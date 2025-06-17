@@ -10,6 +10,7 @@ function App() {
     <>
     <div>
       CIAOOOOO
+      Sono fabiano vaglio e questo è un sito per un'associazione del terzp settore sto provando nuovi strumenti
     </div>
      </>
   )
