@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react'
 
-// Header Component
-const Header = () => {
-  const handleImageError = (e) => {
-    const target = e.target;
-    const nextSibling = target.nextElementSibling;
+const Header: React.FC = () => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+    const target = e.target as HTMLImageElement;
+    const nextSibling = target.nextElementSibling as HTMLElement;
     target.style.display = 'none';
     if (nextSibling) {
       nextSibling.style.display = 'flex';
@@ -68,4 +67,4 @@ const Header = () => {
   );
 };
 
-export default Header
+export default Header;

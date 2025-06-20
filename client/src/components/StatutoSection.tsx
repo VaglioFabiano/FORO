@@ -1,9 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
-const StatutoSection = () => {
-  const [sezioneAperta, setSezioneAperta] = useState(null);
+interface SezioneStatuto {
+  titolo: string;
+  contenuto: string;
+  icon: string;
+}
+
+const StatutoSection: React.FC = () => {
+  const [sezioneAperta, setSezioneAperta] = useState<number | null>(null);
   
-  const sezioniStatuto = [
+  const sezioniStatuto: SezioneStatuto[] = [
     {
       titolo: 'Finalità dell\'Associazione',
       contenuto: 'L\'associazione promuove attività di studio collaborativo, formazione culturale e crescita personale attraverso la gestione di spazi dedicati e l\'organizzazione di eventi educativi che favoriscono l\'apprendimento e lo sviluppo delle competenze.',
@@ -26,7 +32,7 @@ const StatutoSection = () => {
     }
   ];
 
-  const handleToggleSezione = (index) => {
+  const handleToggleSezione = (index: number): void => {
     setSezioneAperta(sezioneAperta === index ? null : index);
   };
 
@@ -47,7 +53,7 @@ const StatutoSection = () => {
         </div>
         
         <div className="space-y-4 mb-12">
-          {sezioniStatuto.map((sezione, index) => (
+          {sezioniStatuto.map((sezione: SezioneStatuto, index: number) => (
             <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200 transition-all duration-300 hover:shadow-xl">
               <button
                 onClick={() => handleToggleSezione(index)}
@@ -94,4 +100,4 @@ const StatutoSection = () => {
   );
 };
 
-export default StatutoSection
+export default StatutoSection;

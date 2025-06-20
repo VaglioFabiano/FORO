@@ -1,6 +1,4 @@
-import React from 'react'
-
-const Footer = () => {
+const Footer: React.FC = () => {
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-16 px-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-cyan-900/20 to-blue-900/20"></div>
@@ -38,7 +36,7 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-2xl mb-6 text-cyan-300">Links Utili</h3>
             <div className="space-y-3">
-              {['Regolamento Interno', 'Modulo Iscrizione', 'Privacy Policy', 'Cookie Policy'].map((link, index) => (
+              {['Regolamento Interno', 'Modulo Iscrizione', 'Privacy Policy', 'Cookie Policy'].map((link: string, index: number) => (
                 <a key={index} href="#" className="block text-slate-300 hover:text-cyan-300 transition-colors duration-300 hover:translate-x-2 transform">
                   {link}
                 </a>
@@ -53,7 +51,7 @@ const Footer = () => {
               © 2025 Aula Studio - Associazione del Terzo Settore. Tutti i diritti riservati.
             </p>
             <div className="flex space-x-6">
-              {['Instagram', 'Facebook', 'Telegram', 'Email'].map((platform, index) => (
+              {['Instagram', 'Facebook', 'Telegram', 'Email'].map((platform: string, index: number) => (
                 <a key={index} href="#" className="text-slate-400 hover:text-cyan-300 transition-all duration-300 hover:scale-110 transform">
                   {platform}
                 </a>
@@ -66,4 +64,4 @@ const Footer = () => {
   );
 };
 
-export default Footer
+export default Footer;

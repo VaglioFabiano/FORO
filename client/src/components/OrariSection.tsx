@@ -1,8 +1,11 @@
-import React from 'react'
+interface Orario {
+  giorno: string;
+  orario: string;
+  icon: string;
+}
 
-
-const OrariSection = () => {
-  const orari = [
+const OrariSection: React.FC = () => {
+  const orari: Orario[] = [
     { giorno: 'Lunedì - Venerdì', orario: '08:00 - 22:00', icon: '📚' },
     { giorno: 'Sabato', orario: '09:00 - 20:00', icon: '📖' },
     { giorno: 'Domenica', orario: '10:00 - 18:00', icon: '☕' },
@@ -28,7 +31,7 @@ const OrariSection = () => {
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {orari.map((item, index) => (
+          {orari.map((item: Orario, index: number) => (
             <div key={index} className="group">
               <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-100">
                 <div className="text-center mb-4">

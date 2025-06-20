@@ -1,5 +1,14 @@
-const SocialSection = () => {
-  const socialChannels = [
+interface SocialChannel {
+  nome: string;
+  handle: string;
+  descrizione: string;
+  icon: string;
+  color: string;
+  hoverColor: string;
+}
+
+const SocialSection: React.FC = () => {
+  const socialChannels: SocialChannel[] = [
     { 
       nome: 'Instagram', 
       handle: '@aulastudio_official', 
@@ -51,7 +60,7 @@ const SocialSection = () => {
         </div>
         
         <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {socialChannels.map((social, index) => (
+          {socialChannels.map((social: SocialChannel, index: number) => (
             <div key={index} className="group cursor-pointer">
               <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200">
                 <div className="flex items-start space-x-4">
