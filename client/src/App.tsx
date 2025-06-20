@@ -1,18 +1,18 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import Header from './components/Header.tsx'
+import OrariSection from './components/OrariSection.tsx'
+import SocialSection from './components/SocialSection.tsx'
+import StatutoSection from './components/StatutoSection.tsx'
+import Footer from './components/Footer.tsx'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function App(): JSX.Element {
   return (
-    <>
-    <div>
-      CIAOOOOO
-      Sono fabiano vaglio e questo è un sito per un'associazione del terzp settore sto provando nuovi strumenti
+    <div className="min-h-screen">
+      <Header />
+      <OrariSection />
+      <SocialSection />
+      <StatutoSection />
+      <Footer />
     </div>
-     </>
   )
 }
 
