@@ -27,7 +27,7 @@ const Header: React.FC = () => {
           <div className="logo-container">
             <div className="logo-glow"></div>
             <img 
-              src="../assets/logo.png" 
+              src="/assets/logo.png"
               alt="Logo Aula Studio" 
               className="logo-image"
               onError={handleImageError}
