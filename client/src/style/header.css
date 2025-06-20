@@ -1,0 +1,231 @@
+/* Stili base */
+.header {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.header-background {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #155e75 100%);
+}
+
+.header-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.5; }
+}
+
+/* Elementi fluttuanti */
+.floating-element {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(20px);
+}
+
+.floating-element-1 {
+  top: 40px;
+  left: 40px;
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.05);
+  animation: bounce 3s infinite;
+}
+
+.floating-element-2 {
+  bottom: 80px;
+  right: 80px;
+  width: 128px;
+  height: 128px;
+  background: rgba(6, 182, 212, 0.1);
+  filter: blur(40px);
+  animation: pulse 3s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Contenuto */
+.header-content {
+  position: relative;
+  z-index: 10;
+  color: white;
+  padding: 80px 24px;
+}
+
+.header-container {
+  max-width: 80rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* Logo */
+.logo-container {
+  margin-bottom: 40px;
+  transform: scale(1);
+  transition: transform 300ms;
+}
+
+.logo-container:hover {
+  transform: scale(1.05);
+}
+
+.logo-glow {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #67e8f9 0%, #3b82f6 100%);
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0.5;
+  animation: pulse 2s infinite;
+}
+
+.logo-image {
+  position: relative;
+  margin: 0 auto;
+  height: 112px;
+  width: 112px;
+  object-fit: contain;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  padding: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.logo-fallback {
+  display: none;
+  background: linear-gradient(135deg, #67e8f9 0%, #3b82f6 100%);
+  border-radius: 50%;
+  width: 112px;
+  height: 112px;
+  margin: 0 auto;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.logo-fallback-text {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+}
+
+/* Titoli */
+.title-section {
+  margin-bottom: 40px;
+}
+
+.main-title {
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 24px;
+  background: linear-gradient(90deg, white 0%, #e0f2fe 50%, #bfdbfe 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pulse 2s infinite;
+}
+
+@media (min-width: 768px) {
+  .main-title {
+    font-size: 4.5rem;
+  }
+}
+
+.title-divider {
+  width: 128px;
+  height: 4px;
+  background: linear-gradient(90deg, #67e8f9 0%, #3b82f6 100%);
+  margin: 0 auto 24px;
+  border-radius: 9999px;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #e0f2fe;
+  margin-bottom: 32px;
+}
+
+@media (min-width: 768px) {
+  .subtitle {
+    font-size: 1.875rem;
+  }
+}
+
+/* Descrizione */
+.description {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 48rem;
+  margin: 0 auto;
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+@media (min-width: 768px) {
+  .description {
+    font-size: 1.25rem;
+  }
+}
+
+/* Bottoni */
+.buttons-container {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .buttons-container {
+    flex-direction: row;
+  }
+}
+
+.primary-button {
+  background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 300ms;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.primary-button:hover {
+  background: linear-gradient(90deg, #0891b2 0%, #2563eb 100%);
+  transform: scale(1.05);
+}
+
+.secondary-button {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  font-weight: 600;
+  background: transparent;
+  cursor: pointer;
+  transition: all 300ms;
+  backdrop-filter: blur(4px);
+}
+
+.secondary-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

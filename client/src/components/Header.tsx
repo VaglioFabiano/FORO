@@ -1,4 +1,5 @@
-import React from 'react'
+import React from 'react';
+import './style/Header.css'; 
 
 const Header: React.FC = () => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
@@ -11,53 +12,51 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="relative overflow-hidden">
+    <header className="header">
       {/* Background with animated gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-800">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-cyan-500/20 animate-pulse"></div>
+      <div className="header-background">
+        <div className="header-overlay"></div>
       </div>
       
       {/* Floating elements */}
-      <div className="absolute top-10 left-10 w-20 h-20 bg-white/5 rounded-full blur-xl animate-bounce"></div>
-      <div className="absolute bottom-20 right-20 w-32 h-32 bg-cyan-400/10 rounded-full blur-2xl animate-pulse"></div>
+      <div className="floating-element floating-element-1"></div>
+      <div className="floating-element floating-element-2"></div>
       
-      <div className="relative z-10 text-white py-20 px-6">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="mb-10 transform hover:scale-105 transition-transform duration-300">
-            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full blur-lg opacity-50 animate-pulse"></div>
-              <img 
-                src="/assets/logo.png" 
-                alt="Logo Aula Studio" 
-                className="relative mx-auto h-28 w-28 object-contain mb-6 bg-white/10 backdrop-blur-sm rounded-full p-3 border-2 border-white/20 shadow-2xl"
-                onError={handleImageError}
-              />
-              <div className="hidden bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full w-28 h-28 mx-auto items-center justify-center shadow-2xl border-2 border-white/30">
-                <span className="text-2xl font-bold text-white">AS</span>
-              </div>
+      <div className="header-content">
+        <div className="header-container">
+          <div className="logo-container">
+            <div className="logo-glow"></div>
+            <img 
+              src="../assets/logo.png" 
+              alt="Logo Aula Studio" 
+              className="logo-image"
+              onError={handleImageError}
+            />
+            <div className="logo-fallback">
+              <span className="logo-fallback-text">AS</span>
             </div>
           </div>
           
-          <div className="space-y-6 mb-10">
-            <h1 className="text-5xl md:text-7xl font-black mb-6 bg-gradient-to-r from-white via-cyan-100 to-blue-200 bg-clip-text text-transparent animate-pulse">
+          <div className="title-section">
+            <h1 className="main-title">
               Aula Studio
             </h1>
-            <div className="h-1 w-32 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto rounded-full mb-6"></div>
-            <p className="text-xl md:text-3xl font-light text-cyan-100 mb-8">
+            <div className="title-divider"></div>
+            <p className="subtitle">
               Associazione del Terzo Settore
             </p>
           </div>
           
-          <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed font-light">
+          <p className="description">
             Uno spazio dedicato allo studio e alla crescita personale, 
             dove la comunità si incontra per condividere conoscenza e obiettivi.
           </p>
           
-          <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-4 rounded-full font-semibold hover:from-cyan-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-300 shadow-xl">
+          <div className="buttons-container">
+            <button className="primary-button">
               Scopri di più
             </button>
-            <button className="border-2 border-white/30 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 backdrop-blur-sm transition-all duration-300">
+            <button className="secondary-button">
               Contattaci
             </button>
           </div>
