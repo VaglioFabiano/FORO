@@ -1,231 +1,108 @@
-/* Stili base */
+/* Aggiungi questo in cima al tuo CSS */
+:root {
+  --mobile-padding: 16px;
+}
+
+/* Modifica queste sezioni esistenti */
+
 .header {
   position: relative;
   overflow: hidden;
   width: 100%;
+  min-height: 100vh; /* Occupa almeno tutta l'altezza dello schermo */
+  box-sizing: border-box;
 }
 
-.header-background {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgb(8, 42, 53) 0%, rgb(12, 73, 91) 50%, rgb(15, 94, 117) 100%);
-}
-
-.header-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(12, 73, 91, 0.4) 0%, rgba(15, 94, 117, 0.4) 100%);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 0.5; }
-}
-
-/* Elementi fluttuanti */
-.floating-element {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(20px);
-}
-
-.floating-element-1 {
-  top: 40px;
-  left: 40px;
-  width: 80px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.05);
-  animation: bounce 3s infinite;
-}
-
-.floating-element-2 {
-  bottom: 80px;
-  right: 80px;
-  width: 128px;
-  height: 128px;
-  background: rgba(15, 94, 117, 0.15);
-  filter: blur(40px);
-  animation: pulse 3s infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
-}
-
-/* Contenuto */
 .header-content {
   position: relative;
   z-index: 10;
   color: white;
-  padding: 80px 24px;
+  padding: 40px var(--mobile-padding); /* Riduci il padding su mobile */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Centra verticalmente il contenuto */
 }
 
-.header-container {
-  max-width: 80rem;
-  margin: 0 auto;
-  text-align: center;
-}
-
-/* Logo */
-.logo-container {
-  margin-bottom: 40px;
-  transform: scale(1);
-  transition: transform 300ms;
-}
-
-.logo-container:hover {
-  transform: scale(1.05);
-}
-
-.logo-glow {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgb(103, 232, 249) 0%, rgb(12, 73, 91) 100%);
-  border-radius: 50%;
-  filter: blur(20px);
-  opacity: 0.5;
-  animation: pulse 2s infinite;
-}
-
+/* Logo mobile */
 .logo-image {
-  position: relative;
-  margin: 0 auto;
-  height: 112px;
-  width: 112px;
-  object-fit: contain;
-  margin-bottom: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(4px);
-  border-radius: 50%;
-  padding: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  height: 80px; /* Riduci le dimensioni su mobile */
+  width: 80px;
+  margin-bottom: 16px;
 }
 
-.logo-fallback {
-  display: none;
-  background: linear-gradient(135deg, rgb(103, 232, 249) 0%, rgb(12, 73, 91) 100%);
-  border-radius: 50%;
-  width: 112px;
-  height: 112px;
-  margin: 0 auto;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.logo-fallback-text {
-  font-size: 2rem;
-  font-weight: bold;
-  color: white;
-}
-
-/* Titoli */
-.title-section {
-  margin-bottom: 40px;
-}
-
+/* Titoli mobile */
 .main-title {
-  font-size: 3rem;
-  font-weight: 900;
-  margin-bottom: 24px;
-  background: linear-gradient(90deg, white 0%, rgb(224, 242, 254) 50%, rgb(191, 219, 254) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: pulse 2s infinite;
-}
-
-@media (min-width: 768px) {
-  .main-title {
-    font-size: 4.5rem;
-  }
-}
-
-.title-divider {
-  width: 128px;
-  height: 4px;
-  background: linear-gradient(90deg, rgb(103, 232, 249) 0%, rgb(12, 73, 91) 100%);
-  margin: 0 auto 24px;
-  border-radius: 9999px;
+  font-size: 2rem; /* Riduci la dimensione del font */
+  margin-bottom: 16px;
 }
 
 .subtitle {
-  font-size: 1.5rem;
-  font-weight: 300;
-  color: rgb(224, 242, 254);
-  margin-bottom: 32px;
+  font-size: 1.2rem;
+  margin-bottom: 24px;
 }
 
-@media (min-width: 768px) {
-  .subtitle {
-    font-size: 1.875rem;
-  }
-}
-
-/* Descrizione */
+/* Descrizione mobile */
 .description {
-  font-size: 1.125rem;
-  color: rgba(255, 255, 255, 0.9);
-  max-width: 48rem;
-  margin: 0 auto;
-  line-height: 1.75;
-  font-weight: 300;
+  font-size: 1rem;
+  padding: 0 var(--mobile-padding);
 }
 
-@media (min-width: 768px) {
-  .description {
-    font-size: 1.25rem;
-  }
-}
-
-/* Bottoni */
+/* Bottoni mobile */
 .buttons-container {
-  margin-top: 48px;
-  display: flex;
+  margin-top: 32px;
   flex-direction: column;
-  gap: 16px;
-  justify-content: center;
 }
 
+.primary-button,
+.secondary-button {
+  padding: 12px 24px; /* Riduci il padding */
+  width: 100%; /* Occupa tutta la larghezza */
+  margin-bottom: 12px; /* Spazio tra i bottoni */
+}
+
+/* Elementi fluttuanti mobile */
+.floating-element-1 {
+  top: 20px;
+  left: 20px;
+  width: 60px;
+  height: 60px;
+}
+
+.floating-element-2 {
+  bottom: 40px;
+  right: 40px;
+  width: 80px;
+  height: 80px;
+}
+
+/* Media query per tablet */
 @media (min-width: 640px) {
+  .header-content {
+    padding: 60px var(--mobile-padding);
+  }
+  
+  .main-title {
+    font-size: 3rem;
+  }
+  
   .buttons-container {
     flex-direction: row;
   }
+  
+  .primary-button,
+  .secondary-button {
+    width: auto;
+  }
 }
 
-.primary-button {
-  background: linear-gradient(90deg, rgb(6, 182, 212) 0%, rgb(12, 73, 91) 100%);
-  color: white;
-  padding: 16px 32px;
-  border-radius: 9999px;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: all 300ms;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.primary-button:hover {
-  background: linear-gradient(90deg, rgb(8, 145, 178) 0%, rgb(8, 42, 53) 100%);
-  transform: scale(1.05);
-}
-
-.secondary-button {
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  padding: 16px 32px;
-  border-radius: 9999px;
-  font-weight: 600;
-  background: transparent;
-  cursor: pointer;
-  transition: all 300ms;
-  backdrop-filter: blur(4px);
-}
-
-.secondary-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+/* Media query per desktop */
+@media (min-width: 1024px) {
+  .header-content {
+    padding: 80px 24px;
+  }
+  
+  .main-title {
+    font-size: 4.5rem;
+  }
 }
