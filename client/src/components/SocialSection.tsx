@@ -1,85 +1,91 @@
-import React, { useState } from 'react'
-
-interface SezioneStatuto {
-  titolo: string;
-  contenuto: string;
-}
-
-const StatutoSection: React.FC = () => {
-  const [sezioneAperta, setSezioneAperta] = useState<number | null>(null)
-  
-  const sezioniStatuto: SezioneStatuto[] = [
-    {
-      titolo: 'Finalità dell\'Associazione',
-      contenuto: 'L\'associazione promuove attività di studio collaborativo, formazione culturale e crescita personale attraverso la gestione di spazi dedicati e l\'organizzazione di eventi educativi.'
+const SocialSection = () => {
+  const socialChannels = [
+    { 
+      nome: 'Instagram', 
+      handle: '@aulastudio_official', 
+      descrizione: 'Foto e storie della vita quotidiana nella nostra community',
+      icon: '📸',
+      color: 'from-pink-500 to-purple-600',
+      hoverColor: 'hover:from-pink-600 hover:to-purple-700'
     },
-    {
-      titolo: 'Attività Principali',
-      contenuto: 'Gestione aula studio, organizzazione gruppi di studio, eventi formativi, workshop tematici, supporto agli studenti universitari e delle scuole superiori.'
+    { 
+      nome: 'Facebook', 
+      handle: 'Aula Studio Associazione', 
+      descrizione: 'Eventi ufficiali e aggiornamenti importanti',
+      icon: '👥',
+      color: 'from-blue-600 to-blue-700',
+      hoverColor: 'hover:from-blue-700 hover:to-blue-800'
     },
-    {
-      titolo: 'Membership',
-      contenuto: 'L\'associazione è aperta a studenti, professionisti e chiunque sia interessato alla crescita culturale. La quota associativa annuale garantisce l\'accesso a tutti i servizi.'
+    { 
+      nome: 'Telegram', 
+      handle: '@aulastudio_info', 
+      descrizione: 'Comunicazioni rapide e organizzazione gruppi studio',
+      icon: '💬',
+      color: 'from-sky-500 to-blue-600',
+      hoverColor: 'hover:from-sky-600 hover:to-blue-700'
     },
-    {
-      titolo: 'Governance',
-      contenuto: 'L\'associazione è guidata da un Consiglio Direttivo eletto dall\'Assemblea dei Soci, che si riunisce almeno una volta all\'anno per le decisioni strategiche.'
+    { 
+      nome: 'WhatsApp', 
+      handle: 'Gruppo Aula Studio', 
+      descrizione: 'Chat di comunità per organizzarsi e condividere',
+      icon: '💚',
+      color: 'from-green-500 to-emerald-600',
+      hoverColor: 'hover:from-green-600 hover:to-emerald-700'
     }
-  ]
-
-  const handleToggleSezione = (index: number): void => {
-    setSezioneAperta(sezioneAperta === index ? null : index)
-  }
+  ];
 
   return (
-    <section className="py-20 px-6" style={{backgroundColor: 'rgb(249, 231, 202)'}}>
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{color: 'rgb(12, 73, 91)'}}>
-            📋 Statuto dell'Associazione
+    <section className="py-24 px-6 bg-white relative">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <div className="inline-block p-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full mb-6">
+            <span className="text-4xl">🌐</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-slate-800">
+            Seguici sui Social
           </h2>
-          <p className="text-lg" style={{color: 'rgb(12, 73, 91)', opacity: 0.8}}>
-            Trasparenza e chiarezza sui nostri principi e modalità operative
+          <div className="h-1 w-24 bg-gradient-to-r from-cyan-500 to-blue-600 mx-auto rounded-full mb-6"></div>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            Resta sempre aggiornato e connettiti con la nostra vivace comunità di studenti
           </p>
         </div>
         
-        <div className="space-y-4">
-          {sezioniStatuto.map((sezione: SezioneStatuto, index: number) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <button
-                onClick={() => handleToggleSezione(index)}
-                className="w-full px-6 py-4 text-left font-semibold hover:bg-gray-50 flex justify-between items-center"
-                style={{color: 'rgb(12, 73, 91)'}}
-              >
-                <span>{sezione.titolo}</span>
-                <span className="text-2xl">
-                  {sezioneAperta === index ? '−' : '+'}
-                </span>
-              </button>
-              {sezioneAperta === index && (
-                <div className="px-6 pb-4 border-t border-gray-100">
-                  <p className="pt-4" style={{color: 'rgb(12, 73, 91)', opacity: 0.8}}>{sezione.contenuto}</p>
+        <div className="grid md:grid-cols-2 gap-8 mb-12">
+          {socialChannels.map((social, index) => (
+            <div key={index} className="group cursor-pointer">
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-slate-200">
+                <div className="flex items-start space-x-4">
+                  <div className={`rounded-2xl w-16 h-16 flex items-center justify-center text-white text-2xl bg-gradient-to-br ${social.color} ${social.hoverColor} transition-all duration-300 group-hover:scale-110 shadow-lg`}>
+                    {social.icon}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-xl text-slate-800 mb-1">{social.nome}</h3>
+                    <p className="font-semibold text-slate-600 mb-3">{social.handle}</p>
+                    <p className="text-slate-500 leading-relaxed">{social.descrizione}</p>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           ))}
         </div>
         
-        <div className="mt-8 text-center">
-          <div className="bg-white/50 rounded-lg p-6">
-            <h3 className="font-semibold mb-2" style={{color: 'rgb(12, 73, 91)'}}>📄 Statuto Completo</h3>
-            <p className="mb-4" style={{color: 'rgb(12, 73, 91)', opacity: 0.8}}>
-              Il documento completo dello statuto è disponibile su richiesta presso la segreteria 
-              dell'associazione o può essere scaricato dal nostro sito ufficiale.
+        <div className="text-center">
+          <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-8 shadow-lg border border-cyan-100">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mr-4">
+                <span className="text-xl">🎯</span>
+              </div>
+              <h3 className="font-bold text-xl text-slate-800">Unisciti alla Comunità</h3>
+            </div>
+            <p className="text-slate-600 leading-relaxed max-w-3xl mx-auto">
+              I nostri social non sono solo informativi: sono spazi di condivisione attiva dove 
+              organizzare gruppi di studio, scambiarsi appunti, motivarsi a vicenda e creare legami duraturi!
             </p>
-            <button className="text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all" style={{backgroundColor: 'rgb(12, 73, 91)'}}>
-              Scarica Statuto PDF
-            </button>
           </div>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default StatutoSection
+export default SocialSection;

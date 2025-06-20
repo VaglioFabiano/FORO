@@ -4,7 +4,7 @@ import SocialSection from './components/SocialSection.tsx'
 import StatutoSection from './components/StatutoSection.tsx'
 import Footer from './components/Footer.tsx'
 
-function App(): JSX.Element {
+const App = () => {
   return (
     <div className="min-h-screen">
       <Header />
@@ -13,7 +13,7 @@ function App(): JSX.Element {
       <StatutoSection />
       <Footer />
     </div>
-  )
-}
+  );
+};
 
 export default App
