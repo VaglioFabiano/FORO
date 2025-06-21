@@ -1,5 +1,3 @@
-import React from 'react';
-
 import Navbar from './components/Navbar.tsx';
 import Header from './components/Header.tsx';
 import OrariSection from './components/OrariSection.tsx';
