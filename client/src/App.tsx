@@ -1,6 +1,6 @@
 import React from 'react';
 
-import Navbar from './components/navbar.tsx';
+import Navbar from './components/Navbar.tsx';
 import Header from './components/Header.tsx';
 import OrariSection from './components/OrariSection.tsx';
 import SocialSection from './components/SocialSection.tsx';
