@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface Orario {
   giorno: string;
   orario: string;
@@ -13,7 +15,16 @@ const OrariSection: React.FC = () => {
   ];
 
   return (
-    <></>
+    <section>
+      <h2>Orari di Apertura</h2>
+      <ul>
+        {orari.map((item, index) => (
+          <li key={index}>
+            {item.icon} <strong>{item.giorno}:</strong> {item.orario}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 };
 
