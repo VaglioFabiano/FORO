@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface SocialChannel {
   nome: string;
   handle: string;
@@ -44,7 +46,21 @@ const SocialSection: React.FC = () => {
   ];
 
   return (
-    <></>
+    <section>
+      <h2 className="text-xl font-bold mb-4">Seguici sui social</h2>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {socialChannels.map((channel, idx) => (
+          <li
+            key={idx}
+            className={`p-4 rounded-xl text-white bg-gradient-to-r ${channel.color} transition ${channel.hoverColor}`}
+          >
+            <div className="text-2xl mb-1">{channel.icon} {channel.nome}</div>
+            <div className="text-sm font-semibold">{channel.handle}</div>
+            <p className="text-sm">{channel.descrizione}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 };
 
