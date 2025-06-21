@@ -76,14 +76,14 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(12, 73, 91, 0.6) 0%, rgba(8, 51, 65, 0.4) 100%);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
   z-index: 2;
 }
 
 .header-content {
   position: relative;
   z-index: 10;
-  color: white;
+  color: rgb(251, 231, 199);
   text-align: center;
   padding: 40px 20px;
   max-width: 1000px;
@@ -102,15 +102,15 @@ html, body {
   left: -10px;
   right: -10px;
   bottom: -10px;
-  background: rgba(12, 73, 91, 0.3);
+  background: rgba(251, 231, 199, 0.2);
   border-radius: 50%;
   filter: blur(20px);
   animation: logoGlow 3s ease-in-out infinite;
 }
 
 @keyframes logoGlow {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
 }
 
 .logo-image {
@@ -118,7 +118,8 @@ html, body {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(251, 231, 199, 0.3);
 }
 
 .logo-fallback {
@@ -126,15 +127,16 @@ html, body {
   position: relative;
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, rgb(12, 73, 91) 0%, rgb(16, 97, 120) 100%);
+  background: linear-gradient(135deg, rgba(251, 231, 199, 0.9) 0%, rgba(251, 231, 199, 0.7) 100%);
   border-radius: 50%;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(251, 231, 199, 0.5);
 }
 
 .logo-fallback-text {
-  color: white;
+  color: rgb(139, 69, 19);
   font-weight: 700;
   font-size: 32px;
   font-family: 'Inter', sans-serif;
@@ -149,11 +151,11 @@ html, body {
   font-size: 4rem;
   font-weight: 800;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 50%, rgba(12, 73, 91, 0.1) 100%);
+  background: linear-gradient(135deg, rgb(251, 231, 199) 0%, rgba(251, 231, 199, 0.9) 50%, rgba(251, 231, 199, 0.8) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
   font-family: 'Inter', sans-serif;
   letter-spacing: -0.02em;
@@ -163,14 +165,14 @@ html, body {
 .title-divider {
   width: 96px;
   height: 4px;
-  background: linear-gradient(90deg, rgb(12, 73, 91) 0%, rgb(16, 97, 120) 100%);
+  background: linear-gradient(90deg, rgba(251, 231, 199, 0.8) 0%, rgba(251, 231, 199, 0.6) 100%);
   margin: 0 auto 16px;
   border-radius: 2px;
 }
 
 .subtitle {
   font-size: 1.5rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(251, 231, 199, 0.9);
   font-weight: 400;
   margin-bottom: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -180,7 +182,7 @@ html, body {
 
 .description {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(251, 231, 199, 0.85);
   margin-bottom: 48px;
   line-height: 1.6;
   max-width: 768px;
@@ -204,14 +206,14 @@ html, body {
 .primary-button {
   position: relative;
   padding: 16px 32px;
-  background: linear-gradient(135deg, rgb(12, 73, 91) 0%, rgb(16, 97, 120) 100%);
-  color: white;
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.9) 0%, rgba(160, 82, 45, 0.9) 100%);
+  color: rgb(251, 231, 199);
   font-weight: 600;
-  border: none;
+  border: 2px solid rgba(251, 231, 199, 0.3);
   border-radius: 50px;
   cursor: pointer;
   font-size: 16px;
-  box-shadow: 0 10px 25px rgba(12, 73, 91, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   overflow: hidden;
   width: 100%;
@@ -227,7 +229,7 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgb(8, 51, 65) 0%, rgb(12, 73, 91) 100%);
+  background: linear-gradient(135deg, rgba(160, 82, 45, 0.9) 0%, rgba(139, 69, 19, 0.9) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 50px;
@@ -235,7 +237,8 @@ html, body {
 
 .primary-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 15px 35px rgba(12, 73, 91, 0.5);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  border-color: rgba(251, 231, 199, 0.5);
 }
 
 .primary-button:hover::before {
@@ -250,10 +253,10 @@ html, body {
 .secondary-button {
   position: relative;
   padding: 16px 32px;
-  background: rgba(12, 73, 91, 0.2);
-  color: white;
+  background: rgba(251, 231, 199, 0.1);
+  color: rgb(251, 231, 199);
   font-weight: 600;
-  border: 2px solid rgba(12, 73, 91, 0.6);
+  border: 2px solid rgba(251, 231, 199, 0.4);
   border-radius: 50px;
   cursor: pointer;
   font-size: 16px;
@@ -268,8 +271,8 @@ html, body {
 
 .secondary-button:hover {
   transform: scale(1.05);
-  background: rgba(12, 73, 91, 0.3);
-  border-color: rgba(12, 73, 91, 0.8);
+  background: rgba(251, 231, 199, 0.2);
+  border-color: rgba(251, 231, 199, 0.6);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
@@ -284,7 +287,7 @@ html, body {
 .scroll-arrow {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(251, 231, 199, 0.7);
   border-left: none;
   border-top: none;
   transform: rotate(45deg);
