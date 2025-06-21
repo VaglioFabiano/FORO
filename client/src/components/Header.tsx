@@ -13,11 +13,19 @@ const Header: React.FC = () => {
 
   return (
     <header className="header">
-      {/* Floating animated elements */}
-      <div className="floating-element-1"></div>
-      <div className="floating-element-2"></div>
-      <div className="floating-element-3"></div>
-      <div className="floating-element-4"></div>
+      {/* Video background */}
+      <video 
+        className="video-background" 
+        autoPlay 
+        muted 
+        loop 
+        playsInline
+      >
+        <source src="https://www.instagram.com/reel/DB9E6wptM1V/media/?size=l" type="video/mp4" />
+      </video>
+      
+      {/* Overlay for better text readability */}
+      <div className="video-overlay"></div>
       
       {/* Main content */}
       <div className="header-content">
@@ -62,17 +70,6 @@ const Header: React.FC = () => {
           </button>
         </div>
       </div>
-      
-      {/* Animated particles */}
-      <div className="particles">
-        <div className="particle particle-1"></div>
-        <div className="particle particle-2"></div>
-        <div className="particle particle-3"></div>
-        <div className="particle particle-4"></div>
-      </div>
-      
-      {/* Bottom gradient */}
-      <div className="bottom-gradient"></div>
     </header>
   );
 };
