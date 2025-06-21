@@ -21,8 +21,8 @@ const Header: React.FC = () => {
         loop 
         playsInline
       >
-        <source src="/assets/background-video.mp4" type="video/mp4" />
-        <source src="/assets/background-video.webm" type="video/webm" />
+        <source src="../assets/background-video.mp4" type="video/mp4" />
+        <source src="../assets/background-video.webm" type="video/webm" />
       </video>
       
       {/* Overlay for better text readability */}
