@@ -11,19 +11,17 @@ const Header: React.FC = () => {
     }
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <header className="header">
-      {/* Video background */}
-      <video 
-        className="video-background" 
-        autoPlay 
-        muted 
-        loop 
-        playsInline
-      >
-        <source src="../assets/background-video.mp4" type="video/mp4" />
-        <source src="../assets/background-video.webm" type="video/webm" />
-      </video>
+    <header id="header" className="header">
+      {/* Background image */}
+      <div className="header-background"></div>
       
       {/* Overlay for better text readability */}
       <div className="video-overlay"></div>
@@ -63,12 +61,23 @@ const Header: React.FC = () => {
         
         {/* Buttons */}
         <div className="buttons-container">
-          <button className="primary-button">
+          <button 
+            className="primary-button"
+            onClick={() => scrollToSection('orari')}
+          >
             <span>Scopri di più</span>
           </button>
-          <button className="secondary-button">
+          <button 
+            className="secondary-button"
+            onClick={() => scrollToSection('footer')}
+          >
             Contattaci
           </button>
+        </div>
+
+        {/* Navigation hint */}
+        <div className="scroll-hint">
+          <div className="scroll-arrow"></div>
         </div>
       </div>
     </header>
