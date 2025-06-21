@@ -21,7 +21,12 @@ const Header: React.FC = () => {
   return (
     <header id="header" className="header">
       {/* Background image */}
-      <div className="header-background"></div>
+      <div 
+        className="header-background"
+        style={{
+          backgroundImage: `url('/assets/header_photo.jpg')`
+        }}
+      ></div>
       
       {/* Overlay for better text readability */}
       <div className="video-overlay"></div>
