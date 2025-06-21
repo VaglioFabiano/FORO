@@ -18,6 +18,7 @@ const OrariSection: React.FC = () => {
   return (
     <section>
       <h2>Orari di Apertura</h2>
+      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
       <ul>
         {orari.map((item, index) => (
           <li key={index}>
