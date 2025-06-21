@@ -6,15 +6,13 @@
   z-index: 1000;
   background: rgb(12, 73, 91);
   backdrop-filter: blur(20px);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   padding: 0;
 }
 
 .navbar-scrolled {
-  background: rgb(12, 73, 91); /* Cambiato da rgba a rgb per colore pieno */
+  background: rgb(12, 73, 91);
   backdrop-filter: blur(20px);
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-container {
@@ -23,12 +21,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 10px 20px;
   transition: all 0.3s ease;
 }
 
 .navbar-scrolled .navbar-container {
-  padding: 12px 20px;
+  padding: 8px 20px;
 }
 
 /* Logo Section */
