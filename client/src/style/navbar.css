@@ -11,7 +11,7 @@
 }
 
 .navbar-scrolled {
-  background: rgba(12, 73, 91, 0.95);
+  background: rgb(12, 73, 91); /* Cambiato da rgba a rgb per colore pieno */
   backdrop-filter: blur(20px);
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
 }
