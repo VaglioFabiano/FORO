@@ -3,6 +3,7 @@ import '../style/navbar.css';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +21,8 @@ const Navbar: React.FC = () => {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+    // Chiudi il menu mobile dopo il click
+    setIsMobileMenuOpen(false);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
@@ -31,65 +34,110 @@ const Navbar: React.FC = () => {
     }
   };
 
-  return (
-    <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
-      <div className="navbar-container">
-        {/* Logo */}
-        <div className="navbar-logo" onClick={() => scrollToSection('header')}>
-          <img 
-            src="/assets/logo.png"
-            alt="Logo Aula Studio" 
-            className="navbar-logo-image"
-            onError={handleImageError}
-          />
-          <div className="navbar-logo-fallback">
-            <span className="navbar-logo-text">AS</span>
-          </div>
-          <span className="navbar-brand">Aula Studio</span>
-        </div>
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
-        {/* Navigation Links */}
-        <div className="navbar-nav">
+  return (
+    <>
+      <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
+        <div className="navbar-container">
+          {/* Logo */}
+          <div className="navbar-logo" onClick={() => scrollToSection('header')}>
+            <img 
+              src="/assets/logo.png"
+              alt="Logo Aula Studio" 
+              className="navbar-logo-image"
+              onError={handleImageError}
+            />
+            <div className="navbar-logo-fallback">
+              <span className="navbar-logo-text">AS</span>
+            </div>
+            <span className="navbar-brand">Aula Studio</span>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="navbar-nav">
+            <button 
+              className="nav-link"
+              onClick={() => scrollToSection('header')}
+            >
+              Home
+            </button>
+            <button 
+              className="nav-link"
+              onClick={() => scrollToSection('orari')}
+            >
+              Orari
+            </button>
+            <button 
+              className="nav-link"
+              onClick={() => scrollToSection('social')}
+            >
+              Social
+            </button>
+            <button 
+              className="nav-link"
+              onClick={() => scrollToSection('statuto')}
+            >
+              Statuto
+            </button>
+            <button 
+              className="nav-link"
+              onClick={() => scrollToSection('footer')}
+            >
+              Contatti
+            </button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <div 
+            className={`mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`}
+            onClick={toggleMobileMenu}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'active' : ''}`}>
+        <div className="mobile-menu-content">
           <button 
-            className="nav-link"
+            className="mobile-nav-link"
             onClick={() => scrollToSection('header')}
           >
             Home
           </button>
           <button 
-            className="nav-link"
+            className="mobile-nav-link"
             onClick={() => scrollToSection('orari')}
           >
             Orari
           </button>
           <button 
-            className="nav-link"
+            className="mobile-nav-link"
             onClick={() => scrollToSection('social')}
           >
             Social
           </button>
           <button 
-            className="nav-link"
+            className="mobile-nav-link"
             onClick={() => scrollToSection('statuto')}
           >
             Statuto
           </button>
           <button 
-            className="nav-link"
+            className="mobile-nav-link"
             onClick={() => scrollToSection('footer')}
           >
             Contatti
           </button>
         </div>
-
-        {/* Mobile Menu Button */}
-        <div className="mobile-menu-toggle">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
       </div>
-    </nav>
+    </>
   );
 };
 
