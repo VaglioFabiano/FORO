@@ -5,15 +5,15 @@ const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-  const handleScroll = () => {
-    const scrollTop = window.scrollY;
-    const threshold = 50; 
-    setIsScrolled(scrollTop > threshold);
-  };
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const threshold = window.innerHeight * 0.1; // 10% of viewport height
+      setIsScrolled(scrollTop > threshold);
+    };
 
-  window.addEventListener('scroll', handleScroll);
-  return () => window.removeEventListener('scroll', handleScroll);
-}, []);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);

@@ -4,8 +4,9 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: transparent;
-  backdrop-filter: blur(0px);
+  background: rgb(12, 73, 91);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   padding: 0;
 }
