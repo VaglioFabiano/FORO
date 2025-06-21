@@ -1,8 +1,22 @@
+/* Reset margins and padding for body and html */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+}
+
 .header {
   position: relative;
   overflow: hidden;
-  width: 100%;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh; /* Full viewport height */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,6 +25,8 @@
   background-size: 400% 400%;
   animation: gradientMove 8s ease infinite;
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0; /* Remove any margin */
+  padding: 0; /* Remove any padding */
 }
 
 @keyframes gradientMove {
@@ -39,6 +55,15 @@
   z-index: 2;
 }
 
+.header-content {
+  position: relative;
+  z-index: 10;
+  color: white;
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 1000px;
+  width: 100%;
+}
 
 .logo-container {
   margin-bottom: 32px;
@@ -270,4 +295,9 @@
   .logo-fallback-text {
     font-size: 48px;
   }
+}
+
+/* Ensure smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
 }
