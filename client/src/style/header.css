@@ -7,6 +7,16 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  background: linear-gradient(135deg, rgb(12, 73, 91) 0%, rgb(8, 51, 65) 50%, rgb(16, 97, 120) 100%);
+  background-size: 400% 400%;
+  animation: gradientMove 8s ease infinite;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .video-background {
@@ -25,7 +35,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, rgba(12, 73, 91, 0.6) 0%, rgba(8, 51, 65, 0.4) 100%);
   z-index: 2;
 }
 
@@ -51,7 +61,7 @@
   left: -10px;
   right: -10px;
   bottom: -10px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(12, 73, 91, 0.3);
   border-radius: 50%;
   filter: blur(20px);
   animation: logoGlow 3s ease-in-out infinite;
@@ -75,7 +85,7 @@
   position: relative;
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, rgb(12, 73, 91) 0%, rgb(16, 97, 120) 100%);
   border-radius: 50%;
   align-items: center;
   justify-content: center;
@@ -84,8 +94,10 @@
 
 .logo-fallback-text {
   color: white;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 32px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .title-section {
@@ -94,41 +106,49 @@
 
 .main-title {
   font-size: 4rem;
-  font-weight: bold;
+  font-weight: 800;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #bfdbfe 50%, #ddd6fe 100%);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.9) 50%, rgba(12, 73, 91, 0.1) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .title-divider {
   width: 96px;
   height: 4px;
-  background: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+  background: linear-gradient(90deg, rgb(12, 73, 91) 0%, rgb(16, 97, 120) 100%);
   margin: 0 auto 16px;
   border-radius: 2px;
 }
 
 .subtitle {
   font-size: 1.5rem;
-  color: #bfdbfe;
-  font-weight: 300;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
   margin-bottom: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.01em;
 }
 
 .description {
   font-size: 1.25rem;
-  color: #d1d5db;
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 48px;
   line-height: 1.6;
   max-width: 768px;
   margin-left: auto;
   margin-right: auto;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.005em;
 }
 
 .buttons-container {
@@ -142,18 +162,20 @@
 .primary-button {
   position: relative;
   padding: 16px 32px;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, rgb(12, 73, 91) 0%, rgb(16, 97, 120) 100%);
   color: white;
   font-weight: 600;
   border: none;
   border-radius: 50px;
   cursor: pointer;
   font-size: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 25px rgba(12, 73, 91, 0.4);
   transition: all 0.3s ease;
   overflow: hidden;
   width: 100%;
   max-width: 200px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.01em;
 }
 
 .primary-button::before {
@@ -163,7 +185,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+  background: linear-gradient(135deg, rgb(8, 51, 65) 0%, rgb(12, 73, 91) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 50px;
@@ -171,7 +193,7 @@
 
 .primary-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 15px 35px rgba(12, 73, 91, 0.5);
 }
 
 .primary-button:hover::before {
@@ -186,10 +208,10 @@
 .secondary-button {
   position: relative;
   padding: 16px 32px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(12, 73, 91, 0.2);
   color: white;
   font-weight: 600;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(12, 73, 91, 0.6);
   border-radius: 50px;
   cursor: pointer;
   font-size: 16px;
@@ -198,12 +220,14 @@
   width: 100%;
   max-width: 200px;
   backdrop-filter: blur(10px);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.01em;
 }
 
 .secondary-button:hover {
   transform: scale(1.05);
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(12, 73, 91, 0.3);
+  border-color: rgba(12, 73, 91, 0.8);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
