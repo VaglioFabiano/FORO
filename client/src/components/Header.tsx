@@ -24,7 +24,7 @@ const Header: React.FC = () => {
       <div 
         className="header-background"
         style={{
-          backgroundImage: `url('/assets/header_photo.jpg')`
+          backgroundImage: `url('../assets/header_photo.jpg')`
         }}
       ></div>
       
