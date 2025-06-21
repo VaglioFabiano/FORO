@@ -1,5 +1,6 @@
 import React from 'react';
 import '../style/header.css';
+import headerPhoto from '../assets/header_photo.jpg';
 
 const Header: React.FC = () => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
@@ -24,7 +25,7 @@ const Header: React.FC = () => {
       <div 
         className="header-background"
         style={{
-          backgroundImage: `url('../assets/header_photo.jpg')`
+          backgroundImage: `url(${headerPhoto})`
         }}
       ></div>
       
