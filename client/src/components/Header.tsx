@@ -1,5 +1,5 @@
 import React from 'react';
-import './style/header.css';
+import '../style/header.css';
 
 const Header: React.FC = () => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
