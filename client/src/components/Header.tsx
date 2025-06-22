@@ -21,11 +21,14 @@ const Header: React.FC = () => {
 
   return (
     <header id="header" className="header">
-      {/* Background image */}
+      {/* Background image con stile inline per usare l'import */}
       <div 
         className="header-background"
         style={{
-          backgroundImage: `url(${headerPhoto})`
+          backgroundImage: `url(${headerPhoto})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
         }}
       ></div>
       
