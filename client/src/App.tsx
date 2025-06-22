@@ -23,10 +23,16 @@ useEffect(() => {
 
   const handleShowLogin = () => {
     setShowLogin(true);
+    // Scorri alla top della pagina quando mostri il login
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Nascondi lo scroll del body quando mostri il login
+    document.body.style.overflow = 'hidden';
   };
 
   const handleBackToHome = () => {
     setShowLogin(false);
+    // Ripristina lo scroll del body quando torni alla home
+    document.body.style.overflow = 'auto';
     // Opzionale: rimuovi l'hash dall'URL
     window.history.pushState(null, '', window.location.pathname);
   };

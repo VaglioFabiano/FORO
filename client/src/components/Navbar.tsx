@@ -22,6 +22,9 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
   }, []);
 
   const scrollToSection = (sectionId: string) => {
+    // Chiudi sempre il menu mobile
+    setIsMobileMenuOpen(false);
+    
     // Se siamo nella pagina di login, torna prima alla home
     if (isInLoginPage) {
       onBackToHome();
@@ -42,7 +45,6 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
-      setIsMobileMenuOpen(false);
     }
   };
 

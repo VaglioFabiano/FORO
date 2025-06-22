@@ -2,5 +2,6 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   surname TEXT NOT NULL,
-  tel TEXT NOT NULL
+  tel TEXT NOT NULL,
+  level INTEGER NOT NULL
 );
