@@ -21,13 +21,16 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
   }, []);
 
   const scrollToSection = (sectionId: string) => {
+  if (window.location.pathname !== '/') {
+    window.location.href = `/#${sectionId}`;
+  } else {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
-    // Chiudi il menu mobile dopo il click
     setIsMobileMenuOpen(false);
-  };
+  }
+};
 
   const navigateToLogin = () => {
     onLoginClick();

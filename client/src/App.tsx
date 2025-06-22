@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect} from 'react';
 import Navbar from './components/Navbar.tsx';
 import Header from './components/Header.tsx';
 import OrariSection from './components/OrariSection.tsx';
@@ -9,6 +9,17 @@ import Login from './components/Login.tsx';
 
 function App(): JSX.Element {
   const [showLogin, setShowLogin] = useState(false);
+
+useEffect(() => {
+  const hash = window.location.hash;
+  if (hash) {
+    const id = hash.replace('#', '');
+    const target = document.getElementById(id);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+}, []);
 
   const handleShowLogin = () => {
     setShowLogin(true);
