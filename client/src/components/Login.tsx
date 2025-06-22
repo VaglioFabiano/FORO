@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../style/login.css';
 
 const Login: React.FC = () => {
@@ -6,9 +6,16 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
+  // Blocca lo scroll del body
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Logica di login qui
     console.log('Login attempt:', { username, password, rememberMe });
   };
 
@@ -19,9 +26,8 @@ const Login: React.FC = () => {
           <img 
             src="/assets/logo.png"
             alt="Logo Aula Studio" 
-            className="logo-image"
+            className="logo"
           />
-          <p className="login-subtitle">Accedi al tuo account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">

@@ -14,31 +14,13 @@ function App(): JSX.Element {
     setShowLogin(true);
   };
 
-  const handleBackToHome = () => {
-    setShowLogin(false);
-  };
-
   return (
     <div className="min-h-screen">
       <Navbar onLoginClick={handleShowLogin} />
       
       {showLogin ? (
         <div>
-          <button 
-            onClick={handleBackToHome}
-            style={{
-              position: 'absolute',
-              top: '80px',
-              left: '20px',
-              padding: '10px 20px',
-              backgroundColor: '#f0f0f0',
-              border: '1px solid #ccc',
-              borderRadius: '5px',
-              cursor: 'pointer'
-            }}
-          >
-            ← Torna alla Home
-          </button>
+          
           <Login />
         </div>
       ) : (
