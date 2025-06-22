@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { ExternalLink, MessageCircle } from 'lucide-react';
-import './SocialSection.css';
+import '../style/social.css';
 
 // Type declaration for Instagram embed script
 declare global {
