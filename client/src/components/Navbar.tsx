@@ -3,9 +3,11 @@ import '../style/navbar.css';
 
 interface NavbarProps {
   onLoginClick: () => void;
+  onBackToHome: () => void;
+  isInLoginPage: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
+const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPage }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -15,25 +17,47 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
       const threshold = window.innerHeight * 0.1; // 10% of viewport height
       setIsScrolled(scrollTop > threshold);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const scrollToSection = (sectionId: string) => {
-  if (window.location.pathname !== '/') {
-    window.location.href = `/#${sectionId}`;
-  } else {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    // Se siamo nella pagina di login, torna prima alla home
+    if (isInLoginPage) {
+      onBackToHome();
+      // Aspetta che il componente si re-renderizzi prima di fare lo scroll
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+      return;
     }
-    setIsMobileMenuOpen(false);
-  }
-};
+
+    if (window.location.pathname !== '/') {
+      window.location.href = `/#${sectionId}`;
+    } else {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+      setIsMobileMenuOpen(false);
+    }
+  };
 
   const navigateToLogin = () => {
     onLoginClick();
+    setIsMobileMenuOpen(false);
+  };
+
+  const navigateToHome = () => { 
+    if (isInLoginPage) {
+      onBackToHome();
+    } else {
+      scrollToSection('header');
+    }
+    setIsMobileMenuOpen(false);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
@@ -54,7 +78,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
       <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
         <div className="navbar-container">
           {/* Logo */}
-          <div className="navbar-logo" onClick={() => scrollToSection('header')}>
+          <div className="navbar-logo" onClick={navigateToHome} style={{ cursor: 'pointer' }}>
             <img 
               src="/assets/logo.png"
               alt="Logo Aula Studio" 
@@ -103,7 +127,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
               className="nav-link login-link"
               onClick={navigateToLogin}
             >
-              Login
+              {isInLoginPage ? 'Indietro' : 'Login'}
             </button>
           </div>
 
@@ -156,7 +180,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
             className="mobile-nav-link login-link"
             onClick={navigateToLogin}
           >
-            Login
+            {isInLoginPage ? 'Indietro' : 'Login'}
           </button>
         </div>
       </div>

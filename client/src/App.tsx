@@ -25,13 +25,22 @@ useEffect(() => {
     setShowLogin(true);
   };
 
+  const handleBackToHome = () => {
+    setShowLogin(false);
+    // Opzionale: rimuovi l'hash dall'URL
+    window.history.pushState(null, '', window.location.pathname);
+  };
+
   return (
     <div className="min-h-screen">
-      <Navbar onLoginClick={handleShowLogin} />
+      <Navbar 
+        onLoginClick={handleShowLogin} 
+        onBackToHome={handleBackToHome}
+        isInLoginPage={showLogin}
+      />
       
       {showLogin ? (
         <div>
-          
           <Login />
         </div>
       ) : (
