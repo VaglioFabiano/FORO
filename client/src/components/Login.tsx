@@ -16,7 +16,11 @@ const Login: React.FC = () => {
     <div className="login-page">
       <div className="login-container">
         <div className="login-header">
-          <img src="/asset/logo.png" alt="Logo" className="logo" />
+          <img 
+            src="/assets/logo.png"
+            alt="Logo Aula Studio" 
+            className="logo-image"
+          />
           <p className="login-subtitle">Accedi al tuo account</p>
         </div>
 
