@@ -6,20 +6,14 @@
 } */
 
 .login-page {
-  position: fixed; /* Usa fixed invece di height: 100vh */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px; /* padding orizzontale per mobile */
+  padding: 120px 20px 40px; /* padding-top maggiore per compensare la navbar */
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  z-index: 1000; /* Assicurati che sia sopra la navbar */
-  overflow-y: auto; /* Permetti scroll se necessario */
 }
 
 .login-container {
@@ -30,8 +24,6 @@
   width: 100%;
   max-width: 400px;
   position: relative;
-  max-height: 90vh; /* Limita l'altezza massima */
-  overflow-y: auto; /* Scroll interno se necessario */
 }
 
 .login-header {
@@ -150,13 +142,13 @@
 /* Responsive */
 @media (max-width: 480px) {
   .login-page {
-    padding: 20px 10px;
+    padding: 100px 10px 20px; /* padding-top ridotto per mobile */
+    min-height: calc(100vh - 60px); /* Compensa l'altezza della navbar mobile */
   }
   
   .login-container {
     padding: 30px 20px;
     margin: 0;
-    max-height: 95vh;
   }
 
   .logo {
