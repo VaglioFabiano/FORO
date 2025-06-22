@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../style/navbar.css';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,9 +28,7 @@ const Navbar: React.FC = () => {
   };
 
   const navigateToLogin = () => {
-    // Naviga alla pagina di login
-    window.location.href = '/login';
-    // Oppure se usi React Router: navigate('/login');
+    navigate('/login');
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
