@@ -1,6 +1,5 @@
 import React from 'react';
 import '../style/header.css';
-import headerPhoto from '../assets/header_photo.jpg';
 
 const Header: React.FC = () => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
@@ -21,16 +20,8 @@ const Header: React.FC = () => {
 
   return (
     <header id="header" className="header">
-      {/* Background image con stile inline per usare l'import */}
-      <div 
-        className="header-background"
-        style={{
-          backgroundImage: `url(${headerPhoto})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      ></div>
+      {/* Background image */}
+      <div className="header-background"></div>
       
       {/* Overlay for better text readability */}
       <div className="video-overlay"></div>
