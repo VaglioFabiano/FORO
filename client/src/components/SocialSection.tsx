@@ -1,65 +1,143 @@
-import React from 'react';
-
-interface SocialChannel {
-  nome: string;
-  handle: string;
-  descrizione: string;
-  icon: string;
-  color: string;
-  hoverColor: string;
-}
+import React, { useEffect } from 'react';
+import { ExternalLink, MessageCircle } from 'lucide-react';
+import '../style/social.css';
 
 const SocialSection: React.FC = () => {
-  const socialChannels: SocialChannel[] = [
-    { 
-      nome: 'Instagram', 
-      handle: '@aulastudio_official', 
-      descrizione: 'Foto e storie della vita quotidiana nella nostra community',
-      icon: '📸',
-      color: 'from-pink-500 to-purple-600',
-      hoverColor: 'hover:from-pink-600 hover:to-purple-700'
-    },
-    { 
-      nome: 'Facebook', 
-      handle: 'Aula Studio Associazione', 
-      descrizione: 'Eventi ufficiali e aggiornamenti importanti',
-      icon: '👥',
-      color: 'from-blue-600 to-blue-700',
-      hoverColor: 'hover:from-blue-700 hover:to-blue-800'
-    },
-    { 
-      nome: 'Telegram', 
-      handle: '@aulastudio_info', 
-      descrizione: 'Comunicazioni rapide e organizzazione gruppi studio',
-      icon: '💬',
-      color: 'from-sky-500 to-blue-600',
-      hoverColor: 'hover:from-sky-600 hover:to-blue-700'
-    },
-    { 
-      nome: 'WhatsApp', 
-      handle: 'Gruppo Aula Studio', 
-      descrizione: 'Chat di comunità per organizzarsi e condividere',
-      icon: '💚',
-      color: 'from-green-500 to-emerald-600',
-      hoverColor: 'hover:from-green-600 hover:to-emerald-700'
+  useEffect(() => {
+    // Carica script Instagram
+    if (!document.querySelector('#instagram-embed-script')) {
+      const script = document.createElement('script');
+      script.id = 'instagram-embed-script';
+      script.src = 'https://www.instagram.com/embed.js';
+      script.async = true;
+      document.body.appendChild(script);
     }
-  ];
+
+    // Carica script Facebook
+    if (!document.querySelector('#facebook-embed-script')) {
+      const script = document.createElement('script');
+      script.id = 'facebook-embed-script';
+      script.src = 'https://connect.facebook.net/it_IT/sdk.js#xfbml=1&version=v18.0';
+      script.async = true;
+      script.defer = true;
+      script.crossOrigin = 'anonymous';
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  const handleSocialClick = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
-    <section>
-      <h2 className="text-xl font-bold mb-4">Seguici sui social</h2>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {socialChannels.map((channel, idx) => (
-          <li
-            key={idx}
-            className={`p-4 rounded-xl text-white bg-gradient-to-r ${channel.color} transition ${channel.hoverColor}`}
-          >
-            <div className="text-2xl mb-1">{channel.icon} {channel.nome}</div>
-            <div className="text-sm font-semibold">{channel.handle}</div>
-            <p className="text-sm">{channel.descrizione}</p>
-          </li>
-        ))}
-      </ul>
+    <section className="social-section">
+      <h2 className="social-title">Seguici sui social</h2>
+      
+      {/* Riquadri Instagram e Facebook affiancati */}
+      <div className="social-grid">
+        {/* Instagram */}
+        <div className="social-card instagram-card">
+          <div className="card-header">
+            <div className="card-icon instagram-icon">📸</div>
+            <div className="card-info">
+              <h3>Instagram</h3>
+              <p>@associazioneforo</p>
+            </div>
+            <button 
+              onClick={() => handleSocialClick('https://www.instagram.com/associazioneforo/')}
+              className="visit-button"
+            >
+              <ExternalLink size={16} />
+            </button>
+          </div>
+          
+          <div className="posts-container">
+            {/* Embed Instagram Post - Esempio */}
+            <blockquote 
+              className="instagram-media" 
+              data-instgrm-permalink="https://www.instagram.com/p/placeholder/"
+              data-instgrm-version="14"
+            >
+              <div className="post-placeholder">
+                <div className="placeholder-content">
+                  <div className="placeholder-avatar"></div>
+                  <div className="placeholder-text">
+                    <div className="placeholder-line"></div>
+                    <div className="placeholder-line short"></div>
+                  </div>
+                </div>
+                <div className="placeholder-image"></div>
+                <p className="placeholder-caption">Caricamento post Instagram...</p>
+              </div>
+            </blockquote>
+          </div>
+        </div>
+
+        {/* Facebook */}
+        <div className="social-card facebook-card">
+          <div className="card-header">
+            <div className="card-icon facebook-icon">👥</div>
+            <div className="card-info">
+              <h3>Facebook</h3>
+              <p>Associazione Foro</p>
+            </div>
+            <button 
+              onClick={() => handleSocialClick('https://www.facebook.com/profile.php?id=61553896114681&locale=it_IT')}
+              className="visit-button"
+            >
+              <ExternalLink size={16} />
+            </button>
+          </div>
+          
+          <div className="posts-container">
+            {/* Embed Facebook Post - Esempio */}
+            <div 
+              className="fb-post" 
+              data-href="https://www.facebook.com/profile.php?id=61553896114681"
+              data-width="auto"
+              data-show-text="true"
+            >
+              <div className="post-placeholder">
+                <div className="placeholder-content">
+                  <div className="placeholder-avatar"></div>
+                  <div className="placeholder-text">
+                    <div className="placeholder-line"></div>
+                    <div className="placeholder-line short"></div>
+                  </div>
+                </div>
+                <div className="placeholder-image"></div>
+                <p className="placeholder-caption">Caricamento post Facebook...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Barra Telegram */}
+      <div 
+        className="telegram-bar"
+        onClick={() => handleSocialClick('https://t.me/aulastudioforo')}
+      >
+        <div className="telegram-content">
+          <div className="telegram-icon">
+            <MessageCircle size={20} />
+          </div>
+          <div className="telegram-info">
+            <h3>Telegram</h3>
+            <p>@aulastudioforo</p>
+            <span className="telegram-description">
+              Canale ufficiale per comunicazioni rapide e coordinamento gruppi studio
+            </span>
+          </div>
+          <div className="telegram-status">
+            <div className="status-indicator">
+              <div className="status-dot"></div>
+              <span>Attivo</span>
+            </div>
+            <ExternalLink size={16} className="external-icon" />
+          </div>
+        </div>
+      </div>
     </section>
   );
 };

@@ -1,0 +1,293 @@
+/* SocialSection.css */
+.social-section {
+  padding: 2rem 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.social-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Grid per i riquadri Instagram e Facebook */
+.social-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .social-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Stili per i riquadri social */
+.social-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.social-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Header del riquadro */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.instagram-icon {
+  background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+}
+
+.facebook-icon {
+  background: #1877f2;
+}
+
+.card-info {
+  flex: 1;
+  margin-left: 0.75rem;
+}
+
+.card-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.card-info p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.visit-button {
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6b7280;
+}
+
+.visit-button:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Contenitore dei post */
+.posts-container {
+  padding: 1rem;
+  min-height: 300px;
+  background: #f9fafb;
+}
+
+/* Placeholder per i post */
+.post-placeholder {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.placeholder-content {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.placeholder-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+}
+
+.placeholder-text {
+  flex: 1;
+}
+
+.placeholder-line {
+  height: 12px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.placeholder-line.short {
+  width: 60%;
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.placeholder-caption {
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Stili per la barra Telegram */
+.telegram-bar {
+  background: linear-gradient(135deg, #0088cc, #0077b3);
+  border-radius: 1rem;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.telegram-bar:hover {
+  background: linear-gradient(135deg, #0077b3, #006699);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px -5px rgba(0, 136, 204, 0.3);
+}
+
+.telegram-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.telegram-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin-right: 1rem;
+}
+
+.telegram-info {
+  flex: 1;
+}
+
+.telegram-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.telegram-info p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin: 0 0 0.25rem 0;
+}
+
+.telegram-description {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .telegram-description {
+    display: none;
+  }
+}
+
+.telegram-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 2rem;
+  font-size: 0.8rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.external-icon {
+  transition: transform 0.3s ease;
+}
+
+.telegram-bar:hover .external-icon {
+  transform: translateX(4px);
+}
+
+/* Stili per i veri embed social (quando caricati) */
+.instagram-media {
+  margin: 0 !important;
+  min-width: 100% !important;
+}
+
+.fb-post {
+  width: 100% !important;
+}
+
+.fb-post span {
+  width: 100% !important;
+}
+
+.fb-post iframe {
+  width: 100% !important;
+}
