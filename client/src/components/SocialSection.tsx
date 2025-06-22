@@ -1,29 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ExternalLink, MessageCircle } from 'lucide-react';
 import '../style/social.css';
 
 const SocialSection: React.FC = () => {
-  useEffect(() => {
-    // Carica script Instagram
-    if (!document.querySelector('#instagram-embed-script')) {
-      const script = document.createElement('script');
-      script.id = 'instagram-embed-script';
-      script.src = 'https://www.instagram.com/embed.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-
-    // Carica script Facebook
-    if (!document.querySelector('#facebook-embed-script')) {
-      const script = document.createElement('script');
-      script.id = 'facebook-embed-script';
-      script.src = 'https://connect.facebook.net/it_IT/sdk.js#xfbml=1&version=v18.0';
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = 'anonymous';
-      document.body.appendChild(script);
-    }
-  }, []);
 
   const handleSocialClick = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -36,7 +15,10 @@ const SocialSection: React.FC = () => {
       {/* Riquadri Instagram e Facebook affiancati */}
       <div className="social-grid">
         {/* Instagram */}
-        <div className="social-card instagram-card">
+        <div 
+          className="social-card instagram-card"
+          onClick={() => handleSocialClick('https://www.instagram.com/associazioneforo/')}
+        >
           <div className="card-header">
             <div className="card-icon instagram-icon">📸</div>
             <div className="card-info">
@@ -44,7 +26,10 @@ const SocialSection: React.FC = () => {
               <p>@associazioneforo</p>
             </div>
             <button 
-              onClick={() => handleSocialClick('https://www.instagram.com/associazioneforo/')}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSocialClick('https://www.instagram.com/associazioneforo/');
+              }}
               className="visit-button"
             >
               <ExternalLink size={16} />
@@ -52,29 +37,33 @@ const SocialSection: React.FC = () => {
           </div>
           
           <div className="posts-container">
-            {/* Embed Instagram Post - Esempio */}
-            <blockquote 
-              className="instagram-media" 
-              data-instgrm-permalink="https://www.instagram.com/p/placeholder/"
-              data-instgrm-version="14"
-            >
-              <div className="post-placeholder">
-                <div className="placeholder-content">
-                  <div className="placeholder-avatar"></div>
-                  <div className="placeholder-text">
-                    <div className="placeholder-line"></div>
-                    <div className="placeholder-line short"></div>
+            <div className="mock-posts">
+              <div className="mock-post">
+                <div className="post-header">
+                  <div className="post-avatar"></div>
+                  <div className="post-info">
+                    <strong>associazioneforo</strong>
+                    <span>• 2 giorni fa</span>
                   </div>
                 </div>
-                <div className="placeholder-image"></div>
-                <p className="placeholder-caption">Caricamento post Instagram...</p>
+                <div className="post-image"></div>
+                <div className="post-content">
+                  <p>🎓 Nuova sessione di studio aperta! Unisciti alla nostra community per prepararti al meglio...</p>
+                  <div className="post-actions">
+                    <span>❤️ 24</span>
+                    <span>💬 5</span>
+                  </div>
+                </div>
               </div>
-            </blockquote>
+            </div>
           </div>
         </div>
 
         {/* Facebook */}
-        <div className="social-card facebook-card">
+        <div 
+          className="social-card facebook-card"
+          onClick={() => handleSocialClick('https://www.facebook.com/profile.php?id=61553896114681&locale=it_IT')}
+        >
           <div className="card-header">
             <div className="card-icon facebook-icon">👥</div>
             <div className="card-info">
@@ -82,7 +71,10 @@ const SocialSection: React.FC = () => {
               <p>Associazione Foro</p>
             </div>
             <button 
-              onClick={() => handleSocialClick('https://www.facebook.com/profile.php?id=61553896114681&locale=it_IT')}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSocialClick('https://www.facebook.com/profile.php?id=61553896114681&locale=it_IT');
+              }}
               className="visit-button"
             >
               <ExternalLink size={16} />
@@ -90,23 +82,23 @@ const SocialSection: React.FC = () => {
           </div>
           
           <div className="posts-container">
-            {/* Embed Facebook Post - Esempio */}
-            <div 
-              className="fb-post" 
-              data-href="https://www.facebook.com/profile.php?id=61553896114681"
-              data-width="auto"
-              data-show-text="true"
-            >
-              <div className="post-placeholder">
-                <div className="placeholder-content">
-                  <div className="placeholder-avatar"></div>
-                  <div className="placeholder-text">
-                    <div className="placeholder-line"></div>
-                    <div className="placeholder-line short"></div>
+            <div className="mock-posts">
+              <div className="mock-post">
+                <div className="post-header">
+                  <div className="post-avatar facebook-avatar"></div>
+                  <div className="post-info">
+                    <strong>Associazione Foro</strong>
+                    <span>• 1 giorno fa</span>
                   </div>
                 </div>
-                <div className="placeholder-image"></div>
-                <p className="placeholder-caption">Caricamento post Facebook...</p>
+                <div className="post-content">
+                  <p>📚 Importante aggiornamento sulle attività di questa settimana. Vi aspettiamo numerosi per le prossime sessioni di studio collaborative!</p>
+                  <div className="post-actions">
+                    <span>👍 18</span>
+                    <span>💬 7</span>
+                    <span>↗️ 3</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
