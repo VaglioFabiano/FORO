@@ -25,6 +25,12 @@ const Navbar: React.FC = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const navigateToLogin = () => {
+    // Naviga alla pagina di login
+    window.location.href = '/login';
+    // Oppure se usi React Router: navigate('/login');
+  };
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
     const target = e.target as HTMLImageElement;
     const nextSibling = target.nextElementSibling as HTMLElement;
@@ -88,6 +94,12 @@ const Navbar: React.FC = () => {
             >
               Contatti
             </button>
+            <button 
+              className="nav-link login-link"
+              onClick={navigateToLogin}
+            >
+              Login
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -134,6 +146,12 @@ const Navbar: React.FC = () => {
             onClick={() => scrollToSection('footer')}
           >
             Contatti
+          </button>
+          <button 
+            className="mobile-nav-link login-link"
+            onClick={navigateToLogin}
+          >
+            Login
           </button>
         </div>
       </div>
