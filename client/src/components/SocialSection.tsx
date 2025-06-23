@@ -36,15 +36,14 @@ interface FacebookPost {
 
 const SocialSection: React.FC = () => {
   const [instagramPosts, setInstagramPosts] = useState<InstagramPost[]>([]);
-  const [facebookPosts, setFacebookPosts] = useState<FacebookPost[]>([]);
+  const [facebookPosts] = useState<FacebookPost[]>([]);
   const [instagramLoading, setInstagramLoading] = useState(true);
   const [facebookLoading, setFacebookLoading] = useState(true);
   const [instagramError, setInstagramError] = useState<string | null>(null);
   const [facebookError, setFacebookError] = useState<string | null>(null);
 
-  // Instagram username and Facebook page ID
+  // Instagram username
   const INSTAGRAM_USERNAME = 'associazioneforo';
-  const FACEBOOK_PAGE_ID = '61553896114681';
 
   useEffect(() => {
     loadSocialScripts();
