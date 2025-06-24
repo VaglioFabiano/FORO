@@ -7,6 +7,7 @@ import StatutoSection from './components/StatutoSection.tsx';
 import Footer from './components/Footer.tsx';
 import Login from './components/Login.tsx';
 import SegnalazioniSection from './components/Segnalazioni.tsx';
+import AssociatiSection from './components/Associati.tsx';
 
 function App(): JSX.Element {
   const [showLogin, setShowLogin] = useState(false);
@@ -60,6 +61,9 @@ useEffect(() => {
           </div>
           <div id="statuto">
             <StatutoSection />
+          </div>
+          <div id="associati">
+            <AssociatiSection />
           </div>
           <div id="footer">
             <Footer />
