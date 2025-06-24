@@ -15,6 +15,7 @@ declare global {
 const SocialSection: React.FC = () => {
   const [embedLoaded, setEmbedLoaded] = useState(false);
   const instagramCardRef = useRef<HTMLDivElement>(null);
+  const facebookIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     loadSocialScripts();
@@ -36,7 +37,6 @@ const SocialSection: React.FC = () => {
     const handleMouseEnter = () => {
       const iframe = card.querySelector('iframe');
       if (iframe) {
-        // Forza il reload per attivare l'autoplay
         iframe.src += '&autoplay=1';
       }
     };
@@ -112,6 +112,7 @@ const SocialSection: React.FC = () => {
     return (
       <div className="facebook-embed-container">
         <iframe 
+          ref={facebookIframeRef}
           src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fassociazioneforopiossasco%2Fposts%2Fpfbid0355NGksgUsUpB5xW6uKkEp5aNDWFcTSBGvCNng9AmQqmDZf55zZqS2Co2v5aLA799l&show_text=true&width=500" 
           width="100%" 
           height="100%" 
@@ -121,10 +122,11 @@ const SocialSection: React.FC = () => {
             margin: 0,
             padding: 0,
             position: 'absolute',
-            top: 0,
+            top: '50%',
             left: 0,
             width: '100%',
-            height: '100%'
+            height: '150%',
+            transform: 'translateY(-50%)'
           }} 
           scrolling="no" 
           frameBorder="0" 
