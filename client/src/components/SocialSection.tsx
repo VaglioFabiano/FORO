@@ -18,7 +18,6 @@ const SocialSection: React.FC = () => {
   useEffect(() => {
     loadSocialScripts();
     
-    // Process Instagram embeds after script loads
     setTimeout(() => {
       if (window.instgrm) {
         window.instgrm.Embeds.process();
@@ -28,7 +27,6 @@ const SocialSection: React.FC = () => {
   }, []);
 
   const loadSocialScripts = () => {
-    // Carica script Instagram
     if (!document.querySelector('#instagram-embed-script')) {
       const script = document.createElement('script');
       script.id = 'instagram-embed-script';
@@ -62,6 +60,11 @@ const SocialSection: React.FC = () => {
               data-instgrm-captioned 
               data-instgrm-permalink="https://www.instagram.com/reel/DB9E6wptM1V/?utm_source=ig_embed&utm_campaign=loading" 
               data-instgrm-version="14"
+              style={{
+                maxWidth: '100%',
+                width: '100%',
+                overflow: 'hidden'
+              }}
             >
               <div style={{padding: '16px'}}>
                 <a href="https://www.instagram.com/reel/DB9E6wptM1V/" target="_blank" rel="noopener noreferrer">
@@ -87,9 +90,14 @@ const SocialSection: React.FC = () => {
       <div className="facebook-embed-container">
         <iframe 
           src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fassociazioneforopiossasco%2Fposts%2Fpfbid0355NGksgUsUpB5xW6uKkEp5aNDWFcTSBGvCNng9AmQqmDZf55zZqS2Co2v5aLA799l&show_text=true&width=500" 
-          width="500" 
-          height="728" 
-          style={{border: 'none', overflow: 'hidden'}} 
+          width="100%" 
+          height="100%" 
+          style={{
+            border: 'none',
+            overflow: 'hidden',
+            maxWidth: '100%',
+            maxHeight: '100%'
+          }} 
           scrolling="no" 
           frameBorder="0" 
           allowFullScreen={true}
