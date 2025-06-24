@@ -18,15 +18,6 @@ declare global {
   }
 }
 
-interface InstagramPost {
-  id: string;
-  permalink: string;
-  media_type: string;
-  media_url?: string;
-  caption?: string;
-  timestamp: string;
-}
-
 interface FacebookPost {
   id: string;
   message?: string;
@@ -35,16 +26,10 @@ interface FacebookPost {
 }
 
 const SocialSection: React.FC = () => {
-  const [instagramPosts, setInstagramPosts] = useState<InstagramPost[]>([]);
   const [facebookPosts] = useState<FacebookPost[]>([]);
-  const [instagramLoading, setInstagramLoading] = useState(false);
   const [facebookLoading, setFacebookLoading] = useState(true);
-  const [instagramError, setInstagramError] = useState<string | null>(null);
   const [facebookError, setFacebookError] = useState<string | null>(null);
   const [embedLoaded, setEmbedLoaded] = useState(false);
-
-  // Instagram username
-  const INSTAGRAM_USERNAME = 'associazioneforo';
 
   useEffect(() => {
     loadSocialScripts();
@@ -109,7 +94,6 @@ const SocialSection: React.FC = () => {
 
   const retryFetch = (platform: 'instagram' | 'facebook') => {
     if (platform === 'instagram') {
-      setInstagramError(null);
       if (window.instgrm) {
         window.instgrm.Embeds.process();
       }
