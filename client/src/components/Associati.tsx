@@ -3,6 +3,8 @@ import '../style/associati.css';
 
 const AssociatiSection: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
   const mediaItems = [
     { type: 'video', src: '../assets/associati1.mp4' },
     { type: 'image', src: '../assets/associati2.JPG' },
@@ -10,11 +12,22 @@ const AssociatiSection: React.FC = () => {
   ];
 
   useEffect(() => {
+    // Controlla se è mobile al montaggio e al ridimensionamento
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
     const interval = setInterval(() => {
       setActiveIndex((prevIndex) => (prevIndex + 1) % mediaItems.length);
-    }, 10000); // Cambia ogni 10 secondi
+    }, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', checkMobile);
+    };
   }, [mediaItems.length]);
 
   const handlePrev = () => {
@@ -41,8 +54,10 @@ const AssociatiSection: React.FC = () => {
             key={index}
             className={`media-item ${index === activeIndex ? 'active' : ''}`}
           >
-            {item.type === 'video' ? (
-              <video autoPlay loop muted>
+            {item.type === 'video' && isMobile ? (
+              <img src={item.src.replace('.mp4', '.jpg')} alt={`Attività dell'associazione ${index + 1}`} />
+            ) : item.type === 'video' ? (
+              <video autoPlay loop muted playsInline>
                 <source src={item.src} type="video/mp4" />
               </video>
             ) : (
