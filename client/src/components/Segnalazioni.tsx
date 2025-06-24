@@ -18,8 +18,9 @@ const Segnalazioni: React.FC = () => {
       <div className="container">
         <h2 style={{ color: 'white' }}>Segnalazioni</h2>
         <div className="segnalazioni-content">
-          <p style={{ color: 'white', textAlign: 'center', marginBottom: '2rem' }}>
-            Hai riscontrato problemi nell'Aula Studio? Facci sapere!
+          <p style={{ color: 'white', textAlign: 'center', marginBottom: '2rem', maxWidth: '800px', marginLeft: 'auto', marginRight: 'auto' }}>
+            Hai riscontrato problemi in aula o vuoi condividere un suggerimento per migliorare il nostro servizio? 
+            Questo spazio è dedicato a te: segnalaci tutto ciò che ritieni importante!
           </p>
           
           {isMobile ? (
@@ -51,8 +52,8 @@ const Segnalazioni: React.FC = () => {
               <div className="iframe-container">
                 <iframe 
                   src="https://docs.google.com/forms/d/e/1FAIpQLSe0B8XCGyZVzPNKn56J-l-rWpzsTCuyPmdQR2iy9EXtfTGBiw/viewform?embedded=true" 
-                  width={640} 
-                  height={654}
+                  width={600} 
+                  height={600}
                   frameBorder="0" 
                   marginHeight={0} 
                   marginWidth={0}
