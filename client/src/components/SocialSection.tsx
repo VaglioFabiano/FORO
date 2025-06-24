@@ -259,7 +259,7 @@ const SocialSection: React.FC = () => {
                 <h3 className="telegram-title">Telegram</h3>
                 <p className="telegram-username">@aulastudioforo</p>
                 <span className="telegram-description">
-                  Canale ufficiale per comunicazioni rapide e coordinamento gruppi studio
+                  Canale ufficiale per comunicazioni
                 </span>
               </div>
             </div>

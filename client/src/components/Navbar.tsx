@@ -115,6 +115,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
             </button>
             <button 
               className="nav-link"
+              onClick={() => scrollToSection('segnalazioni')}
+            >
+              Segnalazioni
+            </button>
+            <button 
+              className="nav-link"
               onClick={() => scrollToSection('statuto')}
             >
               Statuto
@@ -159,6 +165,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
             onClick={() => scrollToSection('orari')}
           >
             Orari
+          </button>
+           <button 
+            className="mobile-nav-link"
+            onClick={() => scrollToSection('segnalazioni')}
+          >
+            Segnalazioni
           </button>
           <button 
             className="mobile-nav-link"
