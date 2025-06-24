@@ -61,8 +61,10 @@ const SocialSection: React.FC = () => {
               data-instgrm-permalink="https://www.instagram.com/reel/DB9E6wptM1V/?utm_source=ig_embed&utm_campaign=loading" 
               data-instgrm-version="14"
               style={{
-                maxWidth: '100%',
                 width: '100%',
+                maxWidth: '100%',
+                margin: 0,
+                padding: 0,
                 overflow: 'hidden'
               }}
             >
@@ -95,8 +97,13 @@ const SocialSection: React.FC = () => {
           style={{
             border: 'none',
             overflow: 'hidden',
-            maxWidth: '100%',
-            maxHeight: '100%'
+            margin: 0,
+            padding: 0,
+            position: 'absolute',
+            top: '-100px',
+            left: 0,
+            width: '100%',
+            height: 'calc(100% + 200px)'
           }} 
           scrolling="no" 
           frameBorder="0" 
