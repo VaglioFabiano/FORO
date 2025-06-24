@@ -1,6 +1,6 @@
 import React from 'react';
 import statutoImage from '../assets/statuto.png';
-import './statuto.css';
+import '../style/statuto.css';
 
 const Statuto: React.FC = () => {
   const statutoDriveLink = "https://drive.google.com/file/d/19RWrdBR22kAbuwPdPwVjxxLjuTfzixaL/view?usp=sharing";
