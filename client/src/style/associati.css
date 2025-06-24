@@ -14,7 +14,8 @@
 
 .testo-associazione h2 {
     margin-top: 0;
-    color: #333;
+    color: rgb(12, 73, 91);
+    margin-bottom: 30px; /* Spazio aumentato */
 }
 
 .testo-associazione p {
