@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ExternalLink, MessageCircle, RefreshCw } from 'lucide-react';
 import '../style/social.css';
 
@@ -14,17 +14,38 @@ declare global {
 
 const SocialSection: React.FC = () => {
   const [embedLoaded, setEmbedLoaded] = useState(false);
+  const instagramCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSocialScripts();
     
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       if (window.instgrm) {
         window.instgrm.Embeds.process();
         setEmbedLoaded(true);
       }
     }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!instagramCardRef.current) return;
+
+    const card = instagramCardRef.current;
+    const handleMouseEnter = () => {
+      const iframe = card.querySelector('iframe');
+      if (iframe) {
+        // Forza il reload per attivare l'autoplay
+        iframe.src += '&autoplay=1';
+      }
+    };
+
+    card.addEventListener('mouseenter', handleMouseEnter);
+    return () => {
+      card.removeEventListener('mouseenter', handleMouseEnter);
+    };
+  }, [embedLoaded]);
 
   const loadSocialScripts = () => {
     if (!document.querySelector('#instagram-embed-script')) {
@@ -58,7 +79,7 @@ const SocialSection: React.FC = () => {
             <blockquote 
               className="instagram-media" 
               data-instgrm-captioned 
-              data-instgrm-permalink="https://www.instagram.com/reel/DB9E6wptM1V/?utm_source=ig_embed&utm_campaign=loading" 
+              data-instgrm-permalink="https://www.instagram.com/reel/DB9E6wptM1V/?utm_source=ig_embed&utm_campaign=loading&autoplay=1" 
               data-instgrm-version="14"
               style={{
                 width: '100%',
@@ -100,10 +121,10 @@ const SocialSection: React.FC = () => {
             margin: 0,
             padding: 0,
             position: 'absolute',
-            top: '-100px',
+            top: 0,
             left: 0,
             width: '100%',
-            height: 'calc(100% + 200px)'
+            height: '100%'
           }} 
           scrolling="no" 
           frameBorder="0" 
@@ -130,6 +151,7 @@ const SocialSection: React.FC = () => {
       <div className="social-grid">
         {/* Instagram Card */}
         <div 
+          ref={instagramCardRef}
           className="social-card instagram-card"
           onClick={(e) => handleSocialClick('https://www.instagram.com/associazioneforo/', e)}
           role="button"
@@ -212,38 +234,40 @@ const SocialSection: React.FC = () => {
       </div>
       
       {/* Telegram Bar */}
-      <div 
-        className="telegram-bar"
-        onClick={(e) => handleSocialClick('https://t.me/aulastudioforo', e)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleSocialClick('https://t.me/aulastudioforo');
-          }
-        }}
-        aria-label="Unisciti al canale Telegram di Associazione Foro"
-      >
-        <div className="telegram-content">
-          <div className="telegram-info">
-            <div className="telegram-icon">
-              <MessageCircle size={20} />
+      <div className="telegram-container">
+        <div 
+          className="telegram-bar"
+          onClick={(e) => handleSocialClick('https://t.me/aulastudioforo', e)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleSocialClick('https://t.me/aulastudioforo');
+            }
+          }}
+          aria-label="Unisciti al canale Telegram di Associazione Foro"
+        >
+          <div className="telegram-content">
+            <div className="telegram-info">
+              <div className="telegram-icon">
+                <MessageCircle size={20} />
+              </div>
+              <div className="telegram-text">
+                <h3 className="telegram-title">Telegram</h3>
+                <p className="telegram-username">@aulastudioforo</p>
+                <span className="telegram-description">
+                  Canale ufficiale per comunicazioni rapide e coordinamento gruppi studio
+                </span>
+              </div>
             </div>
-            <div className="telegram-text">
-              <h3 className="telegram-title">Telegram</h3>
-              <p className="telegram-username">@aulastudioforo</p>
-              <span className="telegram-description">
-                Canale ufficiale per comunicazioni rapide e coordinamento gruppi studio
-              </span>
+            <div className="telegram-status">
+              <div className="status-badge">
+                <div className="status-indicator"></div>
+                <span>Attivo</span>
+              </div>
+              <ExternalLink size={16} className="telegram-arrow" />
             </div>
-          </div>
-          <div className="telegram-status">
-            <div className="status-badge">
-              <div className="status-indicator"></div>
-              <span>Attivo</span>
-            </div>
-            <ExternalLink size={16} className="telegram-arrow" />
           </div>
         </div>
       </div>

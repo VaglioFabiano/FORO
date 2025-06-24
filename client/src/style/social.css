@@ -25,6 +25,7 @@
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  align-items: start; /* Allinea le card alla stessa altezza */
 }
 
 /* Social Card Base Styles */
@@ -44,11 +45,6 @@
 .social-card:hover {
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
   transform: translateY(-0.25rem);
-}
-
-/* Instagram Card Specific - Aligned higher */
-.instagram-card {
-  margin-top: -20px;
 }
 
 /* Social Card Header */
@@ -183,24 +179,27 @@
   }
 }
 
+/* Telegram Container */
+.telegram-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
 /* Telegram Bar */
 .telegram-bar {
   background: linear-gradient(to right, #3b82f6, #2563eb);
   padding: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  width: 100%;
+  border-radius: 0.75rem;
   margin-top: 1.5rem;
-  border-radius: 0;
 }
 
 .telegram-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
 }
 
 .telegram-info {
@@ -288,9 +287,5 @@
   .social-card {
     aspect-ratio: auto;
     height: 300px;
-  }
-  
-  .instagram-card {
-    margin-top: 0;
   }
 }
