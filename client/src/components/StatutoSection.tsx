@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import statutoImage from '../assets/statuto.png';
+import '../style/statuto.css';
 
 interface SezioneStatuto {
   titolo: string;
@@ -6,32 +8,28 @@ interface SezioneStatuto {
   icon: string;
 }
 
-const StatutoSection: React.FC = () => {
+const Statuto: React.FC = () => {
   const [sezioneAperta, setSezioneAperta] = useState<number | null>(null);
 
   const sezioniStatuto: SezioneStatuto[] = [
     {
       titolo: "Finalità dell'Associazione",
-      contenuto:
-        "L'associazione promuove attività di studio collaborativo, formazione culturale e crescita personale attraverso la gestione di spazi dedicati e l'organizzazione di eventi educativi che favoriscono l'apprendimento e lo sviluppo delle competenze.",
+      contenuto: "L'associazione promuove attività di studio collaborativo...",
       icon: '🎯',
     },
     {
       titolo: 'Attività Principali',
-      contenuto:
-        'Gestione aula studio attrezzata, organizzazione gruppi di studio tematici, eventi formativi e culturali, workshop specializzati, supporto agli studenti universitari e delle scuole superiori, servizi di tutoring e mentoring.',
+      contenuto: 'Gestione aula studio attrezzata, organizzazione gruppi...',
       icon: '📚',
     },
     {
       titolo: 'Membership e Adesione',
-      contenuto:
-        "L'associazione è aperta a studenti, professionisti e chiunque sia interessato alla crescita culturale e personale. La quota associativa annuale garantisce l'accesso completo a tutti i servizi, spazi e attività organizzate.",
+      contenuto: "L'associazione è aperta a studenti, professionisti...",
       icon: '👥',
     },
     {
       titolo: 'Governance e Organizzazione',
-      contenuto:
-        "L'associazione è guidata democraticamente da un Consiglio Direttivo eletto dall'Assemblea dei Soci, che si riunisce almeno una volta all'anno per le decisioni strategiche, l'approvazione del bilancio e la pianificazione delle attività.",
+      contenuto: "L'associazione è guidata democraticamente da un Consiglio...",
       icon: '⚖️',
     },
   ];
@@ -40,31 +38,72 @@ const StatutoSection: React.FC = () => {
     setSezioneAperta(sezioneAperta === index ? null : index);
   };
 
+  const statutoDriveLink = "https://drive.google.com/file/d/19RWrdBR22kAbuwPdPwVjxxLjuTfzixaL/view?usp=sharing";
+
   return (
-    <section>
-      <h2 className="text-xl font-bold mb-4">Statuto dell'Associazione</h2>
-      <ul className="space-y-4">
-        {sezioniStatuto.map((sezione, index) => (
-          <li
-            key={index}
-            className="border rounded-xl p-4 shadow transition cursor-pointer hover:bg-gray-50"
-            onClick={() => handleToggleSezione(index)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <span>{sezione.icon}</span>
-                <span>{sezione.titolo}</span>
+    <div className="statuto-container">
+      {/* Sezione Banner */}
+      <div className="statuto-banner">
+        <div className="statuto-banner-content">
+          {/* Parte sinistra con immagine cliccabile */}
+          <div className="statuto-image-wrapper">
+            <a href={statutoDriveLink} target="_blank" rel="noopener noreferrer">
+              <img 
+                src={statutoImage} 
+                alt="Anteprima Statuto" 
+                className="statuto-image"
+              />
+            </a>
+          </div>
+          
+          {/* Parte destra con testo */}
+          <div className="statuto-text-wrapper">
+            <h2>Statuto dell'Associazione</h2>
+            <p>
+              Qui puoi consultare lo statuto che definisce i principi, gli obiettivi e il funzionamento 
+              della nostra associazione. È il documento fondamentale che regola le nostre attività e 
+              la partecipazione dei soci.
+            </p>
+            <a 
+              href={statutoDriveLink} 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="statuto-download-btn"
+            >
+              Scarica lo Statuto
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Sezioni espandibili */}
+      <div className="statuto-sections">
+        <h3>Principali contenuti:</h3>
+        <div className="statuto-accordion">
+          {sezioniStatuto.map((sezione, index) => (
+            <div 
+              key={index} 
+              className={`statuto-accordion-item ${sezioneAperta === index ? 'open' : ''}`}
+              onClick={() => handleToggleSezione(index)}
+            >
+              <div className="statuto-accordion-header">
+                <span className="statuto-accordion-icon">{sezione.icon}</span>
+                <h4>{sezione.titolo}</h4>
+                <span className="statuto-accordion-toggle">
+                  {sezioneAperta === index ? '−' : '+'}
+                </span>
               </div>
-              <span>{sezioneAperta === index ? '−' : '+'}</span>
+              {sezioneAperta === index && (
+                <div className="statuto-accordion-content">
+                  <p>{sezione.contenuto}</p>
+                </div>
+              )}
             </div>
-            {sezioneAperta === index && (
-              <p className="mt-2 text-sm text-gray-700">{sezione.contenuto}</p>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default StatutoSection;
+export default Statuto;
