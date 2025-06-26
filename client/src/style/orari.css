@@ -1,7 +1,7 @@
 .orari-full-width {
   background-color: rgb(248, 233, 205);
   width: 100%;
-  padding: 3rem 0;
+  padding: 2rem 0;
 }
 
 .orari-container {
@@ -14,85 +14,70 @@
 
 .orari-container h2 {
   text-align: center;
-  margin-bottom: 2rem;
-  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
   color: #2c3e50;
 }
 
 .orari-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem; /* Ridotto lo spazio tra i riquadri */
 }
 
 .orario-item {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  padding: 1.5rem;
-  border-radius: 12px;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem; /* Altezza ridotta */
+  border-radius: 8px; /* Bordi meno arrotondati */
   background: rgba(12, 73, 91, 0.08);
-  backdrop-filter: blur(2px);
   box-shadow: 
-    4px 4px 8px rgba(210, 190, 160, 0.4),
-    -4px -4px 8px rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
+    3px 3px 6px rgba(210, 190, 160, 0.3),
+    -3px -3px 6px rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
   border: 1px solid rgba(12, 73, 91, 0.1);
+  min-height: 50px; /* Altezza minima ridotta */
 }
 
 .orario-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 
-    6px 6px 12px rgba(210, 190, 160, 0.4),
-    -6px -6px 12px rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
   background: rgba(12, 73, 91, 0.12);
 }
 
 .icona {
-  font-size: 1.6rem;
-  min-width: 36px;
+  font-size: 1.3rem; /* Icone più piccole */
+  min-width: 28px; /* Spazio ridotto per le icone */
   text-align: center;
   color: rgba(12, 73, 91, 0.8);
 }
 
 .testo {
-  font-size: 1.1rem;
+  font-size: 0.95rem; /* Testo più compatto */
+  line-height: 1.4;
 }
 
 .nota {
   color: rgba(231, 76, 60, 0.9);
   font-style: italic;
-  font-weight: 500;
+  font-size: 0.85rem; /* Note più piccole */
 }
 
 .avviso {
-  margin-top: 3rem;
-  text-align: center;
-  font-style: italic;
-  padding: 1.8rem;
-  background: rgba(12, 73, 91, 0.05);
-  backdrop-filter: blur(2px);
-  box-shadow: 
-    inset 3px 3px 6px rgba(210, 190, 160, 0.3),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.7);
-  border-radius: 12px;
-  line-height: 1.6;
-  color: #2c3e50;
-  border: 1px solid rgba(12, 73, 91, 0.1);
+  margin-top: 2rem;
+  padding: 1rem;
+  font-size: 0.9rem;
+  min-height: auto; /* Altezza automatica */
 }
 
 @media (max-width: 600px) {
-  .orari-container {
-    padding: 0 1.2rem;
-  }
-  
   .orario-item {
-    padding: 1.2rem;
-    gap: 1rem;
+    padding: 0.7rem 1rem;
+    min-height: 45px;
   }
   
   .icona {
-    font-size: 1.4rem;
-    min-width: 32px;
+    font-size: 1.2rem;
+    min-width: 24px;
   }
 }
