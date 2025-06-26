@@ -20,7 +20,8 @@ html, body {
   align-items: center;
   justify-content: center;
   font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  padding-top: 80px; /* Spazio per la navbar */
+  padding-top: 100px;
+  background-color: rgb(12, 73, 91);
 }
 
 .header-background {
@@ -47,7 +48,7 @@ html, body {
   position: relative;
   z-index: 10;
   color: rgb(255, 232, 204);
-  text-align: left; /* Allineamento a sinistra */
+  text-align: left;
   padding: 40px;
   max-width: 1200px;
   width: 100%;
@@ -56,21 +57,22 @@ html, body {
 }
 
 .logo-container {
-  margin-bottom: 32px;
-  align-self: flex-start; /* Logo a sinistra */
+  margin-bottom: 40px;
+  align-self: flex-start;
 }
 
 .logo-image {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   border: 2px solid rgba(255, 232, 204, 0.3);
+  object-fit: cover;
 }
 
 .logo-fallback {
   display: none;
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   background: rgba(255, 232, 204, 0.8);
   border-radius: 50%;
   align-items: center;
@@ -81,7 +83,7 @@ html, body {
 .logo-fallback-text {
   color: rgb(12, 73, 91);
   font-weight: 700;
-  font-size: 32px;
+  font-size: 48px;
   font-family: 'Inter', sans-serif;
 }
 
@@ -91,7 +93,7 @@ html, body {
 }
 
 .main-title {
-  font-size: 4rem;
+  font-size: 4.5rem;
   font-weight: 700;
   margin-bottom: 24px;
   color: rgb(255, 232, 204);
@@ -138,6 +140,10 @@ html, body {
 
 /* Mobile styles */
 @media (max-width: 768px) {
+  .header {
+    padding-top: 70px;
+  }
+  
   .header-content {
     text-align: center;
     align-items: center;
@@ -145,26 +151,46 @@ html, body {
   }
   
   .logo-container {
-    align-self: center; /* Centrato su mobile */
-    margin-bottom: 24px;
+    align-self: center;
+    margin-bottom: 30px;
+  }
+  
+  .logo-image,
+  .logo-fallback {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .logo-fallback-text {
+    font-size: 36px;
   }
   
   .main-title {
-    font-size: 3rem;
+    font-size: 3.2rem;
   }
   
   .description {
     font-size: 1.1rem;
   }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding-top: 60px;
+  }
   
   .logo-image,
   .logo-fallback {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
   }
   
   .logo-fallback-text {
-    font-size: 28px;
+    font-size: 32px;
+  }
+  
+  .main-title {
+    font-size: 2.8rem;
   }
 }
 
