@@ -1,5 +1,5 @@
 import React from 'react';
-import '../style/orari.css';
+import './orari.css';
 
 interface Orario {
   giorno: string;
@@ -18,23 +18,25 @@ const OrariSection: React.FC = () => {
   ];
 
   return (
-    <section className="orari-container">
-      <h2>Orari di Apertura 23-27 giugno ☀️</h2>
-      <div className="orari-list">
-        {orariSettimana.map((item, index) => (
-          <div key={index} className="orario-item">
-            <span className="icona">{item.icona}</span>
-            <div className="testo">
-              <strong>{item.giorno}:</strong> {item.orario}
-              {item.nota && <span className="nota"> ({item.nota})</span>}
+    <section className="orari-full-width">
+      <div className="orari-container">
+        <h2>Orari di Apertura 23-27 giugno ☀️</h2>
+        <div className="orari-list">
+          {orariSettimana.map((item, index) => (
+            <div key={index} className="orario-item">
+              <span className="icona">{item.icona}</span>
+              <div className="testo">
+                <strong>{item.giorno}:</strong> {item.orario}
+                {item.nota && <span className="nota"> ({item.nota})</span>}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-      <div className="avviso">
-        Disponibili le pagode per studiare all'aperto :) 
-        <br />
-        Rimanete collegatə per tutti gli aggiornamenti 😘
+          ))}
+        </div>
+        <div className="avviso">
+          Disponibili le pagode per studiare all'aperto :) 
+          <br />
+          Rimanete collegatə per tutti gli aggiornamenti 😘
+        </div>
       </div>
     </section>
   );

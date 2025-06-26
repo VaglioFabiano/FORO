@@ -1,18 +1,22 @@
+.orari-full-width {
+  background-color: rgb(248, 233, 205);
+  width: 100%;
+  padding: 3rem 0;
+}
+
 .orari-container {
-  background-color: rgb(12, 73, 91);
-  color: white;
-  padding: 2rem;
-  border-radius: 10px;
-  font-family: 'Arial', sans-serif;
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 2rem;
+  font-family: 'Arial', sans-serif;
+  color: #333;
 }
 
 .orari-container h2 {
   text-align: center;
   margin-bottom: 2rem;
   font-size: 1.8rem;
-  color: #ffffff;
+  color: #2c3e50;
 }
 
 .orari-list {
@@ -25,18 +29,26 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: 8px;
-  transition: transform 0.2s;
+  padding: 1.2rem;
+  border-radius: 0;
+  background: rgb(248, 233, 205);
+  box-shadow: 
+    5px 5px 10px rgba(210, 190, 160, 0.5),
+    -5px -5px 10px rgba(255, 255, 255, 0.8);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .orario-item:hover {
-  transform: translateX(5px);
+  transform: translateY(-2px);
+  box-shadow: 
+    7px 7px 12px rgba(210, 190, 160, 0.6),
+    -7px -7px 12px rgba(255, 255, 255, 0.9);
 }
 
 .icona {
   font-size: 1.5rem;
+  min-width: 30px;
+  text-align: center;
 }
 
 .testo {
@@ -44,26 +56,34 @@
 }
 
 .nota {
-  color: #ffcc00;
+  color: #e74c3c;
   font-style: italic;
 }
 
 .avviso {
-  margin-top: 2rem;
+  margin-top: 3rem;
   text-align: center;
   font-style: italic;
-  padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.15);
+  padding: 1.5rem;
+  background: rgb(248, 233, 205);
+  box-shadow: 
+    inset 3px 3px 5px rgba(210, 190, 160, 0.5),
+    inset -3px -3px 5px rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   line-height: 1.6;
+  color: #2c3e50;
 }
 
 @media (max-width: 600px) {
   .orari-container {
-    padding: 1rem;
+    padding: 0 1rem;
   }
   
   .testo {
     font-size: 1rem;
+  }
+  
+  .orario-item {
+    padding: 1rem;
   }
 }
