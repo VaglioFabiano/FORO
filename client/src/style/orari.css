@@ -1,0 +1,69 @@
+.orari-container {
+  background-color: rgb(12, 73, 91);
+  color: white;
+  padding: 2rem;
+  border-radius: 10px;
+  font-family: 'Arial', sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.orari-container h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+  color: #ffffff;
+}
+
+.orari-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.orario-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.orario-item:hover {
+  transform: translateX(5px);
+}
+
+.icona {
+  font-size: 1.5rem;
+}
+
+.testo {
+  font-size: 1.1rem;
+}
+
+.nota {
+  color: #ffcc00;
+  font-style: italic;
+}
+
+.avviso {
+  margin-top: 2rem;
+  text-align: center;
+  font-style: italic;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .orari-container {
+    padding: 1rem;
+  }
+  
+  .testo {
+    font-size: 1rem;
+  }
+}
