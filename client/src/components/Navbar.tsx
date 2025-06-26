@@ -115,12 +115,6 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
             </button>
             <button 
               className="nav-link"
-              onClick={() => scrollToSection('segnalazioni')}
-            >
-              Segnalazioni
-            </button>
-            <button 
-              className="nav-link"
               onClick={() => scrollToSection('statuto')}
             >
               Statuto
@@ -130,6 +124,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
               onClick={() => scrollToSection('associati')}
             >
               Diventa Socio
+            </button>
+            <button 
+              className="nav-link"
+              onClick={() => scrollToSection('segnalazioni')}
+            >
+              Segnalazioni
             </button>
             <button 
               className="nav-link"
@@ -172,12 +172,6 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
           >
             Orari
           </button>
-           <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('segnalazioni')}
-          >
-            Segnalazioni
-          </button>
           <button 
             className="mobile-nav-link"
             onClick={() => scrollToSection('social')}
@@ -195,6 +189,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
             onClick={() => scrollToSection('associati')}
           >
             Diventa Socio
+          </button>
+          <button 
+            className="mobile-nav-link"
+            onClick={() => scrollToSection('segnalazioni')}
+          >
+            Segnalazioni
           </button>
           <button 
             className="mobile-nav-link"

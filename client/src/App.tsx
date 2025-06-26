@@ -53,9 +53,6 @@ useEffect(() => {
           <div id="orari">
             <OrariSection />
           </div>
-          <div id="segnalazioni">
-            <SegnalazioniSection />
-          </div>
           <div id="social">
             <SocialSection />
           </div>
@@ -64,6 +61,9 @@ useEffect(() => {
           </div>
           <div id="associati">
             <AssociatiSection />
+          </div>
+          <div id="segnalazioni">
+            <SegnalazioniSection />
           </div>
           <div id="footer">
             <Footer />
