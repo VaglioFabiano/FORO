@@ -60,8 +60,8 @@ const Header: React.FC = () => {
         
         {/* Description */}
         <p className="description">
-          Uno spazio dedicato allo studio e alla crescita personale, 
-          dove la comunità si incontra per condividere conoscenza e obiettivi.
+         Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce:
+          un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.
         </p>
         
         {/* Buttons */}

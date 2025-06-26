@@ -7,7 +7,7 @@ const Footer: React.FC = () => {
       <div className="footer-content">
         <h3>Contatti</h3>
         <div className="contact-info">
-          <p>Email: <a href="mailto:associazioneforopiossasco@gmail.com">associazioneforopiossasco@gmail.com</a></p>
+          <p><a href="mailto:associazioneforopiossasco@gmail.com">associazioneforopiossasco@gmail.com</a></p>
         </div>
         <div className="social-links">
           <a href="https://t.me/aulastudioforo" target="_blank" rel="noopener noreferrer">
