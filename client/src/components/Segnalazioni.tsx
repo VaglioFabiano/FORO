@@ -14,11 +14,11 @@ const Segnalazioni: React.FC = () => {
   }, []);
 
   return (
-    <section className="segnalazioni-section" style={{ backgroundColor: 'rgb(12, 73, 91)' }}>
+    <section className="segnalazioni-section" style={{ backgroundColor: 'rgb(254, 231, 203)' }}>
       <div className="container">
-        <h2 style={{ color: 'white' }}>Segnalazioni</h2>
+        <h2 style={{ color: 'rgb(12, 73, 91)' }}>Segnalazioni</h2>
         <div className="segnalazioni-content">
-          <p style={{ color: 'white', textAlign: 'center', marginBottom: '2rem', maxWidth: '800px', marginLeft: 'auto', marginRight: 'auto' }}>
+          <p style={{ color: 'rgb(12, 73, 91)', textAlign: 'center', marginBottom: '2rem', maxWidth: '800px', marginLeft: 'auto', marginRight: 'auto' }}>
             Hai riscontrato problemi in aula o vuoi condividere un suggerimento per migliorare il nostro servizio? 
             Questo spazio è dedicato a te: segnalaci tutto ciò che ritieni importante!
           </p>
@@ -44,7 +44,7 @@ const Segnalazioni: React.FC = () => {
                   alt="QR Code per segnalazioni" 
                   className="qr-code-image"
                 />
-                <p style={{ color: 'white', textAlign: 'center', marginTop: '1rem' }}>
+                <p style={{ color: 'rgb(12, 73, 91)', textAlign: 'center', marginTop: '1rem' }}>
                   Scansiona il QR code per accedere al form
                 </p>
               </div>

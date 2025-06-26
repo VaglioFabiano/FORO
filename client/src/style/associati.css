@@ -1,7 +1,7 @@
 .sezione-associazione {
     display: flex;
     flex-wrap: wrap;
-    background-color: rgb(251, 231, 201);
+    background-color: rgb(12, 73, 91);
     padding: 40px;
     align-items: center;
     justify-content: center;
@@ -18,27 +18,27 @@
 
 .testo-associazione h2 {
     margin-top: 0;
-    color: rgb(12, 73, 91);
+    color: white;
     margin-bottom: 30px;
     font-size: 2.2rem;
 }
 
 .testo-associazione p {
-    color: #555;
+    color: white;
     line-height: 1.7;
     margin-bottom: 20px;
     font-size: 1.1rem;
 }
 
 .testo-associazione a {
-    color: #d35400;
+    color: rgb(254, 231, 203);
     text-decoration: none;
     font-weight: bold;
     transition: color 0.3s ease;
 }
 
 .testo-associazione a:hover {
-    color: #a04000;
+    color: rgb(255, 215, 173);
     text-decoration: underline;
 }
 
@@ -77,8 +77,8 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background-color: rgba(12, 73, 91, 0.7);
-    color: white;
+    background-color: rgba(254, 231, 203, 0.8);
+    color: rgb(12, 73, 91);
     border: none;
     padding: 12px 18px;
     cursor: pointer;
@@ -102,7 +102,7 @@
 }
 
 .carosello-btn:hover {
-    background-color: rgba(12, 73, 91, 0.9);
+    background-color: rgba(254, 231, 203, 1);
     transform: translateY(-50%) scale(1.1);
 }
 
