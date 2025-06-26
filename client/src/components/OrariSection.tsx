@@ -1,5 +1,5 @@
 import React from 'react';
-import './orari.css';
+import '../style/orari.css';
 
 interface Orario {
   giorno: string;
