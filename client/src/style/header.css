@@ -141,7 +141,7 @@ html, body {
 /* Mobile styles */
 @media (max-width: 768px) {
   .header {
-    padding-top: 70px;
+    padding-top: 40px;
   }
   
   .header-content {
