@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
           </a>
         </div>
         <div className="copyright">
-          <p>© {new Date().getFullYear()} Associazione Foro Pioassasco. Tutti i diritti riservati.</p>
+          <p>© {new Date().getFullYear()} FORO ETS. Tutti i diritti riservati.</p>
         </div>
       </div>
     </footer>
