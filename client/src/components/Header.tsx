@@ -11,31 +11,13 @@ const Header: React.FC = () => {
     }
   };
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <header id="header" className="header">
-      {/* Background image usando lo stesso percorso del logo */}
-      <div 
-        className="header-background"
-        style={{
-          backgroundImage: `url(/assets/header_photo.jpg)`
-        }}
-      ></div>
-      
-      {/* Overlay for better text readability */}
+      <div className="header-background"></div>
       <div className="video-overlay"></div>
       
-      {/* Main content */}
       <div className="header-content">
-        {/* Logo section */}
         <div className="logo-container">
-          <div className="logo-glow"></div>
           <img 
             src="/assets/logo.png"
             alt="Logo Aula Studio" 
@@ -47,40 +29,14 @@ const Header: React.FC = () => {
           </div>
         </div>
         
-        {/* Title section */}
         <div className="title-section">
-          <h1 className="main-title">
-            Aula Studio
-          </h1>
-          <div className="title-divider"></div>
-          <p className="subtitle">
-            Associazione del Terzo Settore
+          <h1 className="main-title">Aula Studio</h1>
+          <p className="description">
+            Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce:
+            un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.
           </p>
         </div>
         
-        {/* Description */}
-        <p className="description">
-         Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce:
-          un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.
-        </p>
-        
-        {/* Buttons */}
-        <div className="buttons-container">
-          <button 
-            className="primary-button"
-            onClick={() => scrollToSection('orari')}
-          >
-            <span>Scopri di più</span>
-          </button>
-          <button 
-            className="secondary-button"
-            onClick={() => scrollToSection('footer')}
-          >
-            Contattaci
-          </button>
-        </div>
-
-        {/* Navigation hint */}
         <div className="scroll-hint">
           <div className="scroll-arrow"></div>
         </div>
