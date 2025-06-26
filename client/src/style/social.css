@@ -1,6 +1,6 @@
 /* Social Section Main Container */
 .social-section {
-  background: rgb(251, 233, 200);
+  background: rgb(12, 73, 91);
   color: white;
   padding: 2rem 0;
   width: 100%;
@@ -8,7 +8,7 @@
 }
 
 .social-title {
-  color: rgb(12, 73, 91);
+  color: white;
   font-size: 1.875rem;
   font-weight: bold;
   text-align: center;
@@ -31,7 +31,7 @@
 
 /* Social Card Base Styles */
 .social-card {
-  background: white;
+  background: rgb(254, 231, 203);
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -54,7 +54,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(12, 73, 91, 0.1);
 }
 
 .social-platform-info {
@@ -85,34 +85,35 @@
 .platform-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: rgb(12, 73, 91);
   margin: 0;
 }
 
 .platform-username {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: rgb(12, 73, 91);
+  opacity: 0.8;
   margin: 0;
 }
 
 .external-link-btn {
-  background: #f3f4f6;
+  background: rgba(12, 73, 91, 0.1);
   padding: 0.5rem;
   border-radius: 0.5rem;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  color: #6b7280;
+  color: rgb(12, 73, 91);
 }
 
 .external-link-btn:hover {
-  background: #e5e7eb;
+  background: rgba(12, 73, 91, 0.2);
 }
 
 /* Social Card Content */
 .social-card-content {
   flex: 1;
-  background: #f9fafb;
+  background: rgba(254, 231, 203, 0.3);
   overflow: hidden;
   position: relative;
   padding: 0;
@@ -151,13 +152,13 @@
   justify-content: center;
   height: 100%;
   padding: 2rem;
-  color: #6b7280;
+  color: rgb(12, 73, 91);
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(254, 231, 203, 0.9);
 }
 
 .loading-state p {
@@ -187,12 +188,13 @@
 
 /* Telegram Bar */
 .telegram-bar {
-  background: linear-gradient(to right, #3b82f6, #2563eb);
+  background: linear-gradient(to right, rgb(254, 231, 203), rgba(254, 231, 203, 0.8));
   padding: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   border-radius: 0.75rem;
   margin-top: 1.5rem;
+  color: rgb(12, 73, 91);
 }
 
 .telegram-content {
@@ -207,7 +209,8 @@
 }
 
 .telegram-icon {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(12, 73, 91, 0.2);
+  color: rgb(12, 73, 91);
   border-radius: 0.5rem;
   padding: 0.5rem;
   margin-right: 1rem;
@@ -225,13 +228,13 @@
 
 .telegram-username {
   font-size: 0.875rem;
-  opacity: 0.9;
+  opacity: 0.8;
   margin: 0;
 }
 
 .telegram-description {
   font-size: 0.75rem;
-  opacity: 0.8;
+  opacity: 0.7;
   display: block;
   margin-top: 0.25rem;
 }
@@ -246,7 +249,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(12, 73, 91, 0.2);
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.875rem;
