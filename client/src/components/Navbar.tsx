@@ -7,7 +7,7 @@ interface NavbarProps {
   isInLoginPage: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ /*onLoginClick,*/ onBackToHome, isInLoginPage }) => {
+const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPage }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -47,11 +47,11 @@ const Navbar: React.FC<NavbarProps> = ({ /*onLoginClick,*/ onBackToHome, isInLog
       }
     }
   };
-/*
+
   const navigateToLogin = () => {
     onLoginClick();
     setIsMobileMenuOpen(false);
-  };*/
+  };
 
   const navigateToHome = () => { 
     if (isInLoginPage) {
@@ -137,7 +137,12 @@ const Navbar: React.FC<NavbarProps> = ({ /*onLoginClick,*/ onBackToHome, isInLog
             >
               Contatti
             </button>
-           
+           <button 
+              className="nav-link login-link"
+              onClick={navigateToLogin}
+            >
+              {isInLoginPage ? 'Indietro' : 'Login'}
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -197,24 +202,15 @@ const Navbar: React.FC<NavbarProps> = ({ /*onLoginClick,*/ onBackToHome, isInLog
           >
             Contatti
           </button>
-          
-        </div>
-      </div>
-    </>
-  );
-};
-/**
- *  <button 
-              className="nav-link login-link"
-              onClick={navigateToLogin}
-            >
-              {isInLoginPage ? 'Indietro' : 'Login'}
-            </button>
- * <button 
+          <button 
             className="mobile-nav-link login-link"
             onClick={navigateToLogin}
           >
             {isInLoginPage ? 'Indietro' : 'Login'}
           </button>
- */
+        </div>
+      </div>
+    </>
+  );
+};
 export default Navbar;
