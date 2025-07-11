@@ -1,5 +1,5 @@
 // scripts/init-db.ts
-import { initializeDatabase, insertSampleData, getTables, getTableStructure } from '../lib/db.js';
+import { initializeDatabase, insertSampleData, getTables, getTableStructure } from '../lib/db.ts';
 
 async function main() {
   console.log('🚀 Initializing database...');

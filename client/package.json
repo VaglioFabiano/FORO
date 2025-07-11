@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "db:init": "tsx scripts/init-db.ts"
-  },
+ "scripts": {
+  "dev": "npm run db:init && vite",
+  "build": "tsc -b && vite build",
+  "lint": "eslint .",
+  "preview": "vite preview",
+  "db:init": "tsx scripts/init-db.ts"
+},
   "dependencies": {
     "lucide-react": "^0.522.0",
     "react": "^18.3.1",
