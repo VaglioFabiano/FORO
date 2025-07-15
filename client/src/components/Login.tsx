@@ -1,15 +1,73 @@
 import React, { useState } from 'react';
 import '../style/login.css';
 
+interface LoginResponse {
+  success: boolean;
+  message: string;
+  user?: {
+    id: number;
+    name: string;
+    surname: string;
+    tel: string;
+    level: number;
+  };
+  sessionToken?: string;
+  expiresAt?: string;
+  error?: string;
+}
+
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', { username, password, rememberMe });
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          rememberMe
+        }),
+      });
+
+      const data: LoginResponse = await response.json();
+
+      if (response.ok && data.success) {
+        setSuccess('Login effettuato con successo!');
+        
+        // Salva il token di sessione
+        if (data.sessionToken) {
+          localStorage.setItem('sessionToken', data.sessionToken);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+
+        // Reindirizza alla dashboard o alla pagina principale
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
+
+      } else {
+        setError(data.error || 'Errore durante il login');
+      }
+    } catch (error) {
+      setError('Errore di connessione. Riprova più tardi.');
+      console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -24,15 +82,19 @@ const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+
           <div className="form-group">
-            <label htmlFor="username">Nome Utente</label>
+            <label htmlFor="username">Numero di Telefono</label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Inserisci il nome utente"
+              placeholder="Inserisci il numero di telefono"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -45,6 +107,7 @@ const Login: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Inserisci la password"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -54,14 +117,19 @@ const Login: React.FC = () => {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
               />
               <span className="checkmark"></span>
               Ricordami
             </label>
           </div>
 
-          <button type="submit" className="login-button">
-            Login
+          <button 
+            type="submit" 
+            className="login-button"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Accesso in corso...' : 'Login'}
           </button>
         </form>
 
