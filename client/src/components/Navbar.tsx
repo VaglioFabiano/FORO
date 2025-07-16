@@ -10,6 +10,8 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPage }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +22,60 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Controlla se l'utente è loggato
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem('sessionToken');
+      const user = localStorage.getItem('user');
+      setIsLoggedIn(!!token && !!user);
+    };
+
+    checkLoginStatus();
+    
+    // Controlla lo stato di login periodicamente
+    const interval = setInterval(checkLoginStatus, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const sessionToken = localStorage.getItem('sessionToken');
+      
+      if (sessionToken) {
+        // Chiama l'API di logout
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sessionToken }),
+        });
+
+        if (response.ok) {
+          // Rimuovi i dati di sessione dal localStorage
+          localStorage.removeItem('sessionToken');
+          localStorage.removeItem('user');
+          setIsLoggedIn(false);
+          
+          // Reindirizza alla home
+          if (isInLoginPage) {
+            onBackToHome();
+          } else {
+            window.location.href = '/';
+          }
+        } else {
+          console.error('Errore durante il logout');
+        }
+      }
+    } catch (error) {
+      console.error('Errore durante il logout:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const scrollToSection = (sectionId: string) => {
     // Chiudi sempre il menu mobile
@@ -48,8 +104,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
     }
   };
 
-  const navigateToLogin = () => {
-    onLoginClick();
+  const handleAuthClick = () => {
+    if (isLoggedIn) {
+      handleLogout();
+    } else {
+      onLoginClick();
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -73,6 +133,12 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const getAuthButtonText = () => {
+    if (isInLoginPage) return 'Indietro';
+    if (isLoggingOut) return 'Logout...';
+    return isLoggedIn ? 'Logout' : 'Login';
   };
 
   return (
@@ -139,9 +205,10 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
             </button>
            <button 
               className="nav-link login-link"
-              onClick={navigateToLogin}
+              onClick={handleAuthClick}
+              disabled={isLoggingOut}
             >
-              {isInLoginPage ? 'Indietro' : 'Login'}
+              {getAuthButtonText()}
             </button>
           </div>
 
@@ -204,13 +271,15 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
           </button>
           <button 
             className="mobile-nav-link login-link"
-            onClick={navigateToLogin}
+            onClick={handleAuthClick}
+            disabled={isLoggingOut}
           >
-            {isInLoginPage ? 'Indietro' : 'Login'}
+            {getAuthButtonText()}
           </button>
         </div>
       </div>
     </>
   );
 };
+
 export default Navbar;

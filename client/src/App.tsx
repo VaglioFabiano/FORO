@@ -8,7 +8,6 @@ import Footer from './components/Footer.tsx';
 import Login from './components/Login.tsx';
 import SegnalazioniSection from './components/Segnalazioni.tsx';
 import AssociatiSection from './components/Associati.tsx';
-import DatabaseSetup from './components/DatabaseSetup.tsx';
 
 function App(): JSX.Element {
   const [showLogin, setShowLogin] = useState(false);
@@ -38,7 +37,6 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen">
-      <DatabaseSetup />
       <Navbar 
         onLoginClick={handleShowLogin} 
         onBackToHome={handleBackToHome}

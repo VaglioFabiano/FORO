@@ -54,9 +54,9 @@ const Login: React.FC = () => {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
 
-        // Reindirizza alla dashboard o alla pagina principale
+        // Reindirizza alla homepage
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = '/';
         }, 1000);
 
       } else {
