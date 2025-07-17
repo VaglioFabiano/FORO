@@ -115,19 +115,37 @@ const OrariSection: React.FC = () => {
  
 
   // Funzione per ottenere il periodo corrente (puoi personalizzarla)
-  const getCurrentPeriod = (): string => {
+const getCurrentWeek = (): string => {
     const now = new Date();
-    const day = now.getDate();
-    //const month = now.getMonth() + 1;
-    const monthName = now.toLocaleDateString('it-IT', { month: 'long' });
+    const currentDay = now.getDay(); // 0 = domenica, 1 = lunedì, ..., 6 = sabato
     
-    return `${day}-${day + 4} ${monthName}`;
-  };
-
+    // Calcola quanti giorni sottrarre per arrivare a lunedì
+    const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+    
+    // Calcola la data del lunedì
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - daysToMonday);
+    
+    // Calcola la data della domenica (lunedì + 6 giorni)
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    
+    // Ottieni il nome del mese
+    const monthName = monday.toLocaleDateString('it-IT', { month: 'long' });
+    
+    // Se lunedì e domenica sono nello stesso mese
+    if (monday.getMonth() === sunday.getMonth()) {
+        return `${monday.getDate()}-${sunday.getDate()} ${monthName}`;
+    } else {
+        // Se la settimana attraversa due mesi
+        const sundayMonthName = sunday.toLocaleDateString('it-IT', { month: 'long' });
+        return `${monday.getDate()} ${monthName} - ${sunday.getDate()} ${sundayMonthName}`;
+    }
+};
   return (
     <section className="orari-full-width">
       <div className="orari-container">
-        <h2>Orari di Apertura {getCurrentPeriod()} ☀️</h2>
+        <h2>Orari di Apertura {getCurrentWeek()}</h2>
         
         {loading && orari.length === 0 ? (
           <div className="loading">Caricamento orari...</div>
