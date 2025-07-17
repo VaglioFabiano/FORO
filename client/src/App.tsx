@@ -117,8 +117,10 @@ function App(): JSX.Element {
         onLogout={handleLogout}
         isInLoginPage={showLogin}
         forceLoginCheck={forceNavbarUpdate}
-        isInDashboard={false}
+        isInDashboard={showDashboard}
+        onGoToDashboard={() => setShowDashboard(true)}
       />
+
       
       {showLogin ? (
         <div>
