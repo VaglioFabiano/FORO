@@ -9,32 +9,19 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Card principale */
+/* Container del contenuto */
 .crea-utenti-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 40px;
   width: 100%;
   max-width: 800px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.crea-utenti-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
 }
 
 /* Header della card */
 .card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid rgba(139, 69, 19, 0.1);
 }
 
 .card-header h2 {
@@ -43,11 +30,13 @@
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.5px;
+  text-align: center;
 }
 
 .header-icon {
   font-size: 32px;
   opacity: 0.8;
+  margin-left: 15px;
 }
 
 /* Messaggi di stato */
@@ -155,12 +144,8 @@
 /* Select styling */
 .form-group select {
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23999' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 12px center;
-  background-repeat: no-repeat;
-  background-size: 16px;
-  padding-right: 40px;
   appearance: none;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .form-group select:focus {
@@ -219,13 +204,8 @@
 
 /* Messaggio di permesso negato */
 .no-permission-message {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 40px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #8B4513;
 }
 
 .no-permission-icon {
@@ -266,10 +246,6 @@
 
 /* Responsive design */
 @media (min-width: 1024px) {
-  .crea-utenti-card {
-    padding: 50px 60px;
-  }
-  
   .card-header h2 {
     font-size: 32px;
   }
@@ -285,7 +261,6 @@
   }
   
   .crea-utenti-card {
-    padding: 30px 25px;
     max-width: 450px;
   }
   
@@ -310,10 +285,6 @@
 }
 
 @media (max-width: 480px) {
-  .crea-utenti-card {
-    padding: 25px 20px;
-  }
-  
   .card-header {
     flex-direction: column;
     gap: 15px;
