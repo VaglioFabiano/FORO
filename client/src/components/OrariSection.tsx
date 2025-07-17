@@ -71,10 +71,6 @@ const OrariSection: React.FC = () => {
       return undefined; // Nessuna nota per i giorni chiusi
     }
     
-    if (fasce.length > 1) {
-      return 'Apertura serale';
-    }
-    
     // Controlla se c'è una chiusura anticipata (prima delle 19:00)
     const hasEarlyClose = fasce.some(fascia => {
       const oraFine = fascia.ora_fine.split(':');
