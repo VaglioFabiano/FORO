@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../style/login.css';
 
 interface LoginProps {
@@ -15,8 +15,6 @@ interface LoginResponse {
     tel: string;
     level: number;
   };
-  sessionToken?: string;
-  expiresAt?: string;
   error?: string;
 }
 
@@ -27,6 +25,29 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Controlla se l'utente è già loggato al caricamento del componente
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const loginTime = localStorage.getItem('loginTime');
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    
+    if (storedUser && loginTime) {
+      const now = new Date().getTime();
+      const loginTimestamp = parseInt(loginTime);
+      const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 giorni o 1 giorno
+      
+      if (now - loginTimestamp < expirationTime) {
+        // L'utente è ancora loggato
+        onLoginSuccess();
+      } else {
+        // La sessione è scaduta, pulisci il localStorage
+        localStorage.removeItem('user');
+        localStorage.removeItem('loginTime');
+        localStorage.removeItem('rememberMe');
+      }
+    }
+  }, [onLoginSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +63,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         },
         body: JSON.stringify({
           username,
-          password,
-          rememberMe
+          password
         }),
       });
 
@@ -52,11 +72,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       if (response.ok && data.success) {
         setSuccess('Login effettuato con successo!');
         
-        // Salva il token di sessione
-        if (data.sessionToken) {
-          localStorage.setItem('sessionToken', data.sessionToken);
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
+        // Salva i dati dell'utente nel localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('loginTime', new Date().getTime().toString());
+        localStorage.setItem('rememberMe', rememberMe.toString());
 
         // Reindirizza alla dashboard
         setTimeout(() => {

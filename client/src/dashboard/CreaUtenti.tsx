@@ -25,7 +25,7 @@ const CreaUtenti: React.FC = () => {
     name: '',
     surname: '',
     tel: '',
-    level: 2,
+    level: 3,
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -117,7 +117,7 @@ const CreaUtenti: React.FC = () => {
         name: '',
         surname: '',
         tel: '',
-        level: 2,
+        level: 3,
         password: ''
       });
 
@@ -203,9 +203,10 @@ const CreaUtenti: React.FC = () => {
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
-            <option value={0}>Admin (0)</option>
-            <option value={1}>Moderatore (1)</option>
-            <option value={2}>Utente (2)</option>
+            <option value={0}>Sviluppatorə</option>
+            <option value={1}>Direttivə</option>
+            <option value={2}>Sociə</option>
+            <option value={2}>Volontariə</option>
           </select>
         </div>
 

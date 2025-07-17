@@ -11,11 +11,6 @@ function hashPassword(password, salt) {
   return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
 }
 
-// Funzione per generare un token di sessione
-function generateSessionToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
-
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -31,7 +26,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { username, password, rememberMe } = req.body;
+    const { username, password } = req.body;
 
     // Validazione input
     if (!username || !password) {
@@ -51,33 +46,10 @@ export default async function handler(req, res) {
     const user = userResult.rows[0];
 
     // Verifica la password
-    const inputHash = hashPassword(password, user.salt);
+    const inputHash = hashPassword(password, user.password_hash);
     if (inputHash !== user.password_hash) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
-
-    // CANCELLA TUTTE LE SESSIONI PRECEDENTI DELLO STESSO UTENTE
-    await client.execute({
-      sql: 'DELETE FROM sessions WHERE user_id = ?',
-      args: [user.id]
-    });
-
-    // Genera token di sessione
-    const sessionToken = generateSessionToken();
-    const expiresAt = new Date();
-    
-    // Se "ricordami" è attivo, la sessione dura 30 giorni, altrimenti 1 giorno
-    if (rememberMe) {
-      expiresAt.setDate(expiresAt.getDate() + 30);
-    } else {
-      expiresAt.setDate(expiresAt.getDate() + 1);
-    }
-
-    // Salva la nuova sessione
-    await client.execute({
-      sql: 'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
-      args: [sessionToken, user.id, expiresAt.toISOString()]
-    });
 
     // Aggiorna l'ultimo login
     await client.execute({
@@ -97,9 +69,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ 
       success: true, 
       message: 'Login effettuato con successo',
-      user: userResponse,
-      sessionToken: sessionToken,
-      expiresAt: expiresAt.toISOString()
+      user: userResponse
     });
 
   } catch (error) {
