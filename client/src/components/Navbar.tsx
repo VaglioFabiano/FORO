@@ -84,26 +84,36 @@ const Navbar: React.FC<NavbarProps> = ({
   const scrollToSection = (sectionId: string) => {
     setIsMobileMenuOpen(false);
 
+    // SE sei in login o dashboard, torna alla home
     if (isInDashboard || isInLoginPage) {
       onBackToHome();
+
+      // Ritenta lo scroll dopo un piccolo delay per permettere il render della home
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          // Fallback: vai alla home con ancora
+          window.location.href = `/#${sectionId}`;
         }
-      }, 100);
+      }, 300);
+
       return;
     }
 
-    if (window.location.pathname !== '/') {
-      window.location.href = `/#${sectionId}`;
-    } else {
+    // SE sei già nella home:
+    if (window.location.pathname === '/') {
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
+    } else {
+      // Vai alla home e lascia che l’ancora funzioni
+      window.location.href = `/#${sectionId}`;
     }
   };
+
 
   const handleAuthClick = () => {
     if (isLoggedIn) {
