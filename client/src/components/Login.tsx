@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import '../style/login.css';
 
-interface LoginProps {
-  onLoginSuccess: () => void;
-}
-
 interface LoginResponse {
   success: boolean;
   message: string;
@@ -20,7 +16,7 @@ interface LoginResponse {
   error?: string;
 }
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -60,7 +56,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         // Reindirizza alla dashboard
         setTimeout(() => {
-          onLoginSuccess();
+          window.location.href = '/dashboard/homedash';
         }, 1000);
 
       } else {

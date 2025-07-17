@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './homedash.css';
-
-interface HomeDashProps {
-  onLogout: () => void;
-}
+//import './homedash.css';
 
 interface User {
   id: number;
@@ -20,7 +16,7 @@ interface DashboardStats {
   pendingRequests: number;
 }
 
-const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
+const HomeDash: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -50,7 +46,9 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   }, []);
 
   const handleLogout = () => {
-    onLogout();
+    localStorage.removeItem('sessionToken');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
   };
 
   if (isLoading) {
