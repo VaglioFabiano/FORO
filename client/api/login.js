@@ -56,6 +56,12 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
+    // CANCELLA TUTTE LE SESSIONI PRECEDENTI DELLO STESSO UTENTE
+    await client.execute({
+      sql: 'DELETE FROM sessions WHERE user_id = ?',
+      args: [user.id]
+    });
+
     // Genera token di sessione
     const sessionToken = generateSessionToken();
     const expiresAt = new Date();
@@ -67,7 +73,7 @@ export default async function handler(req, res) {
       expiresAt.setDate(expiresAt.getDate() + 1);
     }
 
-    // Salva la sessione
+    // Salva la nuova sessione
     await client.execute({
       sql: 'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
       args: [sessionToken, user.id, expiresAt.toISOString()]
