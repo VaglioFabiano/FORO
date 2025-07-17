@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CreaUtenti from './CreaUtenti.tsx';
 
 interface HomeDashProps {
   onLogout: () => void;
@@ -39,6 +40,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   return (
     <div className="min-h-screen">
       Dashboard per utenti autenticati 
+      <CreaUtenti />
     </div>
   );
 };
