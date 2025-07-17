@@ -24,7 +24,8 @@ export default async function handler(req, res) {
             fo.id,
             fo.giorno,
             fo.ora_inizio,
-            fo.ora_fine
+            fo.ora_fine,
+            fo.note
           FROM fasce_orarie fo
           ORDER BY 
             CASE fo.giorno 
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
 
       case 'POST':
         // Aggiungi nuova fascia oraria
-        const { giorno, ora_inizio, ora_fine } = req.body;
+        const { giorno, ora_inizio, ora_fine, note } = req.body;
         
         if (!giorno || !ora_inizio || !ora_fine) {
           return res.status(400).json({ 
@@ -67,8 +68,8 @@ export default async function handler(req, res) {
         }
         
         const newOrario = await client.execute({
-          sql: 'INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine) VALUES (?, ?, ?) RETURNING *',
-          args: [giorno, ora_inizio, ora_fine]
+          sql: 'INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?) RETURNING *',
+          args: [giorno, ora_inizio, ora_fine, note || null]
         });
         
         return res.status(201).json({ 
@@ -78,7 +79,7 @@ export default async function handler(req, res) {
 
       case 'PUT':
         // Aggiorna fascia oraria esistente
-        const { id, giorno: updateGiorno, ora_inizio: updateInizio, ora_fine: updateFine } = req.body;
+        const { id, giorno: updateGiorno, ora_inizio: updateInizio, ora_fine: updateFine, note: updateNote } = req.body;
         
         if (!id) {
           return res.status(400).json({ 
@@ -101,6 +102,10 @@ export default async function handler(req, res) {
         if (updateFine) {
           updateFields.push('ora_fine = ?');
           updateArgs.push(updateFine);
+        }
+        if (updateNote !== undefined) {
+          updateFields.push('note = ?');
+          updateArgs.push(updateNote);
         }
         
         if (updateFields.length === 0) {

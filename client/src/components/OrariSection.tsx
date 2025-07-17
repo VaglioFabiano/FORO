@@ -72,24 +72,14 @@ const OrariSection: React.FC = () => {
       return undefined; // Nessuna nota per i giorni chiusi
     }
     
-    console.log('Verificando note per fasce:', fasce);
-    
     // Raccoglie tutte le note non vuote e uniche
     const noteUniche = fasce
-      .map(fascia => {
-        console.log(`Fascia ${fascia.id}: nota = "${fascia.note}"`);
-        return fascia.note?.trim();
-      })
+      .map(fascia => fascia.note?.trim())
       .filter((nota): nota is string => nota !== undefined && nota !== '')
       .filter((nota, index, array) => array.indexOf(nota) === index); // Rimuove duplicati
     
-    console.log('Note uniche trovate:', noteUniche);
-    
     // Se ci sono note, le unisce con un separatore
-    const risultato = noteUniche.length > 0 ? noteUniche.join(' • ') : undefined;
-    console.log('Risultato nota:', risultato);
-    
-    return risultato;
+    return noteUniche.length > 0 ? noteUniche.join(' • ') : undefined;
   };
 
   // Carica gli orari dal database
@@ -103,16 +93,7 @@ const OrariSection: React.FC = () => {
         const data: ApiResponse = await response.json();
         
         if (data.success) {
-          // Debug: log dei dati ricevuti
-          console.log('Dati ricevuti dal database:', data.data);
-          
-          // Verifica se ci sono note nei dati
-          const fasceConNote = data.data.filter(fascia => fascia.note && fascia.note.trim() !== '');
-          console.log('Fasce con note trovate:', fasceConNote);
-          
           const orariRaggruppati = raggruppaOrariPerGiorno(data.data);
-          console.log('Orari raggruppati:', orariRaggruppati);
-          
           setOrari(orariRaggruppati);
         } else {
           setError(data.message || 'Errore nel caricamento degli orari');
