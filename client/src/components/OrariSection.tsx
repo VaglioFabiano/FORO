@@ -35,8 +35,8 @@ const OrariSection: React.FC = () => {
     'mercoledì': '📚',
     'giovedì': '📚',
     'venerdì': '📚',
-    'sabato': '🏖️',
-    'domenica': '🏖️'
+    'sabato': '📅',
+    'domenica': '📅'
   };
 
   // Lista completa dei giorni della settimana
@@ -66,15 +66,20 @@ const OrariSection: React.FC = () => {
     }));
   };
 
-  // Funzione per determinare la nota in base alle fasce orarie
+  // Funzione migliorata per determinare la nota in base alle fasce orarie
   const determineNota = (fasce: FasciaOraria[]): string | undefined => {
     if (fasce.length === 0) {
       return undefined; // Nessuna nota per i giorni chiusi
     }
     
-    // Cerca la prima fascia che ha una nota e la restituisce
-    const fasciaConNota = fasce.find(fascia => fascia.note && fascia.note.trim() !== '');
-    return fasciaConNota?.note || undefined;
+    // Raccoglie tutte le note non vuote e uniche
+    const noteUniche = fasce
+      .map(fascia => fascia.note?.trim())
+      .filter((nota): nota is string => nota !== undefined && nota !== '')
+      .filter((nota, index, array) => array.indexOf(nota) === index); // Rimuove duplicati
+    
+    // Se ci sono note, le unisce con un separatore
+    return noteUniche.length > 0 ? noteUniche.join(' • ') : undefined;
   };
 
   // Carica gli orari dal database
