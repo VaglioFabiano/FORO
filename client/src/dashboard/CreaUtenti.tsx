@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './creaUtenti.css';
+import '../style/creaUtenti.css';
 
 interface User {
   id: number;
