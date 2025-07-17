@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../style/creaUtenti.css';
+import './creaUtenti.css';
 
 interface User {
   id: number;
@@ -13,6 +13,7 @@ interface NewUser {
   tel: string;
   level: number;
   password: string;
+  confirmPassword?: string;
 }
 
 interface Message {
@@ -27,7 +28,8 @@ const CreaUtenti: React.FC = () => {
     surname: '',
     tel: '',
     level: 3,
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [message, setMessage] = useState<Message | null>(null);
@@ -95,6 +97,11 @@ const CreaUtenti: React.FC = () => {
       return false;
     }
 
+    if (newUser.password !== newUser.confirmPassword) {
+      setMessage({ type: 'error', text: 'Le password non corrispondono' });
+      return false;
+    }
+
     return true;
   };
 
@@ -148,7 +155,8 @@ const CreaUtenti: React.FC = () => {
         surname: '',
         tel: '',
         level: 3,
-        password: ''
+        password: '',
+        confirmPassword: ''
       });
 
     } catch (error: unknown) {
@@ -256,6 +264,19 @@ const CreaUtenti: React.FC = () => {
               onChange={handleInputChange}
               required
               placeholder="Inserisci la password"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Conferma Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={newUser.confirmPassword || ''}
+              onChange={handleInputChange}
+              required
+              placeholder="Conferma la password"
             />
           </div>
 
