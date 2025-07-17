@@ -32,12 +32,9 @@ const Navbar: React.FC<NavbarProps> = ({
       setIsScrolled(scrollTop > threshold);
     };
     
-    // Solo aggiungiamo l'event listener se non siamo nella dashboard o login page
-    if (!isInDashboard && !isInLoginPage) {
-      window.addEventListener('scroll', handleScroll);
-    }
+    window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isInDashboard, isInLoginPage]);
+  }, []);
 
   const checkLoginStatus = () => {
     const user = localStorage.getItem('user');
@@ -85,12 +82,27 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const handleHomeClick = () => {
+  const handleNavigation = (sectionId?: string) => {
     setIsMobileMenuOpen(false);
+    
     if (isInDashboard || isInLoginPage) {
       onBackToHome();
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      if (sectionId) {
+        setTimeout(() => {
+          const element = document.getElementById(sectionId);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 300);
+      }
+    } else if (sectionId) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.location.href = `/#${sectionId}`;
+      }
     }
   };
 
@@ -101,13 +113,6 @@ const Navbar: React.FC<NavbarProps> = ({
       onLoginClick();
     }
     setIsMobileMenuOpen(false);
-  };
-
-  const handleDashboardClick = () => {
-    setIsMobileMenuOpen(false);
-    if (onGoToDashboard) {
-      onGoToDashboard();
-    }
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
@@ -129,11 +134,55 @@ const Navbar: React.FC<NavbarProps> = ({
     return isLoggedIn ? 'Logout' : 'Login';
   };
 
+  // Render menu items based on login status only
+  const renderMenuItems = () => {
+    if (isLoggedIn) {
+      return (
+        <>
+          <button className="nav-link" onClick={() => handleNavigation('header')}>
+            Home
+          </button>
+          {onGoToDashboard && (
+            <button className="nav-link" onClick={onGoToDashboard}>
+              Dashboard
+            </button>
+          )}
+        </>
+      );
+    } else {
+      return (
+        <>
+          <button className="nav-link" onClick={() => handleNavigation('header')}>
+            Home
+          </button>
+          <button className="nav-link" onClick={() => handleNavigation('orari')}>
+            Orari
+          </button>
+          <button className="nav-link" onClick={() => handleNavigation('social')}>
+            Social
+          </button>
+          <button className="nav-link" onClick={() => handleNavigation('statuto')}>
+            Statuto
+          </button>
+          <button className="nav-link" onClick={() => handleNavigation('associati')}>
+            Diventa Socio
+          </button>
+          <button className="nav-link" onClick={() => handleNavigation('segnalazioni')}>
+            Segnalazioni
+          </button>
+          <button className="nav-link" onClick={() => handleNavigation('footer')}>
+            Contatti
+          </button>
+        </>
+      );
+    }
+  };
+
   return (
     <>
       <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
         <div className="navbar-container">
-          <div className="navbar-logo" onClick={handleHomeClick} style={{ cursor: 'pointer' }}>
+          <div className="navbar-logo" onClick={() => handleNavigation('header')} style={{ cursor: 'pointer' }}>
             <img 
               src="/assets/logo.png"
               alt="Logo Aula Studio" 
@@ -147,50 +196,8 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="navbar-nav">
-            {/* Home button - always visible */}
-            <button className="nav-link" onClick={handleHomeClick}>
-              Home
-            </button>
-
-            {/* Dashboard button - visible when logged in and not in dashboard */}
-            {isLoggedIn && !isInDashboard && (
-              <button className="nav-link" onClick={handleDashboardClick}>
-                Dashboard
-              </button>
-            )}
-
-            {/* Back to home button - visible when in dashboard */}
-            {isInDashboard && (
-              <button className="nav-link" onClick={onBackToHome}>
-                Torna al Sito
-              </button>
-            )}
-
-            {/* Full menu - only for non-logged users not in login page */}
-            {!isLoggedIn && !isInLoginPage && (
-              <>
-                <button className="nav-link" onClick={() => window.location.href = '/#orari'}>
-                  Orari
-                </button>
-                <button className="nav-link" onClick={() => window.location.href = '/#social'}>
-                  Social
-                </button>
-                <button className="nav-link" onClick={() => window.location.href = '/#statuto'}>
-                  Statuto
-                </button>
-                <button className="nav-link" onClick={() => window.location.href = '/#associati'}>
-                  Diventa Socio
-                </button>
-                <button className="nav-link" onClick={() => window.location.href = '/#segnalazioni'}>
-                  Segnalazioni
-                </button>
-                <button className="nav-link" onClick={() => window.location.href = '/#footer'}>
-                  Contatti
-                </button>
-              </>
-            )}
-
-            {/* Auth button - always visible */}
+            {renderMenuItems()}
+            
             <button
               className="nav-link login-link"
               onClick={handleAuthClick}
@@ -211,43 +218,40 @@ const Navbar: React.FC<NavbarProps> = ({
         </div>
       </nav>
 
-      {/* Mobile menu */}
       <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'active' : ''}`}>
         <div className="mobile-menu-content">
-          <button className="mobile-nav-link" onClick={handleHomeClick}>
-            Home
-          </button>
-
-          {isLoggedIn && !isInDashboard && (
-            <button className="mobile-nav-link" onClick={handleDashboardClick}>
-              Dashboard
-            </button>
-          )}
-
-          {isInDashboard && (
-            <button className="mobile-nav-link" onClick={onBackToHome}>
-              Torna al Sito
-            </button>
-          )}
-
-          {!isLoggedIn && !isInLoginPage && (
+          {isLoggedIn ? (
             <>
-              <button className="mobile-nav-link" onClick={() => window.location.href = '/#orari'}>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('header')}>
+                Home
+              </button>
+              {onGoToDashboard && (
+                <button className="mobile-nav-link" onClick={onGoToDashboard}>
+                  Dashboard
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('header')}>
+                Home
+              </button>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('orari')}>
                 Orari
               </button>
-              <button className="mobile-nav-link" onClick={() => window.location.href = '/#social'}>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('social')}>
                 Social
               </button>
-              <button className="mobile-nav-link" onClick={() => window.location.href = '/#statuto'}>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('statuto')}>
                 Statuto
               </button>
-              <button className="mobile-nav-link" onClick={() => window.location.href = '/#associati'}>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('associati')}>
                 Diventa Socio
               </button>
-              <button className="mobile-nav-link" onClick={() => window.location.href = '/#segnalazioni'}>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('segnalazioni')}>
                 Segnalazioni
               </button>
-              <button className="mobile-nav-link" onClick={() => window.location.href = '/#footer'}>
+              <button className="mobile-nav-link" onClick={() => handleNavigation('footer')}>
                 Contatti
               </button>
             </>
