@@ -8,6 +8,7 @@ interface NavbarProps {
   isInLoginPage: boolean;
   forceLoginCheck?: boolean;
   isInDashboard?: boolean;
+  onGoToDashboard?: () => void; // ✅ Aggiunto
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -16,7 +17,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onLogout, 
   isInLoginPage,
   forceLoginCheck,
-  isInDashboard = false
+  isInDashboard = false,
+  onGoToDashboard // ✅ Aggiunto
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -46,10 +48,7 @@ const Navbar: React.FC<NavbarProps> = ({
       if (now - loginTimestamp < expirationTime) {
         setIsLoggedIn(true);
       } else {
-        localStorage.removeItem('user');
-        localStorage.removeItem('loginTime');
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('sessionToken');
+        localStorage.clear();
         setIsLoggedIn(false);
       }
     } else {
@@ -72,10 +71,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      localStorage.removeItem('user');
-      localStorage.removeItem('loginTime');
-      localStorage.removeItem('rememberMe');
-      localStorage.removeItem('sessionToken');
+      localStorage.clear();
       setIsLoggedIn(false);
       onLogout();
     } catch (error) {
@@ -87,8 +83,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const scrollToSection = (sectionId: string) => {
     setIsMobileMenuOpen(false);
-    
-    // Se siamo nella dashboard o nella pagina di login, torna alla home
+
     if (isInDashboard || isInLoginPage) {
       onBackToHome();
       setTimeout(() => {
@@ -119,8 +114,7 @@ const Navbar: React.FC<NavbarProps> = ({
     setIsMobileMenuOpen(false);
   };
 
-  const navigateToHome = () => { 
-    // Se siamo nella dashboard o nella pagina di login, torna alla home
+  const navigateToHome = () => {
     if (isInDashboard || isInLoginPage) {
       onBackToHome();
     } else {
@@ -166,55 +160,40 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="navbar-nav">
-            <button 
-              className="nav-link"
-              onClick={() => scrollToSection('header')}
-            >
+            <button className="nav-link" onClick={() => scrollToSection('header')}>
               Home
             </button>
-            
+
+            {isLoggedIn && !isInDashboard && (
+              <button className="nav-link" onClick={onGoToDashboard}>
+                Dashboard
+              </button>
+            )}
+
             {!isInDashboard && (
               <>
-                <button 
-                  className="nav-link"
-                  onClick={() => scrollToSection('orari')}
-                >
+                <button className="nav-link" onClick={() => scrollToSection('orari')}>
                   Orari
                 </button>
-                <button 
-                  className="nav-link"
-                  onClick={() => scrollToSection('social')}
-                >
+                <button className="nav-link" onClick={() => scrollToSection('social')}>
                   Social
                 </button>
-                <button 
-                  className="nav-link"
-                  onClick={() => scrollToSection('statuto')}
-                >
+                <button className="nav-link" onClick={() => scrollToSection('statuto')}>
                   Statuto
                 </button>
-                <button 
-                  className="nav-link"
-                  onClick={() => scrollToSection('associati')}
-                >
+                <button className="nav-link" onClick={() => scrollToSection('associati')}>
                   Diventa Socio
                 </button>
-                <button 
-                  className="nav-link"
-                  onClick={() => scrollToSection('segnalazioni')}
-                >
+                <button className="nav-link" onClick={() => scrollToSection('segnalazioni')}>
                   Segnalazioni
                 </button>
-                <button 
-                  className="nav-link"
-                  onClick={() => scrollToSection('footer')}
-                >
+                <button className="nav-link" onClick={() => scrollToSection('footer')}>
                   Contatti
                 </button>
               </>
             )}
-            
-           <button 
+
+            <button
               className="nav-link login-link"
               onClick={handleAuthClick}
               disabled={isLoggingOut}
@@ -223,7 +202,7 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
-          <div 
+          <div
             className={`mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`}
             onClick={toggleMobileMenu}
           >
@@ -236,55 +215,40 @@ const Navbar: React.FC<NavbarProps> = ({
 
       <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'active' : ''}`}>
         <div className="mobile-menu-content">
-          <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('header')}
-          >
+          <button className="mobile-nav-link" onClick={() => scrollToSection('header')}>
             Home
           </button>
-          
+
+          {isLoggedIn && !isInDashboard && (
+            <button className="mobile-nav-link" onClick={onGoToDashboard}>
+              Dashboard
+            </button>
+          )}
+
           {!isInDashboard && (
             <>
-              <button 
-                className="mobile-nav-link"
-                onClick={() => scrollToSection('orari')}
-              >
+              <button className="mobile-nav-link" onClick={() => scrollToSection('orari')}>
                 Orari
               </button>
-              <button 
-                className="mobile-nav-link"
-                onClick={() => scrollToSection('social')}
-              >
+              <button className="mobile-nav-link" onClick={() => scrollToSection('social')}>
                 Social
               </button>
-              <button 
-                className="mobile-nav-link"
-                onClick={() => scrollToSection('statuto')}
-              >
+              <button className="mobile-nav-link" onClick={() => scrollToSection('statuto')}>
                 Statuto
               </button>
-              <button 
-                className="mobile-nav-link"
-                onClick={() => scrollToSection('associati')}
-              >
+              <button className="mobile-nav-link" onClick={() => scrollToSection('associati')}>
                 Diventa Socio
               </button>
-              <button 
-                className="mobile-nav-link"
-                onClick={() => scrollToSection('segnalazioni')}
-              >
+              <button className="mobile-nav-link" onClick={() => scrollToSection('segnalazioni')}>
                 Segnalazioni
               </button>
-              <button 
-                className="mobile-nav-link"
-                onClick={() => scrollToSection('footer')}
-              >
+              <button className="mobile-nav-link" onClick={() => scrollToSection('footer')}>
                 Contatti
               </button>
             </>
           )}
-          
-          <button 
+
+          <button
             className="mobile-nav-link login-link"
             onClick={handleAuthClick}
             disabled={isLoggingOut}

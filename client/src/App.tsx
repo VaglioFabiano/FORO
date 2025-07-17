@@ -87,18 +87,23 @@ function App(): JSX.Element {
     setForceNavbarUpdate(prev => !prev);
   };
 
+
+
   // Se l'utente è autenticato, mostra la dashboard
   if (showDashboard) {
     return (
       <div className="min-h-screen">
-        <Navbar 
+       <Navbar 
           onLoginClick={handleShowLogin} 
           onBackToHome={handleBackToHome}
           onLogout={handleLogout}
           isInLoginPage={showLogin}
           forceLoginCheck={forceNavbarUpdate}
-          isInDashboard={true}
+          isInDashboard={false}
+          onGoToDashboard={() => setShowDashboard(true)} 
         />
+
+
         <HomeDash onLogout={handleLogout} />
       </div>
     );
