@@ -11,6 +11,7 @@ import SegnalazioniSection from './components/Segnalazioni.tsx';
 import AssociatiSection from './components/Associati.tsx';
 import HomeDash from './dashboard/homedash.tsx';
 
+
 function App(): JSX.Element {
   const [showLogin, setShowLogin] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
