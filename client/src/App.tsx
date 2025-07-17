@@ -70,13 +70,27 @@ function App() {
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
         <>
-          <Header />
-          <OrariSection />
-          <SocialSection />
-          <StatutoSection />
-          <AssociatiSection />
-          <SegnalazioniSection />
-          <Footer />
+          <div id="header">
+            <Header />
+          </div>
+          <div id="orari">
+            <OrariSection />
+          </div>
+          <div id="social">
+            <SocialSection />
+          </div>
+          <div id="statuto">
+            <StatutoSection />
+          </div>
+          <div id="associati">
+            <AssociatiSection />
+          </div>
+          <div id="segnalazioni">
+            <SegnalazioniSection />
+          </div>
+          <div id="footer">
+            <Footer />
+          </div>
         </>
       )}
     </div>

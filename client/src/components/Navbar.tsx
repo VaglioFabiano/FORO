@@ -129,7 +129,6 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const getAuthButtonText = () => {
-    if (isInLoginPage) return 'Indietro';
     if (isLoggingOut) return 'Logout...';
     return isLoggedIn ? 'Logout' : 'Login';
   };
@@ -140,7 +139,7 @@ const Navbar: React.FC<NavbarProps> = ({
       return (
         <>
           <button className="nav-link" onClick={() => handleNavigation('header')}>
-            Home
+            Home Visitatori
           </button>
           {onGoToDashboard && (
             <button className="nav-link" onClick={onGoToDashboard}>
