@@ -1,4 +1,5 @@
 import { useState, useEffect} from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.tsx';
 import Header from './components/Header.tsx';
 import OrariSection from './components/OrariSection.tsx';
@@ -110,46 +111,43 @@ function App(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar 
-        onLoginClick={handleShowLogin} 
-        onBackToHome={handleBackToHome}
-        onLogout={handleLogout}
-        isInLoginPage={showLogin}
-        forceLoginCheck={forceNavbarUpdate}
-        isInDashboard={showDashboard}
-        onGoToDashboard={() => setShowDashboard(true)}
-      />
-
-      
-      {showLogin ? (
-        <div>
-          <Login onLoginSuccess={handleLoginSuccess} />
-        </div>
-      ) : (
-        <>
-          <Header />
-          <div id="orari">
-            <OrariSection />
-          </div>
-          <div id="social">
-            <SocialSection />
-          </div>
-          <div id="statuto">
-            <StatutoSection />
-          </div>
-          <div id="associati">
-            <AssociatiSection />
-          </div>
-          <div id="segnalazioni">
-            <SegnalazioniSection />
-          </div>
-          <div id="footer">
-            <Footer />
-          </div>
-        </>
-      )}
-    </div>
+    <Router>
+      <div className="min-h-screen">
+        <Navbar 
+          onLoginClick={handleShowLogin} 
+          onBackToHome={handleBackToHome}
+          onLogout={handleLogout}
+          isInLoginPage={showLogin}
+          forceLoginCheck={forceNavbarUpdate}
+          isInDashboard={showDashboard}
+          onGoToDashboard={() => setShowDashboard(true)}
+        />
+        
+        <Routes>
+          <Route path="/dashboard" element={
+            showDashboard ? <HomeDash onLogout={handleLogout} /> : null
+          } />
+          
+          <Route path="/login" element={
+            showLogin ? <Login onLoginSuccess={handleLoginSuccess} /> : null
+          } />
+          
+          <Route path="/" element={
+            !showLogin && !showDashboard ? (
+              <>
+                <Header />
+                <OrariSection />
+                <SocialSection />
+                <StatutoSection />
+                <AssociatiSection />
+                <SegnalazioniSection />
+                <Footer />
+              </>
+            ) : null
+          } />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

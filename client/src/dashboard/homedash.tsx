@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CreaUtenti from './CreaUtenti.tsx';
 
 interface HomeDashProps {
@@ -8,9 +9,9 @@ interface HomeDashProps {
 const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Controlla se l'utente è autenticato con la stessa logica degli altri componenti
     const checkAuth = () => {
       const user = localStorage.getItem('user');
       const loginTime = localStorage.getItem('loginTime');
@@ -32,17 +33,27 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
           localStorage.removeItem('sessionToken');
           setIsAuthenticated(false);
           onLogout();
+          navigate('/'); // Reindirizza alla home
         }
       } else {
         setIsAuthenticated(false);
         onLogout();
+        navigate('/'); // Reindirizza alla home
       }
       
       setIsLoading(false);
     };
 
     checkAuth();
-  }, [onLogout]);
+
+    // Aggiungi listener per cambiamenti di autenticazione
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [onLogout, navigate]);
 
   if (isLoading) {
     return (
@@ -60,13 +71,10 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   return (
     <div className="min-h-screen pt-20 bg-gray-50">
       <div className="container mx-auto px-4">
-
         <div className="grid gap-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <CreaUtenti />
           </div>
-          
-          
         </div>
       </div>
     </div>
