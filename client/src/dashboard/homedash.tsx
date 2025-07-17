@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import CreaUtenti from './CreaUtenti.tsx';
+import CreaUtenti from './CreaUtenti';
 
 interface HomeDashProps {
   onLogout: () => void;
@@ -9,7 +8,6 @@ interface HomeDashProps {
 const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -26,19 +24,13 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
         if (now - loginTimestamp < expirationTime) {
           setIsAuthenticated(true);
         } else {
-          // Sessione scaduta, pulisci tutto
-          localStorage.removeItem('user');
-          localStorage.removeItem('loginTime');
-          localStorage.removeItem('rememberMe');
-          localStorage.removeItem('sessionToken');
+          localStorage.clear();
           setIsAuthenticated(false);
           onLogout();
-          navigate('/'); // Reindirizza alla home
         }
       } else {
         setIsAuthenticated(false);
         onLogout();
-        navigate('/'); // Reindirizza alla home
       }
       
       setIsLoading(false);
@@ -46,14 +38,13 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
     checkAuth();
 
-    // Aggiungi listener per cambiamenti di autenticazione
     const handleStorageChange = () => {
       checkAuth();
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [onLogout, navigate]);
+  }, [onLogout]);
 
   if (isLoading) {
     return (
@@ -65,7 +56,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   }
 
   if (!isAuthenticated) {
-    return null; // Non mostra nulla se non autenticato
+    return null;
   }
 
   return (
