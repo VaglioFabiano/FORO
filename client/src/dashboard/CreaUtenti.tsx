@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../style/creaUtenti.css';
 
 interface User {
   id: number;
@@ -162,108 +163,118 @@ const CreaUtenti: React.FC = () => {
 
   if (!canCreateUsers) {
     return (
-      <div className="p-4 bg-yellow-50 text-yellow-800 rounded">
-        Non hai i permessi per creare utenti
+      <div className="crea-utenti-container">
+        <div className="no-permission-message">
+          <div className="no-permission-icon">🔒</div>
+          <h3>Accesso Negato</h3>
+          <p>Non hai i permessi per creare utenti</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Crea Nuovo Utente</h2>
-      
-      {message && (
-        <div className={`mb-4 p-3 rounded ${
-          message.type === 'success' 
-            ? 'bg-green-50 text-green-800' 
-            : 'bg-red-50 text-red-800'
-        }`}>
-          {message.text}
+    <div className="crea-utenti-container">
+      <div className="crea-utenti-card">
+        <div className="card-header">
+          <h2>Crea Nuovo Utente</h2>
+          <div className="header-icon">👤</div>
         </div>
-      )}
+        
+        {message && (
+          <div className={`message ${message.type}`}>
+            <div className="message-icon">
+              {message.type === 'success' ? '✅' : '❌'}
+            </div>
+            <span>{message.text}</span>
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="form-group">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nome:</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={newUser.name}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="crea-utenti-form">
+          <div className="form-group">
+            <label htmlFor="name">Nome</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={newUser.name}
+              onChange={handleInputChange}
+              required
+              placeholder="Inserisci il nome"
+            />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="surname" className="block text-sm font-medium text-gray-700">Cognome:</label>
-          <input
-            type="text"
-            id="surname"
-            name="surname"
-            value={newUser.surname}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
+          <div className="form-group">
+            <label htmlFor="surname">Cognome</label>
+            <input
+              type="text"
+              id="surname"
+              name="surname"
+              value={newUser.surname}
+              onChange={handleInputChange}
+              required
+              placeholder="Inserisci il cognome"
+            />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="tel" className="block text-sm font-medium text-gray-700">Telefono:</label>
-          <input
-            type="tel"
-            id="tel"
-            name="tel"
-            value={newUser.tel}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
+          <div className="form-group">
+            <label htmlFor="tel">Telefono</label>
+            <input
+              type="tel"
+              id="tel"
+              name="tel"
+              value={newUser.tel}
+              onChange={handleInputChange}
+              required
+              placeholder="Inserisci il numero di telefono"
+            />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="level" className="block text-sm font-medium text-gray-700">Livello:</label>
-          <select
-            id="level"
-            name="level"
-            value={newUser.level}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          <div className="form-group">
+            <label htmlFor="level">Livello</label>
+            <select
+              id="level"
+              name="level"
+              value={newUser.level}
+              onChange={handleInputChange}
+              required
+            >
+              <option value={0}>Sviluppatorə</option>
+              <option value={1}>Direttivə</option>
+              <option value={2}>Sociə</option>
+              <option value={3}>Volontariə</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={newUser.password}
+              onChange={handleInputChange}
+              required
+              placeholder="Inserisci la password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`submit-button ${isSubmitting ? 'loading' : ''}`}
           >
-            <option value={0}>Sviluppatorə</option>
-            <option value={1}>Direttivə</option>
-            <option value={2}>Sociə</option>
-            <option value={3}>Volontariə</option>
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password:</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={newUser.password}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`w-full py-2 px-4 rounded-md text-white ${
-            isSubmitting
-              ? 'bg-blue-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {isSubmitting ? 'Creazione in corso...' : 'Crea Utente'}
-        </button>
-      </form>
+            {isSubmitting ? (
+              <>
+                <span className="loading-spinner"></span>
+                Creazione in corso...
+              </>
+            ) : (
+              'Crea Utente'
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
