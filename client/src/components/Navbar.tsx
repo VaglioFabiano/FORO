@@ -4,10 +4,11 @@ import '../style/navbar.css';
 interface NavbarProps {
   onLoginClick: () => void;
   onBackToHome: () => void;
+  onLogout: () => void;
   isInLoginPage: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPage }) => {
+const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, onLogout, isInLoginPage }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,17 +25,35 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
   }, []);
 
   useEffect(() => {
-    // Controlla se l'utente è loggato
+    // Controlla se l'utente è loggato (nuova logica senza sessioni)
     const checkLoginStatus = () => {
-      const token = localStorage.getItem('sessionToken');
       const user = localStorage.getItem('user');
-      setIsLoggedIn(!!token && !!user);
+      const loginTime = localStorage.getItem('loginTime');
+      const rememberMe = localStorage.getItem('rememberMe') === 'true';
+      
+      if (user && loginTime) {
+        const now = new Date().getTime();
+        const loginTimestamp = parseInt(loginTime);
+        const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+        
+        if (now - loginTimestamp < expirationTime) {
+          setIsLoggedIn(true);
+        } else {
+          // Sessione scaduta
+          localStorage.removeItem('user');
+          localStorage.removeItem('loginTime');
+          localStorage.removeItem('rememberMe');
+          setIsLoggedIn(false);
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
     };
 
     checkLoginStatus();
     
     // Controlla lo stato di login periodicamente
-    const interval = setInterval(checkLoginStatus, 1000);
+    const interval = setInterval(checkLoginStatus, 60000); // ogni minuto
     
     return () => clearInterval(interval);
   }, []);
@@ -42,34 +61,15 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, isInLoginPa
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      const sessionToken = localStorage.getItem('sessionToken');
+      // Rimuovi i dati di sessione dal localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('rememberMe');
+      setIsLoggedIn(false);
       
-      if (sessionToken) {
-        // Chiama l'API di logout
-        const response = await fetch('/api/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ sessionToken }),
-        });
-
-        if (response.ok) {
-          // Rimuovi i dati di sessione dal localStorage
-          localStorage.removeItem('sessionToken');
-          localStorage.removeItem('user');
-          setIsLoggedIn(false);
-          
-          // Reindirizza alla home
-          if (isInLoginPage) {
-            onBackToHome();
-          } else {
-            window.location.href = '/';
-          }
-        } else {
-          console.error('Errore durante il logout');
-        }
-      }
+      // Chiama la funzione di logout dell'App
+      onLogout();
+      
     } catch (error) {
       console.error('Errore durante il logout:', error);
     } finally {

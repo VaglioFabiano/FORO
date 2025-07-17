@@ -15,22 +15,40 @@ function App(): JSX.Element {
   const [showDashboard, setShowDashboard] = useState(false);
 
   useEffect(() => {
-    // Controlla se c'è un token di sessione per mostrare automaticamente la dashboard
-    const sessionToken = localStorage.getItem('sessionToken');
-    if (sessionToken) {
-      setShowDashboard(true);
-      return;
-    }
-
-    // Gestione degli hash per lo scroll
-    const hash = window.location.hash;
-    if (hash) {
-      const id = hash.replace('#', '');
-      const target = document.getElementById(id);
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth' });
+    // Controlla se l'utente è già loggato (nuova logica senza sessioni)
+    const checkLoginStatus = () => {
+      const user = localStorage.getItem('user');
+      const loginTime = localStorage.getItem('loginTime');
+      const rememberMe = localStorage.getItem('rememberMe') === 'true';
+      
+      if (user && loginTime) {
+        const now = new Date().getTime();
+        const loginTimestamp = parseInt(loginTime);
+        const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+        
+        if (now - loginTimestamp < expirationTime) {
+          setShowDashboard(true);
+          return;
+        } else {
+          // Sessione scaduta, pulisci il localStorage
+          localStorage.removeItem('user');
+          localStorage.removeItem('loginTime');
+          localStorage.removeItem('rememberMe');
+        }
       }
-    }
+      
+      // Se non c'è login valido, gestisci gli hash per lo scroll
+      const hash = window.location.hash;
+      if (hash) {
+        const id = hash.replace('#', '');
+        const target = document.getElementById(id);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    };
+
+    checkLoginStatus();
   }, []);
 
   const handleShowLogin = () => {
@@ -53,8 +71,11 @@ function App(): JSX.Element {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('sessionToken');
+    // Pulisci localStorage (già fatto nella navbar, ma per sicurezza)
     localStorage.removeItem('user');
+    localStorage.removeItem('loginTime');
+    localStorage.removeItem('rememberMe');
+    
     setShowDashboard(false);
     setShowLogin(false);
   };
@@ -73,6 +94,7 @@ function App(): JSX.Element {
       <Navbar 
         onLoginClick={handleShowLogin} 
         onBackToHome={handleBackToHome}
+        onLogout={handleLogout}
         isInLoginPage={showLogin}
       />
       
