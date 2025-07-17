@@ -8,7 +8,7 @@ interface NavbarProps {
   isInLoginPage: boolean;
   forceLoginCheck?: boolean;
   isInDashboard?: boolean;
-  onGoToDashboard?: () => void; // ✅ Aggiunto
+  onGoToDashboard?: () => void;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -18,7 +18,7 @@ const Navbar: React.FC<NavbarProps> = ({
   isInLoginPage,
   forceLoginCheck,
   isInDashboard = false,
-  onGoToDashboard // ✅ Aggiunto
+  onGoToDashboard
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -84,36 +84,26 @@ const Navbar: React.FC<NavbarProps> = ({
   const scrollToSection = (sectionId: string) => {
     setIsMobileMenuOpen(false);
 
-    // SE sei in login o dashboard, torna alla home
-    if (isInDashboard || isInLoginPage) {
+    if (isInDashboard) {
       onBackToHome();
-
-      // Ritenta lo scroll dopo un piccolo delay per permettere il render della home
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
-        } else {
-          // Fallback: vai alla home con ancora
-          window.location.href = `/#${sectionId}`;
         }
       }, 300);
-
       return;
     }
 
-    // SE sei già nella home:
     if (window.location.pathname === '/') {
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     } else {
-      // Vai alla home e lascia che l’ancora funzioni
       window.location.href = `/#${sectionId}`;
     }
   };
-
 
   const handleAuthClick = () => {
     if (isLoggedIn) {
@@ -152,6 +142,54 @@ const Navbar: React.FC<NavbarProps> = ({
     return isLoggedIn ? 'Logout' : 'Login';
   };
 
+  // Menu ridotto per utenti loggati
+  const renderLoggedInMenu = () => (
+    <>
+      <button className="nav-link" onClick={navigateToHome}>
+        Home
+      </button>
+      
+      {!isInDashboard && (
+        <button className="nav-link" onClick={onGoToDashboard}>
+          Dashboard
+        </button>
+      )}
+      
+      {isInDashboard && (
+        <button className="nav-link" onClick={onBackToHome}>
+          Torna alla Home
+        </button>
+      )}
+    </>
+  );
+
+  // Menu completo per utenti non loggati
+  const renderFullMenu = () => (
+    <>
+      <button className="nav-link" onClick={() => scrollToSection('header')}>
+        Home
+      </button>
+      <button className="nav-link" onClick={() => scrollToSection('orari')}>
+        Orari
+      </button>
+      <button className="nav-link" onClick={() => scrollToSection('social')}>
+        Social
+      </button>
+      <button className="nav-link" onClick={() => scrollToSection('statuto')}>
+        Statuto
+      </button>
+      <button className="nav-link" onClick={() => scrollToSection('associati')}>
+        Diventa Socio
+      </button>
+      <button className="nav-link" onClick={() => scrollToSection('segnalazioni')}>
+        Segnalazioni
+      </button>
+      <button className="nav-link" onClick={() => scrollToSection('footer')}>
+        Contatti
+      </button>
+    </>
+  );
+
   return (
     <>
       <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
@@ -170,39 +208,8 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="navbar-nav">
-            <button className="nav-link" onClick={() => scrollToSection('header')}>
-              Home
-            </button>
-
-            {isLoggedIn && !isInDashboard && (
-              <button className="nav-link" onClick={onGoToDashboard}>
-                Dashboard
-              </button>
-            )}
-
-            {!isInDashboard && (
-              <>
-                <button className="nav-link" onClick={() => scrollToSection('orari')}>
-                  Orari
-                </button>
-                <button className="nav-link" onClick={() => scrollToSection('social')}>
-                  Social
-                </button>
-                <button className="nav-link" onClick={() => scrollToSection('statuto')}>
-                  Statuto
-                </button>
-                <button className="nav-link" onClick={() => scrollToSection('associati')}>
-                  Diventa Socio
-                </button>
-                <button className="nav-link" onClick={() => scrollToSection('segnalazioni')}>
-                  Segnalazioni
-                </button>
-                <button className="nav-link" onClick={() => scrollToSection('footer')}>
-                  Contatti
-                </button>
-              </>
-            )}
-
+            {isLoggedIn ? renderLoggedInMenu() : renderFullMenu()}
+            
             <button
               className="nav-link login-link"
               onClick={handleAuthClick}
@@ -225,18 +232,27 @@ const Navbar: React.FC<NavbarProps> = ({
 
       <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'active' : ''}`}>
         <div className="mobile-menu-content">
-          <button className="mobile-nav-link" onClick={() => scrollToSection('header')}>
-            Home
-          </button>
-
-          {isLoggedIn && !isInDashboard && (
-            <button className="mobile-nav-link" onClick={onGoToDashboard}>
-              Dashboard
-            </button>
-          )}
-
-          {!isInDashboard && (
+          {isLoggedIn ? (
             <>
+              <button className="mobile-nav-link" onClick={navigateToHome}>
+                Home
+              </button>
+              {!isInDashboard && (
+                <button className="mobile-nav-link" onClick={onGoToDashboard}>
+                  Dashboard
+                </button>
+              )}
+              {isInDashboard && (
+                <button className="mobile-nav-link" onClick={onBackToHome}>
+                  Torna alla Home
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button className="mobile-nav-link" onClick={() => scrollToSection('header')}>
+                Home
+              </button>
               <button className="mobile-nav-link" onClick={() => scrollToSection('orari')}>
                 Orari
               </button>
