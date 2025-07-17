@@ -56,7 +56,7 @@ const Login: React.FC = () => {
 
         // Reindirizza alla dashboard
         setTimeout(() => {
-          window.location.href = '../dashboard/homedash.tsx';
+          window.location.href = '/dashboard/homedash';
         }, 1000);
 
       } else {
