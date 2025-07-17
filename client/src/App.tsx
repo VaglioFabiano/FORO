@@ -1,5 +1,4 @@
 import { useState, useEffect} from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.tsx';
 import Header from './components/Header.tsx';
 import OrariSection from './components/OrariSection.tsx';
@@ -10,7 +9,6 @@ import Login from './components/Login.tsx';
 import SegnalazioniSection from './components/Segnalazioni.tsx';
 import AssociatiSection from './components/Associati.tsx';
 import HomeDash from './dashboard/homedash.tsx';
-
 
 function App(): JSX.Element {
   const [showLogin, setShowLogin] = useState(false);
@@ -111,44 +109,34 @@ function App(): JSX.Element {
     );
   }
 
-  return (
-    <Router>
-      <div className="min-h-screen">
-        <Navbar 
-          onLoginClick={handleShowLogin} 
-          onBackToHome={handleBackToHome}
-          onLogout={handleLogout}
-          isInLoginPage={showLogin}
-          forceLoginCheck={forceNavbarUpdate}
-          isInDashboard={showDashboard}
-          onGoToDashboard={() => setShowDashboard(true)}
-        />
-        
-        <Routes>
-          <Route path="/dashboard" element={
-            showDashboard ? <HomeDash onLogout={handleLogout} /> : null
-          } />
-          
-          <Route path="/login" element={
-            showLogin ? <Login onLoginSuccess={handleLoginSuccess} /> : null
-          } />
-          
-          <Route path="/" element={
-            !showLogin && !showDashboard ? (
-              <>
-                <Header />
-                <OrariSection />
-                <SocialSection />
-                <StatutoSection />
-                <AssociatiSection />
-                <SegnalazioniSection />
-                <Footer />
-              </>
-            ) : null
-          } />
-        </Routes>
-      </div>
-    </Router>
+   return (
+    <div className="min-h-screen">
+      <Navbar 
+        onLoginClick={handleShowLogin} 
+        onBackToHome={handleBackToHome}
+        onLogout={handleLogout}
+        isInLoginPage={showLogin}
+        forceLoginCheck={forceNavbarUpdate}
+        isInDashboard={showDashboard}
+        onGoToDashboard={() => setShowDashboard(true)}
+      />
+      
+      {showDashboard ? (
+        <HomeDash onLogout={handleLogout} />
+      ) : showLogin ? (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <>
+          <Header />
+          <OrariSection />
+          <SocialSection />
+          <StatutoSection />
+          <AssociatiSection />
+          <SegnalazioniSection />
+          <Footer />
+        </>
+      )}
+    </div>
   );
 }
 
