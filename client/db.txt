@@ -32,10 +32,3 @@ CREATE TABLE IF NOT EXISTS users (
         last_login DATETIME
       );
 
-CREATE TABLE IF NOT EXISTS sessions (
-        id TEXT PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        expires_at DATETIME NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      );

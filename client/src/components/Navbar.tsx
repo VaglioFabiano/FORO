@@ -8,6 +8,8 @@ interface NavbarProps {
   isInLoginPage: boolean;
   // AGGIUNTO: Prop per forzare l'aggiornamento dello stato
   forceLoginCheck?: boolean;
+  // AGGIUNTO: Prop per sapere se siamo nella dashboard
+  isInDashboard?: boolean;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ 
@@ -15,7 +17,8 @@ const Navbar: React.FC<NavbarProps> = ({
   onBackToHome, 
   onLogout, 
   isInLoginPage,
-  forceLoginCheck 
+  forceLoginCheck,
+  isInDashboard = false
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -184,42 +187,49 @@ const Navbar: React.FC<NavbarProps> = ({
             >
               Home
             </button>
-            <button 
-              className="nav-link"
-              onClick={() => scrollToSection('orari')}
-            >
-              Orari
-            </button>
-            <button 
-              className="nav-link"
-              onClick={() => scrollToSection('social')}
-            >
-              Social
-            </button>
-            <button 
-              className="nav-link"
-              onClick={() => scrollToSection('statuto')}
-            >
-              Statuto
-            </button>
-            <button 
-              className="nav-link"
-              onClick={() => scrollToSection('associati')}
-            >
-              Diventa Socio
-            </button>
-            <button 
-              className="nav-link"
-              onClick={() => scrollToSection('segnalazioni')}
-            >
-              Segnalazioni
-            </button>
-            <button 
-              className="nav-link"
-              onClick={() => scrollToSection('footer')}
-            >
-              Contatti
-            </button>
+            
+            {/* Mostra i link di navigazione solo se NON siamo nella dashboard */}
+            {!isInDashboard && (
+              <>
+                <button 
+                  className="nav-link"
+                  onClick={() => scrollToSection('orari')}
+                >
+                  Orari
+                </button>
+                <button 
+                  className="nav-link"
+                  onClick={() => scrollToSection('social')}
+                >
+                  Social
+                </button>
+                <button 
+                  className="nav-link"
+                  onClick={() => scrollToSection('statuto')}
+                >
+                  Statuto
+                </button>
+                <button 
+                  className="nav-link"
+                  onClick={() => scrollToSection('associati')}
+                >
+                  Diventa Socio
+                </button>
+                <button 
+                  className="nav-link"
+                  onClick={() => scrollToSection('segnalazioni')}
+                >
+                  Segnalazioni
+                </button>
+                <button 
+                  className="nav-link"
+                  onClick={() => scrollToSection('footer')}
+                >
+                  Contatti
+                </button>
+              </>
+            )}
+            
            <button 
               className="nav-link login-link"
               onClick={handleAuthClick}
@@ -250,42 +260,49 @@ const Navbar: React.FC<NavbarProps> = ({
           >
             Home
           </button>
-          <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('orari')}
-          >
-            Orari
-          </button>
-          <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('social')}
-          >
-            Social
-          </button>
-          <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('statuto')}
-          >
-            Statuto
-          </button>
-          <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('associati')}
-          >
-            Diventa Socio
-          </button>
-          <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('segnalazioni')}
-          >
-            Segnalazioni
-          </button>
-          <button 
-            className="mobile-nav-link"
-            onClick={() => scrollToSection('footer')}
-          >
-            Contatti
-          </button>
+          
+          {/* Mostra i link di navigazione solo se NON siamo nella dashboard */}
+          {!isInDashboard && (
+            <>
+              <button 
+                className="mobile-nav-link"
+                onClick={() => scrollToSection('orari')}
+              >
+                Orari
+              </button>
+              <button 
+                className="mobile-nav-link"
+                onClick={() => scrollToSection('social')}
+              >
+                Social
+              </button>
+              <button 
+                className="mobile-nav-link"
+                onClick={() => scrollToSection('statuto')}
+              >
+                Statuto
+              </button>
+              <button 
+                className="mobile-nav-link"
+                onClick={() => scrollToSection('associati')}
+              >
+                Diventa Socio
+              </button>
+              <button 
+                className="mobile-nav-link"
+                onClick={() => scrollToSection('segnalazioni')}
+              >
+                Segnalazioni
+              </button>
+              <button 
+                className="mobile-nav-link"
+                onClick={() => scrollToSection('footer')}
+              >
+                Contatti
+              </button>
+            </>
+          )}
+          
           <button 
             className="mobile-nav-link login-link"
             onClick={handleAuthClick}

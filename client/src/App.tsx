@@ -97,6 +97,7 @@ function App(): JSX.Element {
           onLogout={handleLogout}
           isInLoginPage={showLogin}
           forceLoginCheck={forceNavbarUpdate}
+          isInDashboard={true}
         />
         <HomeDash onLogout={handleLogout} />
       </div>
@@ -111,6 +112,7 @@ function App(): JSX.Element {
         onLogout={handleLogout}
         isInLoginPage={showLogin}
         forceLoginCheck={forceNavbarUpdate}
+        isInDashboard={false}
       />
       
       {showLogin ? (
