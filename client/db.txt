@@ -16,6 +16,7 @@ CREATE TABLE fasce_orarie (
     giorno TEXT NOT NULL,
     ora_inizio TIME NOT NULL,
     ora_fine TIME NOT NULL,
+    note TEXT,
     FOREIGN KEY (giorno) REFERENCES giorni_settimana(giorno)
 );
 

@@ -6,13 +6,14 @@ interface FasciaOraria {
   giorno: string;
   ora_inizio: string;
   ora_fine: string;
+  note?: string; // Aggiunto campo note opzionale
 }
 
 interface OrarioGiorno {
   giorno: string;
   fasce: FasciaOraria[];
   icona: string;
-  nota?: string;
+  note?: string;
 }
 
 interface ApiResponse {
@@ -61,28 +62,19 @@ const OrariSection: React.FC = () => {
       giorno: giorno.charAt(0).toUpperCase() + giorno.slice(1),
       fasce: gruppi[giorno],
       icona: iconeGiorni[giorno] || '📅',
-      nota: determineNota(gruppi[giorno])
+      note: determineNota(gruppi[giorno])
     }));
   };
 
-  // Funzione per determinare la nota in base agli orari
+  // Funzione per determinare la nota in base alle fasce orarie
   const determineNota = (fasce: FasciaOraria[]): string | undefined => {
     if (fasce.length === 0) {
       return undefined; // Nessuna nota per i giorni chiusi
     }
     
-    // Controlla se c'è una chiusura anticipata (prima delle 19:00)
-    const hasEarlyClose = fasce.some(fascia => {
-      const oraFine = fascia.ora_fine.split(':');
-      const ore = parseInt(oraFine[0]);
-      return ore < 19;
-    });
-    
-    if (hasEarlyClose) {
-      return 'Chiusura anticipata';
-    }
-    
-    return undefined;
+    // Cerca la prima fascia che ha una nota e la restituisce
+    const fasciaConNota = fasce.find(fascia => fascia.note && fascia.note.trim() !== '');
+    return fasciaConNota?.note || undefined;
   };
 
   // Carica gli orari dal database
@@ -112,10 +104,8 @@ const OrariSection: React.FC = () => {
     fetchOrari();
   }, []);
 
- 
-
-  // Funzione per ottenere il periodo corrente (puoi personalizzarla)
-const getCurrentWeek = (): string => {
+  // Funzione per ottenere il periodo corrente
+  const getCurrentWeek = (): string => {
     const now = new Date();
     const currentDay = now.getDay(); // 0 = domenica, 1 = lunedì, ..., 6 = sabato
     
@@ -141,7 +131,8 @@ const getCurrentWeek = (): string => {
         const sundayMonthName = sunday.toLocaleDateString('it-IT', { month: 'long' });
         return `${monday.getDate()} ${monthName} - ${sunday.getDate()} ${sundayMonthName}`;
     }
-};
+  };
+
   return (
     <section className="orari-full-width">
       <div className="orari-container">
@@ -170,7 +161,7 @@ const getCurrentWeek = (): string => {
                       ))}
                     </>
                   )}
-                  {item.nota && <span className="nota"> ({item.nota})</span>}
+                  {item.note && <span className="nota"> ({item.note})</span>}
                 </div>
               </div>
             ))}
