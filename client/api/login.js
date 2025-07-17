@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     const user = userResult.rows[0];
 
     // Verifica la password
-    const inputHash = hashPassword(password, user.password_hash);
+    const inputHash = hashPassword(password, user.salt);
     if (inputHash !== user.password_hash) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
