@@ -6,9 +6,17 @@ interface NavbarProps {
   onBackToHome: () => void;
   onLogout: () => void;
   isInLoginPage: boolean;
+  // AGGIUNTO: Prop per forzare l'aggiornamento dello stato
+  forceLoginCheck?: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, onLogout, isInLoginPage }) => {
+const Navbar: React.FC<NavbarProps> = ({ 
+  onLoginClick, 
+  onBackToHome, 
+  onLogout, 
+  isInLoginPage,
+  forceLoginCheck 
+}) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,32 +32,33 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, onLogout, i
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    // Controlla se l'utente è loggato (nuova logica senza sessioni)
-    const checkLoginStatus = () => {
-      const user = localStorage.getItem('user');
-      const loginTime = localStorage.getItem('loginTime');
-      const rememberMe = localStorage.getItem('rememberMe') === 'true';
+  // MODIFICATO: Estratto la logica di controllo in una funzione separata
+  const checkLoginStatus = () => {
+    const user = localStorage.getItem('user');
+    const loginTime = localStorage.getItem('loginTime');
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    
+    if (user && loginTime) {
+      const now = new Date().getTime();
+      const loginTimestamp = parseInt(loginTime);
+      const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
       
-      if (user && loginTime) {
-        const now = new Date().getTime();
-        const loginTimestamp = parseInt(loginTime);
-        const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-        
-        if (now - loginTimestamp < expirationTime) {
-          setIsLoggedIn(true);
-        } else {
-          // Sessione scaduta
-          localStorage.removeItem('user');
-          localStorage.removeItem('loginTime');
-          localStorage.removeItem('rememberMe');
-          setIsLoggedIn(false);
-        }
+      if (now - loginTimestamp < expirationTime) {
+        setIsLoggedIn(true);
       } else {
+        // Sessione scaduta
+        localStorage.removeItem('user');
+        localStorage.removeItem('loginTime');
+        localStorage.removeItem('rememberMe');
+        localStorage.removeItem('sessionToken'); // AGGIUNTO
         setIsLoggedIn(false);
       }
-    };
+    } else {
+      setIsLoggedIn(false);
+    }
+  };
 
+  useEffect(() => {
     checkLoginStatus();
     
     // Controlla lo stato di login periodicamente
@@ -58,6 +67,13 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, onLogout, i
     return () => clearInterval(interval);
   }, []);
 
+  // AGGIUNTO: Effetto per forzare il controllo quando necessario
+  useEffect(() => {
+    if (forceLoginCheck) {
+      checkLoginStatus();
+    }
+  }, [forceLoginCheck]);
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -65,6 +81,7 @@ const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onBackToHome, onLogout, i
       localStorage.removeItem('user');
       localStorage.removeItem('loginTime');
       localStorage.removeItem('rememberMe');
+      localStorage.removeItem('sessionToken'); // AGGIUNTO
       setIsLoggedIn(false);
       
       // Chiama la funzione di logout dell'App

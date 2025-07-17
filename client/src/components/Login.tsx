@@ -76,6 +76,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('loginTime', new Date().getTime().toString());
         localStorage.setItem('rememberMe', rememberMe.toString());
+        
+        // AGGIUNTO: Crea anche un sessionToken per compatibilità con HomeDash
+        localStorage.setItem('sessionToken', `token_${data.user?.id}_${new Date().getTime()}`);
 
         // Reindirizza alla dashboard
         setTimeout(() => {

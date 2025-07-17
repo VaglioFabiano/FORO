@@ -13,6 +13,7 @@ import HomeDash from './dashboard/homedash.tsx';
 function App(): JSX.Element {
   const [showLogin, setShowLogin] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
 
   useEffect(() => {
     // Controlla se l'utente è già loggato (nuova logica senza sessioni)
@@ -34,6 +35,7 @@ function App(): JSX.Element {
           localStorage.removeItem('user');
           localStorage.removeItem('loginTime');
           localStorage.removeItem('rememberMe');
+          localStorage.removeItem('sessionToken');
         }
       }
       
@@ -68,6 +70,8 @@ function App(): JSX.Element {
   const handleLoginSuccess = () => {
     setShowLogin(false);
     setShowDashboard(true);
+    // Forza l'aggiornamento della navbar
+    setForceNavbarUpdate(prev => !prev);
   };
 
   const handleLogout = () => {
@@ -75,15 +79,25 @@ function App(): JSX.Element {
     localStorage.removeItem('user');
     localStorage.removeItem('loginTime');
     localStorage.removeItem('rememberMe');
+    localStorage.removeItem('sessionToken');
     
     setShowDashboard(false);
     setShowLogin(false);
+    // Forza l'aggiornamento della navbar
+    setForceNavbarUpdate(prev => !prev);
   };
 
   // Se l'utente è autenticato, mostra la dashboard
   if (showDashboard) {
     return (
       <div className="min-h-screen">
+        <Navbar 
+          onLoginClick={handleShowLogin} 
+          onBackToHome={handleBackToHome}
+          onLogout={handleLogout}
+          isInLoginPage={showLogin}
+          forceLoginCheck={forceNavbarUpdate}
+        />
         <HomeDash onLogout={handleLogout} />
       </div>
     );
@@ -96,6 +110,7 @@ function App(): JSX.Element {
         onBackToHome={handleBackToHome}
         onLogout={handleLogout}
         isInLoginPage={showLogin}
+        forceLoginCheck={forceNavbarUpdate}
       />
       
       {showLogin ? (
