@@ -60,22 +60,13 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   return (
     <div className="min-h-screen pt-20 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Benvenuto nell'area riservata</p>
-        </div>
-        
+
         <div className="grid gap-6">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Gestione Utenti</h2>
             <CreaUtenti />
           </div>
           
-          {/* Aggiungi qui altre sezioni della dashboard */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Altre Funzionalità</h2>
-            <p className="text-gray-600">Altre funzionalità della dashboard verranno aggiunte qui...</p>
-          </div>
+          
         </div>
       </div>
     </div>

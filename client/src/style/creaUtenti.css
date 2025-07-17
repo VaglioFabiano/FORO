@@ -16,7 +16,7 @@
   border-radius: 20px;
   padding: 40px;
   width: 100%;
-  max-width: 450px;
+  max-width: 800px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
@@ -83,6 +83,30 @@
   display: flex;
   flex-direction: column;
   gap: 25px;
+}
+
+/* Desktop layout - grid a due colonne */
+@media (min-width: 769px) {
+  .crea-utenti-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px 40px;
+  }
+  
+  /* Il bottone occupa entrambe le colonne */
+  .submit-button {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 300px;
+    margin-top: 20px;
+  }
+  
+  /* Anche il select livello può occupare entrambe le colonne se preferisci */
+  .form-group:nth-child(4) {
+    grid-column: 1 / -1;
+    max-width: 300px;
+    justify-self: center;
+  }
 }
 
 .form-group {
@@ -237,6 +261,20 @@
 }
 
 /* Responsive design */
+@media (min-width: 1024px) {
+  .crea-utenti-card {
+    padding: 50px 60px;
+  }
+  
+  .card-header h2 {
+    font-size: 32px;
+  }
+  
+  .header-icon {
+    font-size: 36px;
+  }
+}
+
 @media (max-width: 768px) {
   .crea-utenti-container {
     padding: 15px;
@@ -244,6 +282,7 @@
   
   .crea-utenti-card {
     padding: 30px 25px;
+    max-width: 450px;
   }
   
   .card-header h2 {
