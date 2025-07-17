@@ -33,22 +33,40 @@ const CreaUtenti: React.FC = () => {
 
   useEffect(() => {
     const checkPermissions = () => {
+      // Controllo semplificato basato sui dati nel localStorage
       const userData = localStorage.getItem('user');
-      if (userData) {
+      const loginTime = localStorage.getItem('loginTime');
+      const rememberMe = localStorage.getItem('rememberMe') === 'true';
+      
+      if (userData && loginTime) {
         try {
-          const user: User = JSON.parse(userData);
-          setCanCreateUsers(user.level < 2);
+          const now = new Date().getTime();
+          const loginTimestamp = parseInt(loginTime);
+          const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+          
+          if (now - loginTimestamp < expirationTime) {
+            const user: User = JSON.parse(userData);
+            setCanCreateUsers(user.level < 2);
+          } else {
+            // Sessione scaduta
+            setCanCreateUsers(false);
+          }
         } catch (error) {
           console.error('Error parsing user data:', error);
+          setCanCreateUsers(false);
         }
+      } else {
+        setCanCreateUsers(false);
       }
     };
 
     checkPermissions();
-    window.addEventListener('storage', checkPermissions);
+    
+    // Rimuovi il listener per storage events dato che ora gestiamo tutto localmente
+    const interval = setInterval(checkPermissions, 60000); // Controlla ogni minuto
     
     return () => {
-      window.removeEventListener('storage', checkPermissions);
+      clearInterval(interval);
     };
   }, []);
 
@@ -88,16 +106,27 @@ const CreaUtenti: React.FC = () => {
     setMessage(null);
 
     try {
-      const sessionToken = localStorage.getItem('sessionToken');
-      if (!sessionToken) {
+      // Crea un sessionToken temporaneo basato sui dati utente
+      const userData = localStorage.getItem('user');
+      const loginTime = localStorage.getItem('loginTime');
+      
+      if (!userData || !loginTime) {
         throw new Error('Sessione non valida');
       }
+
+      // Genera un token temporaneo per la richiesta
+      const user = JSON.parse(userData);
+      const tempToken = btoa(JSON.stringify({
+        userId: user.id,
+        tel: user.tel,
+        timestamp: loginTime
+      }));
 
       const response = await fetch('/api/create_user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`
+          'Authorization': `Bearer ${tempToken}`
         },
         body: JSON.stringify(newUser)
       });
@@ -206,7 +235,7 @@ const CreaUtenti: React.FC = () => {
             <option value={0}>Sviluppatorə</option>
             <option value={1}>Direttivə</option>
             <option value={2}>Sociə</option>
-            <option value={2}>Volontariə</option>
+            <option value={3}>Volontariə</option>
           </select>
         </div>
 

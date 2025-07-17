@@ -6,9 +6,7 @@ interface NavbarProps {
   onBackToHome: () => void;
   onLogout: () => void;
   isInLoginPage: boolean;
-  // AGGIUNTO: Prop per forzare l'aggiornamento dello stato
   forceLoginCheck?: boolean;
-  // AGGIUNTO: Prop per sapere se siamo nella dashboard
   isInDashboard?: boolean;
 }
 
@@ -28,14 +26,13 @@ const Navbar: React.FC<NavbarProps> = ({
   useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
-      const threshold = window.innerHeight * 0.1; // 10% of viewport height
+      const threshold = window.innerHeight * 0.1;
       setIsScrolled(scrollTop > threshold);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // MODIFICATO: Estratto la logica di controllo in una funzione separata
   const checkLoginStatus = () => {
     const user = localStorage.getItem('user');
     const loginTime = localStorage.getItem('loginTime');
@@ -49,11 +46,10 @@ const Navbar: React.FC<NavbarProps> = ({
       if (now - loginTimestamp < expirationTime) {
         setIsLoggedIn(true);
       } else {
-        // Sessione scaduta
         localStorage.removeItem('user');
         localStorage.removeItem('loginTime');
         localStorage.removeItem('rememberMe');
-        localStorage.removeItem('sessionToken'); // AGGIUNTO
+        localStorage.removeItem('sessionToken');
         setIsLoggedIn(false);
       }
     } else {
@@ -63,14 +59,10 @@ const Navbar: React.FC<NavbarProps> = ({
 
   useEffect(() => {
     checkLoginStatus();
-    
-    // Controlla lo stato di login periodicamente
-    const interval = setInterval(checkLoginStatus, 60000); // ogni minuto
-    
+    const interval = setInterval(checkLoginStatus, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // AGGIUNTO: Effetto per forzare il controllo quando necessario
   useEffect(() => {
     if (forceLoginCheck) {
       checkLoginStatus();
@@ -80,16 +72,12 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // Rimuovi i dati di sessione dal localStorage
       localStorage.removeItem('user');
       localStorage.removeItem('loginTime');
       localStorage.removeItem('rememberMe');
-      localStorage.removeItem('sessionToken'); // AGGIUNTO
+      localStorage.removeItem('sessionToken');
       setIsLoggedIn(false);
-      
-      // Chiama la funzione di logout dell'App
       onLogout();
-      
     } catch (error) {
       console.error('Errore durante il logout:', error);
     } finally {
@@ -98,13 +86,11 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const scrollToSection = (sectionId: string) => {
-    // Chiudi sempre il menu mobile
     setIsMobileMenuOpen(false);
     
-    // Se siamo nella pagina di login, torna prima alla home
-    if (isInLoginPage) {
+    // Se siamo nella dashboard o nella pagina di login, torna alla home
+    if (isInDashboard || isInLoginPage) {
       onBackToHome();
-      // Aspetta che il componente si re-renderizzi prima di fare lo scroll
       setTimeout(() => {
         const element = document.getElementById(sectionId);
         if (element) {
@@ -134,7 +120,8 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const navigateToHome = () => { 
-    if (isInLoginPage) {
+    // Se siamo nella dashboard o nella pagina di login, torna alla home
+    if (isInDashboard || isInLoginPage) {
       onBackToHome();
     } else {
       scrollToSection('header');
@@ -165,7 +152,6 @@ const Navbar: React.FC<NavbarProps> = ({
     <>
       <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
         <div className="navbar-container">
-          {/* Logo */}
           <div className="navbar-logo" onClick={navigateToHome} style={{ cursor: 'pointer' }}>
             <img 
               src="/assets/logo.png"
@@ -179,7 +165,6 @@ const Navbar: React.FC<NavbarProps> = ({
             <span className="navbar-brand">Aula Studio</span>
           </div>
 
-          {/* Navigation Links */}
           <div className="navbar-nav">
             <button 
               className="nav-link"
@@ -188,7 +173,6 @@ const Navbar: React.FC<NavbarProps> = ({
               Home
             </button>
             
-            {/* Mostra i link di navigazione solo se NON siamo nella dashboard */}
             {!isInDashboard && (
               <>
                 <button 
@@ -239,7 +223,6 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
           <div 
             className={`mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`}
             onClick={toggleMobileMenu}
@@ -251,7 +234,6 @@ const Navbar: React.FC<NavbarProps> = ({
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       <div className={`mobile-menu-overlay ${isMobileMenuOpen ? 'active' : ''}`}>
         <div className="mobile-menu-content">
           <button 
@@ -261,7 +243,6 @@ const Navbar: React.FC<NavbarProps> = ({
             Home
           </button>
           
-          {/* Mostra i link di navigazione solo se NON siamo nella dashboard */}
           {!isInDashboard && (
             <>
               <button 

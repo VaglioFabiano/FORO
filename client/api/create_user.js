@@ -19,19 +19,31 @@ function hashPassword(password, salt) {
   return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
 }
 
-// Verifica sessione
-async function verifySession(sessionToken) {
+// Nuova funzione per verificare l'utente basata sui dati del token temporaneo
+async function verifyUser(tempToken) {
   try {
+    // Decodifica il token temporaneo
+    const decoded = JSON.parse(atob(tempToken));
+    const { userId, tel, timestamp } = decoded;
+    
+    // Verifica che il timestamp non sia troppo vecchio (es. massimo 1 ora)
+    const now = new Date().getTime();
+    const tokenAge = now - parseInt(timestamp);
+    const maxAge = 60 * 60 * 1000; // 1 ora
+    
+    if (tokenAge > maxAge) {
+      return null;
+    }
+    
+    // Verifica che l'utente esista e abbia i permessi
     const result = await client.execute({
-      sql: `SELECT s.user_id, u.level, u.name, u.surname 
-            FROM sessions s 
-            JOIN users u ON s.user_id = u.id 
-            WHERE s.id = ? AND s.expires_at > datetime('now')`,
-      args: [sessionToken]
+      sql: `SELECT id, level, name, surname, tel FROM users WHERE id = ? AND tel = ?`,
+      args: [userId, tel]
     });
+    
     return result.rows[0] || null;
   } catch (error) {
-    console.error('Session verification error:', error);
+    console.error('Token verification error:', error);
     return null;
   }
 }
@@ -55,18 +67,18 @@ export default async function handler(req, res) {
     await client.execute("SELECT 1");
     
     const { name, surname, tel, level, password } = req.body;
-    const sessionToken = req.headers.authorization?.replace('Bearer ', '');
+    const tempToken = req.headers.authorization?.replace('Bearer ', '');
 
-    if (!sessionToken) {
-      return res.status(401).json({ error: 'Token di sessione richiesto' });
+    if (!tempToken) {
+      return res.status(401).json({ error: 'Token di autenticazione richiesto' });
     }
 
-    const session = await verifySession(sessionToken);
-    if (!session) {
-      return res.status(401).json({ error: 'Sessione non valida o scaduta' });
+    const user = await verifyUser(tempToken);
+    if (!user) {
+      return res.status(401).json({ error: 'Token non valido o scaduto' });
     }
 
-    if (session.level >= 2) {
+    if (user.level >= 2) {
       return res.status(403).json({ error: 'Permessi insufficienti' });
     }
 
@@ -76,7 +88,7 @@ export default async function handler(req, res) {
     }
 
     const levelNum = parseInt(level);
-    if (isNaN(levelNum) || levelNum < 0 || levelNum > 2) {
+    if (isNaN(levelNum) || levelNum < 0 || levelNum > 3) {
       return res.status(400).json({ error: 'Livello non valido' });
     }
 
@@ -95,7 +107,7 @@ export default async function handler(req, res) {
     const passwordHash = hashPassword(password, salt);
 
     const result = await client.execute({
-      sql: `INSERT INTO users (name, surname, tel, level, password_hash, salt) 
+      sql: `INSERT INTO users (name, surname, tel, level, password_hash, salt)
             VALUES (?, ?, ?, ?, ?, ?)`,
       args: [
         name.trim(),
