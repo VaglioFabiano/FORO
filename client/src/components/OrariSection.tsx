@@ -15,14 +15,6 @@ interface OrarioGiorno {
   nota?: string;
 }
 
-interface User {
-  id: number;
-  name: string;
-  surname: string;
-  tel: string;
-  level: number;
-}
-
 interface ApiResponse {
   success: boolean;
   data: any[];
@@ -31,7 +23,6 @@ interface ApiResponse {
 }
 
 const OrariSection: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
   const [orari, setOrari] = useState<OrarioGiorno[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,35 +30,47 @@ const OrariSection: React.FC = () => {
   // Mappa delle icone per ogni giorno
   const iconeGiorni: { [key: string]: string } = {
     'lunedì': '📚',
-    'martedì': '🌙',
-    'mercoledì': '⚠️',
-    'giovedì': '🌙',
+    'martedì': '📚',
+    'mercoledì': '📚',
+    'giovedì': '📚',
     'venerdì': '📚',
-    'sabato': '🎯',
+    'sabato': '🏖️',
     'domenica': '🏖️'
   };
+
+  // Lista completa dei giorni della settimana
+  const tuttiGiorni = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
   // Funzione per raggruppare le fasce orarie per giorno
   const raggruppaOrariPerGiorno = (fasceOrarie: FasciaOraria[]): OrarioGiorno[] => {
     const gruppi: { [key: string]: FasciaOraria[] } = {};
     
+    // Inizializza tutti i giorni con array vuoto
+    tuttiGiorni.forEach(giorno => {
+      gruppi[giorno] = [];
+    });
+    
+    // Raggruppa le fasce orarie per giorno
     fasceOrarie.forEach(fascia => {
-      if (!gruppi[fascia.giorno]) {
-        gruppi[fascia.giorno] = [];
+      if (gruppi[fascia.giorno]) {
+        gruppi[fascia.giorno].push(fascia);
       }
-      gruppi[fascia.giorno].push(fascia);
     });
 
-    return Object.entries(gruppi).map(([giorno, fasce]) => ({
+    return tuttiGiorni.map(giorno => ({
       giorno: giorno.charAt(0).toUpperCase() + giorno.slice(1),
-      fasce,
+      fasce: gruppi[giorno],
       icona: iconeGiorni[giorno] || '📅',
-      nota: determineNota(fasce)
+      nota: determineNota(gruppi[giorno])
     }));
   };
 
   // Funzione per determinare la nota in base agli orari
   const determineNota = (fasce: FasciaOraria[]): string | undefined => {
+    if (fasce.length === 0) {
+      return undefined; // Nessuna nota per i giorni chiusi
+    }
+    
     if (fasce.length > 1) {
       return 'Apertura serale';
     }
@@ -84,13 +87,6 @@ const OrariSection: React.FC = () => {
     }
     
     return undefined;
-  };
-
-  // Funzione per formattare gli orari di un giorno
-  const formatOrari = (fasce: FasciaOraria[]): string => {
-    return fasce.map(fascia => 
-      `${fascia.ora_inizio.slice(0, 5)} - ${fascia.ora_fine.slice(0, 5)}`
-    ).join(' + ');
   };
 
   // Carica gli orari dal database
@@ -112,42 +108,15 @@ const OrariSection: React.FC = () => {
       } catch (err) {
         setError('Errore di connessione nel caricamento degli orari');
         console.error('Errore nel fetch degli orari:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchOrari();
   }, []);
 
-  // Carica gli utenti (mantenuto dal codice originale)
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch('/api/users');
-        const data: ApiResponse = await response.json();
-        
-        if (data.success) {
-          setUsers(data.data);
-        } else {
-          setError(data.message || 'Errore nel caricamento degli utenti');
-        }
-      } catch (err) {
-        setError('Errore di connessione');
-        console.error('Errore nel fetch degli utenti:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, []);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
+ 
 
   // Funzione per ottenere il periodo corrente (puoi personalizzarla)
   const getCurrentPeriod = (): string => {
@@ -174,7 +143,19 @@ const OrariSection: React.FC = () => {
               <div key={index} className="orario-item">
                 <span className="icona">{item.icona}</span>
                 <div className="testo">
-                  <strong>{item.giorno}:</strong> {formatOrari(item.fasce)}
+                  <strong>{item.giorno}:</strong> 
+                  {item.fasce.length === 0 ? (
+                    <span className="chiuso"> Chiuso</span>
+                  ) : (
+                    <>
+                      {item.fasce.map((fascia, fasciaIndex) => (
+                        <span key={fasciaIndex} className={fasciaIndex === 0 ? "orario-principale" : "orario-serale"}>
+                          {fasciaIndex > 0 && " + "}
+                          {fascia.ora_inizio.slice(0, 5)} - {fascia.ora_fine.slice(0, 5)}
+                        </span>
+                      ))}
+                    </>
+                  )}
                   {item.nota && <span className="nota"> ({item.nota})</span>}
                 </div>
               </div>
@@ -186,31 +167,6 @@ const OrariSection: React.FC = () => {
           Disponibili le pagode per studiare all'aperto :) 
           <br />
           Rimanete collegatə per tutti gli aggiornamenti 😘
-        </div>
-        
-        <div className="users">
-          <h3>Lista degli Utenti ({users.length})</h3>
-          {loading ? (
-            <div className="loading">Caricamento utenti...</div>
-          ) : error ? (
-            <div className="error">❌ {error}</div>
-          ) : users.length === 0 ? (
-            <div className="no-users">Nessun utente trovato</div>
-          ) : (
-            <div className="users-list">
-              {users.map((user) => (
-                <div key={user.id} className="user-item">
-                  <div className="user-info">
-                    <strong>{user.name}</strong>
-                    <span className="user-email">{user.tel}</span>
-                    <span className="user-date">
-                      Registrato: {formatDate(user.name)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </section>
