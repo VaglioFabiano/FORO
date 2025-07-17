@@ -247,7 +247,6 @@ const CreaUtenti: React.FC = () => {
               onChange={handleInputChange}
               required
             >
-              <option value={0}>Sviluppatorə</option>
               <option value={1}>Direttivo</option>
               <option value={2}>Sociə</option>
               <option value={3}>Volontariə</option>
