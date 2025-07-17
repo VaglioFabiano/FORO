@@ -93,7 +93,7 @@ const CreaUtenti: React.FC = () => {
         throw new Error('Sessione non valida');
       }
 
-      const response = await fetch('/api/create-user', {
+      const response = await fetch('/api/create_user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
