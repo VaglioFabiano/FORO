@@ -19,7 +19,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComponent, setSelectedComponent] = useState<React.ComponentType | null>(null);
-  const [selectedTitle, setSelectedTitle] = useState<string>('');
 
   // Definisci gli elementi della dashboard
   const dashboardItems: DashboardItem[] = [
@@ -106,12 +105,10 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   const handleCardClick = (item: DashboardItem) => {
     setSelectedComponent(() => item.component);
-    setSelectedTitle(item.title);
   };
 
   const handleBackToDashboard = () => {
     setSelectedComponent(null);
-    setSelectedTitle('');
   };
 
   if (isLoading) {
@@ -136,7 +133,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
           <button className="back-button" onClick={handleBackToDashboard}>
             ← Torna alla Dashboard
           </button>
-          <h1 className="dashboard-title">{selectedTitle}</h1>
         </div>
         <div className="component-container">
           <SelectedComponent />
@@ -148,12 +144,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   // Mostra la dashboard principale
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1 className="dashboard-title">Dashboard</h1>
-        <button className="logout-button" onClick={onLogout}>
-          Logout
-        </button>
-      </div>
+      
       
       <div className="dashboard-grid">
         {dashboardItems.map((item) => (
