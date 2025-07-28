@@ -29,7 +29,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Gestisci e crea nuovi utenti',
       icon: '👥',
       component: CreaUtenti,
-      minLevel: 0 // Solo livello 0 (Direttivo)
+      minLevel: 1 
     },
     {
       id: 'modifica-orari',
@@ -37,7 +37,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Gestisci gli orari di lavoro',
       icon: '🕒',
       component: () => <div>Componente Modifica Orari</div>,
-      minLevel: 1 // Livelli 0 e 1
+      minLevel: 2 // Livelli 0 e 1
     },
     {
       id: 'report',
@@ -45,7 +45,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Visualizza report e statistiche',
       icon: '📊',
       component: () => <div>Componente Report</div>,
-      minLevel: 1 // Livelli 0 e 1
+      minLevel: 3 // Livelli 0 e 1
     },
     {
       id: 'impostazioni',
@@ -53,7 +53,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Configura le impostazioni',
       icon: '⚙️',
       component: () => <div>Componente Impostazioni</div>,
-      minLevel: 0 // Solo livello 0 (Direttivo)
+      minLevel: 0 // Solo livello 0 
     },
     {
       id: 'calendario',
@@ -61,7 +61,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Gestisci eventi e appuntamenti',
       icon: '📅',
       component: () => <div>Componente Calendario</div>,
-      minLevel: 2 // Livelli 0, 1 e 2
+      minLevel: 3 // Livelli 0, 1 e 2
     },
     {
       id: 'notifiche',
@@ -158,7 +158,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   return (
     <div className="dashboard-container">
       <div className="user-info">
-        <p>Livello utente: {userLevel}</p>
+        
       </div>
       
       <div className="dashboard-grid">
@@ -172,7 +172,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
               <div className="card-icon">{item.icon}</div>
               <h3 className="card-title">{item.title}</h3>
               <p className="card-description">{item.description}</p>
-              <p className="card-level">Livello richiesto: {item.minLevel}</p>
+              
             </div>
           ))
         ) : (
