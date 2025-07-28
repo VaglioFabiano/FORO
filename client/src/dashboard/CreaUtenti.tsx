@@ -154,7 +154,7 @@ const CreaUtenti: React.FC = () => {
         name: '',
         surname: '',
         tel: '',
-        level: 3,
+        level: 4,
         password: '',
         confirmPassword: ''
       });
@@ -248,8 +248,9 @@ const CreaUtenti: React.FC = () => {
               required
             >
               <option value={1}>Direttivo</option>
-              <option value={2}>Sociə</option>
-              <option value={3}>Volontariə</option>
+              <option value={2}>Sociə Organizzatorə</option>
+              <option value={3}>Sociə</option>
+              <option value={4}>Volontariə</option>
             </select>
           </div>
 
