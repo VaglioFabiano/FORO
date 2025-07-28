@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CreaUtenti from './CreaUtenti';
 //import ModificaOrari from './ModificaOrari';
-import '../style/HomeDash.css';
+import '../style/homeDash.css';
 
 interface HomeDashProps {
   onLogout: () => void;
