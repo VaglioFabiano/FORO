@@ -116,7 +116,7 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/orari', {
+      const response = await fetch('/api/orari_settimana', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/orari', {
+      const response = await fetch('/api/orari_settimana', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +215,7 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/orari', {
+      const response = await fetch('/api/orari_settimana', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

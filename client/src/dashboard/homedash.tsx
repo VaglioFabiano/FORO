@@ -35,7 +35,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
     {
       id: 'modifica-orari',
       title: 'Modifica Orari',
-      description: 'Gestisci gli orari di lavoro',
+      description: 'Gestisci gli orari di apertura',
       icon: '🕒',
       component: ModificaOrari ,
       minLevel: 2 // Livelli 0 e 1
