@@ -49,7 +49,7 @@ const ModificaOrari: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/orari', {
+      const response = await fetch('/api/orari_settimana', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
