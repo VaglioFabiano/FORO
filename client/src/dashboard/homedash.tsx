@@ -25,55 +25,56 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   // Definisci gli elementi della dashboard
   const dashboardItems: DashboardItem[] = [
-    {
-      id: 'crea-utenti',
-      title: 'Crea Utenti',
-      description: 'Gestisci e crea nuovi utenti',
-      icon: '👥',
-      component: CreaUtenti,
-      requiredLevel: 1 
-    },
-    {
-      id: 'modifica-orari',
-      title: 'Modifica Orari',
-      description: 'Gestisci gli orari di lavoro',
-      icon: '🕒',
-      component: () => <div>Componente Modifica Orari (da implementare)</div>,
-      requiredLevel: 2 
-    },
-    {
-      id: 'report',
-      title: 'Report',
-      description: 'Visualizza report e statistiche',
-      icon: '📊',
-      component: () => <div>Componente Report (da implementare)</div>,
-      requiredLevel: 2 
-    },
-    {
-      id: 'impostazioni',
-      title: 'Impostazioni',
-      description: 'Configura le impostazioni',
-      icon: '⚙️',
-      component: () => <div>Componente Impostazioni (da implementare)</div>,
-      requiredLevel: 1 
-    },
-    {
-      id: 'calendario',
-      title: 'Calendario',
-      description: 'Gestisci eventi e appuntamenti',
-      icon: '📅',
-      component: () => <div>Componente Calendario (da implementare)</div>,
-      requiredLevel: 3
-    },
-    {
-      id: 'notifiche',
-      title: 'Notifiche',
-      description: 'Centro notifiche',
-      icon: '🔔',
-      component: () => <div>Componente Notifiche (da implementare)</div>,
-      requiredLevel: 4 
-    }
-  ];
+  {
+    id: 'crea-utenti',
+    title: 'Crea Utenti',
+    description: 'Gestisci e crea nuovi utenti',
+    icon: '👥',
+    component: CreaUtenti,
+    requiredLevel: 0 // Solo livello 0 (Direttivo)
+  },
+  {
+    id: 'modifica-orari',
+    title: 'Modifica Orari',
+    description: 'Gestisci gli orari di lavoro',
+    icon: '🕒',
+    component: () => <div>Componente Modifica Orari (da implementare)</div>,
+    requiredLevel: 1 // Livello 0 e 1
+  },
+  {
+    id: 'report',
+    title: 'Report',
+    description: 'Visualizza report e statistiche',
+    icon: '📊',
+    component: () => <div>Componente Report (da implementare)</div>,
+    requiredLevel: 1 // Livello 0 e 1
+  },
+  {
+    id: 'impostazioni',
+    title: 'Impostazioni',
+    description: 'Configura le impostazioni',
+    icon: '⚙️',
+    component: () => <div>Componente Impostazioni (da implementare)</div>,
+    requiredLevel: 0 // Solo livello 0 (Direttivo)
+  },
+  {
+    id: 'calendario',
+    title: 'Calendario',
+    description: 'Gestisci eventi e appuntamenti',
+    icon: '📅',
+    component: () => <div>Componente Calendario (da implementare)</div>,
+    requiredLevel: 2 // Livello 0, 1 e 2
+  },
+  {
+    id: 'notifiche',
+    title: 'Notifiche',
+    description: 'Centro notifiche',
+    icon: '🔔',
+    component: () => <div>Componente Notifiche (da implementare)</div>,
+    requiredLevel: 3 // Tutti i livelli (0, 1, 2, 3)
+  }
+];
+
 
   useEffect(() => {
     const checkAuth = () => {
@@ -122,7 +123,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   // Filtra gli elementi della dashboard in base al livello utente
   const filteredDashboardItems = dashboardItems.filter(item => {
-    if (!item.requiredLevel) return true; // Se non ha requiredLevel, mostralo sempre
+    if (!item.requiredLevel && item.requiredLevel !== 0) return true; // Se non ha requiredLevel, mostralo sempre
     return userLevel <= item.requiredLevel;
   });
 
