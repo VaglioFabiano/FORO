@@ -13,14 +13,14 @@ interface DashboardItem {
   description: string;
   icon: string;
   component: React.ComponentType;
-  requiredLevel?: number; // Livello massimo richiesto (1 = Direttivo, 2 = Sociə, 3 = Volontariə)
+  requiredLevel?: number; // Livello esatto richiesto (1 = Direttivo, 2 = Sociə, 3 = Volontariə, 4 = Livello più basso)
 }
 
 const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComponent, setSelectedComponent] = useState<React.ComponentType | null>(null);
-  const [userLevel, setUserLevel] = useState<number>(3); // Default al livello più basso
+  const [userLevel, setUserLevel] = useState<number>(4); // Default al livello più basso
   //const [selectedTitle, setSelectedTitle] = useState<string>('');
 
   // Definisci gli elementi della dashboard
@@ -31,7 +31,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Gestisci e crea nuovi utenti',
       icon: '👥',
       component: CreaUtenti,
-      requiredLevel: 1 // Solo Direttivo (livello < 2)
+      requiredLevel: 1 
     },
     {
       id: 'modifica-orari',
@@ -39,7 +39,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Gestisci gli orari di lavoro',
       icon: '🕒',
       component: () => <div>Componente Modifica Orari (da implementare)</div>,
-      requiredLevel: 2 // Direttivo e Sociə (livello <= 2)
+      requiredLevel: 2 
     },
     {
       id: 'report',
@@ -47,7 +47,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Visualizza report e statistiche',
       icon: '📊',
       component: () => <div>Componente Report (da implementare)</div>,
-      requiredLevel: 2 // Direttivo e Sociə (livello <= 2)
+      requiredLevel: 2 
     },
     {
       id: 'impostazioni',
@@ -55,7 +55,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Configura le impostazioni',
       icon: '⚙️',
       component: () => <div>Componente Impostazioni (da implementare)</div>,
-      requiredLevel: 1 // Solo Direttivo (livello < 2)
+      requiredLevel: 1 
     },
     {
       id: 'calendario',
@@ -63,7 +63,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Gestisci eventi e appuntamenti',
       icon: '📅',
       component: () => <div>Componente Calendario (da implementare)</div>,
-      requiredLevel: 3 // Tutti (livello <= 3)
+      requiredLevel: 3
     },
     {
       id: 'notifiche',
@@ -71,7 +71,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Centro notifiche',
       icon: '🔔',
       component: () => <div>Componente Notifiche (da implementare)</div>,
-      requiredLevel: 3 // Tutti (livello <= 3)
+      requiredLevel: 4 
     }
   ];
 
@@ -90,7 +90,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
         if (now - loginTimestamp < expirationTime) {
           try {
             const userData = JSON.parse(user);
-            setUserLevel(userData.level || 3); // Imposta il livello utente
+            setUserLevel(userData.level || 4); // Imposta il livello utente, default 4
             setIsAuthenticated(true);
           } catch (error) {
             console.error('Error parsing user data:', error);
@@ -123,13 +123,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   // Filtra gli elementi della dashboard in base al livello utente
   const filteredDashboardItems = dashboardItems.filter(item => {
     if (!item.requiredLevel) return true; // Se non ha requiredLevel, mostralo sempre
-    
-    // Per "Crea Utenti" che richiede livello < 2, mostra solo se userLevel < 2 (quindi livello 1)
-    if (item.id === 'crea-utenti') {
-      return userLevel < 2;
-    }
-    
-    // Per altri componenti, usa il controllo <= 
     return userLevel <= item.requiredLevel;
   });
 
