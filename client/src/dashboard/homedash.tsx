@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import CreaUtenti from './CreaUtenti';
-//import ModificaOrari from './ModificaOrari';
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -13,125 +12,111 @@ interface DashboardItem {
   description: string;
   icon: string;
   component: React.ComponentType;
-  requiredLevel?: number; // Livello esatto richiesto (1 = Direttivo, 2 = Sociə, 3 = Volontariə, 4 = Livello più basso)
+  minLevel?: number; // Livello minimo richiesto per vedere l'elemento
 }
 
 const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComponent, setSelectedComponent] = useState<React.ComponentType | null>(null);
-  const [userLevel, setUserLevel] = useState<number>(4); // Default al livello più basso
-  //const [selectedTitle, setSelectedTitle] = useState<string>('');
+  const [userLevel, setUserLevel] = useState<number>(-1); // Default a -1 (non autenticato)
 
-  // Definisci gli elementi della dashboard
+  // Elementi della dashboard con i livelli minimi richiesti
   const dashboardItems: DashboardItem[] = [
-  {
-    id: 'crea-utenti',
-    title: 'Crea Utenti',
-    description: 'Gestisci e crea nuovi utenti',
-    icon: '👥',
-    component: CreaUtenti,
-    requiredLevel: 0 // Solo livello 0 (Direttivo)
-  },
-  {
-    id: 'modifica-orari',
-    title: 'Modifica Orari',
-    description: 'Gestisci gli orari di lavoro',
-    icon: '🕒',
-    component: () => <div>Componente Modifica Orari (da implementare)</div>,
-    requiredLevel: 1 // Livello 0 e 1
-  },
-  {
-    id: 'report',
-    title: 'Report',
-    description: 'Visualizza report e statistiche',
-    icon: '📊',
-    component: () => <div>Componente Report (da implementare)</div>,
-    requiredLevel: 1 // Livello 0 e 1
-  },
-  {
-    id: 'impostazioni',
-    title: 'Impostazioni',
-    description: 'Configura le impostazioni',
-    icon: '⚙️',
-    component: () => <div>Componente Impostazioni (da implementare)</div>,
-    requiredLevel: 0 // Solo livello 0 (Direttivo)
-  },
-  {
-    id: 'calendario',
-    title: 'Calendario',
-    description: 'Gestisci eventi e appuntamenti',
-    icon: '📅',
-    component: () => <div>Componente Calendario (da implementare)</div>,
-    requiredLevel: 2 // Livello 0, 1 e 2
-  },
-  {
-    id: 'notifiche',
-    title: 'Notifiche',
-    description: 'Centro notifiche',
-    icon: '🔔',
-    component: () => <div>Componente Notifiche (da implementare)</div>,
-    requiredLevel: 3 // Tutti i livelli (0, 1, 2, 3)
-  }
-];
-
+    {
+      id: 'crea-utenti',
+      title: 'Crea Utenti',
+      description: 'Gestisci e crea nuovi utenti',
+      icon: '👥',
+      component: CreaUtenti,
+      minLevel: 0 // Solo livello 0 (Direttivo)
+    },
+    {
+      id: 'modifica-orari',
+      title: 'Modifica Orari',
+      description: 'Gestisci gli orari di lavoro',
+      icon: '🕒',
+      component: () => <div>Componente Modifica Orari</div>,
+      minLevel: 1 // Livelli 0 e 1
+    },
+    {
+      id: 'report',
+      title: 'Report',
+      description: 'Visualizza report e statistiche',
+      icon: '📊',
+      component: () => <div>Componente Report</div>,
+      minLevel: 1 // Livelli 0 e 1
+    },
+    {
+      id: 'impostazioni',
+      title: 'Impostazioni',
+      description: 'Configura le impostazioni',
+      icon: '⚙️',
+      component: () => <div>Componente Impostazioni</div>,
+      minLevel: 0 // Solo livello 0 (Direttivo)
+    },
+    {
+      id: 'calendario',
+      title: 'Calendario',
+      description: 'Gestisci eventi e appuntamenti',
+      icon: '📅',
+      component: () => <div>Componente Calendario</div>,
+      minLevel: 2 // Livelli 0, 1 e 2
+    },
+    {
+      id: 'notifiche',
+      title: 'Notifiche',
+      description: 'Centro notifiche',
+      icon: '🔔',
+      component: () => <div>Componente Notifiche</div>,
+      minLevel: 3 // Tutti i livelli (0-3)
+    }
+  ];
 
   useEffect(() => {
-    const checkAuth = () => {
-      const user = localStorage.getItem('user');
-      const loginTime = localStorage.getItem('loginTime');
-      const rememberMe = localStorage.getItem('rememberMe') === 'true';
-      const sessionToken = localStorage.getItem('sessionToken');
-      
-      if (user && loginTime && sessionToken) {
+    const checkAuth = async () => {
+      try {
+        const user = localStorage.getItem('user');
+        const loginTime = localStorage.getItem('loginTime');
+        const rememberMe = localStorage.getItem('rememberMe') === 'true';
+        
+        if (!user || !loginTime) {
+          throw new Error('Dati di autenticazione mancanti');
+        }
+
+        // Verifica validità sessione
         const now = new Date().getTime();
         const loginTimestamp = parseInt(loginTime);
         const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
         
-        if (now - loginTimestamp < expirationTime) {
-          try {
-            const userData = JSON.parse(user);
-            setUserLevel(userData.level || 4); // Imposta il livello utente, default 4
-            setIsAuthenticated(true);
-          } catch (error) {
-            console.error('Error parsing user data:', error);
-            setIsAuthenticated(false);
-            onLogout();
-          }
-        } else {
-          localStorage.clear();
-          setIsAuthenticated(false);
-          onLogout();
+        if (now - loginTimestamp > expirationTime) {
+          throw new Error('Sessione scaduta');
         }
-      } else {
+
+        const userData = JSON.parse(user);
+        if (!userData.level && userData.level !== 0) {
+          throw new Error('Livello utente non valido');
+        }
+
+        setUserLevel(userData.level);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Errore autenticazione:', error);
+        localStorage.clear();
         setIsAuthenticated(false);
         onLogout();
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     checkAuth();
-
-    const handleStorageChange = () => {
-      checkAuth();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, [onLogout]);
 
-  // Filtra gli elementi della dashboard in base al livello utente
-  const filteredDashboardItems = dashboardItems.filter(item => {
-    if (item.requiredLevel === undefined) return true; // Se non ha requiredLevel, mostralo sempre
-    
-    // Un utente può vedere un elemento se il suo livello è <= al requiredLevel dell'elemento
-    // Livello 0 (Direttivo) può vedere tutto
-    // Livello 1 (Sociə) può vedere elementi con requiredLevel >= 1
-    // Livello 2 (Volontariə) può vedere elementi con requiredLevel >= 2
-    // Livello 3 (Base) può vedere solo elementi con requiredLevel >= 3
-    return userLevel <= item.requiredLevel;
-  });
+  // Filtra gli elementi visibili in base al livello utente
+  const visibleItems = dashboardItems.filter(item => 
+    item.minLevel === undefined || userLevel <= item.minLevel
+  );
 
   const handleCardClick = (item: DashboardItem) => {
     setSelectedComponent(() => item.component);
@@ -154,7 +139,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
     return null;
   }
 
-  // Se è selezionato un componente, mostralo
   if (selectedComponent) {
     const SelectedComponent = selectedComponent;
     return (
@@ -171,23 +155,32 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
     );
   }
 
-  // Mostra la dashboard principale
   return (
     <div className="dashboard-container">
-      
+      <div className="user-info">
+        <p>Livello utente: {userLevel}</p>
+      </div>
       
       <div className="dashboard-grid">
-        {filteredDashboardItems.map((item) => (
-          <div
-            key={item.id}
-            className="dashboard-card"
-            onClick={() => handleCardClick(item)}
-          >
-            <div className="card-icon">{item.icon}</div>
-            <h3 className="card-title">{item.title}</h3>
-            <p className="card-description">{item.description}</p>
+        {visibleItems.length > 0 ? (
+          visibleItems.map((item) => (
+            <div
+              key={item.id}
+              className="dashboard-card"
+              onClick={() => handleCardClick(item)}
+            >
+              <div className="card-icon">{item.icon}</div>
+              <h3 className="card-title">{item.title}</h3>
+              <p className="card-description">{item.description}</p>
+              <p className="card-level">Livello richiesto: {item.minLevel}</p>
+            </div>
+          ))
+        ) : (
+          <div className="no-access">
+            <h2>Nessun accesso</h2>
+            <p>Il tuo livello ({userLevel}) non ti permette di vedere alcun elemento.</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
