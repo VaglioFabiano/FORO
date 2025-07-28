@@ -26,6 +26,34 @@ const GIORNI_SETTIMANA = [
   'venerdì', 'sabato', 'domenica'
 ];
 
+const getCurrentWeek = (): string => {
+  const now = new Date();
+  const currentDay = now.getDay(); // 0 = domenica, 1 = lunedì, ..., 6 = sabato
+  
+  // Calcola quanti giorni sottrarre per arrivare a lunedì
+  const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+  
+  // Calcola la data del lunedì
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysToMonday);
+  
+  // Calcola la data della domenica (lunedì + 6 giorni)
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  
+  // Ottieni il nome del mese
+  const monthName = monday.toLocaleDateString('it-IT', { month: 'long' });
+  
+  // Se lunedì e domenica sono nello stesso mese
+  if (monday.getMonth() === sunday.getMonth()) {
+      return `${monday.getDate()}-${sunday.getDate()} ${monthName}`;
+  } else {
+      // Se la settimana attraversa due mesi
+      const sundayMonthName = sunday.toLocaleDateString('it-IT', { month: 'long' });
+      return `${monday.getDate()} ${monthName} - ${sunday.getDate()} ${sundayMonthName}`;
+  }
+};
+
 const ModificaOrari: React.FC = () => {
   const [orari, setOrari] = useState<FasciaOraria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,7 +299,7 @@ const ModificaOrari: React.FC = () => {
   return (
     <div className="modifica-orari-container">
       <div className="modifica-orari-header">
-        <h1>Gestione Orari Settimanali</h1>
+        <h1>Gestione Orari {getCurrentWeek()}</h1>
         <button onClick={fetchOrari} className="btn btn-refresh" disabled={loading}>
           🔄 Ricarica
         </button>
