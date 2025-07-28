@@ -2,15 +2,15 @@
 
 .dashboard-container {
   min-height: 100vh;
-  padding-top: 2rem;
-  background-color: #f8fafc;
+  padding-top: 6rem;
+  background-color: rgb(12, 73, 91);
 }
 
 .dashboard-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   padding: 0 2rem;
 }
 
@@ -105,7 +105,6 @@
   background-color: white;
   border-radius: 0.75rem;
   margin: 0 2rem;
-  padding: 2rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
