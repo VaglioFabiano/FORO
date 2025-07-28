@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import '../style/modificaOrari.css';
 
 interface FasciaOraria {
@@ -7,6 +7,12 @@ interface FasciaOraria {
   ora_inizio: string;
   ora_fine: string;
   note?: string;
+}
+
+interface NuovaFascia {
+  ora_inizio: string;
+  ora_fine: string;
+  note: string;
 }
 
 interface ApiResponse {
@@ -24,16 +30,14 @@ export default function ModificaOrari() {
   const [orari, setOrari] = useState<FasciaOraria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
   
-  // Form state
-  const [formData, setFormData] = useState({
-    giorno: '',
-    ora_inizio: '',
-    ora_fine: '',
-    note: ''
-  });
+  // Stato per le nuove fasce da aggiungere per ogni giorno
+  const [nuoveFasce, setNuoveFasce] = useState<Record<string, NuovaFascia[]>>({});
+  
+  // Stato per editing inline
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
   // Carica gli orari all'avvio
   useEffect(() => {
@@ -43,47 +47,72 @@ export default function ModificaOrari() {
   const fetchOrari = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/orari');
+      setError(null);
+      
+      const response = await fetch('/api/orari', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data: ApiResponse = await response.json();
       
       if (data.success && data.data) {
         setOrari(data.data);
+        console.log('Orari caricati:', data.data);
       } else {
-        setError('Errore nel caricamento degli orari');
+        throw new Error(data.error || 'Errore nel caricamento degli orari');
       }
     } catch (err) {
-      setError('Errore di connessione');
       console.error('Fetch error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+  const groupByDay = (orari: FasciaOraria[]) => {
+    return GIORNI_SETTIMANA.reduce((acc, giorno) => {
+      acc[giorno] = orari.filter(o => o.giorno === giorno).sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
+      return acc;
+    }, {} as Record<string, FasciaOraria[]>);
+  };
+
+  const aggiungiNuovaFascia = (giorno: string) => {
+    setNuoveFasce(prev => ({
       ...prev,
-      [name]: value
+      [giorno]: [
+        ...(prev[giorno] || []),
+        { ora_inizio: '', ora_fine: '', note: '' }
+      ]
     }));
   };
 
-  const resetForm = () => {
-    setFormData({
-      giorno: '',
-      ora_inizio: '',
-      ora_fine: '',
-      note: ''
-    });
-    setEditingId(null);
-    setShowAddForm(false);
+  const rimuoviNuovaFascia = (giorno: string, index: number) => {
+    setNuoveFasce(prev => ({
+      ...prev,
+      [giorno]: prev[giorno]?.filter((_, i) => i !== index) || []
+    }));
   };
 
-  const handleAddOrario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.giorno || !formData.ora_inizio || !formData.ora_fine) {
-      setError('Giorno, ora inizio e ora fine sono richiesti');
-      return;
+  const aggiornaNuovaFascia = (giorno: string, index: number, field: keyof NuovaFascia, value: string) => {
+    setNuoveFasce(prev => ({
+      ...prev,
+      [giorno]: prev[giorno]?.map((fascia, i) => 
+        i === index ? { ...fascia, [field]: value } : fascia
+      ) || []
+    }));
+  };
+
+  const salvaFascia = async (giorno: string, fascia: NuovaFascia) => {
+    if (!fascia.ora_inizio || !fascia.ora_fine) {
+      setError('Ora inizio e ora fine sono obbligatorie');
+      return false;
     }
 
     try {
@@ -92,68 +121,52 @@ export default function ModificaOrari() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        await fetchOrari(); // Ricarica la lista
-        resetForm();
-        setError(null);
-      } else {
-        setError(data.error || 'Errore nell\'aggiunta');
-      }
-    } catch (err) {
-      setError('Errore di connessione');
-      console.error('Add error:', err);
-    }
-  };
-
-  const handleEditOrario = (orario: FasciaOraria) => {
-    setFormData({
-      giorno: orario.giorno,
-      ora_inizio: orario.ora_inizio,
-      ora_fine: orario.ora_fine,
-      note: orario.note || ''
-    });
-    setEditingId(orario.id);
-    setShowAddForm(false);
-  };
-
-  const handleUpdateOrario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!editingId) return;
-
-    try {
-      const response = await fetch('/api/orari', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          id: editingId,
-          ...formData
+          giorno,
+          ora_inizio: fascia.ora_inizio,
+          ora_fine: fascia.ora_fine,
+          note: fascia.note || null
         }),
       });
 
       const data = await response.json();
       
       if (data.success) {
-        await fetchOrari(); // Ricarica la lista
-        resetForm();
-        setError(null);
+        await fetchOrari(); // Ricarica tutti gli orari
+        return true;
       } else {
-        setError(data.error || 'Errore nell\'aggiornamento');
+        throw new Error(data.error || 'Errore nel salvataggio');
       }
     } catch (err) {
-      setError('Errore di connessione');
-      console.error('Update error:', err);
+      console.error('Save error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione');
+      return false;
     }
   };
 
-  const handleDeleteOrario = async (id: number) => {
+  const salvaFasceGiorno = async (giorno: string) => {
+    const fasce = nuoveFasce[giorno] || [];
+    let tutteOk = true;
+
+    for (const fascia of fasce) {
+      const risultato = await salvaFascia(giorno, fascia);
+      if (!risultato) {
+        tutteOk = false;
+        break;
+      }
+    }
+
+    if (tutteOk) {
+      // Rimuovi le fasce salvate
+      setNuoveFasce(prev => ({
+        ...prev,
+        [giorno]: []
+      }));
+      setError(null);
+    }
+  };
+
+  const eliminaFascia = async (id: number) => {
     if (!confirm('Sei sicuro di voler eliminare questa fascia oraria?')) {
       return;
     }
@@ -170,34 +183,87 @@ export default function ModificaOrari() {
       const data = await response.json();
       
       if (data.success) {
-        await fetchOrari(); // Ricarica la lista
+        await fetchOrari();
         setError(null);
       } else {
-        setError(data.error || 'Errore nell\'eliminazione');
+        throw new Error(data.error || 'Errore nell\'eliminazione');
       }
     } catch (err) {
-      setError('Errore di connessione');
       console.error('Delete error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione');
+    }
+  };
+
+  const iniziaModifica = (fascia: FasciaOraria) => {
+    setEditingId(fascia.id);
+    setEditData({
+      ora_inizio: fascia.ora_inizio,
+      ora_fine: fascia.ora_fine,
+      note: fascia.note || ''
+    });
+  };
+
+  const annullaModifica = () => {
+    setEditingId(null);
+    setEditData({});
+  };
+
+  const salvaModifica = async () => {
+    if (!editingId || !editData.ora_inizio || !editData.ora_fine) {
+      setError('Ora inizio e ora fine sono obbligatorie');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/orari', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingId,
+          ora_inizio: editData.ora_inizio,
+          ora_fine: editData.ora_fine,
+          note: editData.note || null
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        await fetchOrari();
+        setEditingId(null);
+        setEditData({});
+        setError(null);
+      } else {
+        throw new Error(data.error || 'Errore nell\'aggiornamento');
+      }
+    } catch (err) {
+      console.error('Update error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione');
     }
   };
 
   const formatTime = (time: string) => {
-    // Converte il formato numerico in HH:MM se necessario
     if (time.includes(':')) return time;
     const hours = Math.floor(parseFloat(time));
     const minutes = Math.round((parseFloat(time) - hours) * 60);
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  const groupByDay = (orari: FasciaOraria[]) => {
-    return GIORNI_SETTIMANA.reduce((acc, giorno) => {
-      acc[giorno] = orari.filter(o => o.giorno === giorno);
-      return acc;
-    }, {} as Record<string, FasciaOraria[]>);
+  const toggleDay = (giorno: string) => {
+    setExpandedDay(expandedDay === giorno ? null : giorno);
   };
 
   if (loading) {
-    return <div className="loading">Caricamento orari...</div>;
+    return (
+      <div className="modifica-orari-container">
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <span>Caricamento orari...</span>
+        </div>
+      </div>
+    );
   }
 
   const orariGruppi = groupByDay(orari);
@@ -205,12 +271,9 @@ export default function ModificaOrari() {
   return (
     <div className="modifica-orari-container">
       <div className="header">
-        <h1>Modifica Orari Settimanali</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowAddForm(!showAddForm)}
-        >
-          {showAddForm ? 'Annulla' : 'Aggiungi Orario'}
+        <h1>Gestione Orari Settimanali</h1>
+        <button onClick={fetchOrari} className="btn btn-refresh" disabled={loading}>
+          🔄 Ricarica
         </button>
       </div>
 
@@ -221,121 +284,146 @@ export default function ModificaOrari() {
         </div>
       )}
 
-      {/* Form per aggiungere/modificare */}
-      {(showAddForm || editingId) && (
-        <div className="form-container">
-          <h3>{editingId ? 'Modifica Orario' : 'Nuovo Orario'}</h3>
-          <form onSubmit={editingId ? handleUpdateOrario : handleAddOrario}>
-            <div className="form-group">
-              <label htmlFor="giorno">Giorno:</label>
-              <select
-                id="giorno"
-                name="giorno"
-                value={formData.giorno}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Seleziona giorno</option>
-                {GIORNI_SETTIMANA.map(giorno => (
-                  <option key={giorno} value={giorno}>
-                    {giorno.charAt(0).toUpperCase() + giorno.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="ora_inizio">Ora Inizio:</label>
-                <input
-                  type="time"
-                  id="ora_inizio"
-                  name="ora_inizio"
-                  value={formData.ora_inizio}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="ora_fine">Ora Fine:</label>
-                <input
-                  type="time"
-                  id="ora_fine"
-                  name="ora_fine"
-                  value={formData.ora_fine}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="note">Note (opzionale):</label>
-              <textarea
-                id="note"
-                name="note"
-                value={formData.note}
-                onChange={handleInputChange}
-                rows={3}
-                placeholder="Inserisci eventuali note..."
-              />
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn btn-success">
-                {editingId ? 'Aggiorna' : 'Aggiungi'}
-              </button>
-              <button type="button" onClick={resetForm} className="btn btn-secondary">
-                Annulla
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Lista orari raggruppati per giorno */}
       <div className="orari-list">
         {GIORNI_SETTIMANA.map(giorno => (
           <div key={giorno} className="day-section">
-            <h3 className="day-title">
-              {giorno.charAt(0).toUpperCase() + giorno.slice(1)}
-            </h3>
+            <div 
+              className="day-header" 
+              onClick={() => toggleDay(giorno)}
+            >
+              <h3 className="day-title">
+                {giorno.charAt(0).toUpperCase() + giorno.slice(1)}
+                <span className="orari-count">({orariGruppi[giorno].length})</span>
+              </h3>
+              <div className="day-actions">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    aggiungiNuovaFascia(giorno);
+                    setExpandedDay(giorno);
+                  }}
+                  className="btn btn-add"
+                  title="Aggiungi fascia oraria"
+                >
+                  + Aggiungi
+                </button>
+                <span className={`expand-icon ${expandedDay === giorno ? 'expanded' : ''}`}>
+                  ▼
+                </span>
+              </div>
+            </div>
             
-            {orariGruppi[giorno].length === 0 ? (
-              <div className="no-orari">Nessun orario impostato</div>
-            ) : (
-              <div className="orari-cards">
-                {orariGruppi[giorno].map(orario => (
-                  <div key={orario.id} className="orario-card">
-                    <div className="orario-time">
-                      <span className="time-start">{formatTime(orario.ora_inizio)}</span>
-                      <span className="time-separator">-</span>
-                      <span className="time-end">{formatTime(orario.ora_fine)}</span>
-                    </div>
-                    
-                    {orario.note && (
-                      <div className="orario-note">{orario.note}</div>
-                    )}
-                    
-                    <div className="orario-actions">
+            {expandedDay === giorno && (
+              <div className="day-content">
+                {/* Orari esistenti */}
+                {orariGruppi[giorno].length > 0 && (
+                  <div className="existing-orari">
+                    <h4>Orari attuali:</h4>
+                    {orariGruppi[giorno].map(orario => (
+                      <div key={orario.id} className="orario-item">
+                        {editingId === orario.id ? (
+                          <div className="edit-form">
+                            <input
+                              type="time"
+                              value={editData.ora_inizio || ''}
+                              onChange={(e) => setEditData(prev => ({ ...prev, ora_inizio: e.target.value }))}
+                            />
+                            <span>-</span>
+                            <input
+                              type="time"
+                              value={editData.ora_fine || ''}
+                              onChange={(e) => setEditData(prev => ({ ...prev, ora_fine: e.target.value }))}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Note"
+                              value={editData.note || ''}
+                              onChange={(e) => setEditData(prev => ({ ...prev, note: e.target.value }))}
+                            />
+                            <button onClick={salvaModifica} className="btn btn-success btn-small">✓</button>
+                            <button onClick={annullaModifica} className="btn btn-secondary btn-small">✗</button>
+                          </div>
+                        ) : (
+                          <div className="orario-display">
+                            <div className="orario-time">
+                              <span className="time-badge">{formatTime(orario.ora_inizio)}</span>
+                              <span>-</span>
+                              <span className="time-badge">{formatTime(orario.ora_fine)}</span>
+                            </div>
+                            {orario.note && <div className="orario-note">{orario.note}</div>}
+                            <div className="orario-actions">
+                              <button
+                                onClick={() => iniziaModifica(orario)}
+                                className="btn btn-edit btn-small"
+                                title="Modifica"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => eliminaFascia(orario.id)}
+                                className="btn btn-delete btn-small"
+                                title="Elimina"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Nuove fasce da aggiungere */}
+                {nuoveFasce[giorno]?.length > 0 && (
+                  <div className="new-fasce">
+                    <h4>Nuove fasce da aggiungere:</h4>
+                    {nuoveFasce[giorno].map((fascia, index) => (
+                      <div key={index} className="new-fascia-form">
+                        <input
+                          type="time"
+                          value={fascia.ora_inizio}
+                          onChange={(e) => aggiornaNuovaFascia(giorno, index, 'ora_inizio', e.target.value)}
+                          placeholder="Inizio"
+                        />
+                        <span>-</span>
+                        <input
+                          type="time"
+                          value={fascia.ora_fine}
+                          onChange={(e) => aggiornaNuovaFascia(giorno, index, 'ora_fine', e.target.value)}
+                          placeholder="Fine"
+                        />
+                        <input
+                          type="text"
+                          value={fascia.note}
+                          onChange={(e) => aggiornaNuovaFascia(giorno, index, 'note', e.target.value)}
+                          placeholder="Note (opzionale)"
+                        />
+                        <button
+                          onClick={() => rimuoviNuovaFascia(giorno, index)}
+                          className="btn btn-delete btn-small"
+                          title="Rimuovi"
+                        >
+                          ✗
+                        </button>
+                      </div>
+                    ))}
+                    <div className="save-actions">
                       <button
-                        onClick={() => handleEditOrario(orario)}
-                        className="btn btn-edit"
-                        title="Modifica"
+                        onClick={() => salvaFasceGiorno(giorno)}
+                        className="btn btn-success"
                       >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDeleteOrario(orario.id)}
-                        className="btn btn-delete"
-                        title="Elimina"
-                      >
-                        🗑️
+                        💾 Salva tutte le fasce
                       </button>
                     </div>
                   </div>
-                ))}
+                )}
+
+                {orariGruppi[giorno].length === 0 && (!nuoveFasce[giorno] || nuoveFasce[giorno].length === 0) && (
+                  <div className="no-orari">
+                    Nessun orario impostato per questo giorno
+                  </div>
+                )}
               </div>
             )}
           </div>

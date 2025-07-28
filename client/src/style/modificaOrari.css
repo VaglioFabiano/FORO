@@ -1,6 +1,6 @@
 /* Container principale */
 .modifica-orari-container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,32 +27,68 @@
   font-weight: 600;
 }
 
+/* Loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: #7f8c8d;
+  font-size: 18px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #ecf0f1;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* Bottoni */
 .btn {
-  padding: 10px 20px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.3s ease;
   text-decoration: none;
-  display: inline-block;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.btn:hover {
-  transform: translateY(-2px);
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.btn-primary {
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-refresh {
   background-color: #3498db;
   color: white;
 }
 
-.btn-primary:hover {
-  background-color: #2980b9;
+.btn-add {
+  background-color: #27ae60;
+  color: white;
+  font-size: 12px;
+  padding: 6px 12px;
 }
 
 .btn-success {
@@ -60,51 +96,28 @@
   color: white;
 }
 
-.btn-success:hover {
-  background-color: #229954;
-}
-
 .btn-secondary {
   background-color: #95a5a6;
   color: white;
 }
 
-.btn-secondary:hover {
-  background-color: #7f8c8d;
-}
-
 .btn-edit {
   background-color: #f39c12;
   color: white;
-  padding: 6px 10px;
-  font-size: 12px;
-  min-width: 35px;
-}
-
-.btn-edit:hover {
-  background-color: #e67e22;
 }
 
 .btn-delete {
   background-color: #e74c3c;
   color: white;
-  padding: 6px 10px;
+}
+
+.btn-small {
+  padding: 4px 8px;
   font-size: 12px;
-  min-width: 35px;
+  min-width: 30px;
 }
 
-.btn-delete:hover {
-  background-color: #c0392b;
-}
-
-/* Loading e errori */
-.loading {
-  text-align: center;
-  padding: 50px;
-  font-size: 18px;
-  color: #7f8c8d;
-}
-
+/* Messaggi di errore */
 .error-message {
   background-color: #fee;
   color: #c0392b;
@@ -131,122 +144,100 @@
   justify-content: center;
 }
 
-/* Form container */
-.form-container {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
-}
-
-.form-container h3 {
-  margin: 0 0 25px 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #34495e;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #ecf0f1;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.3s ease;
-  font-family: inherit;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 25px;
-}
-
 /* Lista orari */
 .orari-list {
   display: grid;
-  gap: 30px;
+  gap: 20px;
 }
 
+/* Sezione giorno */
 .day-section {
   background: white;
   border-radius: 12px;
-  padding: 25px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ecf0f1;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.day-header:hover {
+  background-color: #e9ecef;
 }
 
 .day-title {
-  margin: 0 0 20px 0;
+  margin: 0;
   color: #2c3e50;
   font-size: 1.3rem;
   font-weight: 600;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #ecf0f1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.no-orari {
-  text-align: center;
-  color: #95a5a6;
-  font-style: italic;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 2px dashed #bdc3c7;
+.orari-count {
+  background-color: #3498db;
+  color: white;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: normal;
 }
 
-.orari-cards {
-  display: grid;
+.day-actions {
+  display: flex;
+  align-items: center;
   gap: 15px;
 }
 
-.orario-card {
+.expand-icon {
+  font-size: 14px;
+  transition: transform 0.3s ease;
+  color: #7f8c8d;
+}
+
+.expand-icon.expanded {
+  transform: rotate(180deg);
+}
+
+/* Contenuto giorno */
+.day-content {
+  padding: 25px;
+}
+
+.day-content h4 {
+  margin: 0 0 15px 0;
+  color: #34495e;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Orari esistenti */
+.existing-orari {
+  margin-bottom: 25px;
+}
+
+.orario-item {
+  background-color: #f8f9fa;
+  border: 1px solid #ecf0f1;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+}
+
+.orario-display {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #f8f9fa;
-  padding: 15px 20px;
-  border-radius: 10px;
-  border: 1px solid #ecf0f1;
-  transition: all 0.3s ease;
-}
-
-.orario-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #3498db;
+  gap: 15px;
 }
 
 .orario-time {
@@ -254,40 +245,105 @@
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  color: #2c3e50;
-  font-size: 16px;
 }
 
-.time-start,
-.time-end {
+.time-badge {
   background-color: #3498db;
   color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
+  padding: 4px 12px;
+  border-radius: 16px;
   font-size: 14px;
-  min-width: 60px;
+  min-width: 50px;
   text-align: center;
-}
-
-.time-separator {
-  color: #7f8c8d;
-  font-weight: normal;
 }
 
 .orario-note {
   flex: 1;
-  margin: 0 20px;
   color: #7f8c8d;
   font-style: italic;
   background-color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 4px;
   border: 1px solid #ecf0f1;
 }
 
 .orario-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+}
+
+/* Form di modifica */
+.edit-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.edit-form input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.edit-form input[type="time"] {
+  width: 100px;
+}
+
+.edit-form input[type="text"] {
+  flex: 1;
+  min-width: 150px;
+}
+
+/* Nuove fasce */
+.new-fasce {
+  border-top: 2px solid #ecf0f1;
+  padding-top: 20px;
+}
+
+.new-fascia-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.new-fascia-form input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.new-fascia-form input[type="time"] {
+  width: 100px;
+}
+
+.new-fascia-form input[type="text"] {
+  flex: 1;
+  min-width: 150px;
+}
+
+.save-actions {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #ecf0f1;
+}
+
+/* No orari */
+.no-orari {
+  text-align: center;
+  color: #95a5a6;
+  font-style: italic;
+  padding: 30px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #bdc3c7;
 }
 
 /* Responsive design */
@@ -298,7 +354,7 @@
   
   .header {
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
     text-align: center;
   }
   
@@ -306,47 +362,60 @@
     font-size: 1.5rem;
   }
   
-  .form-row {
-    grid-template-columns: 1fr;
+  .day-header {
+    padding: 15px 20px;
   }
   
-  .form-actions {
-    flex-direction: column;
+  .day-title {
+    font-size: 1.1rem;
   }
   
-  .orario-card {
+  .day-content {
+    padding: 20px;
+  }
+  
+  .orario-display {
     flex-direction: column;
     align-items: stretch;
-    gap: 15px;
+    gap: 10px;
   }
   
   .orario-time {
     justify-content: center;
   }
   
-  .orario-note {
-    margin: 0;
-    text-align: center;
-  }
-  
   .orario-actions {
     justify-content: center;
+  }
+  
+  .edit-form,
+  .new-fascia-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .edit-form input,
+  .new-fascia-form input {
+    width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   .day-section {
+    margin: 0 -5px;
+  }
+  
+  .day-header {
+    padding: 12px 15px;
+  }
+  
+  .day-content {
     padding: 15px;
   }
   
-  .form-container {
-    padding: 20px;
-  }
-  
-  .time-start,
-  .time-end {
-    min-width: 50px;
+  .time-badge {
+    min-width: 45px;
     font-size: 13px;
-    padding: 4px 8px;
+    padding: 3px 8px;
   }
 }
