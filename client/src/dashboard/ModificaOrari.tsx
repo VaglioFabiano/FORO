@@ -270,7 +270,7 @@ export default function ModificaOrari() {
 
   return (
     <div className="modifica-orari-container">
-      <div className="header">
+      <div className="modifica-orari-header">
         <h1>Gestione Orari Settimanali</h1>
         <button onClick={fetchOrari} className="btn btn-refresh" disabled={loading}>
           🔄 Ricarica
