@@ -1,21 +1,32 @@
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN
-});
+// Configurazione con validazione (stessa del file create_user)
+const config = {
+  url: process.env.TURSO_DATABASE_URL?.trim(),
+  authToken: process.env.TURSO_AUTH_TOKEN?.trim()
+};
+
+if (!config.url || !config.authToken) {
+  console.error("Mancano le variabili d'ambiente per il DB!");
+  throw new Error("Configurazione database mancante");
+}
+
+const client = createClient(config);
 
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   try {
+    // Test connessione DB
+    await client.execute("SELECT 1");
+
     switch (req.method) {
       case 'GET':
         // Ottieni tutti gli orari della settimana ordinati per giorno
@@ -55,13 +66,9 @@ export default async function handler(req, res) {
           });
         }
         
-        // Verifica che il giorno esista nella tabella giorni_settimana
-        const giornoExists = await client.execute({
-          sql: 'SELECT giorno FROM giorni_settimana WHERE giorno = ?',
-          args: [giorno]
-        });
-        
-        if (giornoExists.rows.length === 0) {
+        // Verifica che il giorno sia valido
+        const validDays = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+        if (!validDays.includes(giorno.toLowerCase())) {
           return res.status(400).json({ 
             error: 'Giorno non valido' 
           });
@@ -69,7 +76,7 @@ export default async function handler(req, res) {
         
         const newOrario = await client.execute({
           sql: 'INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?) RETURNING *',
-          args: [giorno, ora_inizio, ora_fine, note || null]
+          args: [giorno.toLowerCase(), ora_inizio, ora_fine, note || null]
         });
         
         return res.status(201).json({ 
@@ -93,7 +100,7 @@ export default async function handler(req, res) {
         
         if (updateGiorno) {
           updateFields.push('giorno = ?');
-          updateArgs.push(updateGiorno);
+          updateArgs.push(updateGiorno.toLowerCase());
         }
         if (updateInizio) {
           updateFields.push('ora_inizio = ?');
@@ -167,7 +174,7 @@ export default async function handler(req, res) {
     console.error('Database error:', error);
     return res.status(500).json({ 
       error: 'Operazione sul database fallita',
-      details: error.message
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Errore interno'
     });
   }
 }

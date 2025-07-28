@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../style/modificaOrari.css';
 
 interface FasciaOraria {
@@ -26,7 +26,7 @@ const GIORNI_SETTIMANA = [
   'venerdì', 'sabato', 'domenica'
 ];
 
-export default function ModificaOrari() {
+const ModificaOrari: React.FC = () => {
   const [orari, setOrari] = useState<FasciaOraria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -431,4 +431,6 @@ export default function ModificaOrari() {
       </div>
     </div>
   );
-}
+};
+
+export default ModificaOrari;
