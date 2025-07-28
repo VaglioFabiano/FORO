@@ -7,11 +7,17 @@
 }
 
 .dashboard-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: rgb(12, 73, 91);
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin-bottom: 3rem;
-  padding: 0 2rem;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .dashboard-title {
@@ -104,7 +110,7 @@
 .component-container {
   background-color: white;
   border-radius: 0.75rem;
-  margin: 0 2rem;
+  margin: 5rem 2rem 2rem 2rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
@@ -139,11 +145,11 @@
   }
   
   .dashboard-header {
-    padding: 0 1rem;
+    padding: 1rem;
   }
   
   .component-container {
-    margin: 0 1rem;
+    margin: 5rem 1rem 2rem 1rem;
   }
 }
 
