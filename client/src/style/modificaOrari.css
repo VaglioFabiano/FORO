@@ -1,0 +1,352 @@
+/* Container principale */
+.modifica-orari-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+/* Bottoni */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.btn-success {
+  background-color: #27ae60;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #229954;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #7f8c8d;
+}
+
+.btn-edit {
+  background-color: #f39c12;
+  color: white;
+  padding: 6px 10px;
+  font-size: 12px;
+  min-width: 35px;
+}
+
+.btn-edit:hover {
+  background-color: #e67e22;
+}
+
+.btn-delete {
+  background-color: #e74c3c;
+  color: white;
+  padding: 6px 10px;
+  font-size: 12px;
+  min-width: 35px;
+}
+
+.btn-delete:hover {
+  background-color: #c0392b;
+}
+
+/* Loading e errori */
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 18px;
+  color: #7f8c8d;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c0392b;
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #f1c0c0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-error {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #c0392b;
+  padding: 0;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form container */
+.form-container {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.form-container h3 {
+  margin: 0 0 25px 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #34495e;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ecf0f1;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+/* Lista orari */
+.orari-list {
+  display: grid;
+  gap: 30px;
+}
+
+.day-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.day-title {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.no-orari {
+  text-align: center;
+  color: #95a5a6;
+  font-style: italic;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #bdc3c7;
+}
+
+.orari-cards {
+  display: grid;
+  gap: 15px;
+}
+
+.orario-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8f9fa;
+  padding: 15px 20px;
+  border-radius: 10px;
+  border: 1px solid #ecf0f1;
+  transition: all 0.3s ease;
+}
+
+.orario-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #3498db;
+}
+
+.orario-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.time-start,
+.time-end {
+  background-color: #3498db;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.time-separator {
+  color: #7f8c8d;
+  font-weight: normal;
+}
+
+.orario-note {
+  flex: 1;
+  margin: 0 20px;
+  color: #7f8c8d;
+  font-style: italic;
+  background-color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ecf0f1;
+}
+
+.orario-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .modifica-orari-container {
+    padding: 15px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .orario-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .orario-time {
+    justify-content: center;
+  }
+  
+  .orario-note {
+    margin: 0;
+    text-align: center;
+  }
+  
+  .orario-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-section {
+    padding: 15px;
+  }
+  
+  .form-container {
+    padding: 20px;
+  }
+  
+  .time-start,
+  .time-end {
+    min-width: 50px;
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+}

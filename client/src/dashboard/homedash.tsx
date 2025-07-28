@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CreaUtenti from './CreaUtenti';
+import ModificaOrari from './ModificaOrari';
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -36,7 +37,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       title: 'Modifica Orari',
       description: 'Gestisci gli orari di lavoro',
       icon: '🕒',
-      component: () => <div>Componente Modifica Orari</div>,
+      component: ModificaOrari ,
       minLevel: 2 // Livelli 0 e 1
     },
     {
