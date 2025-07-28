@@ -123,7 +123,13 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   // Filtra gli elementi della dashboard in base al livello utente
   const filteredDashboardItems = dashboardItems.filter(item => {
-    if (!item.requiredLevel && item.requiredLevel !== 0) return true; // Se non ha requiredLevel, mostralo sempre
+    if (item.requiredLevel === undefined) return true; // Se non ha requiredLevel, mostralo sempre
+    
+    // Un utente può vedere un elemento se il suo livello è <= al requiredLevel dell'elemento
+    // Livello 0 può vedere tutto (0,1,2,3)
+    // Livello 1 può vedere (1,2,3) ma non 0
+    // Livello 2 può vedere (2,3) ma non 0,1
+    // Livello 3 può vedere solo (3)
     return userLevel <= item.requiredLevel;
   });
 
