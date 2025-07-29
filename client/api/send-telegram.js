@@ -56,8 +56,11 @@ async function getChatIdByPhone(phoneNumber) {
     });
     
     if (cachedResult.rows.length > 0 && cachedResult.rows[0].telegram_chat_id) {
+      console.log(`Chat ID trovato in cache per ${phoneNumber}: ${cachedResult.rows[0].telegram_chat_id}`);
       return cachedResult.rows[0].telegram_chat_id;
     }
+    
+    console.log(`Nessun chat_id in cache per ${phoneNumber}, cerco negli aggiornamenti...`);
     
     // Se non c'è in cache, tenta di ottenere gli aggiornamenti recenti
     const updatesResponse = await fetch(`${TELEGRAM_API_URL}/getUpdates?limit=100&offset=-100`);
@@ -70,59 +73,50 @@ async function getChatIdByPhone(phoneNumber) {
     
     console.log(`Trovati ${updatesData.result.length} aggiornamenti Telegram`);
     
-    // Cerca tra gli aggiornamenti
-    for (const update of updatesData.result.reverse()) { // Inizia dai più recenti
-      // Controlla contatti condivisi
+    // Cerca SOLO contatti condivisi che corrispondano al numero esatto
+    let foundChatId = null;
+    
+    for (const update of updatesData.result.reverse()) {
       if (update.message && update.message.contact) {
         const contact = update.message.contact;
         const normalizedContactPhone = contact.phone_number.replace(/[^\d+]/g, '');
         const normalizedSearchPhone = phoneNumber.replace(/[^\d+]/g, '');
         
-        console.log(`Confronto: ${normalizedContactPhone} vs ${normalizedSearchPhone}`);
+        console.log(`Confronto contatto: ${normalizedContactPhone} vs ${normalizedSearchPhone}`);
         
-        if (normalizedContactPhone === normalizedSearchPhone || 
-            normalizedContactPhone.includes(normalizedSearchPhone.slice(-8)) ||
-            normalizedSearchPhone.includes(normalizedContactPhone.slice(-8))) {
+        // Match più rigoroso: deve essere una corrispondenza esatta o molto specifica
+        if (normalizedContactPhone === normalizedSearchPhone) {
+          foundChatId = update.message.chat.id;
+          console.log(`Match esatto trovato! Chat ID: ${foundChatId}`);
+          break;
+        } else if (normalizedContactPhone.length >= 8 && normalizedSearchPhone.length >= 8) {
+          // Confronta solo se entrambi i numeri hanno almeno 8 cifre
+          const contactLast8 = normalizedContactPhone.slice(-8);
+          const searchLast8 = normalizedSearchPhone.slice(-8);
           
-          const chatId = update.message.chat.id;
-          console.log(`Chat ID trovato tramite contatto: ${chatId}`);
-          
-          // Salva il chat_id nel database per uso futuro
-          await client.execute({
-            sql: `UPDATE users SET telegram_chat_id = ? WHERE tel = ?`,
-            args: [chatId, phoneNumber]
-          });
-          
-          return chatId;
-        }
-      }
-      
-      // Controlla messaggi privati (qualsiasi messaggio da chat private)
-      if (update.message && update.message.chat && update.message.chat.type === 'private') {
-        const chatId = update.message.chat.id;
-        const firstName = update.message.from?.first_name || '';
-        const lastName = update.message.from?.last_name || '';
-        const username = update.message.from?.username || '';
-        
-        console.log(`Messaggio privato da: ${firstName} ${lastName} (@${username}), Chat ID: ${chatId}`);
-        
-        // Se è l'unico aggiornamento recente da chat private, potrebbe essere quello giusto
-        // Salviamo temporaneamente questo chat_id
-        if (updatesData.result.filter(u => u.message?.chat?.type === 'private').length === 1) {
-          console.log(`Unico messaggio privato trovato, assumo sia dell'utente: ${chatId}`);
-          
-          await client.execute({
-            sql: `UPDATE users SET telegram_chat_id = ? WHERE tel = ?`,
-            args: [chatId, phoneNumber]
-          });
-          
-          return chatId;
+          if (contactLast8 === searchLast8) {
+            foundChatId = update.message.chat.id;
+            console.log(`Match parziale (ultime 8 cifre) trovato! Chat ID: ${foundChatId}`);
+            break;
+          }
         }
       }
     }
     
-    console.log('Nessun chat_id trovato negli aggiornamenti');
+    if (foundChatId) {
+      // Salva il chat_id nel database per uso futuro
+      await client.execute({
+        sql: `UPDATE users SET telegram_chat_id = ? WHERE tel = ?`,
+        args: [foundChatId, phoneNumber]
+      });
+      
+      console.log(`Chat ID salvato nel database per ${phoneNumber}: ${foundChatId}`);
+      return foundChatId;
+    }
+    
+    console.log(`Nessun contatto trovato per il numero ${phoneNumber}`);
     return null;
+    
   } catch (error) {
     console.error('Errore nell\'ottenere chat_id:', error);
     return null;
@@ -252,11 +246,22 @@ export default async function handler(req, res) {
     const chatId = await getChatIdByPhone(phoneNumber.trim());
     
     if (!chatId) {
-      // Log del fallimento
-      await logMessage(user.id, phoneNumber.trim(), message.trim(), false, null, 'Chat ID non trovato');
+      // Log del fallimento con informazioni dettagliate
+      await logMessage(user.id, phoneNumber.trim(), message.trim(), false, null, 
+        `Chat ID non trovato per il numero ${phoneNumber.trim()}. L'utente deve condividere il suo contatto con il bot.`);
       
       return res.status(404).json({ 
-        error: 'Non è stato possibile trovare una chat Telegram associata a questo numero. Assicurati di aver avviato una conversazione con il bot @YourBotName e di aver condiviso il tuo contatto.' 
+        error: `Nessuna chat Telegram trovata per il numero ${phoneNumber.trim()}. Per utilizzare questa funzione:
+
+1. Avvia una conversazione con il bot Telegram
+2. Condividi il tuo contatto telefonico con il bot:
+   • Clicca sull'icona della graffetta (📎)
+   • Seleziona "Contatto" 
+   • Condividi il tuo numero di telefono
+3. Riprova ad inviare il messaggio
+
+Il numero deve corrispondere esattamente a quello registrato nel sistema (${phoneNumber.trim()}).`,
+        botUsername: 'Il tuo bot Telegram' // Sostituisci con l'username del tuo bot
       });
     }
 

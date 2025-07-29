@@ -159,6 +159,41 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
     }
   };
 
+  const resetChatId = async () => {
+    if (!currentUser) return;
+    
+    if (!confirm('Sei sicuro di voler cancellare il Chat ID salvato? Dovrai condividere nuovamente il tuo contatto con il bot.')) {
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const tempToken = generateTempToken(currentUser);
+      const response = await fetch('/api/telegram-reset-chatid', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${tempToken}`
+        }
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        addResult('success', data.message);
+        // Aggiorna le info di debug se sono visualizzate
+        if (showDebug) {
+          await fetchDebugInfo();
+        }
+      } else {
+        addResult('error', data.error);
+      }
+    } catch (error) {
+      console.error('Errore reset:', error);
+      addResult('error', 'Errore nel reset del Chat ID');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="telegram-sender">
@@ -230,6 +265,14 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
             disabled={isLoading}
           >
             🔧 Debug Info
+          </button>
+
+          <button
+            className="reset-button"
+            onClick={resetChatId}
+            disabled={isLoading}
+          >
+            🗑️ Reset Chat ID
           </button>
         </div>
       </div>
@@ -500,6 +543,28 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
         }
 
         .debug-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .reset-button {
+          background: linear-gradient(135deg, #dc3545, #c82333);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .reset-button:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .reset-button:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
