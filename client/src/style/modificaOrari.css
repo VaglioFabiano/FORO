@@ -1,6 +1,6 @@
 /* Container principale */
 .modifica-orari-container {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -25,6 +25,46 @@
   color: #2c3e50;
   font-size: 2rem;
   font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+/* Container per le due settimane */
+.weeks-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.week-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.week-title {
+  margin: 0 0 20px 0;
+  color: #2c3e50;
+  font-size: 1.4rem;
+  font-weight: 600;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #ecf0f1;
+}
+
+.current-week .week-title {
+  color: #27ae60;
+  border-bottom-color: #27ae60;
+}
+
+.next-week .week-title {
+  color: #3498db;
+  border-bottom-color: #3498db;
 }
 
 /* Loading */
@@ -96,6 +136,12 @@
   color: white;
 }
 
+.btn-large {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
 .btn-secondary {
   background-color: #95a5a6;
   color: white;
@@ -147,14 +193,14 @@
 /* Lista orari */
 .orari-list {
   display: grid;
-  gap: 20px;
+  gap: 15px;
 }
 
 /* Sezione giorno */
 .day-section {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
@@ -162,21 +208,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 25px;
-  background-color: #f8f9fa;
+  padding: 15px 20px;
+  background-color: #ffffff;
   border-bottom: 1px solid #ecf0f1;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
 .day-header:hover {
-  background-color: #e9ecef;
+  background-color: #f8f9fa;
 }
 
 .day-title {
   margin: 0;
   color: #2c3e50;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -186,7 +232,7 @@
 .orari-count {
   background-color: #3498db;
   color: white;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   padding: 2px 8px;
   border-radius: 12px;
   font-weight: normal;
@@ -210,27 +256,28 @@
 
 /* Contenuto giorno */
 .day-content {
-  padding: 25px;
+  padding: 20px;
+  background-color: #ffffff;
 }
 
 .day-content h4 {
   margin: 0 0 15px 0;
   color: #34495e;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 /* Orari esistenti */
 .existing-orari {
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .orario-item {
   background-color: #f8f9fa;
   border: 1px solid #ecf0f1;
   border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
 }
 
 .orario-display {
@@ -243,18 +290,26 @@
 .orario-time {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-weight: 600;
 }
 
 .time-badge {
   background-color: #3498db;
   color: white;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  min-width: 50px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  min-width: 45px;
   text-align: center;
+}
+
+.current-week .time-badge {
+  background-color: #27ae60;
+}
+
+.next-week .time-badge {
+  background-color: #3498db;
 }
 
 .orario-note {
@@ -265,18 +320,19 @@
   padding: 6px 12px;
   border-radius: 4px;
   border: 1px solid #ecf0f1;
+  font-size: 13px;
 }
 
 .orario-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 /* Form di modifica */
 .edit-form {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -284,49 +340,49 @@
   padding: 6px 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .edit-form input[type="time"] {
-  width: 100px;
+  width: 90px;
 }
 
 .edit-form input[type="text"] {
   flex: 1;
-  min-width: 150px;
+  min-width: 120px;
 }
 
 /* Nuove fasce */
 .new-fasce {
   border-top: 2px solid #ecf0f1;
-  padding-top: 20px;
+  padding-top: 15px;
 }
 
 .new-fascia-form {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background-color: #fff3cd;
   border: 1px solid #ffeaa7;
   border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
 }
 
 .new-fascia-form input {
-  padding: 6px 10px;
+  padding: 6px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .new-fascia-form input[type="time"] {
-  width: 100px;
+  width: 85px;
 }
 
 .new-fascia-form input[type="text"] {
   flex: 1;
-  min-width: 150px;
+  min-width: 100px;
 }
 
 .save-actions {
@@ -340,13 +396,39 @@
   text-align: center;
   color: #95a5a6;
   font-style: italic;
-  padding: 30px;
+  padding: 20px;
   background-color: #f8f9fa;
   border-radius: 8px;
   border: 2px dashed #bdc3c7;
+  font-size: 14px;
 }
 
 /* Responsive design */
+@media (max-width: 1200px) {
+  .modifica-orari-container {
+    max-width: 1000px;
+  }
+  
+  .weeks-container {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 992px) {
+  .weeks-container {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  
+  .week-section {
+    padding: 15px;
+  }
+  
+  .week-title {
+    font-size: 1.3rem;
+  }
+}
+
 @media (max-width: 768px) {
   .modifica-orari-container {
     padding: 15px;
@@ -362,16 +444,27 @@
     font-size: 1.5rem;
   }
   
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+  
+  .btn-large {
+    width: 100%;
+    justify-content: center;
+  }
+  
   .day-header {
-    padding: 15px 20px;
+    padding: 12px 15px;
   }
   
   .day-title {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
   
   .day-content {
-    padding: 20px;
+    padding: 15px;
   }
   
   .orario-display {
@@ -392,30 +485,109 @@
   .new-fascia-form {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
   }
   
   .edit-form input,
   .new-fascia-form input {
     width: 100%;
   }
+  
+  .time-badge {
+    min-width: 40px;
+    font-size: 12px;
+    padding: 3px 8px;
+  }
 }
 
 @media (max-width: 480px) {
-  .day-section {
+  .modifica-orari-container {
+    padding: 10px;
+  }
+  
+  .week-section {
     margin: 0 -5px;
+    padding: 12px;
   }
   
   .day-header {
-    padding: 12px 15px;
+    padding: 10px 12px;
   }
   
   .day-content {
-    padding: 15px;
+    padding: 12px;
   }
   
-  .time-badge {
-    min-width: 45px;
-    font-size: 13px;
-    padding: 3px 8px;
+  .day-title {
+    font-size: 0.95rem;
   }
+  
+  .week-title {
+    font-size: 1.1rem;
+  }
+  
+  .btn {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  
+  .btn-small {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+  
+  .orario-item {
+    padding: 10px;
+  }
+  
+  .new-fascia-form {
+    padding: 8px;
+  }
+}
+
+/* Animazioni per migliorare l'UX */
+.day-section {
+  transition: all 0.3s ease;
+}
+
+.day-section:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.orario-item {
+  transition: all 0.2s ease;
+}
+
+.orario-item:hover {
+  background-color: #ffffff;
+  border-color: #3498db;
+}
+
+.new-fascia-form {
+  transition: all 0.2s ease;
+}
+
+.new-fascia-form:hover {
+  background-color: #fff8e1;
+  border-color: #ffb300;
+}
+
+/* Stili per evidenziare le modifiche pending */
+.week-section:has(.new-fasce) .week-title::after {
+  content: " *";
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* Focus states migliorati */
+.btn:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+input:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 1px;
+  border-color: #3498db;
 }
