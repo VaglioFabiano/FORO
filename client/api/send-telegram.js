@@ -60,26 +60,32 @@ async function getChatIdByPhone(phoneNumber) {
     }
     
     // Se non c'è in cache, tenta di ottenere gli aggiornamenti recenti
-    const updatesResponse = await fetch(`${TELEGRAM_API_URL}/getUpdates`);
+    const updatesResponse = await fetch(`${TELEGRAM_API_URL}/getUpdates?limit=100&offset=-100`);
     const updatesData = await updatesResponse.json();
     
     if (!updatesData.ok) {
-      throw new Error('Errore nell\'ottenere gli aggiornamenti Telegram');
+      console.error('Errore Telegram API:', updatesData);
+      throw new Error('Errore nell\'ottenere gli aggiornamenti Telegram: ' + updatesData.description);
     }
     
-    // Cerca tra gli aggiornamenti un contatto che corrisponda al numero
-    for (const update of updatesData.result) {
+    console.log(`Trovati ${updatesData.result.length} aggiornamenti Telegram`);
+    
+    // Cerca tra gli aggiornamenti
+    for (const update of updatesData.result.reverse()) { // Inizia dai più recenti
+      // Controlla contatti condivisi
       if (update.message && update.message.contact) {
         const contact = update.message.contact;
-        // Normalizza i numeri per il confronto
-        const normalizedContactPhone = contact.phone_number.replace(/[^\d]/g, '');
-        const normalizedSearchPhone = phoneNumber.replace(/[^\d]/g, '');
+        const normalizedContactPhone = contact.phone_number.replace(/[^\d+]/g, '');
+        const normalizedSearchPhone = phoneNumber.replace(/[^\d+]/g, '');
+        
+        console.log(`Confronto: ${normalizedContactPhone} vs ${normalizedSearchPhone}`);
         
         if (normalizedContactPhone === normalizedSearchPhone || 
-            normalizedContactPhone.endsWith(normalizedSearchPhone) ||
-            normalizedSearchPhone.endsWith(normalizedContactPhone)) {
+            normalizedContactPhone.includes(normalizedSearchPhone.slice(-8)) ||
+            normalizedSearchPhone.includes(normalizedContactPhone.slice(-8))) {
           
           const chatId = update.message.chat.id;
+          console.log(`Chat ID trovato tramite contatto: ${chatId}`);
           
           // Salva il chat_id nel database per uso futuro
           await client.execute({
@@ -91,13 +97,31 @@ async function getChatIdByPhone(phoneNumber) {
         }
       }
       
-      // Controlla anche nei messaggi diretti se l'utente ha scritto al bot
-      if (update.message && update.message.from && update.message.chat.type === 'private') {
-        // Qui potresti implementare una logica per associare l'utente
-        // basandoti su altri criteri (es. username, nome, ecc.)
+      // Controlla messaggi privati (qualsiasi messaggio da chat private)
+      if (update.message && update.message.chat && update.message.chat.type === 'private') {
+        const chatId = update.message.chat.id;
+        const firstName = update.message.from?.first_name || '';
+        const lastName = update.message.from?.last_name || '';
+        const username = update.message.from?.username || '';
+        
+        console.log(`Messaggio privato da: ${firstName} ${lastName} (@${username}), Chat ID: ${chatId}`);
+        
+        // Se è l'unico aggiornamento recente da chat private, potrebbe essere quello giusto
+        // Salviamo temporaneamente questo chat_id
+        if (updatesData.result.filter(u => u.message?.chat?.type === 'private').length === 1) {
+          console.log(`Unico messaggio privato trovato, assumo sia dell'utente: ${chatId}`);
+          
+          await client.execute({
+            sql: `UPDATE users SET telegram_chat_id = ? WHERE tel = ?`,
+            args: [chatId, phoneNumber]
+          });
+          
+          return chatId;
+        }
       }
     }
     
+    console.log('Nessun chat_id trovato negli aggiornamenti');
     return null;
   } catch (error) {
     console.error('Errore nell\'ottenere chat_id:', error);

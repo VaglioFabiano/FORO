@@ -23,6 +23,8 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
   const [message, setMessage] = useState('');
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   // Template messaggi predefiniti
   const messageTemplates = [
@@ -77,7 +79,7 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
       // Ottieni il token temporaneo per l'autenticazione
       const tempToken = generateTempToken(currentUser);
       
-      const response = await fetch('/api/sendTelegram', {
+      const response = await fetch('/api/send-telegram', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -131,6 +133,30 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
 
   const clearResults = () => {
     setSendResults([]);
+  };
+
+  const fetchDebugInfo = async () => {
+    if (!currentUser) return;
+    
+    setIsLoading(true);
+    try {
+      const tempToken = generateTempToken(currentUser);
+      const response = await fetch('/api/telegram-debug', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tempToken}`
+        }
+      });
+      
+      const data = await response.json();
+      setDebugInfo(data);
+      setShowDebug(true);
+    } catch (error) {
+      console.error('Errore debug:', error);
+      addResult('error', 'Errore nel recuperare le informazioni di debug');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!currentUser) {
@@ -197,6 +223,14 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
           >
             {isLoading ? '📤 Invio in corso...' : '📨 Invia Messaggio'}
           </button>
+          
+          <button
+            className="debug-button"
+            onClick={fetchDebugInfo}
+            disabled={isLoading}
+          >
+            🔧 Debug Info
+          </button>
         </div>
       </div>
 
@@ -205,6 +239,67 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
           <h4>👁️ Anteprima messaggio:</h4>
           <div className="preview-content">
             {replaceTemplateVariables(message, currentUser)}
+          </div>
+        </div>
+      )}
+
+      {showDebug && debugInfo && (
+        <div className="debug-section">
+          <div className="debug-header">
+            <h3>🔧 Informazioni Debug</h3>
+            <button 
+              className="close-debug-button" 
+              onClick={() => setShowDebug(false)}
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="debug-content">
+            <div className="debug-item">
+              <h4>👤 Utente Corrente</h4>
+              <pre>{JSON.stringify(debugInfo.user, null, 2)}</pre>
+            </div>
+            
+            <div className="debug-item">
+              <h4>🤖 Bot Telegram</h4>
+              <pre>{JSON.stringify(debugInfo.bot, null, 2)}</pre>
+            </div>
+            
+            <div className="debug-item">
+              <h4>💾 Database</h4>
+              <pre>{JSON.stringify(debugInfo.database, null, 2)}</pre>
+            </div>
+            
+            <div className="debug-item">
+              <h4>📱 Ultimi Messaggi Telegram</h4>
+              <div className="telegram-updates">
+                {debugInfo.telegram.lastUpdates.length > 0 ? (
+                  debugInfo.telegram.lastUpdates.map((update: { chatId: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; chatType: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; from: { firstName: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; lastName: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; username: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }; messageType: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; contactPhone: any; text: any; date: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }, index: React.Key | null | undefined) => (
+                    <div key={index} className="update-item">
+                      <strong>Chat ID:</strong> {update.chatId}<br/>
+                      <strong>Tipo:</strong> {update.chatType}<br/>
+                      <strong>Da:</strong> {update.from.firstName} {update.from.lastName} (@{update.from.username})<br/>
+                      <strong>Tipo Messaggio:</strong> {update.messageType}<br/>
+                      {update.contactPhone && (
+                        <>
+                          <strong>Telefono Contatto:</strong> {update.contactPhone}<br/>
+                        </>
+                      )}
+                      {update.text && (
+                        <>
+                          <strong>Testo:</strong> {update.text}<br/>
+                        </>
+                      )}
+                      <strong>Data:</strong> {update.date}<br/>
+                      <hr/>
+                    </div>
+                  ))
+                ) : (
+                  <p>Nessun messaggio trovato. Assicurati di aver scritto al bot di recente.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -360,6 +455,7 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
         .form-actions {
           display: flex;
           justify-content: center;
+          gap: 15px;
         }
 
         .send-button {
@@ -384,6 +480,28 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
           opacity: 0.6;
           cursor: not-allowed;
           transform: none;
+        }
+
+        .debug-button {
+          background: linear-gradient(135deg, #17a2b8, #138496);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .debug-button:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+        }
+
+        .debug-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .message-preview {
@@ -510,6 +628,95 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
 
         .error-message h3 {
           margin: 0 0 10px 0;
+        }
+
+        .debug-section {
+          background: #f8f9fa;
+          border: 2px solid #dee2e6;
+          border-radius: 12px;
+          margin-bottom: 24px;
+          max-height: 500px;
+          overflow: hidden;
+        }
+
+        .debug-header {
+          background: #e9ecef;
+          padding: 15px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #dee2e6;
+        }
+
+        .debug-header h3 {
+          margin: 0;
+          color: #495057;
+        }
+
+        .close-debug-button {
+          background: #dc3545;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          cursor: pointer;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .debug-content {
+          padding: 20px;
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .debug-item {
+          margin-bottom: 20px;
+          padding: 15px;
+          background: white;
+          border-radius: 8px;
+          border: 1px solid #dee2e6;
+        }
+
+        .debug-item h4 {
+          margin: 0 0 10px 0;
+          color: #495057;
+          font-size: 16px;
+        }
+
+        .debug-item pre {
+          background: #f8f9fa;
+          padding: 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          overflow-x: auto;
+          margin: 0;
+        }
+
+        .telegram-updates {
+          background: #f8f9fa;
+          padding: 10px;
+          border-radius: 4px;
+          max-height: 200px;
+          overflow-y: auto;
+        }
+
+        .update-item {
+          background: white;
+          padding: 10px;
+          margin-bottom: 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+
+        .update-item hr {
+          margin: 8px 0;
+          border: none;
+          border-top: 1px solid #dee2e6;
         }
 
         @media (max-width: 768px) {
