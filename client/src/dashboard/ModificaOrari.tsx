@@ -30,57 +30,37 @@ const GIORNI_SETTIMANA = [
 
 const getCurrentWeek = (): string => {
   const now = new Date();
-  const currentDay = now.getDay(); // 0 = domenica, 1 = lunedì, ..., 6 = sabato
-  
-  // Calcola quanti giorni sottrarre per arrivare a lunedì
+  const currentDay = now.getDay();
   const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
-  
-  // Calcola la data del lunedì
   const monday = new Date(now);
   monday.setDate(now.getDate() - daysToMonday);
-  
-  // Calcola la data della domenica (lunedì + 6 giorni)
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  
-  // Ottieni il nome del mese
   const monthName = monday.toLocaleDateString('it-IT', { month: 'long' });
   
-  // Se lunedì e domenica sono nello stesso mese
   if (monday.getMonth() === sunday.getMonth()) {
-      return `${monday.getDate()}-${sunday.getDate()} ${monthName}`;
+    return `${monday.getDate()}-${sunday.getDate()} ${monthName}`;
   } else {
-      // Se la settimana attraversa due mesi
-      const sundayMonthName = sunday.toLocaleDateString('it-IT', { month: 'long' });
-      return `${monday.getDate()} ${monthName} - ${sunday.getDate()} ${sundayMonthName}`;
+    const sundayMonthName = sunday.toLocaleDateString('it-IT', { month: 'long' });
+    return `${monday.getDate()} ${monthName} - ${sunday.getDate()} ${sundayMonthName}`;
   }
 };
 
 const getNextWeek = (): string => {
   const now = new Date();
   const currentDay = now.getDay();
-  
-  // Calcola quanti giorni sottrarre per arrivare a lunedì della settimana corrente
   const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
-  
-  // Calcola la data del lunedì della prossima settimana
   const nextMonday = new Date(now);
   nextMonday.setDate(now.getDate() - daysToMonday + 7);
-  
-  // Calcola la data della domenica della prossima settimana
   const nextSunday = new Date(nextMonday);
   nextSunday.setDate(nextMonday.getDate() + 6);
-  
-  // Ottieni il nome del mese
   const monthName = nextMonday.toLocaleDateString('it-IT', { month: 'long' });
   
-  // Se lunedì e domenica sono nello stesso mese
   if (nextMonday.getMonth() === nextSunday.getMonth()) {
-      return `${nextMonday.getDate()}-${nextSunday.getDate()} ${monthName}`;
+    return `${nextMonday.getDate()}-${nextSunday.getDate()} ${monthName}`;
   } else {
-      // Se la settimana attraversa due mesi
-      const sundayMonthName = nextSunday.toLocaleDateString('it-IT', { month: 'long' });
-      return `${nextMonday.getDate()} ${monthName} - ${nextSunday.getDate()} ${sundayMonthName}`;
+    const sundayMonthName = nextSunday.toLocaleDateString('it-IT', { month: 'long' });
+    return `${nextMonday.getDate()} ${monthName} - ${nextSunday.getDate()} ${sundayMonthName}`;
   }
 };
 
@@ -91,14 +71,11 @@ const ModificaOrari: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   
-  // Stato per le nuove fasce da aggiungere per ogni giorno e settimana
   const [nuoveFasce, setNuoveFasce] = useState<Record<string, Record<WeekType, NuovaFascia[]>>>({});
-  
-  // Stato per editing inline
   const [editingId, setEditingId] = useState<{id: number, week: WeekType} | null>(null);
   const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
-  // Inizializza tutti i giorni come aperti
+  // Inizializza gli stati espansi
   useEffect(() => {
     const initialExpanded = GIORNI_SETTIMANA.reduce((acc, giorno) => {
       acc[giorno] = true;
@@ -109,45 +86,39 @@ const ModificaOrari: React.FC = () => {
 
   // Carica gli orari all'avvio
   useEffect(() => {
-    fetchAllOrari();
+    fetchOrari();
   }, []);
 
-  const fetchAllOrari = async () => {
+  const fetchOrari = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch orari settimana corrente
-      const responseCorrente = await fetch('/api/orari_settimana', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      // Fetch orari prossima settimana
-      const responseProssima = await fetch('/api/orari_prossima_settimana', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!responseCorrente.ok || !responseProssima.ok) {
+      // Esegui entrambe le chiamate in parallelo
+      const [currentRes, nextRes] = await Promise.all([
+        fetch('/api/orari_settimana'),
+        fetch('/api/orari_prossima_settimana')
+      ]);
+
+      if (!currentRes.ok || !nextRes.ok) {
         throw new Error('Errore nel caricamento degli orari');
       }
-      
-      const dataCorrente: ApiResponse = await responseCorrente.json();
-      const dataProssima: ApiResponse = await responseProssima.json();
-      
-      if (dataCorrente.success && dataCorrente.data) {
-        setOrariCorrente(dataCorrente.data);
+
+      const currentData: ApiResponse = await currentRes.json();
+      const nextData: ApiResponse = await nextRes.json();
+
+      if (currentData.success && currentData.data) {
+        setOrariCorrente(currentData.data);
+      } else {
+        throw new Error(currentData.error || 'Errore nel caricamento orari corrente');
       }
-      
-      if (dataProssima.success && dataProssima.data) {
-        setOrariProssima(dataProssima.data);
+
+      if (nextData.success && nextData.data) {
+        setOrariProssima(nextData.data);
+      } else {
+        throw new Error(nextData.error || 'Errore nel caricamento orari prossima');
       }
-      
+
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err instanceof Error ? err.message : 'Errore di connessione');
@@ -158,44 +129,50 @@ const ModificaOrari: React.FC = () => {
 
   const groupByDay = (orari: FasciaOraria[]) => {
     return GIORNI_SETTIMANA.reduce((acc, giorno) => {
-      acc[giorno] = orari.filter(o => o.giorno === giorno).sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
+      acc[giorno] = orari.filter(o => o.giorno === giorno)
+                         .sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
       return acc;
     }, {} as Record<string, FasciaOraria[]>);
   };
 
   const aggiungiNuovaFascia = (giorno: string, week: WeekType) => {
-    setNuoveFasce(prev => ({
-      ...prev,
-      [giorno]: {
-        ...prev[giorno],
-        [week]: [
-          ...(prev[giorno]?.[week] || []),
-          { ora_inizio: '09:00', ora_fine: '19:30', note: '' }
-        ]
-      }
-    }));
+    setNuoveFasce(prev => {
+      const existingDay = prev[giorno] || { current: [], next: [] };
+      return {
+        ...prev,
+        [giorno]: {
+          ...existingDay,
+          [week]: [
+            ...existingDay[week],
+            { ora_inizio: '09:00', ora_fine: '18:00', note: '' }
+          ]
+        }
+      };
+    });
   };
 
   const rimuoviNuovaFascia = (giorno: string, week: WeekType, index: number) => {
-    setNuoveFasce(prev => ({
-      ...prev,
-      [giorno]: {
-        ...prev[giorno],
-        [week]: prev[giorno]?.[week]?.filter((_, i) => i !== index) || []
+    setNuoveFasce(prev => {
+      const updated = { ...prev };
+      if (updated[giorno]?.[week]) {
+        updated[giorno][week] = updated[giorno][week].filter((_, i) => i !== index);
+        if (updated[giorno][week].length === 0 && 
+            (week === 'current' ? updated[giorno].next : updated[giorno].current).length === 0) {
+          delete updated[giorno];
+        }
       }
-    }));
+      return updated;
+    });
   };
 
   const aggiornaNuovaFascia = (giorno: string, week: WeekType, index: number, field: keyof NuovaFascia, value: string) => {
-    setNuoveFasce(prev => ({
-      ...prev,
-      [giorno]: {
-        ...prev[giorno],
-        [week]: prev[giorno]?.[week]?.map((fascia, i) => 
-          i === index ? { ...fascia, [field]: value } : fascia
-        ) || []
+    setNuoveFasce(prev => {
+      const updated = { ...prev };
+      if (updated[giorno]?.[week]?.[index]) {
+        updated[giorno][week][index] = { ...updated[giorno][week][index], [field]: value };
       }
-    }));
+      return updated;
+    });
   };
 
   const salvaFascia = async (giorno: string, fascia: NuovaFascia, week: WeekType) => {
@@ -238,39 +215,32 @@ const ModificaOrari: React.FC = () => {
     setError(null);
     let tutteOk = true;
 
-    // Salva tutte le nuove fasce per entrambe le settimane
+    // Crea un array di tutte le promesse di salvataggio
+    const savePromises: Promise<boolean>[] = [];
+
     for (const giorno of GIORNI_SETTIMANA) {
-      const fasceCorrente = nuoveFasce[giorno]?.current || [];
-      const fasceProssima = nuoveFasce[giorno]?.next || [];
+      const fasceGiorno = nuoveFasce[giorno];
+      if (!fasceGiorno) continue;
 
-      // Salva fasce settimana corrente
-      for (const fascia of fasceCorrente) {
-        const risultato = await salvaFascia(giorno, fascia, 'current');
-        if (!risultato) {
-          tutteOk = false;
-          break;
+      for (const week of ['current', 'next'] as WeekType[]) {
+        for (const fascia of fasceGiorno[week] || []) {
+          savePromises.push(salvaFascia(giorno, fascia, week));
         }
       }
+    }
 
-      if (!tutteOk) break;
-
-      // Salva fasce prossima settimana
-      for (const fascia of fasceProssima) {
-        const risultato = await salvaFascia(giorno, fascia, 'next');
-        if (!risultato) {
-          tutteOk = false;
-          break;
-        }
-      }
-
-      if (!tutteOk) break;
+    try {
+      const results = await Promise.all(savePromises);
+      tutteOk = results.every(r => r);
+    } catch (err) {
+      console.error('Save all error:', err);
+      setError(err instanceof Error ? err.message : 'Errore nel salvataggio');
+      tutteOk = false;
     }
 
     if (tutteOk) {
-      // Rimuovi tutte le fasce salvate
       setNuoveFasce({});
-      await fetchAllOrari(); // Ricarica tutti gli orari
-      setError(null);
+      await fetchOrari();
     }
 
     setLoading(false);
@@ -294,8 +264,7 @@ const ModificaOrari: React.FC = () => {
       const data = await response.json();
       
       if (data.success) {
-        await fetchAllOrari();
-        setError(null);
+        await fetchOrari();
       } else {
         throw new Error(data.error || 'Errore nell\'eliminazione');
       }
@@ -306,7 +275,7 @@ const ModificaOrari: React.FC = () => {
   };
 
   const iniziaModifica = (fascia: FasciaOraria, week: WeekType) => {
-    setEditingId({id: fascia.id, week});
+    setEditingId({ id: fascia.id, week });
     setEditData({
       ora_inizio: fascia.ora_inizio,
       ora_fine: fascia.ora_fine,
@@ -343,10 +312,9 @@ const ModificaOrari: React.FC = () => {
       const data = await response.json();
       
       if (data.success) {
-        await fetchAllOrari();
+        await fetchOrari();
         setEditingId(null);
         setEditData({});
-        setError(null);
       } else {
         throw new Error(data.error || 'Errore nell\'aggiornamento');
       }
@@ -370,6 +338,13 @@ const ModificaOrari: React.FC = () => {
     }));
   };
 
+  const hasPendingChanges = () => {
+    return Object.values(nuoveFasce).some(dayFasce => 
+      (dayFasce.current?.length || 0) > 0 || 
+      (dayFasce.next?.length || 0) > 0
+    );
+  };
+
   const renderWeekSection = (title: string, orari: FasciaOraria[], week: WeekType, className: string) => {
     const orariGruppi = groupByDay(orari);
     
@@ -378,11 +353,8 @@ const ModificaOrari: React.FC = () => {
         <h2 className="week-title">{title}</h2>
         <div className="orari-list">
           {GIORNI_SETTIMANA.map(giorno => (
-            <div key={giorno} className="day-section">
-              <div 
-                className="day-header" 
-                onClick={() => toggleDay(giorno)}
-              >
+            <div key={`${week}-${giorno}`} className="day-section">
+              <div className="day-header" onClick={() => toggleDay(giorno)}>
                 <h3 className="day-title">
                   {giorno.charAt(0).toUpperCase() + giorno.slice(1)}
                   <span className="orari-count">({orariGruppi[giorno].length})</span>
@@ -417,19 +389,19 @@ const ModificaOrari: React.FC = () => {
                               <input
                                 type="time"
                                 value={editData.ora_inizio || ''}
-                                onChange={(e) => setEditData(prev => ({ ...prev, ora_inizio: e.target.value }))}
+                                onChange={(e) => setEditData({ ...editData, ora_inizio: e.target.value })}
                               />
                               <span>-</span>
                               <input
                                 type="time"
                                 value={editData.ora_fine || ''}
-                                onChange={(e) => setEditData(prev => ({ ...prev, ora_fine: e.target.value }))}
+                                onChange={(e) => setEditData({ ...editData, ora_fine: e.target.value })}
                               />
                               <input
                                 type="text"
                                 placeholder="Note"
                                 value={editData.note || ''}
-                                onChange={(e) => setEditData(prev => ({ ...prev, note: e.target.value }))}
+                                onChange={(e) => setEditData({ ...editData, note: e.target.value })}
                               />
                               <button onClick={salvaModifica} className="btn btn-success btn-small">✓</button>
                               <button onClick={annullaModifica} className="btn btn-secondary btn-small">✗</button>
@@ -444,14 +416,20 @@ const ModificaOrari: React.FC = () => {
                               {orario.note && <div className="orario-note">{orario.note}</div>}
                               <div className="orario-actions">
                                 <button
-                                  onClick={() => iniziaModifica(orario, week)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    iniziaModifica(orario, week);
+                                  }}
                                   className="btn btn-edit btn-small"
                                   title="Modifica"
                                 >
                                   ✏️
                                 </button>
                                 <button
-                                  onClick={() => eliminaFascia(orario.id, week)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    eliminaFascia(orario.id, week);
+                                  }}
                                   className="btn btn-delete btn-small"
                                   title="Elimina"
                                 >
@@ -516,15 +494,7 @@ const ModificaOrari: React.FC = () => {
     );
   };
 
-  // Verifica se ci sono modifiche da salvare
-  const hasPendingChanges = () => {
-    return Object.values(nuoveFasce).some(dayFasce => 
-      (dayFasce.current && dayFasce.current.length > 0) || 
-      (dayFasce.next && dayFasce.next.length > 0)
-    );
-  };
-
-  if (loading) {
+  if (loading && orariCorrente.length === 0 && orariProssima.length === 0) {
     return (
       <div className="modifica-orari-container">
         <div className="loading">
@@ -549,7 +519,7 @@ const ModificaOrari: React.FC = () => {
               💾 Salva Tutti gli Orari
             </button>
           )}
-          <button onClick={fetchAllOrari} className="btn btn-refresh" disabled={loading}>
+          <button onClick={fetchOrari} className="btn btn-refresh" disabled={loading}>
             🔄 Ricarica
           </button>
         </div>
@@ -578,7 +548,6 @@ const ModificaOrari: React.FC = () => {
         )}
       </div>
 
-      {/* Bottone di salvataggio in fondo */}
       {hasPendingChanges() && (
         <div className="bottom-save-section">
           <button 
