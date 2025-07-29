@@ -4,7 +4,7 @@
   margin: 0 auto;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8f9fa;
+  background-color: rgb(248, 233, 205);
   min-height: 100vh;
 }
 
@@ -15,7 +15,7 @@
   align-items: center;
   margin-bottom: 30px;
   padding: 20px;
-  background: white;
+  background: rgb(248, 233, 205);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -42,7 +42,7 @@
 }
 
 .week-section {
-  background: white;
+  background: rgb(248, 233, 205);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -455,6 +455,18 @@
     justify-content: center;
   }
   
+  .bottom-save-section {
+    margin-top: 20px;
+    padding: 20px 15px;
+  }
+  
+  .btn-bottom-save {
+    width: 100%;
+    min-width: auto;
+    font-size: 16px;
+    padding: 12px 20px;
+  }
+  
   .day-header {
     padding: 12px 15px;
   }
@@ -578,6 +590,30 @@
   content: " *";
   color: #e74c3c;
   font-weight: bold;
+}
+
+/* Sezione salvataggio in fondo */
+.bottom-save-section {
+  margin-top: 30px;
+  padding: 25px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border-top: 3px solid #27ae60;
+}
+
+.btn-bottom-save {
+  min-width: 250px;
+  font-size: 18px;
+  padding: 15px 30px;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+}
+
+.btn-bottom-save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
 }
 
 /* Focus states migliorati */

@@ -117,8 +117,8 @@ const ModificaOrari: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch orari settimana corrente (assumendo che esista un'API simile)
-      const responseCorrente = await fetch('/api/orari_settimana_corrente', {
+      // Fetch orari settimana corrente
+      const responseCorrente = await fetch('/api/orari_settimana', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ const ModificaOrari: React.FC = () => {
       });
       
       // Fetch orari prossima settimana
-      const responseProssima = await fetch('/api/orari_settimana', {
+      const responseProssima = await fetch('/api/orari_prossima_settimana', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      const endpoint = week === 'current' ? '/api/orari_settimana_corrente' : '/api/orari_settimana';
+      const endpoint = week === 'current' ? '/api/orari_settimana' : '/api/orari_prossima_settimana';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -282,7 +282,7 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      const endpoint = week === 'current' ? '/api/orari_settimana_corrente' : '/api/orari_settimana';
+      const endpoint = week === 'current' ? '/api/orari_settimana' : '/api/orari_prossima_settimana';
       const response = await fetch(endpoint, {
         method: 'DELETE',
         headers: {
@@ -326,7 +326,7 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      const endpoint = editingId.week === 'current' ? '/api/orari_settimana_corrente' : '/api/orari_settimana';
+      const endpoint = editingId.week === 'current' ? '/api/orari_settimana' : '/api/orari_prossima_settimana';
       const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
@@ -577,6 +577,19 @@ const ModificaOrari: React.FC = () => {
           'week-section next-week'
         )}
       </div>
+
+      {/* Bottone di salvataggio in fondo */}
+      {hasPendingChanges() && (
+        <div className="bottom-save-section">
+          <button 
+            onClick={salvaTuttiGliOrari} 
+            className="btn btn-success btn-large btn-bottom-save"
+            disabled={loading}
+          >
+            💾 Salva Tutti gli Orari
+          </button>
+        </div>
+      )}
     </div>
   );
 };
