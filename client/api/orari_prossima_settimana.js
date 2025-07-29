@@ -32,12 +32,12 @@ export default async function handler(req, res) {
         // Ottieni tutti gli orari della settimana ordinati per giorno
         const orari = await client.execute(`
           SELECT 
-            fo.id,
-            fo.giorno,
-            fo.ora_inizio,
-            fo.ora_fine,
-            fo.note
-          FROM fasce_orarie_prossima fo
+            po.id,
+            po.giorno,
+            po.ora_inizio,
+            po.ora_fine,
+            po.note
+          FROM fasce_orarie_prossima po
           ORDER BY 
             CASE fo.giorno 
               WHEN 'lunedì' THEN 1
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
               WHEN 'sabato' THEN 6
               WHEN 'domenica' THEN 7
             END,
-            fo.ora_inizio
+            po.ora_inizio
         `);
         
         return res.status(200).json({ 
