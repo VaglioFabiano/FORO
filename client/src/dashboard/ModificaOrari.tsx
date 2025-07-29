@@ -75,7 +75,6 @@ const ModificaOrari: React.FC = () => {
   const [editingId, setEditingId] = useState<{id: number, week: WeekType} | null>(null);
   const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
-  // Inizializza gli stati espansi
   useEffect(() => {
     const initialExpanded = GIORNI_SETTIMANA.reduce((acc, giorno) => {
       acc[giorno] = true;
@@ -84,7 +83,6 @@ const ModificaOrari: React.FC = () => {
     setExpandedDays(initialExpanded);
   }, []);
 
-  // Carica gli orari all'avvio
   useEffect(() => {
     fetchOrari();
   }, []);
@@ -94,34 +92,39 @@ const ModificaOrari: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Esegui entrambe le chiamate in parallelo
       const [currentRes, nextRes] = await Promise.all([
         fetch('/api/orari_settimana'),
         fetch('/api/orari_prossima_settimana')
       ]);
 
-      if (!currentRes.ok || !nextRes.ok) {
-        throw new Error('Errore nel caricamento degli orari');
+      // Controlla se le risposte sono ok
+      if (!currentRes.ok) {
+        throw new Error(`Errore nel caricamento orari corrente: ${currentRes.status}`);
+      }
+      
+      if (!nextRes.ok) {
+        throw new Error(`Errore nel caricamento orari prossima: ${nextRes.status}`);
       }
 
       const currentData: ApiResponse = await currentRes.json();
       const nextData: ApiResponse = await nextRes.json();
 
-      if (currentData.success && currentData.data) {
-        setOrariCorrente(currentData.data);
-      } else {
+      // Controlla se le risposte hanno successo
+      if (!currentData.success) {
         throw new Error(currentData.error || 'Errore nel caricamento orari corrente');
       }
 
-      if (nextData.success && nextData.data) {
-        setOrariProssima(nextData.data);
-      } else {
+      if (!nextData.success) {
         throw new Error(nextData.error || 'Errore nel caricamento orari prossima');
       }
 
+      // Imposta i dati solo se tutto è ok
+      setOrariCorrente(currentData.data || []);
+      setOrariProssima(nextData.data || []);
+
     } catch (err) {
       console.error('Fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione');
+      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
     } finally {
       setLoading(false);
     }
@@ -144,7 +147,7 @@ const ModificaOrari: React.FC = () => {
           ...existingDay,
           [week]: [
             ...existingDay[week],
-            { ora_inizio: '09:00', ora_fine: '18:00', note: '' }
+            { ora_inizio: '09:00', ora_fine: '19:30', note: '' }
           ]
         }
       };
@@ -196,6 +199,10 @@ const ModificaOrari: React.FC = () => {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       
       if (data.success) {
@@ -205,7 +212,7 @@ const ModificaOrari: React.FC = () => {
       }
     } catch (err) {
       console.error('Save error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione');
+      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
       return false;
     }
   };
@@ -215,7 +222,6 @@ const ModificaOrari: React.FC = () => {
     setError(null);
     let tutteOk = true;
 
-    // Crea un array di tutte le promesse di salvataggio
     const savePromises: Promise<boolean>[] = [];
 
     for (const giorno of GIORNI_SETTIMANA) {
@@ -261,6 +267,10 @@ const ModificaOrari: React.FC = () => {
         body: JSON.stringify({ id }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       
       if (data.success) {
@@ -270,7 +280,7 @@ const ModificaOrari: React.FC = () => {
       }
     } catch (err) {
       console.error('Delete error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione');
+      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
     }
   };
 
@@ -309,6 +319,10 @@ const ModificaOrari: React.FC = () => {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       
       if (data.success) {
@@ -320,7 +334,7 @@ const ModificaOrari: React.FC = () => {
       }
     } catch (err) {
       console.error('Update error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione');
+      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
     }
   };
 
@@ -378,7 +392,6 @@ const ModificaOrari: React.FC = () => {
               
               {expandedDays[giorno] && (
                 <div className="day-content">
-                  {/* Orari esistenti */}
                   {orariGruppi[giorno].length > 0 && (
                     <div className="existing-orari">
                       <h4>Orari attuali:</h4>
@@ -443,7 +456,6 @@ const ModificaOrari: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Nuove fasce da aggiungere */}
                   {nuoveFasce[giorno]?.[week]?.length > 0 && (
                     <div className="new-fasce">
                       <h4>Nuove fasce da aggiungere:</h4>
