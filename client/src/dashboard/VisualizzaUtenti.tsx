@@ -31,34 +31,43 @@ const VisualizzaUtenti: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const generateToken = () => {
-    const user = localStorage.getItem('user');
-    if (!user) {
-      throw new Error('Utente non autenticato');
-    }
-
+  useEffect(() => {
+  // Verifica i dati al mount
+  const user = localStorage.getItem('user');
+  if (user) {
     const userData = JSON.parse(user);
-    console.log('User data from localStorage:', userData);
-
-    // Verifica che i dati necessari siano presenti
-    if (!userData.id || !userData.tel) {
-      throw new Error('Dati utente incompleti in localStorage');
+    if (!userData.id || userData.id <= 0) {
+      console.error('Dati utente corrotti, pulendo localStorage');
+      localStorage.removeItem('user');
+      window.location.href = '/login'; 
     }
+  }
+}, []);
 
-    const tokenData = {
-      userId: userData.id,
-      tel: userData.tel,
-      timestamp: new Date().getTime()
+    const generateToken = () => {
+        const user = localStorage.getItem('user');
+        if (!user) {
+            throw new Error('Utente non autenticato');
+        }
+
+        const userData = JSON.parse(user);
+        console.log('User data from localStorage:', userData);
+
+        // Verifica più rigorosa dei dati
+        if (!userData.id || userData.id <= 0 || !userData.tel) {
+            console.error('Dati utente non validi:', userData);
+            throw new Error('Dati utente non validi in localStorage. ID deve essere > 0 e tel deve essere presente');
+        }
+
+        const tokenData = {
+            userId: userData.id,
+            tel: userData.tel,
+            timestamp: new Date().getTime()
+        };
+
+        console.log('Generating token with data:', tokenData);
+        return btoa(JSON.stringify(tokenData));
     };
-
-    console.log('Generating token with data:', tokenData);
-    const token = btoa(JSON.stringify(tokenData));
-    console.log('Generated token:', token);
-    
-    setDebugInfo(`Token generato per utente ID: ${userData.id}, Tel: ${userData.tel}`);
-    
-    return token;
-  };
 
   const fetchUsers = async () => {
     try {

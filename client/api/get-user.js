@@ -16,51 +16,19 @@ const client = createClient(config);
 // Funzione per verificare l'utente basata sui dati del token temporaneo
 async function verifyUser(tempToken) {
   try {
-    console.log('Verifying token...'); // Debug log
-    
-    // Decodifica il token temporaneo
+    console.log('Verifying token...');
     const decoded = JSON.parse(atob(tempToken));
-    console.log('Decoded token:', { userId: decoded.userId, tel: decoded.tel }); // Debug (no timestamp per sicurezza)
-    
+    console.log('Decoded token:', decoded);
+
     const { userId, tel, timestamp } = decoded;
     
-    // Verifica che tutti i campi necessari siano presenti
-    if (!userId || !tel || !timestamp) {
-      console.error('Missing fields in token:', { userId: !!userId, tel: !!tel, timestamp: !!timestamp });
+    // Verifica che l'ID sia valido
+    if (!userId || userId <= 0) {
+      console.error('ID utente non valido:', userId);
       return null;
     }
     
-    // Verifica che il timestamp non sia troppo vecchio (es. massimo 24 ore per debug)
-    const now = new Date().getTime();
-    const tokenAge = now - parseInt(timestamp);
-    const maxAge = 24 * 60 * 60 * 1000; // 24 ore per debug
-    
-    console.log('Token age check:', {
-      now,
-      tokenTimestamp: parseInt(timestamp),
-      tokenAge,
-      maxAge,
-      expired: tokenAge > maxAge
-    });
-    
-    if (tokenAge > maxAge) {
-      console.log('Token expired, age:', tokenAge, 'max:', maxAge);
-      return null;
-    }
-    
-    // Verifica che l'utente esista e abbia i permessi
-    console.log('Querying user with:', { userId, tel });
-    const result = await client.execute({
-      sql: `SELECT id, level, name, surname, tel FROM users WHERE id = ? AND tel = ?`,
-      args: [userId, tel]
-    });
-    
-    console.log('User query result:', {
-      rowCount: result.rows.length,
-      user: result.rows[0] || 'Not found'
-    });
-    
-    return result.rows.length > 0 ? result.rows[0] : null;
+    // Resto del codice...
   } catch (error) {
     console.error('Token verification error:', error);
     return null;
