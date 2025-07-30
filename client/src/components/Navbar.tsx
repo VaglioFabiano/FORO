@@ -72,11 +72,33 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
+      const sessionToken = localStorage.getItem('sessionToken');
+      
+      // Chiama l'API di logout
+      const response = await fetch('/api/autenticazione', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionToken,
+          action: 'logout'
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Logout response:', data);
+
+      // Pulisci il localStorage indipendentemente dalla risposta dell'API
       localStorage.clear();
       setIsLoggedIn(false);
       onLogout();
     } catch (error) {
       console.error('Errore durante il logout:', error);
+      // Anche in caso di errore, pulisci il localStorage
+      localStorage.clear();
+      setIsLoggedIn(false);
+      onLogout();
     } finally {
       setIsLoggingOut(false);
     }

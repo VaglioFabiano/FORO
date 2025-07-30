@@ -56,14 +56,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/autenticazione', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           username,
-          password
+          password,
+          action: 'login'
         }),
       });
 
