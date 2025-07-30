@@ -32,8 +32,6 @@ const VisualizzaUtenti: React.FC = () => {
   const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [canViewUsers, setCanViewUsers] = useState<boolean>(false);
-  const [currentUserLevel, setCurrentUserLevel] = useState<number>(-1);
 
   const levelNames: Record<number, string> = {
     0: 'Admin',
@@ -44,89 +42,33 @@ const VisualizzaUtenti: React.FC = () => {
   };
 
   useEffect(() => {
-    const checkPermissions = () => {
-      const userData = localStorage.getItem('user');
-      const loginTime = localStorage.getItem('loginTime');
-      const rememberMe = localStorage.getItem('rememberMe') === 'true';
-      
-      if (userData && loginTime) {
-        try {
-          const now = new Date().getTime();
-          const loginTimestamp = parseInt(loginTime);
-          const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
-          
-          if (now - loginTimestamp < expirationTime) {
-            const user = JSON.parse(userData);
-            setCurrentUserLevel(user.level);
-            setCanViewUsers(user.level <= 1);
-            return true;
-          }
-        } catch (error) {
-          console.error('Error parsing user data:', error);
-        }
-      }
-      setCanViewUsers(false);
-      return false;
-    };
-
-    if (checkPermissions()) {
-      fetchUsers();
-    }
+    fetchUsers();
   }, []);
 
   useEffect(() => {
     filterUsers();
   }, [users, searchTerm, filterLevel]);
 
-  const generateTempToken = (): string => {
-    const userData = localStorage.getItem('user');
-    const loginTime = localStorage.getItem('loginTime');
-    
-    if (!userData || !loginTime) {
-      throw new Error('Sessione non valida');
-    }
-
-    try {
-      const user = JSON.parse(userData);
-      return btoa(JSON.stringify({
-        userId: user.id,
-        tel: user.tel,
-        timestamp: loginTime,
-        level: user.level
-      }));
-    } catch (error) {
-      console.error('Error generating temp token:', error);
-      throw new Error('Errore nella generazione del token');
-    }
-  };
-
   const fetchUsers = async () => {
     setLoading(true);
     setMessage(null);
     
     try {
-      const tempToken = generateTempToken();
-      
       const response = await fetch('/api/user', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${tempToken}`,
           'Content-Type': 'application/json'
         }
       });
 
-      // Controllo del Content-Type prima di fare il parsing JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        console.error('Risposta non JSON:', textResponse);
-        throw new Error('Risposta del server non valida');
+      if (!response.ok) {
+        throw new Error(`Errore ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || `Errore ${response.status}: ${response.statusText}`);
+      if (!data.success) {
+        throw new Error(data.error || 'Errore nel caricamento utenti');
       }
 
       if (!data.users) {
@@ -213,11 +155,6 @@ const VisualizzaUtenti: React.FC = () => {
       return false;
     }
 
-    if (currentUserLevel > 0 && editingUser.level < currentUserLevel) {
-      setMessage({ type: 'error', text: 'Non puoi assegnare un livello superiore al tuo' });
-      return false;
-    }
-
     return true;
   };
 
@@ -230,8 +167,6 @@ const VisualizzaUtenti: React.FC = () => {
     setMessage(null);
 
     try {
-      const tempToken = generateTempToken();
-      
       const updateData: any = {
         id: editingUser.id,
         name: editingUser.name.trim(),
@@ -247,23 +182,18 @@ const VisualizzaUtenti: React.FC = () => {
       const response = await fetch('/api/user', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tempToken}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(updateData)
       });
 
-      // Controllo del Content-Type prima di fare il parsing JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        console.error('Risposta non JSON:', textResponse);
-        throw new Error('Risposta del server non valida');
+      if (!response.ok) {
+        throw new Error(`Errore ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!data.success) {
         throw new Error(data.error || 'Errore durante l\'aggiornamento');
       }
 
@@ -292,27 +222,21 @@ const VisualizzaUtenti: React.FC = () => {
     }
 
     try {
-      const tempToken = generateTempToken();
-      
-      const response = await fetch(`/api/user?id=${userId}`, {
+      const response = await fetch('/api/user', {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tempToken}`
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: userId })
       });
 
-      // Controllo del Content-Type prima di fare il parsing JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        console.error('Risposta non JSON:', textResponse);
-        throw new Error('Risposta del server non valida');
+      if (!response.ok) {
+        throw new Error(`Errore ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!data.success) {
         throw new Error(data.error || 'Errore durante l\'eliminazione');
       }
 
@@ -342,18 +266,6 @@ const VisualizzaUtenti: React.FC = () => {
       minute: '2-digit'
     });
   };
-
-  if (!canViewUsers) {
-    return (
-      <div className="visualizzautenti-container">
-        <div className="visualizzautenti-no-permission">
-          <div className="visualizzautenti-no-permission-icon">🔒</div>
-          <h3>Accesso Negato</h3>
-          <p>Non hai i permessi per visualizzare gli utenti</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -451,15 +363,13 @@ const VisualizzaUtenti: React.FC = () => {
                     >
                       ✏️
                     </button>
-                    {currentUserLevel === 0 && (
-                      <button
-                        onClick={() => handleDeleteUser(user.id, `${user.name} ${user.surname}`)}
-                        className="visualizzautenti-delete-button"
-                        title="Elimina utente"
-                      >
-                        🗑️
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDeleteUser(user.id, `${user.name} ${user.surname}`)}
+                      className="visualizzautenti-delete-button"
+                      title="Elimina utente"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -538,8 +448,8 @@ const VisualizzaUtenti: React.FC = () => {
                     onChange={handleInputChange}
                     required
                   >
-                    {currentUserLevel === 0 && <option value={0}>Admin</option>}
-                    {currentUserLevel <= 0 && <option value={1}>Direttivo</option>}
+                    <option value={0}>Admin</option>
+                    <option value={1}>Direttivo</option>
                     <option value={2}>Sociə Organizzatorə</option>
                     <option value={3}>Sociə</option>
                     <option value={4}>Volontariə</option>

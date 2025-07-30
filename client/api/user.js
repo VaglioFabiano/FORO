@@ -24,89 +24,38 @@ function hashPassword(password, salt) {
   }
 }
 
-// Funzione per verificare l'utente
-async function verifyUser(tempToken) {
-  try {
-    // Usa atob invece di Buffer per la compatibilità con Edge Runtime
-    const decoded = JSON.parse(atob(tempToken));
-    const { userId, tel, timestamp } = decoded;
-    
-    console.log('Token decodificato:', { userId, tel, timestamp }); // Debug
-    
-    if (!userId || !tel || !timestamp) {
-      console.warn('Token malformato - dati mancanti:', { userId: !!userId, tel: !!tel, timestamp: !!timestamp });
-      return null;
-    }
-
-    const now = Date.now();
-    const tokenAge = now - parseInt(timestamp);
-    const maxAge = 24 * 60 * 60 * 1000; // 24 ore invece di 1 ora per test
-    
-    console.log('Verifica scadenza:', { now, timestamp: parseInt(timestamp), tokenAge, maxAge }); // Debug
-    
-    if (tokenAge > maxAge) {
-      console.warn('Token scaduto - età:', tokenAge, 'max:', maxAge);
-      return null;
-    }
-    
-    const result = await client.execute({
-      sql: 'SELECT id, level, name, surname, tel FROM users WHERE id = ? AND tel = ?',
-      args: [userId, tel]
-    });
-    
-    console.log('Risultato query utente:', result.rows.length); // Debug
-    
-    if (result.rows.length === 0) {
-      console.warn('Utente non trovato nel DB per id:', userId, 'tel:', tel);
-      return null;
-    }
-
-    const user = result.rows[0];
-    console.log('Utente trovato:', { id: user.id, level: user.level, name: user.name }); // Debug
-    return user;
-  } catch (error) {
-    console.error('Errore nella verifica utente:', error);
-    return null;
-  }
-}
-
 // Handler per creare un nuovo utente (POST)
 async function createUser(req, res) {
   try {
     const { name, surname, tel, level, password } = req.body;
-    const tempToken = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!tempToken) {
-      return res.status(401).json({ error: 'Token di autenticazione richiesto' });
-    }
-
-    const user = await verifyUser(tempToken);
-    if (!user) {
-      return res.status(401).json({ error: 'Token non valido o scaduto' });
-    }
-
-    if (user.level >= 2) {
-      return res.status(403).json({ error: 'Permessi insufficienti' });
-    }
 
     // Validazione input
     if (!name?.trim() || !surname?.trim() || !tel?.trim() || !password) {
-      return res.status(400).json({ error: 'Tutti i campi sono obbligatori' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Tutti i campi sono obbligatori' 
+      });
     }
 
     const levelNum = parseInt(level);
     if (isNaN(levelNum)) {
-      return res.status(400).json({ error: 'Livello non valido' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Livello non valido' 
+      });
     }
 
-    // Validazione telefono
-    const { rows } = await client.execute({
+    // Validazione telefono univoco
+    const existingUser = await client.execute({
       sql: 'SELECT id FROM users WHERE tel = ?',
       args: [tel.trim()]
     });
 
-    if (rows.length > 0) {
-      return res.status(400).json({ error: 'Telefono già registrato' });
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Telefono già registrato' 
+      });
     }
 
     // Creazione utente
@@ -134,6 +83,7 @@ async function createUser(req, res) {
   } catch (error) {
     console.error('Errore nella creazione utente:', error);
     return res.status(500).json({
+      success: false,
       error: 'Errore interno del server',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -143,21 +93,6 @@ async function createUser(req, res) {
 // Handler per ottenere tutti gli utenti (GET)
 async function getUsers(req, res) {
   try {
-    const tempToken = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!tempToken) {
-      return res.status(401).json({ error: 'Token di autenticazione richiesto' });
-    }
-
-    const user = await verifyUser(tempToken);
-    if (!user) {
-      return res.status(401).json({ error: 'Token non valido o scaduto' });
-    }
-
-    if (user.level > 1) {
-      return res.status(403).json({ error: 'Permessi insufficienti' });
-    }
-
     const result = await client.execute({
       sql: `SELECT 
               id, name, surname, tel, level, 
@@ -175,6 +110,7 @@ async function getUsers(req, res) {
   } catch (error) {
     console.error('Errore nel recupero utenti:', error);
     return res.status(500).json({
+      success: false,
       error: 'Errore interno del server',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -185,28 +121,20 @@ async function getUsers(req, res) {
 async function updateUser(req, res) {
   try {
     const { id, name, surname, tel, level, password } = req.body;
-    const tempToken = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!tempToken) {
-      return res.status(401).json({ error: 'Token di autenticazione richiesto' });
-    }
-
-    const currentUser = await verifyUser(tempToken);
-    if (!currentUser) {
-      return res.status(401).json({ error: 'Token non valido o scaduto' });
-    }
-
-    if (currentUser.level > 1) {
-      return res.status(403).json({ error: 'Permessi insufficienti' });
-    }
 
     if (!id || !name?.trim() || !surname?.trim() || !tel?.trim()) {
-      return res.status(400).json({ error: 'Dati mancanti' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Dati mancanti' 
+      });
     }
 
     const levelNum = parseInt(level);
     if (isNaN(levelNum)) {
-      return res.status(400).json({ error: 'Livello non valido' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Livello non valido' 
+      });
     }
 
     // Verifica esistenza utente
@@ -216,16 +144,13 @@ async function updateUser(req, res) {
     });
 
     if (targetUser.rows.length === 0) {
-      return res.status(404).json({ error: 'Utente non trovato' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Utente non trovato' 
+      });
     }
 
-    // Controlli permessi
-    if (currentUser.level > 0 && 
-        (targetUser.rows[0].level < currentUser.level || levelNum < currentUser.level)) {
-      return res.status(403).json({ error: 'Permessi insufficienti' });
-    }
-
-    // Verifica telefono univoco
+    // Verifica telefono univoco (solo se è diverso da quello attuale)
     if (tel.trim() !== targetUser.rows[0].tel) {
       const telCheck = await client.execute({
         sql: 'SELECT id FROM users WHERE tel = ? AND id != ?',
@@ -233,7 +158,10 @@ async function updateUser(req, res) {
       });
 
       if (telCheck.rows.length > 0) {
-        return res.status(400).json({ error: 'Telefono già registrato' });
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Telefono già registrato' 
+        });
       }
     }
 
@@ -243,7 +171,10 @@ async function updateUser(req, res) {
 
     if (password?.trim()) {
       if (password.length < 6) {
-        return res.status(400).json({ error: 'Password troppo corta' });
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Password troppo corta (minimo 6 caratteri)' 
+        });
       }
       const salt = tel.trim();
       const passwordHash = hashPassword(password, salt);
@@ -267,6 +198,7 @@ async function updateUser(req, res) {
   } catch (error) {
     console.error('Errore nell\'aggiornamento utente:', error);
     return res.status(500).json({
+      success: false,
       error: 'Errore interno del server',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -277,27 +209,12 @@ async function updateUser(req, res) {
 async function deleteUser(req, res) {
   try {
     const id = req.query.id || req.body.id;
-    const tempToken = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!tempToken) {
-      return res.status(401).json({ error: 'Token di autenticazione richiesto' });
-    }
-
-    const currentUser = await verifyUser(tempToken);
-    if (!currentUser) {
-      return res.status(401).json({ error: 'Token non valido o scaduto' });
-    }
-
-    if (currentUser.level > 0) {
-      return res.status(403).json({ error: 'Permessi insufficienti' });
-    }
 
     if (!id) {
-      return res.status(400).json({ error: 'ID utente mancante' });
-    }
-
-    if (parseInt(id) === currentUser.id) {
-      return res.status(400).json({ error: 'Non puoi eliminare il tuo account' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ID utente mancante' 
+      });
     }
 
     const result = await client.execute({
@@ -306,17 +223,22 @@ async function deleteUser(req, res) {
     });
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Utente non trovato' });
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Utente non trovato' 
+      });
     }
 
     return res.status(200).json({
       success: true,
-      deletedUser: result.rows[0]
+      deletedUser: result.rows[0],
+      message: 'Utente eliminato con successo'
     });
 
   } catch (error) {
     console.error('Errore nell\'eliminazione utente:', error);
     return res.status(500).json({
+      success: false,
       error: 'Errore interno del server',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -348,12 +270,16 @@ export default async function handler(req, res) {
       case 'DELETE':
         return await deleteUser(req, res);
       default:
-        return res.status(405).json({ error: 'Metodo non supportato' });
+        return res.status(405).json({ 
+          success: false, 
+          error: 'Metodo non supportato' 
+        });
     }
   } catch (error) {
     console.error('Errore API:', error);
     
     return res.status(500).json({ 
+      success: false,
       error: 'Errore interno del server',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
