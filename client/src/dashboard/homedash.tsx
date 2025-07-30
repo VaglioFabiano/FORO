@@ -28,12 +28,12 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   // Elementi della dashboard con i livelli minimi richiesti
   const dashboardItems: DashboardItem[] = [
     {
-      id: 'profilo-utente', // NUOVO ELEMENTO - Accessibile a tutti
+      id: 'profilo-utente',
       title: 'Il Mio Profilo',
       description: 'Modifica le tue informazioni personali',
       icon: '👤',
       component: ProfiloUtente,
-      minLevel: 4 // Accessibile a tutti i livelli (0-4)
+      minLevel: 4 
     },
     {
       id: 'crea-utenti',
@@ -44,7 +44,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       minLevel: 1 
     },
     {
-      id: 'visualizza-utenti', // NUOVO ELEMENTO
+      id: 'visualizza-utenti', 
       title: 'Visualizza Utenti',
       description: 'Visualizza tutti gli utenti registrati',
       icon: '👀',
@@ -67,38 +67,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       component: TelegramSender,
       minLevel: 0 // Livelli 0 e 1
     },
-    {
-      id: 'report',
-      title: 'Report',
-      description: 'Visualizza report e statistiche',
-      icon: '📊',
-      component: () => <div>Componente Report</div>,
-      minLevel: 3 // Livelli 0 e 1
-    },
-    {
-      id: 'impostazioni',
-      title: 'Impostazioni',
-      description: 'Configura le impostazioni',
-      icon: '⚙️',
-      component: () => <div>Componente Impostazioni</div>,
-      minLevel: 0 // Solo livello 0 
-    },
-    {
-      id: 'calendario',
-      title: 'Calendario',
-      description: 'Gestisci eventi e appuntamenti',
-      icon: '📅',
-      component: () => <div>Componente Calendario</div>,
-      minLevel: 3 // Livelli 0, 1 e 2
-    },
-    {
-      id: 'notifiche',
-      title: 'Notifiche',
-      description: 'Centro notifiche',
-      icon: '🔔',
-      component: () => <div>Componente Notifiche</div>,
-      minLevel: 3 // Tutti i livelli (0-3)
-    }
+    // Aggiungi altri elementi della dashboard qui
   ];
 
   useEffect(() => {
