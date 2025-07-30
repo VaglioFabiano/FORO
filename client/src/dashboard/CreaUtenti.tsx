@@ -136,13 +136,27 @@ const CreaUtenti: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${tempToken}`
         },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify({
+          name: newUser.name,
+          surname: newUser.surname,
+          tel: newUser.tel,
+          level: newUser.level,
+          password: newUser.password
+        })
       });
+
+      // Controllo del Content-Type prima di fare il parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Risposta non JSON:', textResponse);
+        throw new Error('Risposta del server non valida');
+      }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Errore durante la creazione');
+        throw new Error(data.error || `Errore ${response.status}: ${response.statusText}`);
       }
 
       setMessage({ 
@@ -154,12 +168,13 @@ const CreaUtenti: React.FC = () => {
         name: '',
         surname: '',
         tel: '',
-        level: 4,
+        level: 3,
         password: '',
         confirmPassword: ''
       });
 
     } catch (error: unknown) {
+      console.error('Errore creazione utente:', error);
       setMessage({ 
         type: 'error', 
         text: error instanceof Error ? error.message : 'Errore di connessione' 

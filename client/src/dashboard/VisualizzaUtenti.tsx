@@ -115,12 +115,19 @@ const VisualizzaUtenti: React.FC = () => {
         }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Errore ${response.status}: ${response.statusText}`);
+      // Controllo del Content-Type prima di fare il parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Risposta non JSON:', textResponse);
+        throw new Error('Risposta del server non valida');
       }
 
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Errore ${response.status}: ${response.statusText}`);
+      }
 
       if (!data.users) {
         throw new Error('Formato dati non valido');
@@ -246,6 +253,14 @@ const VisualizzaUtenti: React.FC = () => {
         body: JSON.stringify(updateData)
       });
 
+      // Controllo del Content-Type prima di fare il parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Risposta non JSON:', textResponse);
+        throw new Error('Risposta del server non valida');
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -261,6 +276,7 @@ const VisualizzaUtenti: React.FC = () => {
       closeEditModal();
 
     } catch (error) {
+      console.error('Errore aggiornamento utente:', error);
       setMessage({ 
         type: 'error', 
         text: error instanceof Error ? error.message : 'Errore di connessione' 
@@ -278,14 +294,21 @@ const VisualizzaUtenti: React.FC = () => {
     try {
       const tempToken = generateTempToken();
       
-      const response = await fetch('/api/user', {
+      const response = await fetch(`/api/user?id=${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${tempToken}`
-        },
-        body: JSON.stringify({ id: userId })
+        }
       });
+
+      // Controllo del Content-Type prima di fare il parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('Risposta non JSON:', textResponse);
+        throw new Error('Risposta del server non valida');
+      }
 
       const data = await response.json();
 
@@ -301,6 +324,7 @@ const VisualizzaUtenti: React.FC = () => {
       await fetchUsers();
 
     } catch (error) {
+      console.error('Errore eliminazione utente:', error);
       setMessage({ 
         type: 'error', 
         text: error instanceof Error ? error.message : 'Errore di connessione' 

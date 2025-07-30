@@ -86,7 +86,7 @@ async function createUser(req, res) {
     }
 
     const levelNum = parseInt(level);
-    if (isNaN(levelNum) ){
+    if (isNaN(levelNum)) {
       return res.status(400).json({ error: 'Livello non valido' });
     }
 
@@ -267,7 +267,8 @@ async function updateUser(req, res) {
 // Handler migliorato per eliminare un utente (DELETE)
 async function deleteUser(req, res) {
   try {
-    const { id } = req.query;
+    // Modifica: leggi l'ID dal query parameter O dal body
+    const id = req.query.id || req.body.id;
     const tempToken = req.headers.authorization?.replace('Bearer ', '');
 
     if (!tempToken) {
@@ -320,6 +321,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -343,12 +345,16 @@ module.exports = async function handler(req, res) {
     }
   } catch (error) {
     console.error('Errore API:', error);
-    res.status(500).json({ 
-      error: 'Errore interno del server',
-      ...(process.env.NODE_ENV === 'development' && { 
-        details: error.message,
-        stack: error.stack 
-      })
-    });
+    
+    // Assicurati che la risposta sia sempre JSON
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        error: 'Errore interno del server',
+        ...(process.env.NODE_ENV === 'development' && { 
+          details: error.message,
+          stack: error.stack 
+        })
+      });
+    }
   }
 };
