@@ -59,29 +59,26 @@ const VisualizzaUtenti: React.FC = () => {
             const user = JSON.parse(userData);
             setCurrentUserLevel(user.level);
             setCanViewUsers(user.level <= 1);
-          } else {
-            setCanViewUsers(false);
+            return true;
           }
         } catch (error) {
           console.error('Error parsing user data:', error);
-          setCanViewUsers(false);
         }
-      } else {
-        setCanViewUsers(false);
       }
+      setCanViewUsers(false);
+      return false;
     };
 
-    checkPermissions();
-    if (canViewUsers) {
+    if (checkPermissions()) {
       fetchUsers();
     }
-  }, [canViewUsers]);
+  }, []);
 
   useEffect(() => {
     filterUsers();
   }, [users, searchTerm, filterLevel]);
 
-  const generateTempToken = () => {
+  const generateTempToken = (): string => {
     const userData = localStorage.getItem('user');
     const loginTime = localStorage.getItem('loginTime');
     
@@ -89,16 +86,24 @@ const VisualizzaUtenti: React.FC = () => {
       throw new Error('Sessione non valida');
     }
 
-    const user = JSON.parse(userData);
-    return btoa(JSON.stringify({
-      userId: user.id,
-      tel: user.tel,
-      timestamp: loginTime
-    }));
+    try {
+      const user = JSON.parse(userData);
+      return btoa(JSON.stringify({
+        userId: user.id,
+        tel: user.tel,
+        timestamp: loginTime,
+        level: user.level
+      }));
+    } catch (error) {
+      console.error('Error generating temp token:', error);
+      throw new Error('Errore nella generazione del token');
+    }
   };
 
   const fetchUsers = async () => {
     setLoading(true);
+    setMessage(null);
+    
     try {
       const tempToken = generateTempToken();
       
@@ -110,18 +115,27 @@ const VisualizzaUtenti: React.FC = () => {
         }
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Errore nel caricamento utenti');
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Errore ${response.status}: ${response.statusText}`);
       }
 
-      setUsers(data.users || []);
-      setMessage({ type: 'success', text: `Caricati ${data.users?.length || 0} utenti` });
+      const data = await response.json();
+
+      if (!data.users) {
+        throw new Error('Formato dati non valido');
+      }
+
+      setUsers(data.users);
+      setMessage({ 
+        type: 'success', 
+        text: `Caricati ${data.users.length} utenti` 
+      });
     } catch (error) {
+      console.error('Fetch users error:', error);
       setMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : 'Errore di connessione' 
+        text: error instanceof Error ? error.message : 'Errore di connessione al server'
       });
       setUsers([]);
     } finally {
