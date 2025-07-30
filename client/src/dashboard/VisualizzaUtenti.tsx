@@ -46,7 +46,7 @@ const VisualizzaUtenti: React.FC = () => {
         timestamp: new Date().getTime()
       }));
 
-      const response = await fetch('/api/get-users', {
+      const response = await fetch('/api/get-user', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${tempToken}`,
