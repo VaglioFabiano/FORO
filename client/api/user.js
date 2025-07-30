@@ -105,42 +105,34 @@ async function getUsers(req, res) {
   try {
     console.log('Tentativo di recupero utenti...');
     
-    // Prima verifichiamo se la tabella esiste
-    const tableCheck = await client.execute({
-      sql: "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
-    });
+    // Query molto semplice per iniziare
+    const result = await client.execute('SELECT * FROM users');
     
-    console.log('Controllo tabella users:', tableCheck.rows);
+    console.log('Query eseguita, numero righe:', result.rows.length);
     
-    if (tableCheck.rows.length === 0) {
-      console.error('Tabella users non trovata');
-      return res.status(500).json({
-        success: false,
-        error: 'Tabella users non esistente nel database'
-      });
+    // Controlliamo se ci sono dati e come sono strutturati
+    if (result.rows.length > 0) {
+      console.log('Prima riga:', JSON.stringify(result.rows[0], null, 2));
     }
 
-    // Verifichiamo la struttura della tabella
-    const tableInfo = await client.execute({
-      sql: "PRAGMA table_info(users)"
-    });
-    
-    console.log('Struttura tabella users:', tableInfo.rows);
+    // Trasformiamo i dati per essere sicuri della struttura
+    const users = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      surname: row.surname,
+      tel: row.tel,
+      level: row.level,
+      created_at: row.created_at,
+      last_login: row.last_login,
+      telegram_chat_id: row.telegram_chat_id
+    }));
 
-    // Query semplificata per il debug
-    const result = await client.execute({
-      sql: 'SELECT * FROM users ORDER BY id DESC LIMIT 10'
-    });
-
-    console.log('Risultato query utenti:', {
-      rowCount: result.rows.length,
-      firstRow: result.rows[0] || 'Nessun utente trovato'
-    });
+    console.log('Utenti trasformati:', users.length);
 
     return res.status(200).json({
       success: true,
-      users: result.rows,
-      count: result.rows.length
+      users: users,
+      count: users.length
     });
 
   } catch (error) {
@@ -153,11 +145,7 @@ async function getUsers(req, res) {
     return res.status(500).json({
       success: false,
       error: 'Errore interno del server',
-      details: error.message,
-      debugInfo: process.env.NODE_ENV === 'development' ? {
-        stack: error.stack,
-        name: error.name
-      } : undefined
+      details: error.message
     });
   }
 }
