@@ -34,7 +34,7 @@ const VisualizzaUtenti: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const levelNames: Record<number, string> = {
-    0: 'Admin',
+    0: 'Direttivo', // Admin mostrati come Direttivo
     1: 'Direttivo',
     2: 'Sociə Organizzatorə',
     3: 'Sociə',
@@ -99,8 +99,16 @@ const VisualizzaUtenti: React.FC = () => {
         user.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.tel.includes(searchTerm);
 
-      // Correggiamo il confronto per il livello - assicuriamoci che sia numerico
-      const matchesLevel = filterLevel === 'all' || user.level === parseInt(filterLevel);
+      // Trattiamo livello 0 e 1 come "Direttivo" (stesso gruppo)
+      let matchesLevel = false;
+      if (filterLevel === 'all') {
+        matchesLevel = true;
+      } else if (filterLevel === '1') {
+        // Se filtriamo per "Direttivo", includiamo sia livello 0 che livello 1
+        matchesLevel = user.level === 0 || user.level === 1;
+      } else {
+        matchesLevel = user.level === parseInt(filterLevel);
+      }
 
       return matchesSearch && matchesLevel;
     });
@@ -316,7 +324,6 @@ const VisualizzaUtenti: React.FC = () => {
             className="visualizzautenti-level-filter"
           >
             <option value="all">Tutti i livelli</option>
-            
             <option value="1">Direttivo</option>
             <option value="2">Sociə Organizzatorə</option>
             <option value="3">Sociə</option>
@@ -351,7 +358,7 @@ const VisualizzaUtenti: React.FC = () => {
                 <td>{user.surname}</td>
                 <td>{user.tel}</td>
                 <td>
-                  <span className={`visualizzautenti-level-badge visualizzautenti-level-${user.level}`}>
+                  <span className={`visualizzautenti-level-badge visualizzautenti-level-${user.level === 0 ? '1' : user.level}`}>
                     {levelNames[user.level] || `Livello ${user.level}`}
                   </span>
                 </td>
@@ -451,7 +458,7 @@ const VisualizzaUtenti: React.FC = () => {
                     onChange={handleInputChange}
                     required
                   >
-                    <option value={0}>Admin</option>
+                    <option value={0}>Direttivo (Admin)</option>
                     <option value={1}>Direttivo</option>
                     <option value={2}>Sociə Organizzatorə</option>
                     <option value={3}>Sociə</option>
