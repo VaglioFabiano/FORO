@@ -30,7 +30,7 @@ const VisualizzaUtenti: React.FC = () => {
   const [message, setMessage] = useState<Message | null>(null);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('id'); // 'id', 'name', 'surname'
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -141,22 +141,7 @@ const VisualizzaUtenti: React.FC = () => {
     setFilteredUsers(filtered);
   };
 
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      // Se clicchiamo sulla stessa colonna, inverti l'ordine
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      // Se clicchiamo su una nuova colonna, ordina ascendente
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
-
-  const getSortIcon = (field: string) => {
-    if (sortBy !== field) return '↕️'; // Icona neutra
-    return sortOrder === 'asc' ? '↑' : '↓';
-  };
-
+  
   const openEditModal = (user: User) => {
     setEditingUser({
       ...user,
@@ -379,16 +364,6 @@ const VisualizzaUtenti: React.FC = () => {
             <option value="surname">Cognome</option>
           </select>
         </div>
-        <div className="visualizzautenti-filter-group">
-          <label>Ordine</label>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="visualizzautenti-sort-button"
-            title={`Ordina ${sortOrder === 'asc' ? 'decrescente' : 'crescente'}`}
-          >
-            {sortOrder === 'asc' ? '↑ Crescente' : '↓ Decrescente'}
-          </button>
-        </div>
       </div>
 
       <div className="visualizzautenti-stats">
@@ -399,15 +374,9 @@ const VisualizzaUtenti: React.FC = () => {
         <table className="visualizzautenti-table">
           <thead>
             <tr>
-              <th onClick={() => handleSort('id')} style={{ cursor: 'pointer' }}>
-                ID {getSortIcon('id')}
-              </th>
-              <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                Nome {getSortIcon('name')}
-              </th>
-              <th onClick={() => handleSort('surname')} style={{ cursor: 'pointer' }}>
-                Cognome {getSortIcon('surname')}
-              </th>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Cognome</th>
               <th>Username</th>
               <th>Telefono</th>
               <th>Livello</th>
