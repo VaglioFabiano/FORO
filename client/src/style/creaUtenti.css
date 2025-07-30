@@ -74,7 +74,7 @@
   gap: 25px;
 }
 
-/* Desktop layout - grid a due colonne */
+/* Desktop layout - grid a due colonne con layout aggiornato */
 @media (min-width: 769px) {
   .crea-utenti-form {
     display: grid;
@@ -83,15 +83,22 @@
     padding: 20px 0;
   }
   
-  /* Colonna sinistra: Nome, Telefono, Password */
+  /* Prima riga: Nome, Cognome */
   .form-group:nth-child(1) { grid-column: 1; } /* Nome */
-  .form-group:nth-child(3) { grid-column: 1; } /* Telefono */
-  .form-group:nth-child(5) { grid-column: 1; } /* Password */
-  
-  /* Colonna destra: Cognome, Livello, Conferma Password */
   .form-group:nth-child(2) { grid-column: 2; } /* Cognome */
-  .form-group:nth-child(4) { grid-column: 2; } /* Livello */
-  .form-group:nth-child(6) { grid-column: 2; } /* Conferma Password */
+  
+  /* Seconda riga: Username, Telefono */
+  .form-group:nth-child(3) { grid-column: 1; } /* Username */
+  .form-group:nth-child(4) { grid-column: 2; } /* Telefono */
+  
+  /* Terza riga: Livello (occupa entrambe le colonne) */
+  .form-group:nth-child(5) { 
+    grid-column: 1 / -1; /* Occupa entrambe le colonne */
+  }
+  
+  /* Quarta riga: Password, Conferma Password */
+  .form-group:nth-child(6) { grid-column: 1; } /* Password */
+  .form-group:nth-child(7) { grid-column: 2; } /* Conferma Password */
   
   /* Il bottone occupa entrambe le colonne */
   .submit-button {
@@ -99,6 +106,12 @@
     justify-self: center;
     width: 300px;
     margin-top: 20px;
+  }
+
+  /* Stile speciale per il campo livello a tutta larghezza */
+  .form-group-full-width {
+    max-width: 400px;
+    justify-self: center;
   }
 }
 
