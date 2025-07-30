@@ -359,7 +359,7 @@ const VisualizzaUtenti: React.FC = () => {
             onChange={(e) => setSortBy(e.target.value)}
             className="visualizzautenti-sort-select"
           >
-            <option value="id">ID</option>
+            
             <option value="name">Nome</option>
             <option value="surname">Cognome</option>
           </select>
@@ -508,7 +508,6 @@ const VisualizzaUtenti: React.FC = () => {
                     onChange={handleInputChange}
                     required
                   >
-                    <option value={0}>Direttivo (Admin)</option>
                     <option value={1}>Direttivo</option>
                     <option value={2}>Sociə Organizzatorə</option>
                     <option value={3}>Sociə</option>
@@ -522,7 +521,7 @@ const VisualizzaUtenti: React.FC = () => {
 
               <div className="visualizzautenti-form-row">
                 <div className="visualizzautenti-form-group">
-                  <label htmlFor="edit-password">Nuova Password (opzionale)</label>
+                  <label htmlFor="edit-password">Nuova Password </label>
                   <input
                     type="password"
                     id="edit-password"
