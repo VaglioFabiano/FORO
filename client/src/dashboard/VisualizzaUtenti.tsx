@@ -46,7 +46,9 @@ const VisualizzaUtenti: React.FC = () => {
 
     const generateToken = () => {
         const user = localStorage.getItem('user');
-        if (!user) {
+        const loginTime = localStorage.getItem('loginTime'); // Usa loginTime invece di timestamp corrente
+        
+        if (!user || !loginTime) {
             throw new Error('Utente non autenticato');
         }
 
@@ -62,7 +64,7 @@ const VisualizzaUtenti: React.FC = () => {
         const tokenData = {
             userId: userData.id,
             tel: userData.tel,
-            timestamp: new Date().getTime()
+            timestamp: loginTime // Usa loginTime invece di new Date().getTime()
         };
 
         console.log('Generating token with data:', tokenData);
