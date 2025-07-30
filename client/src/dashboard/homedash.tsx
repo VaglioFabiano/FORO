@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CreaUtenti from './CreaUtenti';
 import ModificaOrari from './ModificaOrari';
 import TelegramSender from './TelegramSender'; 
+import VisualizzaUtenti from './VisualizzaUtenti'; // NUOVO IMPORT
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -34,6 +35,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       minLevel: 1 
     },
     {
+      id: 'visualizza-utenti', // NUOVO ELEMENTO
+      title: 'Visualizza Utenti',
+      description: 'Visualizza tutti gli utenti registrati',
+      icon: '👀',
+      component: VisualizzaUtenti,
+      minLevel: 1 // Livello 0 e 1
+    },
+    {
       id: 'modifica-orari',
       title: 'Modifica Orari',
       description: 'Gestisci gli orari di apertura',
@@ -43,11 +52,11 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
     },
     {
       id: 'telegram-sender',
-      title: 'Messaggi Telegram',  // NUOVO ELEMENTO
+      title: 'Messaggi Telegram',
       description: 'Invia messaggi via Telegram',
       icon: '📱',
       component: TelegramSender,
-      minLevel: 2 // Livelli 0 e 1
+      minLevel: 0 // Livelli 0 e 1
     },
     {
       id: 'report',
