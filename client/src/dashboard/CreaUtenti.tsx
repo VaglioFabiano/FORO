@@ -249,7 +249,7 @@ const CreaUtenti: React.FC = () => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-group form-group-full-width">
             <label htmlFor="level">Livello</label>
             <select
               id="level"
