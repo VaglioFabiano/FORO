@@ -16,19 +16,26 @@ const client = createClient(config);
 // Funzione per verificare l'utente basata sui dati del token temporaneo
 async function verifyUser(tempToken) {
   try {
-    console.log('Verifying token...');
+    // Decodifica il token temporaneo
     const decoded = JSON.parse(atob(tempToken));
-    console.log('Decoded token:', decoded);
-
     const { userId, tel, timestamp } = decoded;
     
-    // Verifica che l'ID sia valido
-    if (!userId || userId <= 0) {
-      console.error('ID utente non valido:', userId);
+    // Verifica che il timestamp non sia troppo vecchio (es. massimo 1 ora)
+    const now = new Date().getTime();
+    const tokenAge = now - parseInt(timestamp);
+    const maxAge = 60 * 60 * 1000; // 1 ora
+    
+    if (tokenAge > maxAge) {
       return null;
     }
     
-    // Resto del codice...
+    // Verifica che l'utente esista e abbia i permessi
+    const result = await client.execute({
+      sql: `SELECT id, level, name, surname, tel FROM users WHERE id = ? AND tel = ?`,
+      args: [userId, tel]
+    });
+    
+    return result.rows[0] || null;
   } catch (error) {
     console.error('Token verification error:', error);
     return null;
@@ -36,8 +43,6 @@ async function verifyUser(tempToken) {
 }
 
 export default async function handler(req, res) {
-  console.log('GET /api/get-user called'); // Debug log
-  
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -48,57 +53,30 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'GET') {
-    return res.status(405).json({ 
-      success: false,
-      error: 'Method not allowed' 
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('Testing DB connection...'); // Debug log
-    
     // Test connessione DB
     await client.execute("SELECT 1");
     
-    console.log('DB connection OK'); // Debug log
-    
-    const authHeader = req.headers.authorization;
-    const tempToken = authHeader?.replace('Bearer ', '');
-
-    console.log('Auth header present:', !!authHeader); // Debug log
-    console.log('Token extracted:', !!tempToken); // Debug log
+    const tempToken = req.headers.authorization?.replace('Bearer ', '');
 
     if (!tempToken) {
-      return res.status(401).json({ 
-        success: false,
-        error: 'Token di autenticazione richiesto' 
-      });
+      return res.status(401).json({ error: 'Token di autenticazione richiesto' });
     }
 
-    console.log('Verifying user...'); // Debug log
     const user = await verifyUser(tempToken);
-    
     if (!user) {
-      return res.status(401).json({ 
-        success: false,
-        error: 'Token non valido o scaduto' 
-      });
+      return res.status(401).json({ error: 'Token non valido o scaduto' });
     }
 
-    console.log('User verified, level:', user.level); // Debug log
-
-    // Verifica che l'utente abbia il livello appropriato (livello 1 o superiore)
+    // Solo admin (livello 0) e direttivo (livello 1) possono vedere tutti gli utenti
     if (user.level > 1) {
-      return res.status(403).json({ 
-        success: false,
-        error: 'Permessi insufficienti per visualizzare gli utenti' 
-      });
+      return res.status(403).json({ error: 'Permessi insufficienti per visualizzare gli utenti' });
     }
 
-    console.log('Fetching all users...'); // Debug log
-
-    // Recupera tutti gli utenti con le informazioni necessarie
-    // Usa datetime() per convertire il timestamp in formato leggibile
+    // Query per ottenere tutti gli utenti (escluso password_hash e salt per sicurezza)
     const result = await client.execute({
       sql: `SELECT 
               id, 
@@ -106,73 +84,41 @@ export default async function handler(req, res) {
               surname, 
               tel, 
               level, 
-              datetime(created_at) as created_at
+              created_at, 
+              last_login,
+              telegram_chat_id
             FROM users 
-            ORDER BY created_at DESC`
+            ORDER BY level ASC, created_at DESC`
     });
 
-    console.log('Users fetched:', result.rows.length); // Debug log
-    console.log('First row sample:', result.rows[0]); // Debug per vedere il formato
-
-    // Formatta i risultati - gestisce sia oggetti che array
-    const users = result.rows.map((row, index) => {
-      try {
-        // Gestisce il caso in cui row possa essere un array o un oggetto
-        let userData;
-        if (Array.isArray(row)) {
-          userData = {
-            id: row[0],
-            name: row[1],
-            surname: row[2],
-            tel: row[3],
-            level: row[4],
-            created_at: row[5]
-          };
-        } else {
-          userData = {
-            id: row.id,
-            name: row.name,
-            surname: row.surname,
-            tel: row.tel,
-            level: row.level,
-            created_at: row.created_at
-          };
-        }
-        
-        // Assicurati che tutti i campi siano definiti
-        return {
-          id: userData.id || 0,
-          name: userData.name || '',
-          surname: userData.surname || '',
-          tel: userData.tel || '',
-          level: userData.level || 0,
-          created_at: userData.created_at || new Date().toISOString()
-        };
-      } catch (error) {
-        console.error(`Error processing row ${index}:`, error, row);
-        return null;
-      }
-    }).filter(user => user !== null); // Rimuovi eventuali utenti null
-
-    console.log('Returning users:', users.length); // Debug log
+    // Formatta i dati per una migliore gestione nel frontend
+    const users = result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      surname: row.surname,
+      tel: row.tel,
+      level: row.level,
+      created_at: row.created_at,
+      last_login: row.last_login,
+      telegram_chat_id: row.telegram_chat_id
+    }));
 
     return res.status(200).json({
       success: true,
       users: users,
-      total: users.length
+      total: users.length,
+      requestedBy: {
+        id: user.id,
+        name: user.name,
+        level: user.level
+      }
     });
 
   } catch (error) {
-    console.error('Error fetching users - Full error:', error);
-    console.error('Error stack:', error.stack);
-    
+    console.error('Error fetching users:', error);
     return res.status(500).json({
-      success: false,
       error: 'Errore interno del server',
-      ...(process.env.NODE_ENV === 'development' && { 
-        details: error.message,
-        stack: error.stack 
-      })
+      ...(process.env.NODE_ENV === 'development' && { details: error.message })
     });
   }
 }

@@ -8,80 +8,101 @@ interface User {
   tel: string;
   level: number;
   created_at: string;
+  last_login?: string;
+  telegram_chat_id?: number;
 }
 
-interface ApiResponse {
-  success: boolean;
-  users: User[];
-  error?: string;
-  total?: number;
+interface EditingUser extends User {
+  password?: string;
+  confirmPassword?: string;
+}
+
+interface Message {
+  type: 'success' | 'error' | 'info';
+  text: string;
 }
 
 const VisualizzaUtenti: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [levelFilter, setLevelFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'name' | 'surname' | 'level' | 'created_at'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [debugInfo, setDebugInfo] = useState<string>('');
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [message, setMessage] = useState<Message | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filterLevel, setFilterLevel] = useState<string>('all');
+  const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [canViewUsers, setCanViewUsers] = useState<boolean>(false);
+  const [currentUserLevel, setCurrentUserLevel] = useState<number>(-1);
+
+  const levelNames: Record<number, string> = {
+    0: 'Admin',
+    1: 'Direttivo',
+    2: 'Sociə Organizzatorə',
+    3: 'Sociə',
+    4: 'Volontariə'
+  };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  useEffect(() => {
-  // Verifica i dati al mount
-  const user = localStorage.getItem('user');
-  if (user) {
-    const userData = JSON.parse(user);
-    if (!userData.id || userData.id <= 0) {
-      console.error('Dati utente corrotti, pulendo localStorage');
-      localStorage.removeItem('user');
-      window.location.href = '/login'; 
-    }
-  }
-}, []);
-
-    const generateToken = () => {
-        const user = localStorage.getItem('user');
-        const loginTime = localStorage.getItem('loginTime'); // Usa loginTime invece di timestamp corrente
-        
-        if (!user || !loginTime) {
-            throw new Error('Utente non autenticato');
+    const checkPermissions = () => {
+      const userData = localStorage.getItem('user');
+      const loginTime = localStorage.getItem('loginTime');
+      const rememberMe = localStorage.getItem('rememberMe') === 'true';
+      
+      if (userData && loginTime) {
+        try {
+          const now = new Date().getTime();
+          const loginTimestamp = parseInt(loginTime);
+          const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+          
+          if (now - loginTimestamp < expirationTime) {
+            const user = JSON.parse(userData);
+            setCurrentUserLevel(user.level);
+            setCanViewUsers(user.level <= 1); // Solo admin e direttivo possono vedere utenti
+          } else {
+            setCanViewUsers(false);
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          setCanViewUsers(false);
         }
-
-        const userData = JSON.parse(user);
-        console.log('User data from localStorage:', userData);
-
-        // Verifica più rigorosa dei dati
-        if (!userData.id || userData.id <= 0 || !userData.tel) {
-            console.error('Dati utente non validi:', userData);
-            throw new Error('Dati utente non validi in localStorage. ID deve essere > 0 e tel deve essere presente');
-        }
-
-        const tokenData = {
-            userId: userData.id,
-            tel: userData.tel,
-            timestamp: loginTime // Usa loginTime invece di new Date().getTime()
-        };
-
-        console.log('Generating token with data:', tokenData);
-        return btoa(JSON.stringify(tokenData));
+      } else {
+        setCanViewUsers(false);
+      }
     };
 
+    checkPermissions();
+    if (canViewUsers) {
+      fetchUsers();
+    }
+  }, [canViewUsers]);
+
+  useEffect(() => {
+    filterUsers();
+  }, [users, searchTerm, filterLevel]);
+
+  const generateTempToken = () => {
+    const userData = localStorage.getItem('user');
+    const loginTime = localStorage.getItem('loginTime');
+    
+    if (!userData || !loginTime) {
+      throw new Error('Sessione non valida');
+    }
+
+    const user = JSON.parse(userData);
+    return btoa(JSON.stringify({
+      userId: user.id,
+      tel: user.tel,
+      timestamp: loginTime
+    }));
+  };
+
   const fetchUsers = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      setDebugInfo('');
-
-      const tempToken = generateToken();
-
-      console.log('Making request to /api/get-user with token:', tempToken);
-
-      const response = await fetch('/api/get-user', {
+      const tempToken = generateTempToken();
+      
+      const response = await fetch('/api/get-users', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${tempToken}`,
@@ -89,155 +110,221 @@ const VisualizzaUtenti: React.FC = () => {
         }
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
-      const data: ApiResponse = await response.json();
-      console.log('Response data:', data);
+      const data = await response.json();
 
       if (!response.ok) {
-        const errorMsg = data.error || `Errore HTTP ${response.status}`;
-        console.error('Request failed:', errorMsg);
-        throw new Error(errorMsg);
+        throw new Error(data.error || 'Errore nel caricamento utenti');
       }
 
-      if (data.success && data.users) {
-        console.log('Users loaded successfully:', data.users.length);
-        setUsers(data.users);
-        setDebugInfo(`${data.users.length} utenti caricati con successo`);
-      } else {
-        throw new Error(data.error || 'Risposta non valida dal server');
-      }
-
-    } catch (err) {
-      console.error('Errore nel caricamento utenti:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Errore sconosciuto';
-      setError(errorMessage);
-      setDebugInfo(`Errore: ${errorMessage}`);
+      setUsers(data.users || []);
+      setMessage({ type: 'success', text: `Caricati ${data.users?.length || 0} utenti` });
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Errore di connessione' 
+      });
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getLevelText = (level: number): string => {
-    switch (level) {
-      case 0: return 'Amministratore';
-      case 1: return 'Manager';
-      case 2: return 'Operatore';
-      case 3: return 'Utente';
-      default: return 'Sconosciuto';
-    }
-  };
-
-  const getLevelColor = (level: number): string => {
-    switch (level) {
-      case 0: return '#e74c3c'; // Rosso
-      case 1: return '#f39c12'; // Arancione
-      case 2: return '#3498db'; // Blu
-      case 3: return '#2ecc71'; // Verde
-      default: return '#95a5a6'; // Grigio
-    }
-  };
-
-  const formatDate = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('it-IT', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      console.error('Error formatting date:', dateString, error);
-      return dateString; // Ritorna la stringa originale se non riesce a formattarla
-    }
-  };
-
-  // Filtra e ordina gli utenti
-  const filteredAndSortedUsers = users
-    .filter(user => {
+  const filterUsers = () => {
+    let filtered = users.filter(user => {
       const matchesSearch = 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.tel.includes(searchTerm);
-      
-      const matchesLevel = levelFilter === 'all' || user.level.toString() === levelFilter;
-      
+
+      const matchesLevel = filterLevel === 'all' || user.level.toString() === filterLevel;
+
       return matchesSearch && matchesLevel;
-    })
-    .sort((a, b) => {
-      let aValue: any = a[sortBy];
-      let bValue: any = b[sortBy];
-      
-      if (sortBy === 'created_at') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      } else if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
     });
 
-  const handleSort = (column: typeof sortBy) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortOrder('asc');
+    setFilteredUsers(filtered);
+  };
+
+  const openEditModal = (user: User) => {
+    setEditingUser({
+      ...user,
+      password: '',
+      confirmPassword: ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditingUser(null);
+    setIsModalOpen(false);
+    setMessage(null);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!editingUser) return;
+
+    const { name, value } = e.target;
+    setEditingUser(prev => ({
+      ...prev!,
+      [name]: name === 'level' ? parseInt(value) : value
+    }));
+  };
+
+  const validateEditForm = (): boolean => {
+    if (!editingUser) return false;
+
+    if (!editingUser.name.trim() || !editingUser.surname.trim()) {
+      setMessage({ type: 'error', text: 'Nome e cognome sono obbligatori' });
+      return false;
+    }
+
+    if (!editingUser.tel.trim() || !/^\d+$/.test(editingUser.tel)) {
+      setMessage({ type: 'error', text: 'Telefono non valido' });
+      return false;
+    }
+
+    if (editingUser.password && editingUser.password.length < 6) {
+      setMessage({ type: 'error', text: 'Password troppo corta (min 6 caratteri)' });
+      return false;
+    }
+
+    if (editingUser.password && editingUser.password !== editingUser.confirmPassword) {
+      setMessage({ type: 'error', text: 'Le password non corrispondono' });
+      return false;
+    }
+
+    // Solo admin può modificare altri admin o direttivo
+    if (currentUserLevel > 0 && editingUser.level < currentUserLevel) {
+      setMessage({ type: 'error', text: 'Non puoi assegnare un livello superiore al tuo' });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateEditForm() || !editingUser) return;
+
+    setIsSubmitting(true);
+    setMessage(null);
+
+    try {
+      const tempToken = generateTempToken();
+      
+      const updateData: any = {
+        id: editingUser.id,
+        name: editingUser.name.trim(),
+        surname: editingUser.surname.trim(),
+        tel: editingUser.tel.trim(),
+        level: editingUser.level
+      };
+
+      if (editingUser.password && editingUser.password.trim()) {
+        updateData.password = editingUser.password;
+      }
+
+      const response = await fetch('/api/update-user', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tempToken}`
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Errore durante l\'aggiornamento');
+      }
+
+      setMessage({ 
+        type: 'success', 
+        text: `Utente ${data.user.name} aggiornato con successo!` 
+      });
+
+      // Aggiorna la lista utenti
+      await fetchUsers();
+      closeEditModal();
+
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Errore di connessione' 
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Funzione per verificare i dati in localStorage
-  const checkLocalStorage = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      setDebugInfo(`LocalStorage: ID=${userData.id}, Tel=${userData.tel}, Level=${userData.level}`);
-    } else {
-      setDebugInfo('Nessun dato utente in localStorage');
+  const handleDeleteUser = async (userId: number, userName: string) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare l'utente ${userName}?`)) {
+      return;
+    }
+
+    try {
+      const tempToken = generateTempToken();
+      
+      const response = await fetch('/api/delete-user', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tempToken}`
+        },
+        body: JSON.stringify({ id: userId })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Errore durante l\'eliminazione');
+      }
+
+      setMessage({ 
+        type: 'success', 
+        text: `Utente ${userName} eliminato con successo!` 
+      });
+
+      await fetchUsers();
+
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Errore di connessione' 
+      });
     }
   };
 
-  if (loading) {
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Mai';
+    return new Date(dateString).toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (!canViewUsers) {
     return (
       <div className="visualizza-utenti-container">
-        <div className="loading-visualizza-utenti">
-          <div className="loading-spinner-visualizza-utenti"></div>
-          <p>Caricamento utenti...</p>
-          {debugInfo && <p style={{fontSize: '12px', color: '#666'}}>{debugInfo}</p>}
+        <div className="no-permission-message">
+          <div className="no-permission-icon">🔒</div>
+          <h3>Accesso Negato</h3>
+          <p>Non hai i permessi per visualizzare gli utenti</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (loading) {
     return (
       <div className="visualizza-utenti-container">
-        <div className="error-visualizza-utenti">
-          <h2>❌ Errore</h2>
-          <p>{error}</p>
-          {debugInfo && (
-            <div style={{marginTop: '10px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px'}}>
-              <strong>Debug Info:</strong><br />
-              {debugInfo}
-            </div>
-          )}
-          <div style={{marginTop: '10px'}}>
-            <button onClick={fetchUsers} className="retry-button-visualizza-utenti">
-              Riprova
-            </button>
-            <button onClick={checkLocalStorage} style={{marginLeft: '10px'}} className="retry-button-visualizza-utenti">
-              Verifica LocalStorage
-            </button>
-          </div>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Caricamento utenti...</p>
         </div>
       </div>
     );
@@ -245,88 +332,236 @@ const VisualizzaUtenti: React.FC = () => {
 
   return (
     <div className="visualizza-utenti-container">
-      <div className="header-visualizza-utenti">
-        <h1>👥 Visualizza Utenti</h1>
-        <p>Totale utenti: {users.length} • Visualizzati: {filteredAndSortedUsers.length}</p>
-        {debugInfo && <p style={{fontSize: '12px', color: '#666'}}>{debugInfo}</p>}
+      <div className="header-section">
+        <h2>👥 Gestione Utenti</h2>
+        <button onClick={fetchUsers} className="refresh-button">
+          🔄 Aggiorna
+        </button>
       </div>
 
-      <div className="filters-visualizza-utenti">
-        <div className="search-box-visualizza-utenti">
+      {message && (
+        <div className={`message ${message.type}`}>
+          <div className="message-icon">
+            {message.type === 'success' ? '✅' : message.type === 'error' ? '❌' : 'ℹ️'}
+          </div>
+          <span>{message.text}</span>
+        </div>
+      )}
+
+      <div className="filters-section">
+        <div className="filter-group">
           <input
             type="text"
             placeholder="Cerca per nome, cognome o telefono..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input-visualizza-utenti"
+            className="search-input"
           />
         </div>
-
-        <div className="filter-group-visualizza-utenti">
-          <label htmlFor="level-filter">Filtra per livello:</label>
+        <div className="filter-group">
           <select
-            id="level-filter"
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value)}
-            className="level-filter-visualizza-utenti"
+            value={filterLevel}
+            onChange={(e) => setFilterLevel(e.target.value)}
+            className="level-filter"
           >
             <option value="all">Tutti i livelli</option>
-            <option value="0">Amministratore (0)</option>
-            <option value="1">Manager (1)</option>
-            <option value="2">Operatore (2)</option>
-            <option value="3">Utente (3)</option>
+            <option value="0">Admin</option>
+            <option value="1">Direttivo</option>
+            <option value="2">Sociə Organizzatorə</option>
+            <option value="3">Sociə</option>
+            <option value="4">Volontariə</option>
           </select>
         </div>
-
-        <button onClick={fetchUsers} className="refresh-button-visualizza-utenti">
-          🔄 Aggiorna
-        </button>
       </div>
 
-      {filteredAndSortedUsers.length === 0 ? (
-        <div className="no-users-visualizza-utenti">
-          <h3>Nessun utente trovato</h3>
-          <p>Prova a modificare i filtri di ricerca.</p>
-        </div>
-      ) : (
-        <div className="table-container-visualizza-utenti">
-          <table className="users-table-visualizza-utenti">
-            <thead>
-              <tr>
-                <th onClick={() => handleSort('name')} className="sortable-visualizza-utenti">
-                  Nome {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </th>
-                <th onClick={() => handleSort('surname')} className="sortable-visualizza-utenti">
-                  Cognome {sortBy === 'surname' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </th>
-                <th>Telefono</th>
-                <th onClick={() => handleSort('level')} className="sortable-visualizza-utenti">
-                  Livello {sortBy === 'level' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </th>
-                <th onClick={() => handleSort('created_at')} className="sortable-visualizza-utenti">
-                  Data Creazione {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAndSortedUsers.map((user) => (
-                <tr key={user.id}>
-                  <td className="name-cell-visualizza-utenti">{user.name}</td>
-                  <td className="surname-cell-visualizza-utenti">{user.surname}</td>
-                  <td className="tel-cell-visualizza-utenti">{user.tel}</td>
-                  <td className="level-cell-visualizza-utenti">
-                    <span 
-                      className="level-badge-visualizza-utenti"
-                      style={{ backgroundColor: getLevelColor(user.level) }}
+      <div className="users-stats">
+        <span>Trovati {filteredUsers.length} utenti di {users.length} totali</span>
+      </div>
+
+      <div className="users-table-container">
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Cognome</th>
+              <th>Telefono</th>
+              <th>Livello</th>
+              <th>Creato il</th>
+              <th>Ultimo Login</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.map(user => (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+                <td>{user.name}</td>
+                <td>{user.surname}</td>
+                <td>{user.tel}</td>
+                <td>
+                  <span className={`level-badge level-${user.level}`}>
+                    {levelNames[user.level] || `Livello ${user.level}`}
+                  </span>
+                </td>
+                <td>{formatDate(user.created_at)}</td>
+                <td>{formatDate(user.last_login || '')}</td>
+                <td>
+                  <div className="actions-buttons">
+                    <button
+                      onClick={() => openEditModal(user)}
+                      className="edit-button"
+                      title="Modifica utente"
                     >
-                      {user.level} - {getLevelText(user.level)}
-                    </span>
-                  </td>
-                  <td className="date-cell-visualizza-utenti">{formatDate(user.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      ✏️
+                    </button>
+                    {currentUserLevel === 0 && (
+                      <button
+                        onClick={() => handleDeleteUser(user.id, `${user.name} ${user.surname}`)}
+                        className="delete-button"
+                        title="Elimina utente"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {filteredUsers.length === 0 && (
+          <div className="no-users-message">
+            <p>Nessun utente trovato con i filtri selezionati</p>
+          </div>
+        )}
+      </div>
+
+      {/* Modal per modifica utente */}
+      {isModalOpen && editingUser && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Modifica Utente</h3>
+              <button onClick={closeEditModal} className="close-button">✕</button>
+            </div>
+
+            {message && (
+              <div className={`message ${message.type}`}>
+                <div className="message-icon">
+                  {message.type === 'success' ? '✅' : '❌'}
+                </div>
+                <span>{message.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateUser} className="edit-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="edit-name">Nome</label>
+                  <input
+                    type="text"
+                    id="edit-name"
+                    name="name"
+                    value={editingUser.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="edit-surname">Cognome</label>
+                  <input
+                    type="text"
+                    id="edit-surname"
+                    name="surname"
+                    value={editingUser.surname}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="edit-tel">Telefono</label>
+                  <input
+                    type="tel"
+                    id="edit-tel"
+                    name="tel"
+                    value={editingUser.tel}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="edit-level">Livello</label>
+                  <select
+                    id="edit-level"
+                    name="level"
+                    value={editingUser.level}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    {currentUserLevel === 0 && <option value={0}>Admin</option>}
+                    {currentUserLevel <= 0 && <option value={1}>Direttivo</option>}
+                    <option value={2}>Sociə Organizzatorə</option>
+                    <option value={3}>Sociə</option>
+                    <option value={4}>Volontariə</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="edit-password">Nuova Password (opzionale)</label>
+                  <input
+                    type="password"
+                    id="edit-password"
+                    name="password"
+                    value={editingUser.password || ''}
+                    onChange={handleInputChange}
+                    placeholder="Lascia vuoto se non vuoi cambiare"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="edit-confirmPassword">Conferma Password</label>
+                  <input
+                    type="password"
+                    id="edit-confirmPassword"
+                    name="confirmPassword"
+                    value={editingUser.confirmPassword || ''}
+                    onChange={handleInputChange}
+                    placeholder="Conferma la nuova password"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="cancel-button"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`submit-button ${isSubmitting ? 'loading' : ''}`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="loading-spinner"></span>
+                      Aggiornamento...
+                    </>
+                  ) : (
+                    'Aggiorna Utente'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
