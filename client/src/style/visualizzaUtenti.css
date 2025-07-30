@@ -139,7 +139,7 @@
   font-size: 16px;
   background: rgba(255, 255, 255, 0.8);
   color: #333;
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
   outline: none;
   cursor: pointer;
   appearance: none;
@@ -147,6 +147,9 @@
   background-repeat: no-repeat;
   background-position: right 1rem center;
   background-size: 1.5em;
+  width: 100%; /* Aggiunto per consistenza */
+  box-sizing: border-box; /* Aggiunto per consistenza */
+  margin: 0; /* Aggiunto per consistenza */
 }
 
 .visualizzautenti-level-filter:focus,
@@ -155,6 +158,37 @@
   background: rgba(255, 255, 255, 1);
   box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23D2691E' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* Stile per i gruppi di filtri - aggiunto per allineare a CreaUtenti */
+.visualizzautenti-filter-group {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+}
+
+.visualizzautenti-filter-group label {
+  color: #8B4513;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Media query per mobile - aggiustamenti */
+@media (max-width: 768px) {
+  .visualizzautenti-level-filter,
+  .visualizzautenti-sort-select {
+    padding: 12px 16px;
+    font-size: 14px;
+    background-position: right 0.8rem center;
+  }
+  
+  .visualizzautenti-filter-group label {
+    font-size: 13px;
+  }
 }
 
 /* Stats */
