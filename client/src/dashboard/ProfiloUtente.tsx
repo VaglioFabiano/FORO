@@ -195,16 +195,6 @@ const ProfiloUtente: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'Mai';
-    return new Date(dateString).toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   if (loading) {
     return (
@@ -248,17 +238,7 @@ const ProfiloUtente: React.FC = () => {
           </div>
         )}
 
-        <div className="profilo-utente-info">
-          <div className="info-item">
-            <strong>ID Utente:</strong> {user.id}
-          </div>
-          <div className="info-item">
-            <strong>Registrato il:</strong> {formatDate(user.created_at)}
-          </div>
-          <div className="info-item">
-            <strong>Ultimo accesso:</strong> {formatDate(user.last_login || '')}
-          </div>
-        </div>
+    
 
         <form onSubmit={handleSubmit} className="profilo-utente-form">
           <div className="form-section">
