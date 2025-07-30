@@ -36,7 +36,6 @@ const VisualizzaUtenti: React.FC = () => {
   const [currentUserLevel, setCurrentUserLevel] = useState<number>(-1);
 
   const levelNames: Record<number, string> = {
-    0: 'Admin',
     1: 'Direttivo',
     2: 'Sociə Organizzatorə',
     3: 'Sociə',
@@ -102,7 +101,7 @@ const VisualizzaUtenti: React.FC = () => {
     try {
       const tempToken = generateTempToken();
       
-      const response = await fetch('/api/get-users', {
+      const response = await fetch('/api/user', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${tempToken}`,
@@ -224,7 +223,7 @@ const VisualizzaUtenti: React.FC = () => {
         updateData.password = editingUser.password;
       }
 
-      const response = await fetch('/api/update-user', {
+      const response = await fetch('/api/user', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -266,7 +265,7 @@ const VisualizzaUtenti: React.FC = () => {
     try {
       const tempToken = generateTempToken();
       
-      const response = await fetch('/api/delete-user', {
+      const response = await fetch('/api/user', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

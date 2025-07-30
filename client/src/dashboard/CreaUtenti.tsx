@@ -130,7 +130,7 @@ const CreaUtenti: React.FC = () => {
         timestamp: loginTime
       }));
 
-      const response = await fetch('/api/create_user', {
+      const response = await fetch('/api/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
