@@ -92,7 +92,7 @@ const ModificaOrari: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Prova prima a caricare solo la settimana corrente
+      // Carica la settimana corrente
       const currentRes = await fetch('/api/orari_settimana');
       
       if (!currentRes.ok) {
@@ -107,26 +107,20 @@ const ModificaOrari: React.FC = () => {
       
       setOrariCorrente(currentData.data || []);
       
-      // Prova a caricare la prossima settimana, ma non bloccare se fallisce
-      try {
-        const nextRes = await fetch('/api/orari_prossima_settimana');
-        
-        if (nextRes.ok) {
-          const nextData: ApiResponse = await nextRes.json();
-          if (nextData.success) {
-            setOrariProssima(nextData.data || []);
-          } else {
-            console.warn('Endpoint prossima settimana non funzionante:', nextData.error);
-            setOrariProssima([]);
-          }
-        } else {
-          console.warn('Endpoint prossima settimana non disponibile:', nextRes.status);
-          setOrariProssima([]);
-        }
-      } catch (nextErr) {
-        console.warn('Errore nel caricamento prossima settimana (non bloccante):', nextErr);
-        setOrariProssima([]);
+      // Carica la prossima settimana con il parametro settimana=next
+      const nextRes = await fetch('/api/orari_settimana?settimana=next');
+      
+      if (!nextRes.ok) {
+        throw new Error(`Errore nel caricamento orari prossima: ${nextRes.status}`);
       }
+      
+      const nextData: ApiResponse = await nextRes.json();
+      
+      if (!nextData.success) {
+        throw new Error(nextData.error || 'Errore nel caricamento orari prossima');
+      }
+      
+      setOrariProssima(nextData.data || []);
 
     } catch (err) {
       console.error('Fetch error:', err);
@@ -191,33 +185,15 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      // Se è la prossima settimana ma l'endpoint non esiste, usa quello corrente con un parametro
-      let endpoint = '/api/orari_settimana';
-      let body: any = {
+      const body = {
         giorno,
         ora_inizio: fascia.ora_inizio,
         ora_fine: fascia.ora_fine,
-        note: fascia.note || null
+        note: fascia.note || null,
+        settimana: week === 'next' ? 'next' : undefined
       };
 
-      // Se l'endpoint per la prossima settimana esiste, usalo
-      if (week === 'next') {
-        // Prova prima con l'endpoint specifico
-        try {
-          const testRes = await fetch('/api/orari_prossima_settimana', { method: 'HEAD' });
-          if (testRes.ok || testRes.status === 405) { // 405 = Method Not Allowed, ma endpoint esiste
-            endpoint = '/api/orari_prossima_settimana';
-          } else {
-            // Fallback: aggiungi un parametro per identificare la settimana
-            body.settimana = 'prossima';
-          }
-        } catch {
-          // Fallback: aggiungi un parametro per identificare la settimana
-          body.settimana = 'prossima';
-        }
-      }
-
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/orari_settimana', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -284,24 +260,12 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      let endpoint = '/api/orari_settimana';
-      let body: any = { id };
+      const body = { 
+        id,
+        settimana: week === 'next' ? 'next' : undefined
+      };
 
-      if (week === 'next') {
-        // Prova prima con l'endpoint specifico
-        try {
-          const testRes = await fetch('/api/orari_prossima_settimana', { method: 'HEAD' });
-          if (testRes.ok || testRes.status === 405) {
-            endpoint = '/api/orari_prossima_settimana';
-          } else {
-            body.settimana = 'prossima';
-          }
-        } catch {
-          body.settimana = 'prossima';
-        }
-      }
-
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/orari_settimana', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -347,28 +311,15 @@ const ModificaOrari: React.FC = () => {
     }
 
     try {
-      let endpoint = '/api/orari_settimana';
-      let body: any = {
+      const body = {
         id: editingId.id,
         ora_inizio: editData.ora_inizio,
         ora_fine: editData.ora_fine,
-        note: editData.note || null
+        note: editData.note || null,
+        settimana: editingId.week === 'next' ? 'next' : undefined
       };
 
-      if (editingId.week === 'next') {
-        try {
-          const testRes = await fetch('/api/orari_prossima_settimana', { method: 'HEAD' });
-          if (testRes.ok || testRes.status === 405) {
-            endpoint = '/api/orari_prossima_settimana';
-          } else {
-            body.settimana = 'prossima';
-          }
-        } catch {
-          body.settimana = 'prossima';
-        }
-      }
-
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/orari_settimana', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

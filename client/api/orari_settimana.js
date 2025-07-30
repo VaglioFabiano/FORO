@@ -1,6 +1,6 @@
 import { createClient } from '@libsql/client/web';
 
-// Configurazione con validazione (stessa del file create_user)
+// Configurazione con validazione
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
   authToken: process.env.TURSO_AUTH_TOKEN?.trim()
@@ -27,19 +27,23 @@ export default async function handler(req, res) {
     // Test connessione DB
     await client.execute("SELECT 1");
 
+    // Determina la tabella in base al parametro settimana
+    const settimana = req.body?.settimana || req.query?.settimana || 'current';
+    const tableName = settimana === 'next' ? 'fasce_orarie_prossima' : 'fasce_orarie';
+
     switch (req.method) {
       case 'GET':
         // Ottieni tutti gli orari della settimana ordinati per giorno
         const orari = await client.execute(`
           SELECT 
-            fo.id,
-            fo.giorno,
-            fo.ora_inizio,
-            fo.ora_fine,
-            fo.note
-          FROM fasce_orarie fo
+            id,
+            giorno,
+            ora_inizio,
+            ora_fine,
+            note
+          FROM ${tableName}
           ORDER BY 
-            CASE fo.giorno 
+            CASE giorno 
               WHEN 'lunedì' THEN 1
               WHEN 'martedì' THEN 2
               WHEN 'mercoledì' THEN 3
@@ -48,7 +52,7 @@ export default async function handler(req, res) {
               WHEN 'sabato' THEN 6
               WHEN 'domenica' THEN 7
             END,
-            fo.ora_inizio
+            ora_inizio
         `);
         
         return res.status(200).json({ 
@@ -75,7 +79,7 @@ export default async function handler(req, res) {
         }
         
         const newOrario = await client.execute({
-          sql: 'INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?) RETURNING *',
+          sql: `INSERT INTO ${tableName} (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?) RETURNING *`,
           args: [giorno.toLowerCase(), ora_inizio, ora_fine, note || null]
         });
         
@@ -124,7 +128,7 @@ export default async function handler(req, res) {
         updateArgs.push(id);
         
         const updatedOrario = await client.execute({
-          sql: `UPDATE fasce_orarie SET ${updateFields.join(', ')} WHERE id = ? RETURNING *`,
+          sql: `UPDATE ${tableName} SET ${updateFields.join(', ')} WHERE id = ? RETURNING *`,
           args: updateArgs
         });
         
@@ -150,7 +154,7 @@ export default async function handler(req, res) {
         }
         
         const deleteResult = await client.execute({
-          sql: 'DELETE FROM fasce_orarie WHERE id = ?',
+          sql: `DELETE FROM ${tableName} WHERE id = ?`,
           args: [deleteId]
         });
         
