@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import CreaUtenti from './CreaUtenti';
 import ModificaOrari from './ModificaOrari';
 import TelegramSender from './TelegramSender'; 
-import VisualizzaUtenti from './VisualizzaUtenti'; // NUOVO IMPORT
+import VisualizzaUtenti from './VisualizzaUtenti'; 
+import ProfiloUtente from './ProfiloUtente';
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -26,6 +27,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   // Elementi della dashboard con i livelli minimi richiesti
   const dashboardItems: DashboardItem[] = [
+    {
+      id: 'profilo-utente', // NUOVO ELEMENTO - Accessibile a tutti
+      title: 'Il Mio Profilo',
+      description: 'Modifica le tue informazioni personali',
+      icon: '👤',
+      component: ProfiloUtente,
+      minLevel: 4 // Accessibile a tutti i livelli (0-4)
+    },
     {
       id: 'crea-utenti',
       title: 'Crea Utenti',
