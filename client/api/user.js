@@ -27,20 +27,25 @@ function hashPassword(password, salt) {
 // Funzione per verificare l'utente
 async function verifyUser(tempToken) {
   try {
-    const decoded = JSON.parse(Buffer.from(tempToken, 'base64').toString());
+    // Usa atob invece di Buffer per la compatibilità con Edge Runtime
+    const decoded = JSON.parse(atob(tempToken));
     const { userId, tel, timestamp } = decoded;
     
+    console.log('Token decodificato:', { userId, tel, timestamp }); // Debug
+    
     if (!userId || !tel || !timestamp) {
-      console.warn('Token malformato');
+      console.warn('Token malformato - dati mancanti:', { userId: !!userId, tel: !!tel, timestamp: !!timestamp });
       return null;
     }
 
     const now = Date.now();
     const tokenAge = now - parseInt(timestamp);
-    const maxAge = 60 * 60 * 1000; // 1 ora
+    const maxAge = 24 * 60 * 60 * 1000; // 24 ore invece di 1 ora per test
+    
+    console.log('Verifica scadenza:', { now, timestamp: parseInt(timestamp), tokenAge, maxAge }); // Debug
     
     if (tokenAge > maxAge) {
-      console.warn('Token scaduto');
+      console.warn('Token scaduto - età:', tokenAge, 'max:', maxAge);
       return null;
     }
     
@@ -49,12 +54,16 @@ async function verifyUser(tempToken) {
       args: [userId, tel]
     });
     
+    console.log('Risultato query utente:', result.rows.length); // Debug
+    
     if (result.rows.length === 0) {
-      console.warn('Utente non trovato nel DB');
+      console.warn('Utente non trovato nel DB per id:', userId, 'tel:', tel);
       return null;
     }
 
-    return result.rows[0];
+    const user = result.rows[0];
+    console.log('Utente trovato:', { id: user.id, level: user.level, name: user.name }); // Debug
+    return user;
   } catch (error) {
     console.error('Errore nella verifica utente:', error);
     return null;
