@@ -28,8 +28,9 @@ const VisualizzaUtenti: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [message, setMessage] = useState<Message | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterLevel, setFilterLevel] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('id'); // 'id', 'name', 'surname'
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -47,8 +48,8 @@ const VisualizzaUtenti: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    filterUsers();
-  }, [users, searchTerm, filterLevel]);
+    filterAndSortUsers();
+  }, [users, filterLevel, sortBy, sortOrder]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -85,7 +86,7 @@ const VisualizzaUtenti: React.FC = () => {
       console.error('Fetch users error:', error);
       setMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : String(error) || 'Errore di connessione al server'
+        text: error instanceof Error ? error.message : 'Errore di connessione al server'
       });
       setUsers([]);
     } finally {
@@ -93,15 +94,9 @@ const VisualizzaUtenti: React.FC = () => {
     }
   };
 
-  const filterUsers = () => {
+  const filterAndSortUsers = () => {
     let filtered = users.filter(user => {
-      const matchesSearch = 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.tel.includes(searchTerm);
-
-      // Trattiamo livello 0 e 1 come "Direttivo" (stesso gruppo)
+      // Solo filtro per livello, nessuna ricerca testuale
       let matchesLevel = false;
       if (filterLevel === 'all') {
         matchesLevel = true;
@@ -112,10 +107,54 @@ const VisualizzaUtenti: React.FC = () => {
         matchesLevel = user.level === parseInt(filterLevel);
       }
 
-      return matchesSearch && matchesLevel;
+      return matchesLevel;
+    });
+
+    // Ordina i risultati
+    filtered.sort((a, b) => {
+      let valueA: string | number;
+      let valueB: string | number;
+
+      switch (sortBy) {
+        case 'name':
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+          break;
+        case 'surname':
+          valueA = a.surname.toLowerCase();
+          valueB = b.surname.toLowerCase();
+          break;
+        case 'id':
+        default:
+          valueA = a.id;
+          valueB = b.id;
+          break;
+      }
+
+      if (sortOrder === 'asc') {
+        return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+      } else {
+        return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+      }
     });
 
     setFilteredUsers(filtered);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      // Se clicchiamo sulla stessa colonna, inverti l'ordine
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Se clicchiamo su una nuova colonna, ordina ascendente
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortBy !== field) return '↕️'; // Icona neutra
+    return sortOrder === 'asc' ? '↑' : '↓';
   };
 
   const openEditModal = (user: User) => {
@@ -315,16 +354,6 @@ const VisualizzaUtenti: React.FC = () => {
 
       <div className="visualizzautenti-filters">
         <div className="visualizzautenti-filter-group">
-          <label>Cerca Utenti</label>
-          <input
-            type="text"
-            placeholder="Cerca per nome, cognome, username o telefono..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="visualizzautenti-search-input"
-          />
-        </div>
-        <div className="visualizzautenti-filter-group">
           <label>Filtra per Livello</label>
           <select
             value={filterLevel}
@@ -338,6 +367,28 @@ const VisualizzaUtenti: React.FC = () => {
             <option value="4">Volontariə</option>
           </select>
         </div>
+        <div className="visualizzautenti-filter-group">
+          <label>Ordina per</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="visualizzautenti-sort-select"
+          >
+            <option value="id">ID</option>
+            <option value="name">Nome</option>
+            <option value="surname">Cognome</option>
+          </select>
+        </div>
+        <div className="visualizzautenti-filter-group">
+          <label>Ordine</label>
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="visualizzautenti-sort-button"
+            title={`Ordina ${sortOrder === 'asc' ? 'decrescente' : 'crescente'}`}
+          >
+            {sortOrder === 'asc' ? '↑ Crescente' : '↓ Decrescente'}
+          </button>
+        </div>
       </div>
 
       <div className="visualizzautenti-stats">
@@ -348,9 +399,15 @@ const VisualizzaUtenti: React.FC = () => {
         <table className="visualizzautenti-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Nome</th>
-              <th>Cognome</th>
+              <th onClick={() => handleSort('id')} style={{ cursor: 'pointer' }}>
+                ID {getSortIcon('id')}
+              </th>
+              <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                Nome {getSortIcon('name')}
+              </th>
+              <th onClick={() => handleSort('surname')} style={{ cursor: 'pointer' }}>
+                Cognome {getSortIcon('surname')}
+              </th>
               <th>Username</th>
               <th>Telefono</th>
               <th>Livello</th>
