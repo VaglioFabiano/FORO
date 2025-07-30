@@ -10,6 +10,7 @@ interface User {
 interface NewUser {
   name: string;
   surname: string;
+  username: string;
   tel: string;
   level: number;
   password: string;
@@ -26,6 +27,7 @@ const CreaUtenti: React.FC = () => {
   const [newUser, setNewUser] = useState<NewUser>({
     name: '',
     surname: '',
+    username: '',
     tel: '',
     level: 3,
     password: '',
@@ -39,13 +41,12 @@ const CreaUtenti: React.FC = () => {
       // Controllo semplificato basato sui dati nel localStorage
       const userData = localStorage.getItem('user');
       const loginTime = localStorage.getItem('loginTime');
-      const rememberMe = localStorage.getItem('rememberMe') === 'true';
       
       if (userData && loginTime) {
         try {
           const now = new Date().getTime();
           const loginTimestamp = parseInt(loginTime);
-          const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+          const expirationTime = 24 * 60 * 60 * 1000; // 24 ore
           
           if (now - loginTimestamp < expirationTime) {
             const user: User = JSON.parse(userData);
@@ -65,8 +66,8 @@ const CreaUtenti: React.FC = () => {
 
     checkPermissions();
     
-    // Rimuovi il listener per storage events dato che ora gestiamo tutto localmente
-    const interval = setInterval(checkPermissions, 60000); // Controlla ogni minuto
+    // Controlla ogni minuto
+    const interval = setInterval(checkPermissions, 60000);
     
     return () => {
       clearInterval(interval);
@@ -84,6 +85,11 @@ const CreaUtenti: React.FC = () => {
   const validateForm = (): boolean => {
     if (!newUser.name.trim() || !newUser.surname.trim()) {
       setMessage({ type: 'error', text: 'Nome e cognome sono obbligatori' });
+      return false;
+    }
+
+    if (!newUser.username.trim()) {
+      setMessage({ type: 'error', text: 'Username è obbligatorio' });
       return false;
     }
 
@@ -114,48 +120,24 @@ const CreaUtenti: React.FC = () => {
     setMessage(null);
 
     try {
-      // Crea un sessionToken temporaneo basato sui dati utente
-      const userData = localStorage.getItem('user');
-      const loginTime = localStorage.getItem('loginTime');
-      
-      if (!userData || !loginTime) {
-        throw new Error('Sessione non valida');
-      }
-
-      // Genera un token temporaneo per la richiesta
-      const user = JSON.parse(userData);
-      const tempToken = btoa(JSON.stringify({
-        userId: user.id,
-        tel: user.tel,
-        timestamp: loginTime
-      }));
-
       const response = await fetch('/api/user', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tempToken}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           name: newUser.name,
           surname: newUser.surname,
+          username: newUser.username,
           tel: newUser.tel,
           level: newUser.level,
           password: newUser.password
         })
       });
 
-      // Controllo del Content-Type prima di fare il parsing JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        console.error('Risposta non JSON:', textResponse);
-        throw new Error('Risposta del server non valida');
-      }
-
       const data = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         throw new Error(data.error || `Errore ${response.status}: ${response.statusText}`);
       }
 
@@ -167,6 +149,7 @@ const CreaUtenti: React.FC = () => {
       setNewUser({
         name: '',
         surname: '',
+        username: '',
         tel: '',
         level: 3,
         password: '',
@@ -237,6 +220,19 @@ const CreaUtenti: React.FC = () => {
               onChange={handleInputChange}
               required
               placeholder="Inserisci il cognome"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value={newUser.username}
+              onChange={handleInputChange}
+              required
+              placeholder="Inserisci l'username"
             />
           </div>
 

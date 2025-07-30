@@ -20,13 +20,13 @@ async function handleLogin(req, res) {
     if (!username || !password) {
       return res.status(400).json({ 
         success: false,
-        error: 'Nome utente e password sono obbligatori' 
+        error: 'Username e password sono obbligatori' 
       });
     }
 
-    // Trova l'utente (usa il telefono come username)
+    // Trova l'utente usando lo username
     const userResult = await client.execute({
-      sql: 'SELECT id, name, surname, tel, level, password_hash, salt FROM users WHERE tel = ?',
+      sql: 'SELECT id, name, surname, username, tel, level, password_hash, salt FROM users WHERE username = ?',
       args: [username]
     });
 
@@ -59,6 +59,7 @@ async function handleLogin(req, res) {
       id: user.id,
       name: user.name,
       surname: user.surname,
+      username: user.username,
       tel: user.tel,
       level: user.level
     };

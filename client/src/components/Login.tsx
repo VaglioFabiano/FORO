@@ -12,6 +12,7 @@ interface LoginResponse {
     id: number;
     name: string;
     surname: string;
+    username: string;
     tel: string;
     level: number;
   };
@@ -109,13 +110,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-group">
-            <label htmlFor="username">Numero di Telefono</label>
+            <label htmlFor="username">Username</label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Inserisci il numero di telefono"
+              placeholder="Inserisci il tuo username"
               required
               disabled={isLoading}
             />

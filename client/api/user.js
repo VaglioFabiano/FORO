@@ -37,10 +37,10 @@ function hashPassword(password, salt) {
 // Handler per creare un nuovo utente (POST)
 async function createUser(req, res) {
   try {
-    const { name, surname, tel, level, password } = req.body;
+    const { name, surname, username, tel, level, password } = req.body;
 
     // Validazione input
-    if (!name?.trim() || !surname?.trim() || !tel?.trim() || !password) {
+    if (!name?.trim() || !surname?.trim() || !username?.trim() || !tel?.trim() || !password) {
       return res.status(400).json({ 
         success: false, 
         error: 'Tutti i campi sono obbligatori' 
@@ -55,29 +55,43 @@ async function createUser(req, res) {
       });
     }
 
+    // Validazione username univoco
+    const existingUsername = await client.execute({
+      sql: 'SELECT id FROM users WHERE username = ?',
+      args: [username.trim()]
+    });
+
+    if (existingUsername.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Username già registrato' 
+      });
+    }
+
     // Validazione telefono univoco
-    const existingUser = await client.execute({
+    const existingTel = await client.execute({
       sql: 'SELECT id FROM users WHERE tel = ?',
       args: [tel.trim()]
     });
 
-    if (existingUser.rows.length > 0) {
+    if (existingTel.rows.length > 0) {
       return res.status(400).json({ 
         success: false, 
         error: 'Telefono già registrato' 
       });
     }
 
-    // Creazione utente
-    const salt = tel.trim();
+    // Creazione utente - usa username come salt
+    const salt = username.trim();
     const passwordHash = hashPassword(password, salt);
 
     const result = await client.execute({
-      sql: `INSERT INTO users (name, surname, tel, level, password_hash, salt)
-            VALUES (?, ?, ?, ?, ?, ?) RETURNING id, name, surname, tel, level, created_at`,
+      sql: `INSERT INTO users (name, surname, username, tel, level, password_hash, salt)
+            VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, name, surname, username, tel, level, created_at`,
       args: [
         name.trim(),
         surname.trim(),
+        username.trim(),
         tel.trim(),
         levelNum,
         passwordHash,
@@ -120,6 +134,7 @@ async function getUsers(req, res) {
       id: row.id,
       name: row.name,
       surname: row.surname,
+      username: row.username,
       tel: row.tel,
       level: row.level,
       created_at: row.created_at,
@@ -153,9 +168,9 @@ async function getUsers(req, res) {
 // Handler per aggiornare un utente (PUT)
 async function updateUser(req, res) {
   try {
-    const { id, name, surname, tel, level, password } = req.body;
+    const { id, name, surname, username, tel, level, password } = req.body;
 
-    if (!id || !name?.trim() || !surname?.trim() || !tel?.trim()) {
+    if (!id || !name?.trim() || !surname?.trim() || !username?.trim() || !tel?.trim()) {
       return res.status(400).json({ 
         success: false, 
         error: 'Dati mancanti' 
@@ -172,7 +187,7 @@ async function updateUser(req, res) {
 
     // Verifica esistenza utente
     const targetUser = await client.execute({
-      sql: 'SELECT id, level, tel FROM users WHERE id = ?',
+      sql: 'SELECT id, level, username, tel FROM users WHERE id = ?',
       args: [id]
     });
 
@@ -181,6 +196,21 @@ async function updateUser(req, res) {
         success: false, 
         error: 'Utente non trovato' 
       });
+    }
+
+    // Verifica username univoco (solo se è diverso da quello attuale)
+    if (username.trim() !== targetUser.rows[0].username) {
+      const usernameCheck = await client.execute({
+        sql: 'SELECT id FROM users WHERE username = ? AND id != ?',
+        args: [username.trim(), id]
+      });
+
+      if (usernameCheck.rows.length > 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Username già registrato' 
+        });
+      }
     }
 
     // Verifica telefono univoco (solo se è diverso da quello attuale)
@@ -199,8 +229,8 @@ async function updateUser(req, res) {
     }
 
     // Costruzione query dinamica
-    let updateSql = 'UPDATE users SET name = ?, surname = ?, tel = ?, level = ?';
-    const updateArgs = [name.trim(), surname.trim(), tel.trim(), levelNum];
+    let updateSql = 'UPDATE users SET name = ?, surname = ?, username = ?, tel = ?, level = ?';
+    const updateArgs = [name.trim(), surname.trim(), username.trim(), tel.trim(), levelNum];
 
     if (password?.trim()) {
       if (password.length < 6) {
@@ -209,7 +239,7 @@ async function updateUser(req, res) {
           error: 'Password troppo corta (minimo 6 caratteri)' 
         });
       }
-      const salt = tel.trim();
+      const salt = username.trim(); // Usa il nuovo username come salt
       const passwordHash = hashPassword(password, salt);
       updateSql += ', password_hash = ?, salt = ?';
       updateArgs.push(passwordHash, salt);

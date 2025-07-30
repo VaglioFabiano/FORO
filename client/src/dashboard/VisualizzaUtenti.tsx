@@ -5,6 +5,7 @@ interface User {
   id: number;
   name: string;
   surname: string;
+  username: string;
   tel: string;
   level: number;
   created_at: string;
@@ -84,7 +85,7 @@ const VisualizzaUtenti: React.FC = () => {
       console.error('Fetch users error:', error);
       setMessage({ 
         type: 'error', 
-        text: error instanceof Error ? error.message : 'Errore di connessione al server'
+        text: error instanceof Error ? error.message : String(error) || 'Errore di connessione al server'
       });
       setUsers([]);
     } finally {
@@ -97,6 +98,7 @@ const VisualizzaUtenti: React.FC = () => {
       const matchesSearch = 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.tel.includes(searchTerm);
 
       // Trattiamo livello 0 e 1 come "Direttivo" (stesso gruppo)
@@ -149,6 +151,11 @@ const VisualizzaUtenti: React.FC = () => {
       return false;
     }
 
+    if (!editingUser.username.trim()) {
+      setMessage({ type: 'error', text: 'Username è obbligatorio' });
+      return false;
+    }
+
     if (!editingUser.tel.trim() || !/^\d+$/.test(editingUser.tel)) {
       setMessage({ type: 'error', text: 'Telefono non valido' });
       return false;
@@ -180,6 +187,7 @@ const VisualizzaUtenti: React.FC = () => {
         id: editingUser.id,
         name: editingUser.name.trim(),
         surname: editingUser.surname.trim(),
+        username: editingUser.username.trim(),
         tel: editingUser.tel.trim(),
         level: editingUser.level
       };
@@ -310,7 +318,7 @@ const VisualizzaUtenti: React.FC = () => {
           <label>Cerca Utenti</label>
           <input
             type="text"
-            placeholder="Cerca per nome, cognome o telefono..."
+            placeholder="Cerca per nome, cognome, username o telefono..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="visualizzautenti-search-input"
@@ -343,6 +351,7 @@ const VisualizzaUtenti: React.FC = () => {
               <th>ID</th>
               <th>Nome</th>
               <th>Cognome</th>
+              <th>Username</th>
               <th>Telefono</th>
               <th>Livello</th>
               <th>Creato il</th>
@@ -356,6 +365,7 @@ const VisualizzaUtenti: React.FC = () => {
                 <td>{user.id}</td>
                 <td>{user.name}</td>
                 <td>{user.surname}</td>
+                <td>{user.username}</td>
                 <td>{user.tel}</td>
                 <td>
                   <span className={`visualizzautenti-level-badge visualizzautenti-level-${user.level === 0 ? '1' : user.level}`}>
@@ -439,6 +449,17 @@ const VisualizzaUtenti: React.FC = () => {
 
               <div className="visualizzautenti-form-row">
                 <div className="visualizzautenti-form-group">
+                  <label htmlFor="edit-username">Username</label>
+                  <input
+                    type="text"
+                    id="edit-username"
+                    name="username"
+                    value={editingUser.username}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-tel">Telefono</label>
                   <input
                     type="tel"
@@ -449,6 +470,9 @@ const VisualizzaUtenti: React.FC = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="visualizzautenti-form-row">
                 <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-level">Livello</label>
                   <select
@@ -464,6 +488,9 @@ const VisualizzaUtenti: React.FC = () => {
                     <option value={3}>Sociə</option>
                     <option value={4}>Volontariə</option>
                   </select>
+                </div>
+                <div className="visualizzautenti-form-group">
+                  {/* Spazio vuoto per mantenere il layout a griglia */}
                 </div>
               </div>
 
