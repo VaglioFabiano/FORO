@@ -99,7 +99,8 @@ const VisualizzaUtenti: React.FC = () => {
         user.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.tel.includes(searchTerm);
 
-      const matchesLevel = filterLevel === 'all' || user.level.toString() === filterLevel;
+      // Correggiamo il confronto per il livello - assicuriamoci che sia numerico
+      const matchesLevel = filterLevel === 'all' || user.level === parseInt(filterLevel);
 
       return matchesSearch && matchesLevel;
     });
@@ -298,6 +299,7 @@ const VisualizzaUtenti: React.FC = () => {
 
       <div className="visualizzautenti-filters">
         <div className="visualizzautenti-filter-group">
+          <label>Cerca Utenti</label>
           <input
             type="text"
             placeholder="Cerca per nome, cognome o telefono..."
@@ -307,13 +309,14 @@ const VisualizzaUtenti: React.FC = () => {
           />
         </div>
         <div className="visualizzautenti-filter-group">
+          <label>Filtra per Livello</label>
           <select
             value={filterLevel}
             onChange={(e) => setFilterLevel(e.target.value)}
             className="visualizzautenti-level-filter"
           >
             <option value="all">Tutti i livelli</option>
-            <option value="0">Admin</option>
+            
             <option value="1">Direttivo</option>
             <option value="2">Sociə Organizzatorə</option>
             <option value="3">Sociə</option>
