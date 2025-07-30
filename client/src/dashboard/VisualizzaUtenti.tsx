@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../style/visualizzaUtenti.css';
+import '../style/VisualizzaUtenti.css';
 
 interface User {
   id: number;
@@ -36,6 +36,7 @@ const VisualizzaUtenti: React.FC = () => {
   const [currentUserLevel, setCurrentUserLevel] = useState<number>(-1);
 
   const levelNames: Record<number, string> = {
+    0: 'Admin',
     1: 'Direttivo',
     2: 'Sociə Organizzatorə',
     3: 'Sociə',
@@ -57,7 +58,7 @@ const VisualizzaUtenti: React.FC = () => {
           if (now - loginTimestamp < expirationTime) {
             const user = JSON.parse(userData);
             setCurrentUserLevel(user.level);
-            setCanViewUsers(user.level <= 1); // Solo admin e direttivo possono vedere utenti
+            setCanViewUsers(user.level <= 1);
           } else {
             setCanViewUsers(false);
           }
@@ -191,7 +192,6 @@ const VisualizzaUtenti: React.FC = () => {
       return false;
     }
 
-    // Solo admin può modificare altri admin o direttivo
     if (currentUserLevel > 0 && editingUser.level < currentUserLevel) {
       setMessage({ type: 'error', text: 'Non puoi assegnare un livello superiore al tuo' });
       return false;
@@ -243,7 +243,6 @@ const VisualizzaUtenti: React.FC = () => {
         text: `Utente ${data.user.name} aggiornato con successo!` 
       });
 
-      // Aggiorna la lista utenti
       await fetchUsers();
       closeEditModal();
 
@@ -308,9 +307,9 @@ const VisualizzaUtenti: React.FC = () => {
 
   if (!canViewUsers) {
     return (
-      <div className="visualizza-utenti-container">
-        <div className="no-permission-message">
-          <div className="no-permission-icon">🔒</div>
+      <div className="visualizzautenti-container">
+        <div className="visualizzautenti-no-permission">
+          <div className="visualizzautenti-no-permission-icon">🔒</div>
           <h3>Accesso Negato</h3>
           <p>Non hai i permessi per visualizzare gli utenti</p>
         </div>
@@ -320,9 +319,9 @@ const VisualizzaUtenti: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="visualizza-utenti-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
+      <div className="visualizzautenti-container">
+        <div className="visualizzautenti-loading-container">
+          <div className="visualizzautenti-loading-spinner"></div>
           <p>Caricamento utenti...</p>
         </div>
       </div>
@@ -330,38 +329,38 @@ const VisualizzaUtenti: React.FC = () => {
   }
 
   return (
-    <div className="visualizza-utenti-container">
-      <div className="header-section">
+    <div className="visualizzautenti-container">
+      <div className="visualizzautenti-header">
         <h2>👥 Gestione Utenti</h2>
-        <button onClick={fetchUsers} className="refresh-button">
+        <button onClick={fetchUsers} className="visualizzautenti-refresh-button">
           🔄 Aggiorna
         </button>
       </div>
 
       {message && (
-        <div className={`message ${message.type}`}>
-          <div className="message-icon">
+        <div className={`visualizzautenti-message ${message.type}`}>
+          <div className="visualizzautenti-message-icon">
             {message.type === 'success' ? '✅' : message.type === 'error' ? '❌' : 'ℹ️'}
           </div>
           <span>{message.text}</span>
         </div>
       )}
 
-      <div className="filters-section">
-        <div className="filter-group">
+      <div className="visualizzautenti-filters">
+        <div className="visualizzautenti-filter-group">
           <input
             type="text"
             placeholder="Cerca per nome, cognome o telefono..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            className="visualizzautenti-search-input"
           />
         </div>
-        <div className="filter-group">
+        <div className="visualizzautenti-filter-group">
           <select
             value={filterLevel}
             onChange={(e) => setFilterLevel(e.target.value)}
-            className="level-filter"
+            className="visualizzautenti-level-filter"
           >
             <option value="all">Tutti i livelli</option>
             <option value="0">Admin</option>
@@ -373,12 +372,12 @@ const VisualizzaUtenti: React.FC = () => {
         </div>
       </div>
 
-      <div className="users-stats">
+      <div className="visualizzautenti-stats">
         <span>Trovati {filteredUsers.length} utenti di {users.length} totali</span>
       </div>
 
-      <div className="users-table-container">
-        <table className="users-table">
+      <div className="visualizzautenti-table-container">
+        <table className="visualizzautenti-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -399,17 +398,17 @@ const VisualizzaUtenti: React.FC = () => {
                 <td>{user.surname}</td>
                 <td>{user.tel}</td>
                 <td>
-                  <span className={`level-badge level-${user.level}`}>
+                  <span className={`visualizzautenti-level-badge visualizzautenti-level-${user.level}`}>
                     {levelNames[user.level] || `Livello ${user.level}`}
                   </span>
                 </td>
                 <td>{formatDate(user.created_at)}</td>
                 <td>{formatDate(user.last_login || '')}</td>
                 <td>
-                  <div className="actions-buttons">
+                  <div className="visualizzautenti-actions">
                     <button
                       onClick={() => openEditModal(user)}
-                      className="edit-button"
+                      className="visualizzautenti-edit-button"
                       title="Modifica utente"
                     >
                       ✏️
@@ -417,7 +416,7 @@ const VisualizzaUtenti: React.FC = () => {
                     {currentUserLevel === 0 && (
                       <button
                         onClick={() => handleDeleteUser(user.id, `${user.name} ${user.surname}`)}
-                        className="delete-button"
+                        className="visualizzautenti-delete-button"
                         title="Elimina utente"
                       >
                         🗑️
@@ -431,33 +430,32 @@ const VisualizzaUtenti: React.FC = () => {
         </table>
 
         {filteredUsers.length === 0 && (
-          <div className="no-users-message">
+          <div className="visualizzautenti-no-users">
             <p>Nessun utente trovato con i filtri selezionati</p>
           </div>
         )}
       </div>
 
-      {/* Modal per modifica utente */}
       {isModalOpen && editingUser && (
-        <div className="modal-overlay" onClick={closeEditModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="visualizzautenti-modal-overlay" onClick={closeEditModal}>
+          <div className="visualizzautenti-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="visualizzautenti-modal-header">
               <h3>Modifica Utente</h3>
-              <button onClick={closeEditModal} className="close-button">✕</button>
+              <button onClick={closeEditModal} className="visualizzautenti-close-button">✕</button>
             </div>
 
             {message && (
-              <div className={`message ${message.type}`}>
-                <div className="message-icon">
+              <div className={`visualizzautenti-message ${message.type}`}>
+                <div className="visualizzautenti-message-icon">
                   {message.type === 'success' ? '✅' : '❌'}
                 </div>
                 <span>{message.text}</span>
               </div>
             )}
 
-            <form onSubmit={handleUpdateUser} className="edit-form">
-              <div className="form-row">
-                <div className="form-group">
+            <form onSubmit={handleUpdateUser} className="visualizzautenti-edit-form">
+              <div className="visualizzautenti-form-row">
+                <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-name">Nome</label>
                   <input
                     type="text"
@@ -468,7 +466,7 @@ const VisualizzaUtenti: React.FC = () => {
                     required
                   />
                 </div>
-                <div className="form-group">
+                <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-surname">Cognome</label>
                   <input
                     type="text"
@@ -481,8 +479,8 @@ const VisualizzaUtenti: React.FC = () => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className="visualizzautenti-form-row">
+                <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-tel">Telefono</label>
                   <input
                     type="tel"
@@ -493,7 +491,7 @@ const VisualizzaUtenti: React.FC = () => {
                     required
                   />
                 </div>
-                <div className="form-group">
+                <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-level">Livello</label>
                   <select
                     id="edit-level"
@@ -511,8 +509,8 @@ const VisualizzaUtenti: React.FC = () => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
+              <div className="visualizzautenti-form-row">
+                <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-password">Nuova Password (opzionale)</label>
                   <input
                     type="password"
@@ -523,7 +521,7 @@ const VisualizzaUtenti: React.FC = () => {
                     placeholder="Lascia vuoto se non vuoi cambiare"
                   />
                 </div>
-                <div className="form-group">
+                <div className="visualizzautenti-form-group">
                   <label htmlFor="edit-confirmPassword">Conferma Password</label>
                   <input
                     type="password"
@@ -536,22 +534,22 @@ const VisualizzaUtenti: React.FC = () => {
                 </div>
               </div>
 
-              <div className="modal-actions">
+              <div className="visualizzautenti-modal-actions">
                 <button
                   type="button"
                   onClick={closeEditModal}
-                  className="cancel-button"
+                  className="visualizzautenti-cancel-button"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`submit-button ${isSubmitting ? 'loading' : ''}`}
+                  className={`visualizzautenti-submit-button ${isSubmitting ? 'loading' : ''}`}
                 >
                   {isSubmitting ? (
                     <>
-                      <span className="loading-spinner"></span>
+                      <span className="visualizzautenti-loading-spinner"></span>
                       Aggiornamento...
                     </>
                   ) : (

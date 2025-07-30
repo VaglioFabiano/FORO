@@ -73,7 +73,7 @@ async function createUser(req, res) {
     }
 
     const levelNum = parseInt(level);
-    if (isNaN(levelNum) || levelNum < 0 || levelNum > 3) {
+    if (isNaN(levelNum) || levelNum < 0 || levelNum > 4) {
       return res.status(400).json({ error: 'Livello non valido' });
     }
 
