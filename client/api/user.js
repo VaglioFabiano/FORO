@@ -1,10 +1,10 @@
-const { createClient } = require('@libsql/client/web');
-const crypto = require('crypto');
+import { createClient } from '@libsql/client/web';
+import crypto from 'crypto';
 
-// Configurazione con validazione
+// Configurazione con validazione (uguale al file orari)
 const config = {
-  url: process.env.TURSO_DATABASE_URL?.trim() || '',
-  authToken: process.env.TURSO_AUTH_TOKEN?.trim() || ''
+  url: process.env.TURSO_DATABASE_URL?.trim(),
+  authToken: process.env.TURSO_AUTH_TOKEN?.trim()
 };
 
 if (!config.url || !config.authToken) {
@@ -24,7 +24,7 @@ function hashPassword(password, salt) {
   }
 }
 
-// Funzione migliorata per verificare l'utente
+// Funzione per verificare l'utente
 async function verifyUser(tempToken) {
   try {
     const decoded = JSON.parse(Buffer.from(tempToken, 'base64').toString());
@@ -126,12 +126,12 @@ async function createUser(req, res) {
     console.error('Errore nella creazione utente:', error);
     return res.status(500).json({
       error: 'Errore interno del server',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message })
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
 
-// Handler migliorato per ottenere tutti gli utenti (GET)
+// Handler per ottenere tutti gli utenti (GET)
 async function getUsers(req, res) {
   try {
     const tempToken = req.headers.authorization?.replace('Bearer ', '');
@@ -167,12 +167,12 @@ async function getUsers(req, res) {
     console.error('Errore nel recupero utenti:', error);
     return res.status(500).json({
       error: 'Errore interno del server',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message })
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
 
-// Handler migliorato per aggiornare un utente (PUT)
+// Handler per aggiornare un utente (PUT)
 async function updateUser(req, res) {
   try {
     const { id, name, surname, tel, level, password } = req.body;
@@ -259,15 +259,14 @@ async function updateUser(req, res) {
     console.error('Errore nell\'aggiornamento utente:', error);
     return res.status(500).json({
       error: 'Errore interno del server',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message })
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
 
-// Handler migliorato per eliminare un utente (DELETE)
+// Handler per eliminare un utente (DELETE)
 async function deleteUser(req, res) {
   try {
-    // Modifica: leggi l'ID dal query parameter O dal body
     const id = req.query.id || req.body.id;
     const tempToken = req.headers.authorization?.replace('Bearer ', '');
 
@@ -310,25 +309,24 @@ async function deleteUser(req, res) {
     console.error('Errore nell\'eliminazione utente:', error);
     return res.status(500).json({
       error: 'Errore interno del server',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message })
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
 
-// Gestione centralizzata delle routes
-module.exports = async function handler(req, res) {
-  // Configurazione CORS
+// Export handler principale (come nel file orari)
+export default async function handler(req, res) {
+  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   try {
-    // Verifica connessione DB
+    // Test connessione DB
     await client.execute("SELECT 1");
     
     switch (req.method) {
@@ -346,15 +344,9 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     console.error('Errore API:', error);
     
-    // Assicurati che la risposta sia sempre JSON
-    if (!res.headersSent) {
-      res.status(500).json({ 
-        error: 'Errore interno del server',
-        ...(process.env.NODE_ENV === 'development' && { 
-          details: error.message,
-          stack: error.stack 
-        })
-      });
-    }
+    return res.status(500).json({ 
+      error: 'Errore interno del server',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
-};
+}
