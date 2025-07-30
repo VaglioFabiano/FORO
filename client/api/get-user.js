@@ -16,9 +16,19 @@ const client = createClient(config);
 // Funzione per verificare l'utente basata sui dati del token temporaneo
 async function verifyUser(tempToken) {
   try {
+    console.log('Verifying token...'); // Debug log
+    
     // Decodifica il token temporaneo
     const decoded = JSON.parse(atob(tempToken));
+    console.log('Decoded token:', { userId: decoded.userId, tel: decoded.tel }); // Debug (no timestamp per sicurezza)
+    
     const { userId, tel, timestamp } = decoded;
+    
+    // Verifica che tutti i campi necessari siano presenti
+    if (!userId || !tel || !timestamp) {
+      console.error('Missing fields in token:', { userId: !!userId, tel: !!tel, timestamp: !!timestamp });
+      return null;
+    }
     
     // Verifica che il timestamp non sia troppo vecchio (es. massimo 1 ora)
     const now = new Date().getTime();
@@ -26,6 +36,7 @@ async function verifyUser(tempToken) {
     const maxAge = 60 * 60 * 1000; // 1 ora
     
     if (tokenAge > maxAge) {
+      console.log('Token expired, age:', tokenAge, 'max:', maxAge);
       return null;
     }
     
@@ -35,7 +46,9 @@ async function verifyUser(tempToken) {
       args: [userId, tel]
     });
     
-    return result.rows[0] || null;
+    console.log('User query result rows:', result.rows.length); // Debug log
+    
+    return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
     console.error('Token verification error:', error);
     return null;
@@ -43,6 +56,8 @@ async function verifyUser(tempToken) {
 }
 
 export default async function handler(req, res) {
+  console.log('GET /api/get-user called'); // Debug log
+  
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -53,30 +68,57 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false,
+      error: 'Method not allowed' 
+    });
   }
 
   try {
+    console.log('Testing DB connection...'); // Debug log
+    
     // Test connessione DB
     await client.execute("SELECT 1");
     
-    const tempToken = req.headers.authorization?.replace('Bearer ', '');
+    console.log('DB connection OK'); // Debug log
+    
+    const authHeader = req.headers.authorization;
+    const tempToken = authHeader?.replace('Bearer ', '');
+
+    console.log('Auth header present:', !!authHeader); // Debug log
+    console.log('Token extracted:', !!tempToken); // Debug log
 
     if (!tempToken) {
-      return res.status(401).json({ error: 'Token di autenticazione richiesto' });
+      return res.status(401).json({ 
+        success: false,
+        error: 'Token di autenticazione richiesto' 
+      });
     }
 
+    console.log('Verifying user...'); // Debug log
     const user = await verifyUser(tempToken);
+    
     if (!user) {
-      return res.status(401).json({ error: 'Token non valido o scaduto' });
+      return res.status(401).json({ 
+        success: false,
+        error: 'Token non valido o scaduto' 
+      });
     }
+
+    console.log('User verified, level:', user.level); // Debug log
 
     // Verifica che l'utente abbia il livello appropriato (livello 1 o superiore)
     if (user.level > 1) {
-      return res.status(403).json({ error: 'Permessi insufficienti per visualizzare gli utenti' });
+      return res.status(403).json({ 
+        success: false,
+        error: 'Permessi insufficienti per visualizzare gli utenti' 
+      });
     }
 
+    console.log('Fetching all users...'); // Debug log
+
     // Recupera tutti gli utenti con le informazioni necessarie
+    // Usa datetime() per convertire il timestamp in formato leggibile
     const result = await client.execute({
       sql: `SELECT 
               id, 
@@ -84,20 +126,55 @@ export default async function handler(req, res) {
               surname, 
               tel, 
               level, 
-              created_at
+              datetime(created_at) as created_at
             FROM users 
             ORDER BY created_at DESC`
     });
 
-    // Formatta i risultati
-    const users = result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      surname: row.surname,
-      tel: row.tel,
-      level: row.level,
-      created_at: row.created_at
-    }));
+    console.log('Users fetched:', result.rows.length); // Debug log
+    console.log('First row sample:', result.rows[0]); // Debug per vedere il formato
+
+    // Formatta i risultati - gestisce sia oggetti che array
+    const users = result.rows.map((row, index) => {
+      try {
+        // Gestisce il caso in cui row possa essere un array o un oggetto
+        let userData;
+        if (Array.isArray(row)) {
+          userData = {
+            id: row[0],
+            name: row[1],
+            surname: row[2],
+            tel: row[3],
+            level: row[4],
+            created_at: row[5]
+          };
+        } else {
+          userData = {
+            id: row.id,
+            name: row.name,
+            surname: row.surname,
+            tel: row.tel,
+            level: row.level,
+            created_at: row.created_at
+          };
+        }
+        
+        // Assicurati che tutti i campi siano definiti
+        return {
+          id: userData.id || 0,
+          name: userData.name || '',
+          surname: userData.surname || '',
+          tel: userData.tel || '',
+          level: userData.level || 0,
+          created_at: userData.created_at || new Date().toISOString()
+        };
+      } catch (error) {
+        console.error(`Error processing row ${index}:`, error, row);
+        return null;
+      }
+    }).filter(user => user !== null); // Rimuovi eventuali utenti null
+
+    console.log('Returning users:', users.length); // Debug log
 
     return res.status(200).json({
       success: true,
@@ -106,11 +183,16 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching users - Full error:', error);
+    console.error('Error stack:', error.stack);
+    
     return res.status(500).json({
       success: false,
       error: 'Errore interno del server',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message })
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error.message,
+        stack: error.stack 
+      })
     });
   }
 }
