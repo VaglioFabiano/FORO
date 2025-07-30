@@ -1,18 +1,28 @@
 import { createClient } from '@libsql/client/web';
 import crypto from 'crypto';
 
-// Configurazione con validazione (uguale al file orari)
+// Configurazione con validazione e logging
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
   authToken: process.env.TURSO_AUTH_TOKEN?.trim()
 };
 
+console.log('Configurazione database:', {
+  hasUrl: !!config.url,
+  hasToken: !!config.authToken,
+  urlLength: config.url?.length || 0,
+  tokenLength: config.authToken?.length || 0
+});
+
 if (!config.url || !config.authToken) {
   console.error("Mancano le variabili d'ambiente per il DB!");
+  console.error("TURSO_DATABASE_URL presente:", !!process.env.TURSO_DATABASE_URL);
+  console.error("TURSO_AUTH_TOKEN presente:", !!process.env.TURSO_AUTH_TOKEN);
   throw new Error("Configurazione database mancante");
 }
 
 const client = createClient(config);
+console.log('Client database creato con successo');
 
 // Funzione per hashare la password
 function hashPassword(password, salt) {
@@ -93,12 +103,38 @@ async function createUser(req, res) {
 // Handler per ottenere tutti gli utenti (GET)
 async function getUsers(req, res) {
   try {
+    console.log('Tentativo di recupero utenti...');
+    
+    // Prima verifichiamo se la tabella esiste
+    const tableCheck = await client.execute({
+      sql: "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+    });
+    
+    console.log('Controllo tabella users:', tableCheck.rows);
+    
+    if (tableCheck.rows.length === 0) {
+      console.error('Tabella users non trovata');
+      return res.status(500).json({
+        success: false,
+        error: 'Tabella users non esistente nel database'
+      });
+    }
+
+    // Verifichiamo la struttura della tabella
+    const tableInfo = await client.execute({
+      sql: "PRAGMA table_info(users)"
+    });
+    
+    console.log('Struttura tabella users:', tableInfo.rows);
+
+    // Query semplificata per il debug
     const result = await client.execute({
-      sql: `SELECT 
-              id, name, surname, tel, level, 
-              created_at, last_login, telegram_chat_id
-            FROM users 
-            ORDER BY level ASC, created_at DESC`
+      sql: 'SELECT * FROM users ORDER BY id DESC LIMIT 10'
+    });
+
+    console.log('Risultato query utenti:', {
+      rowCount: result.rows.length,
+      firstRow: result.rows[0] || 'Nessun utente trovato'
     });
 
     return res.status(200).json({
@@ -108,11 +144,20 @@ async function getUsers(req, res) {
     });
 
   } catch (error) {
-    console.error('Errore nel recupero utenti:', error);
+    console.error('Errore dettagliato nel recupero utenti:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
     return res.status(500).json({
       success: false,
       error: 'Errore interno del server',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message,
+      debugInfo: process.env.NODE_ENV === 'development' ? {
+        stack: error.stack,
+        name: error.name
+      } : undefined
     });
   }
 }
@@ -247,6 +292,8 @@ async function deleteUser(req, res) {
 
 // Export handler principale (come nel file orari)
 export default async function handler(req, res) {
+  console.log(`API /user chiamata con metodo: ${req.method}`);
+  
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -257,31 +304,48 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Test connessione DB
-    await client.execute("SELECT 1");
+    // Test connessione DB con più dettagli
+    console.log('Testing database connection...');
+    const testResult = await client.execute("SELECT 1 as test");
+    console.log('Database connection successful:', testResult);
     
     switch (req.method) {
       case 'GET':
+        console.log('Handling GET request...');
         return await getUsers(req, res);
       case 'POST':
+        console.log('Handling POST request...');
         return await createUser(req, res);
       case 'PUT':
+        console.log('Handling PUT request...');
         return await updateUser(req, res);
       case 'DELETE':
+        console.log('Handling DELETE request...');
         return await deleteUser(req, res);
       default:
+        console.log(`Metodo non supportato: ${req.method}`);
         return res.status(405).json({ 
           success: false, 
           error: 'Metodo non supportato' 
         });
     }
   } catch (error) {
-    console.error('Errore API:', error);
+    console.error('Errore API dettagliato:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
     
     return res.status(500).json({ 
       success: false,
       error: 'Errore interno del server',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message,
+      debugInfo: process.env.NODE_ENV === 'development' ? {
+        stack: error.stack,
+        name: error.name,
+        code: error.code
+      } : undefined
     });
   }
 }
