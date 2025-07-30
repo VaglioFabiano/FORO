@@ -21,7 +21,6 @@ interface LoginResponse {
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -30,12 +29,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const loginTime = localStorage.getItem('loginTime');
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
     
     if (storedUser && loginTime) {
       const now = new Date().getTime();
       const loginTimestamp = parseInt(loginTime);
-      const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 giorni o 1 giorno
+      const expirationTime = 24 * 60 * 60 * 1000; // 24 ore
       
       if (now - loginTimestamp < expirationTime) {
         // L'utente è ancora loggato
@@ -44,7 +42,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         // La sessione è scaduta, pulisci il localStorage
         localStorage.removeItem('user');
         localStorage.removeItem('loginTime');
-        localStorage.removeItem('rememberMe');
       }
     }
   }, [onLoginSuccess]);
@@ -76,9 +73,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         // Salva i dati dell'utente nel localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('loginTime', new Date().getTime().toString());
-        localStorage.setItem('rememberMe', rememberMe.toString());
         
-        // AGGIUNTO: Crea anche un sessionToken per compatibilità con HomeDash
+        // Crea anche un sessionToken per compatibilità
         localStorage.setItem('sessionToken', `token_${data.user?.id}_${new Date().getTime()}`);
 
         // Reindirizza alla dashboard
@@ -138,19 +134,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
-          <div className="form-options">
-            <label className="checkbox-container">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={isLoading}
-              />
-              <span className="checkmark"></span>
-              Ricordami
-            </label>
-          </div>
-
           <button 
             type="submit" 
             className="login-button"
@@ -159,11 +142,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             {isLoading ? 'Accesso in corso...' : 'Login'}
           </button>
         </form>
-
-        <div className="login-footer">
-          <p>Hai dimenticato la password?</p>
-          <a href="#" className="forgot-link">Clicca qui</a>
-        </div>
       </div>
     </div>
   );
