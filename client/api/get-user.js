@@ -30,10 +30,18 @@ async function verifyUser(tempToken) {
       return null;
     }
     
-    // Verifica che il timestamp non sia troppo vecchio (es. massimo 1 ora)
+    // Verifica che il timestamp non sia troppo vecchio (es. massimo 24 ore per debug)
     const now = new Date().getTime();
     const tokenAge = now - parseInt(timestamp);
-    const maxAge = 60 * 60 * 1000; // 1 ora
+    const maxAge = 24 * 60 * 60 * 1000; // 24 ore per debug
+    
+    console.log('Token age check:', {
+      now,
+      tokenTimestamp: parseInt(timestamp),
+      tokenAge,
+      maxAge,
+      expired: tokenAge > maxAge
+    });
     
     if (tokenAge > maxAge) {
       console.log('Token expired, age:', tokenAge, 'max:', maxAge);
@@ -41,12 +49,16 @@ async function verifyUser(tempToken) {
     }
     
     // Verifica che l'utente esista e abbia i permessi
+    console.log('Querying user with:', { userId, tel });
     const result = await client.execute({
       sql: `SELECT id, level, name, surname, tel FROM users WHERE id = ? AND tel = ?`,
       args: [userId, tel]
     });
     
-    console.log('User query result rows:', result.rows.length); // Debug log
+    console.log('User query result:', {
+      rowCount: result.rows.length,
+      user: result.rows[0] || 'Not found'
+    });
     
     return result.rows.length > 0 ? result.rows[0] : null;
   } catch (error) {
