@@ -63,9 +63,15 @@ const Presenze: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [statistiche, setStatistiche] = useState<Statistiche | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
   const fasce = ['9-13', '13-16', '16-19', '21-24'];
   const giorni = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+  const mesi = [
+    'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+    'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+  ];
 
   useEffect(() => {
     fetchPresenze();
@@ -127,11 +133,6 @@ const Presenze: React.FC = () => {
   };
 
   const handleCellClick = (data: string, fascia: string) => {
-    if (!currentUser || currentUser.level < 4) {
-      setMessage({ type: 'error', text: 'Non hai i permessi per modificare le presenze' });
-      return;
-    }
-
     const presenza = getPresenzaByDataFascia(data, fascia);
     setSelectedCell({ data, fascia });
     setEditValue(presenza?.numero_presenze.toString() || '0');
@@ -213,11 +214,64 @@ const Presenze: React.FC = () => {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (selectedMonths.length === 0) {
+      setMessage({ type: 'error', text: 'Seleziona almeno un mese' });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/presenze/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          months: selectedMonths,
+          current_user_id: currentUser?.id
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `presenze_${selectedMonths.join('_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        setMessage({ type: 'success', text: 'PDF scaricato con successo!' });
+        closePdfModal();
+      } else {
+        const data = await response.json();
+        setMessage({ type: 'error', text: data.error || 'Errore nel download PDF' });
+      }
+    } catch (error) {
+      console.error('Errore nel download PDF:', error);
+      setMessage({ type: 'error', text: 'Errore di connessione' });
+    }
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedCell(null);
     setEditValue('');
     setEditNote('');
+  };
+
+  const closePdfModal = () => {
+    setIsPdfModalOpen(false);
+    setSelectedMonths([]);
+  };
+
+  const toggleMonthSelection = (monthKey: string) => {
+    setSelectedMonths(prev => 
+      prev.includes(monthKey) 
+        ? prev.filter(m => m !== monthKey)
+        : [...prev, monthKey]
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -243,6 +297,10 @@ const Presenze: React.FC = () => {
     setShowStats(!showStats);
   };
 
+  const canDownloadPdf = () => {
+    return currentUser && (currentUser.level === 0 || currentUser.level === 1);
+  };
+
   const renderCalendarGrid = () => {
     if (!monthInfo) return null;
 
@@ -256,7 +314,7 @@ const Presenze: React.FC = () => {
     });
 
     return (
-      <div className="presenze-calendar">
+      <div className="presenze-calendar compact">
         {/* Header con fasce orarie */}
         <div className="calendar-header">
           <div className="date-column">Data</div>
@@ -265,7 +323,7 @@ const Presenze: React.FC = () => {
               {fascia}
             </div>
           ))}
-          <div className="total-column">Totale</div>
+          <div className="total-column">Tot</div>
         </div>
 
         {/* Righe dei giorni */}
@@ -354,6 +412,70 @@ const Presenze: React.FC = () => {
     );
   };
 
+  const renderPdfModal = () => {
+    //const currentYear = new Date().getFullYear();
+    const months = [];
+    
+    // Genera gli ultimi 12 mesi
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthName = `${mesi[date.getMonth()]} ${date.getFullYear()}`;
+      months.push({ key: monthKey, name: monthName });
+    }
+
+    return (
+      <div className="presenza-modal-overlay" onClick={closePdfModal}>
+        <div className="presenza-modal-content pdf-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="presenza-modal-header">
+            <h3>📄 Scarica Report PDF</h3>
+            <button className="close-button" onClick={closePdfModal}>
+              ×
+            </button>
+          </div>
+          
+          <div className="presenza-modal-body">
+            <p className="pdf-instructions">Seleziona i mesi di cui vuoi scaricare il report PDF:</p>
+            
+            <div className="months-grid">
+              {months.map(month => (
+                <label key={month.key} className="month-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedMonths.includes(month.key)}
+                    onChange={() => toggleMonthSelection(month.key)}
+                  />
+                  <span className="checkmark"></span>
+                  {month.name}
+                </label>
+              ))}
+            </div>
+            
+            <div className="selected-count">
+              {selectedMonths.length > 0 && (
+                <p>Selezionati: {selectedMonths.length} mesi</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="presenza-modal-actions">
+            <button className="cancel-button" onClick={closePdfModal}>
+              Annulla
+            </button>
+            <button 
+              className="save-button" 
+              onClick={handleDownloadPdf}
+              disabled={selectedMonths.length === 0}
+            >
+              📄 Scarica PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="presenze-container">
@@ -375,23 +497,28 @@ const Presenze: React.FC = () => {
             className={`month-button ${selectedMese === 'precedente' ? 'active' : ''}`}
             onClick={() => setSelectedMese('precedente')}
           >
-            ← Mese Precedente
+            ← Precedente
           </button>
           <button
             className={`month-button ${selectedMese === 'corrente' ? 'active' : ''}`}
             onClick={() => setSelectedMese('corrente')}
           >
-            {monthInfo?.monthName || 'Mese Corrente'}
+            {monthInfo?.monthName || 'Corrente'}
           </button>
           <button
             className={`month-button ${selectedMese === 'successivo' ? 'active' : ''}`}
             onClick={() => setSelectedMese('successivo')}
           >
-            Mese Successivo →
+            Successivo →
           </button>
         </div>
 
         <div className="presenze-actions">
+          {canDownloadPdf() && (
+            <button onClick={() => setIsPdfModalOpen(true)} className="pdf-button">
+              📄 Scarica PDF
+            </button>
+          )}
           <button onClick={toggleStats} className="stats-button">
             {showStats ? '📊 Nascondi Stats' : '📊 Mostra Stats'}
           </button>
@@ -413,13 +540,6 @@ const Presenze: React.FC = () => {
           >
             ×
           </button>
-        </div>
-      )}
-
-      {currentUser && currentUser.level < 4 && (
-        <div className="presenze-message info">
-          <span className="message-icon">ℹ️</span>
-          Modalità visualizzazione - Non hai i permessi per modificare le presenze
         </div>
       )}
 
@@ -489,6 +609,9 @@ const Presenze: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal per PDF */}
+      {isPdfModalOpen && renderPdfModal()}
     </div>
   );
 };
