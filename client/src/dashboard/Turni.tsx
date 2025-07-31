@@ -141,23 +141,61 @@ const Turni: React.FC = () => {
     return false;
   };
 
-  const handleTurnoClick = (turno: Turno) => {
+  // Funzione per creare un "pseudo-turno" per celle completamente chiuse
+  const createClosedTurno = (dayIndex: number, turnoIndex: number): Turno => {
+    const orari = [
+      { inizio: '09:00', fine: '13:00' },
+      { inizio: '13:00', fine: '16:00' },
+      { inizio: '16:00', fine: '19:30' },
+      { inizio: '21:00', fine: '24:00' }
+    ];
+    
+    // Calcola la data per questo giorno
+    const weekOffset = selectedWeek === 'corrente' ? 0 : 
+                     selectedWeek === 'prossima' ? 1 : 
+                     selectedWeek === 'plus2' ? 2 : 3;
+    
+    const now = new Date();
+    const currentDay = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + (weekOffset * 7));
+    const targetDate = new Date(monday);
+    targetDate.setDate(monday.getDate() + dayIndex);
+    
+    return {
+      id: null,
+      data: targetDate.toISOString().split('T')[0],
+      turno_inizio: orari[turnoIndex].inizio,
+      turno_fine: orari[turnoIndex].fine,
+      fascia_id: 1,
+      user_id: null,
+      note: '',
+      user_name: '',
+      user_surname: '',
+      user_username: '',
+      assegnato: false,
+      day_index: dayIndex,
+      turno_index: turnoIndex,
+      nota_automatica: '',
+      is_default: true
+    };
+  };
+
+  const handleTurnoClick = (turno: Turno, isCompletelyClosedCell = false) => {
     setSelectedTurno(turno);
     setSelectedUserId(turno.user_id || currentUser?.id || null);
     setNote(turno.note || '');
-    setIsClosedOverride(false);
+    
+    // Se è una cella completamente chiusa o un turno chiuso, imposta automaticamente il flag
+    if (isCompletelyClosedCell || isTurnoClosed(turno)) {
+      setIsClosedOverride(false); // L'utente dovrà comunque checkare
+    } else {
+      setIsClosedOverride(false);
+    }
+    
     setIsModalOpen(true);
   };
-  /*
-  const handleClickClosedTurno = () => {
-    // TODO: Handler per turni chiusi
-    console.log('TODO: Gestione click su turno chiuso');
-    if (selectedTurno && currentUser) {
-      setSelectedUserId(currentUser.id);
-      setIsClosedOverride(true);
-    }
-  };
-  */
+
   const handleAssegnaTurno = async () => {
     if (!selectedTurno || selectedUserId === null || selectedUserId === undefined) return;
 
@@ -185,6 +223,17 @@ const Turni: React.FC = () => {
         setMessage({ type: 'success', text: 'Turno assegnato con successo!' });
         fetchAllTurni();
         closeModal();
+        
+        // TODO: Handler per ripercussioni turno straordinario
+        if (isClosedOverride || isTurnoClosed(selectedTurno)) {
+          console.log('TODO: Gestire ripercussioni turno straordinario/chiuso', {
+            turno: selectedTurno,
+            user_id: selectedUserId,
+            current_user: currentUser,
+            note: note,
+            action: 'assigned_to_closed_slot'
+          });
+        }
         
         // TODO: Handler notifica assegnazione
         console.log('TODO: Notifica assegnazione turno', {
@@ -328,12 +377,11 @@ const Turni: React.FC = () => {
                     }`}
                     onClick={() => {
                       if (turno) {
-                        if (isClosedTurno && !turno.assegnato) {
-                          // Gestione speciale per turni chiusi
-                          handleTurnoClick(turno);
-                        } else {
-                          handleTurnoClick(turno);
-                        }
+                        handleTurnoClick(turno);
+                      } else {
+                        // Crea un pseudo-turno per celle completamente chiuse
+                        const pseudoTurno = createClosedTurno(dayIndex, turnoIndex);
+                        handleTurnoClick(pseudoTurno, true);
                       }
                     }}
                   >
@@ -368,7 +416,12 @@ const Turni: React.FC = () => {
                         </div>
                       )
                     ) : (
-                      <div className="turno-closed">Chiuso</div>
+                      <div className="turno-closed">
+                        <div>Chiuso</div>
+                        <div className="turno-nota-automatica" style={{fontSize: '9px', marginTop: '2px'}}>
+                          (Clicca per richiedere)
+                        </div>
+                      </div>
                     )}
                   </div>
                 );
@@ -413,13 +466,13 @@ const Turni: React.FC = () => {
             className={`week-button ${selectedWeek === 'plus2' ? 'active' : ''}`}
             onClick={() => setSelectedWeek('plus2')}
           >
-            Settimana ({getPlus2WeekRange()})
+            Settimana +2 ({getPlus2WeekRange()})
           </button>
           <button
             className={`week-button ${selectedWeek === 'plus3' ? 'active' : ''}`}
             onClick={() => setSelectedWeek('plus3')}
           >
-            Settimana ({getPlus3WeekRange()})
+            Settimana +3 ({getPlus3WeekRange()})
           </button>
         </div>
 
@@ -448,7 +501,11 @@ const Turni: React.FC = () => {
           <div className="turno-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="turno-modal-header">
               <h3>
-                {isTurnoClosed(selectedTurno) && !selectedTurno.assegnato ? 
+                {(isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
+                  t.data === selectedTurno.data && 
+                  t.turno_inizio === selectedTurno.turno_inizio && 
+                  t.turno_fine === selectedTurno.turno_fine
+                )) && !selectedTurno.assegnato ? 
                   '⚠️ Richiesta Turno Straordinario' : 
                   'Gestisci Turno'
                 }
@@ -460,7 +517,11 @@ const Turni: React.FC = () => {
               <div className="turno-info">
                 <p><strong>Data:</strong> {formatDate(selectedTurno.data)}</p>
                 <p><strong>Orario:</strong> {selectedTurno.turno_inizio} - {selectedTurno.turno_fine}</p>
-                {isTurnoClosed(selectedTurno) && (
+                {(isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
+                  t.data === selectedTurno.data && 
+                  t.turno_inizio === selectedTurno.turno_inizio && 
+                  t.turno_fine === selectedTurno.turno_fine
+                )) && (
                   <p style={{color: '#ff9800', fontWeight: 'bold'}}>
                     ⚠️ Questo è normalmente un turno chiuso
                   </p>
@@ -496,14 +557,22 @@ const Turni: React.FC = () => {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={
-                    isTurnoClosed(selectedTurno) ? 
+                    (isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
+                      t.data === selectedTurno.data && 
+                      t.turno_inizio === selectedTurno.turno_inizio && 
+                      t.turno_fine === selectedTurno.turno_fine
+                    )) ? 
                     "Motivo della richiesta..." : 
                     "Aggiungi una nota..."
                   }
                 />
               </div>
 
-              {isTurnoClosed(selectedTurno) && !selectedTurno.assegnato && (
+              {(isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
+                t.data === selectedTurno.data && 
+                t.turno_inizio === selectedTurno.turno_inizio && 
+                t.turno_fine === selectedTurno.turno_fine
+              )) && !selectedTurno.assegnato && (
                 <div className="form-group">
                   <label>
                     <input
@@ -533,11 +602,19 @@ const Turni: React.FC = () => {
                 disabled={
                   selectedUserId === null || 
                   selectedUserId === undefined || 
-                  (isTurnoClosed(selectedTurno) && !selectedTurno.assegnato && !isClosedOverride)
+                  ((isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
+                    t.data === selectedTurno.data && 
+                    t.turno_inizio === selectedTurno.turno_inizio && 
+                    t.turno_fine === selectedTurno.turno_fine
+                  )) && !selectedTurno.assegnato && !isClosedOverride)
                 }
               >
                 {selectedTurno.assegnato ? 'Modifica' : 
-                 isTurnoClosed(selectedTurno) ? 'Richiedi' : 'Assegna'} Turno
+                 (isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
+                   t.data === selectedTurno.data && 
+                   t.turno_inizio === selectedTurno.turno_inizio && 
+                   t.turno_fine === selectedTurno.turno_fine
+                 )) ? 'Richiedi' : 'Assegna'} Turno
               </button>
             </div>
           </div>

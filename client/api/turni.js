@@ -177,12 +177,14 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
               turnoFine = '24:00';
             }
 
+            // Crea nota con orari specifici
             let nota = '';
             if (nuovoInizio > inizioMinuti) {
-              nota = '(apertura posticipata)';
+              nota = `(apertura posticipata alle ${turnoInizio})`;
             }
             if (nuovaFine < fineMinuti) {
-              nota = nota ? nota + ' (chiusura anticipata)' : '(chiusura anticipata)';
+              const chiusuraText = `(chiusura anticipata alle ${turnoFine})`;
+              nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
             }
 
             turni.push({
@@ -223,7 +225,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
 async function handleTurnoNotification(action, turnoData, currentUserId, targetUserId = null) {
   // TODO: Implementare sistema di notifiche
   console.log('TODO: Notifica turno', {
-    action, // 'assigned', 'removed', 'self_assigned', 'self_removed'
+    action, // 'assigned', 'removed', 'self_assigned', 'self_removed', 'closed_assigned'
     turnoData,
     currentUserId,
     targetUserId
@@ -236,6 +238,26 @@ async function handleTurnoNotification(action, turnoData, currentUserId, targetU
   - 'self_removed': utente si rimuove da un turno
   - 'removed': admin rimuove qualcuno da un turno
   - 'closed_assigned': utente si mette in turno chiuso (caso speciale)
+  */
+}
+
+// Handler per ripercussioni turni straordinari (TODO)
+async function handleClosedTurnoRepercussions(turnoData, userId, note) {
+  // TODO: Implementare gestione ripercussioni
+  console.log('TODO: Gestire ripercussioni turno straordinario', {
+    turnoData,
+    userId,
+    note,
+    timestamp: new Date().toISOString()
+  });
+  
+  /*
+  Possibili ripercussioni:
+  - Invio email a manager
+  - Notifica su Slack
+  - Log speciale
+  - Richiesta approvazione
+  - Calcolo costi extra
   */
 }
 
@@ -342,14 +364,13 @@ async function assegnaTurno(req, res) {
       });
     }
 
-    // TODO: Handler per turno chiuso
+    // TODO: Handler per ripercussioni turno chiuso
     if (is_closed_override) {
-      console.log('TODO: Utente si sta mettendo in un turno chiuso', {
-        user_id,
+      await handleClosedTurnoRepercussions({
         data,
         turno_inizio,
         turno_fine
-      });
+      }, user_id, note);
     }
 
     // Verifica se esiste già un turno per questa combinazione
@@ -368,7 +389,7 @@ async function assegnaTurno(req, res) {
       if (current_user_id === user_id && current_user_id === oldUserId) {
         action = 'self_modified'; // Utente modifica le proprie note
       } else if (current_user_id === user_id) {
-        action = 'self_assigned'; // Utente si assegna il turno
+        action = is_closed_override ? 'closed_assigned' : 'self_assigned';
       } else if (current_user_id === oldUserId) {
         action = 'assigned'; // Admin assegna turno ad altri
       } else {
