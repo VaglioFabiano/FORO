@@ -221,62 +221,149 @@ const Presenze: React.FC = () => {
     }
 
     try {
+      setMessage({ type: 'info', text: 'Raccolta dati in corso...' });
+      
+      // Raccogli i dati direttamente dal frontend invece di usare il backend
+      const pdfData = await collectPdfData();
+      
+      if (pdfData.length === 0) {
+        setMessage({ type: 'error', text: 'Nessun dato trovato per i mesi selezionati' });
+        return;
+      }
+
       setMessage({ type: 'info', text: 'Generazione PDF in corso...' });
       
-      const response = await fetch('/api/presenze?download-pdf=true', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          months: selectedMonths,
-          user_id: currentUser?.id
-        }),
+      // Genera e scarica il PDF
+      await generateAndDownloadPdf(pdfData);
+      
+      setMessage({ 
+        type: 'success', 
+        text: `PDF scaricato con successo! Elaborati ${pdfData.length} mesi.` 
       });
+      closePdfModal();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Per ora, poiché il backend restituisce JSON invece di un PDF reale
-          // mostro un messaggio di successo. In produzione qui scaricheresti il PDF
-          setMessage({ 
-            type: 'success', 
-            text: `PDF generato con successo! Elaborati ${data.months_processed} mesi.` 
-          });
-          
-          // TODO: In produzione, qui gestiresti il download del PDF blob
-          // const blob = await response.blob();
-          // const url = window.URL.createObjectURL(blob);
-          // const a = document.createElement('a');
-          // a.style.display = 'none';
-          // a.href = url;
-          // a.download = `presenze_report_${selectedMonths.length}_mesi.pdf`;
-          // document.body.appendChild(a);
-          // a.click();
-          // document.body.removeChild(a);
-          // window.URL.revokeObjectURL(url);
-          
-          closePdfModal();
-        } else {
-          setMessage({ type: 'error', text: data.error || 'Errore nella generazione PDF' });
-        }
-      } else {
-        let errorMessage = 'Errore nel download PDF';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch (e) {
-          errorMessage = `Errore ${response.status}: ${response.statusText}`;
-        }
-        setMessage({ type: 'error', text: errorMessage });
-      }
     } catch (error) {
       console.error('Errore nel download PDF:', error);
       setMessage({ 
         type: 'error', 
-        text: 'Errore di connessione. Verifica che l\'endpoint sia disponibile.' 
+        text: 'Errore nella generazione del PDF' 
       });
     }
+  };
+
+  // Raccoglie i dati per il PDF
+  const collectPdfData = async () => {
+    const pdfData = [];
+    
+    for (const monthString of selectedMonths) {
+      try {
+        const response = await fetch(`/api/presenze?mese=${monthString}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          pdfData.push({
+            monthInfo: data.month_info,
+            presenze: data.presenze.filter((p: Presenza) => p.numero_presenze > 0)
+          });
+        }
+      } catch (error) {
+        console.error(`Errore nel recupero dati per ${monthString}:`, error);
+      }
+    }
+    
+    return pdfData;
+  };
+
+  // Genera e scarica il PDF usando jsPDF
+  const generateAndDownloadPdf = async (pdfData: any[]) => {
+    // Crea il contenuto del PDF come testo semplice
+    let content = '='.repeat(60) + '\n';
+    content += '              REPORT PRESENZE\n';
+    content += '='.repeat(60) + '\n';
+    content += `Generato il: ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}\n`;
+    content += `Periodo: ${pdfData.length} mesi selezionati\n\n`;
+
+    pdfData.forEach((monthData, index) => {
+      const { monthInfo, presenze } = monthData;
+      
+      content += '\n' + '-'.repeat(50) + '\n';
+      content += `MESE: ${monthInfo.monthName.toUpperCase()}\n`;
+      content += '-'.repeat(50) + '\n\n';
+      
+      // Organizza presenze per data
+      const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
+      presenze.forEach((p: any) => {
+        if (!presenzeMap[p.data]) {
+          presenzeMap[p.data] = {};
+        }
+        presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
+      });
+
+      // Tabella giorni
+      content += 'DATA  | GG  | 9-13 | 13-16 | 16-19 | 21-24 | TOT\n';
+      content += '------|-----|------|-------|-------|-------|----\n';
+      
+      let totaliFascia = { '9-13': 0, '13-16': 0, '16-19': 0, '21-24': 0 };
+      let totaleMese = 0;
+      let giorniConPresenze = 0;
+
+      monthInfo.dates.forEach((data: string) => {
+        const date = new Date(data);
+        const dayOfWeek = date.getDay();
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+        
+        const totaleGiorno = fasce.reduce((sum, fascia) => {
+          return sum + (presenzeMap[data]?.[fascia] || 0);
+        }, 0);
+
+        if (totaleGiorno > 0) {
+          giorniConPresenze++;
+          const giorno = date.getDate().toString().padStart(2, ' ');
+          const nomeGiorno = dayNames[dayOfWeek];
+          
+          content += `${giorno}    | ${nomeGiorno} |`;
+          
+          fasce.forEach(fascia => {
+            const numero = presenzeMap[data]?.[fascia] || 0;
+            content += ` ${numero.toString().padStart(4, ' ')} |`;
+            totaliFascia[fascia as keyof typeof totaliFascia] += numero;
+            totaleMese += numero;
+          });
+          
+          content += ` ${totaleGiorno.toString().padStart(3, ' ')}\n`;
+        }
+      });
+
+      // Totali
+      content += '------|-----|------|-------|-------|-------|----\n';
+      content += 'TOT   |     |';
+      fasce.forEach(fascia => {
+        content += ` ${totaliFascia[fascia as keyof typeof totaliFascia].toString().padStart(4, ' ')} |`;
+      });
+      content += ` ${totaleMese.toString().padStart(3, ' ')}\n\n`;
+
+      // Statistiche
+      content += 'STATISTICHE:\n';
+      content += `- Totale mese: ${totaleMese} presenze\n`;
+      content += `- Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno\n`;
+      content += `- Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}\n`;
+      
+      if (index < pdfData.length - 1) {
+        content += '\n\n';
+      }
+    });
+
+    // Scarica come file di testo
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `presenze_report_${selectedMonths.length}_mesi.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   const closeModal = () => {
@@ -294,7 +381,7 @@ const Presenze: React.FC = () => {
   const toggleMonthSelection = (monthKey: string) => {
     setSelectedMonths(prev => 
       prev.includes(monthKey) 
-        ? prev.filter(m => m !== monthKey)
+        ? prev.filter((m: string) => m !== monthKey)
         : [...prev, monthKey]
     );
   };
@@ -436,14 +523,9 @@ const Presenze: React.FC = () => {
       </div>
     );
   };
-  
 
   const renderPdfModal = () => {
-    interface MonthOption {
-      key: string;
-      name: string;
-    }
-    const months: MonthOption[] = [];
+    const months: Array<{key: string, name: string}> = [];
     const currentDate = new Date();
     
     // Genera gli ultimi 12 mesi senza duplicati
@@ -501,7 +583,7 @@ const Presenze: React.FC = () => {
               onClick={handleDownloadPdf}
               disabled={selectedMonths.length === 0}
             >
-              📄 Scarica PDF
+              📄 Scarica Report
             </button>
           </div>
         </div>
