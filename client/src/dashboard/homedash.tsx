@@ -34,7 +34,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Form di gestione turni',
       icon: '📅',
       component: Turni,
-      minLevel: 0 // Livelli 0 e 1
+      minLevel: 4 
     },
     {
       id: 'profilo-utente',
