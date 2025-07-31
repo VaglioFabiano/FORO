@@ -466,13 +466,13 @@ const Turni: React.FC = () => {
             className={`week-button ${selectedWeek === 'plus2' ? 'active' : ''}`}
             onClick={() => setSelectedWeek('plus2')}
           >
-            Settimana +2 ({getPlus2WeekRange()})
+            Settimana ({getPlus2WeekRange()})
           </button>
           <button
             className={`week-button ${selectedWeek === 'plus3' ? 'active' : ''}`}
             onClick={() => setSelectedWeek('plus3')}
           >
-            Settimana +3 ({getPlus3WeekRange()})
+            Settimana ({getPlus3WeekRange()})
           </button>
         </div>
 

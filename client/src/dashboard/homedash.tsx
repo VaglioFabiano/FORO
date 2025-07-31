@@ -5,6 +5,7 @@ import TelegramSender from './TelegramSender';
 import VisualizzaUtenti from './VisualizzaUtenti'; 
 import ProfiloUtente from './ProfiloUtente';
 import Turni from './Turni';
+import presenze from './presenze';
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -34,6 +35,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
       description: 'Form di gestione turni',
       icon: '📅',
       component: Turni,
+      minLevel: 4 
+    },
+    {
+      id: 'Presenze',
+      title: 'Presenze Aula Studio',
+      description: 'Form di gestione delle presenze',
+      icon: '🙋',
+      component: presenze,
       minLevel: 4 
     },
     {
