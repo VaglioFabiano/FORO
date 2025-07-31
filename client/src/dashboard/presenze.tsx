@@ -276,94 +276,276 @@ const Presenze: React.FC = () => {
 
   // Genera e scarica il PDF usando jsPDF
   const generateAndDownloadPdf = async (pdfData: any[]) => {
-    // Crea il contenuto del PDF come testo semplice
-    let content = '='.repeat(60) + '\n';
-    content += '              REPORT PRESENZE\n';
-    content += '='.repeat(60) + '\n';
-    content += `Generato il: ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}\n`;
-    content += `Periodo: ${pdfData.length} mesi selezionati\n\n`;
-
-    pdfData.forEach((monthData, index) => {
-      const { monthInfo, presenze } = monthData;
+    try {
+      // Carica jsPDF dinamicamente
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
       
-      content += '\n' + '-'.repeat(50) + '\n';
-      content += `MESE: ${monthInfo.monthName.toUpperCase()}\n`;
-      content += '-'.repeat(50) + '\n\n';
-      
-      // Organizza presenze per data
-      const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
-      presenze.forEach((p: any) => {
-        if (!presenzeMap[p.data]) {
-          presenzeMap[p.data] = {};
-        }
-        presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
       });
 
-      // Tabella giorni
-      content += 'DATA  | GG  | 9-13 | 13-16 | 16-19 | 21-24 | TOT\n';
-      content += '------|-----|------|-------|-------|-------|----\n';
+      // Ora jsPDF è disponibile globalmente
+      const { jsPDF } = (window as any).jspdf;
       
-      let totaliFascia = { '9-13': 0, '13-16': 0, '16-19': 0, '21-24': 0 };
-      let totaleMese = 0;
-      let giorniConPresenze = 0;
+      const doc = new jsPDF();
+      let yPosition = 20;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 15;
+      
+      // Header del documento
+      doc.setFontSize(16);
+      doc.setFont(undefined, 'bold');
+      doc.text('REPORT PRESENZE', 105, yPosition, { align: 'center' });
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Generato il: ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}`, 105, yPosition, { align: 'center' });
+      yPosition += 5;
+      doc.text(`Periodo: ${pdfData.length} mesi selezionati`, 105, yPosition, { align: 'center' });
+      yPosition += 15;
 
-      monthInfo.dates.forEach((data: string) => {
-        const date = new Date(data);
-        const dayOfWeek = date.getDay();
-        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+      // Aggiungi linea separatrice
+      doc.line(margin, yPosition, 210 - margin, yPosition);
+      yPosition += 10;
+
+      pdfData.forEach((monthData, monthIndex) => {
+        const { monthInfo, presenze } = monthData;
         
-        const totaleGiorno = fasce.reduce((sum, fascia) => {
-          return sum + (presenzeMap[data]?.[fascia] || 0);
-        }, 0);
+        // Controlla se serve una nuova pagina
+        if (yPosition > pageHeight - 60) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        // Titolo del mese
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text(monthInfo.monthName.toUpperCase(), margin, yPosition);
+        yPosition += 10;
+        
+        // Organizza presenze per data
+        const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
+        presenze.forEach((p: any) => {
+          if (!presenzeMap[p.data]) {
+            presenzeMap[p.data] = {};
+          }
+          presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
+        });
 
-        if (totaleGiorno > 0) {
-          giorniConPresenze++;
-          const giorno = date.getDate().toString().padStart(2, ' ');
-          const nomeGiorno = dayNames[dayOfWeek];
+        // Header della tabella
+        doc.setFontSize(8);
+        doc.setFont(undefined, 'bold');
+        
+        const colWidths = [15, 15, 20, 20, 20, 20, 20];
+        const headers = ['Data', 'Giorno', '9-13', '13-16', '16-19', '21-24', 'Tot'];
+        let xPosition = margin;
+        
+        headers.forEach((header, i) => {
+          doc.text(header, xPosition, yPosition);
+          xPosition += colWidths[i];
+        });
+        yPosition += 5;
+        
+        // Linea sotto l'header
+        doc.line(margin, yPosition, 210 - margin, yPosition);
+        yPosition += 5;
+
+        // Dati delle presenze
+        doc.setFont(undefined, 'normal');
+        let totaliFascia = { '9-13': 0, '13-16': 0, '16-19': 0, '21-24': 0 };
+        let totaleMese = 0;
+        let giorniConPresenze = 0;
+
+        monthInfo.dates.forEach((data: string) => {
+          const date = new Date(data);
+          const dayOfWeek = date.getDay();
+          const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
           
-          content += `${giorno}    | ${nomeGiorno} |`;
-          
-          fasce.forEach(fascia => {
-            const numero = presenzeMap[data]?.[fascia] || 0;
-            content += ` ${numero.toString().padStart(4, ' ')} |`;
-            totaliFascia[fascia as keyof typeof totaliFascia] += numero;
-            totaleMese += numero;
-          });
-          
-          content += ` ${totaleGiorno.toString().padStart(3, ' ')}\n`;
+          const totaleGiorno = fasce.reduce((sum, fascia) => {
+            return sum + (presenzeMap[data]?.[fascia] || 0);
+          }, 0);
+
+          if (totaleGiorno > 0) {
+            // Controlla se serve una nuova pagina
+            if (yPosition > pageHeight - 15) {
+              doc.addPage();
+              yPosition = 20;
+              
+              // Ripeti l'header sulla nuova pagina
+              doc.setFont(undefined, 'bold');
+              xPosition = margin;
+              headers.forEach((header, i) => {
+                doc.text(header, xPosition, yPosition);
+                xPosition += colWidths[i];
+              });
+              yPosition += 5;
+              doc.line(margin, yPosition, 210 - margin, yPosition);
+              yPosition += 5;
+              doc.setFont(undefined, 'normal');
+            }
+            
+            giorniConPresenze++;
+            const giorno = date.getDate().toString();
+            const nomeGiorno = dayNames[dayOfWeek];
+            
+            xPosition = margin;
+            doc.text(giorno, xPosition, yPosition);
+            xPosition += colWidths[0];
+            
+            doc.text(nomeGiorno, xPosition, yPosition);
+            xPosition += colWidths[1];
+            
+            fasce.forEach((fascia, i) => {
+              const numero = presenzeMap[data]?.[fascia] || 0;
+              doc.text(numero > 0 ? numero.toString() : '-', xPosition, yPosition);
+              totaliFascia[fascia as keyof typeof totaliFascia] += numero;
+              totaleMese += numero;
+              xPosition += colWidths[i + 2];
+            });
+            
+            doc.text(totaleGiorno.toString(), xPosition, yPosition);
+            yPosition += 4;
+          }
+        });
+
+        // Linea prima dei totali
+        yPosition += 2;
+        doc.line(margin, yPosition, 210 - margin, yPosition);
+        yPosition += 5;
+
+        // Riga dei totali
+        doc.setFont(undefined, 'bold');
+        xPosition = margin;
+        doc.text('TOTALI', xPosition, yPosition);
+        xPosition += colWidths[0] + colWidths[1];
+        
+        fasce.forEach((fascia, i) => {
+          doc.text(totaliFascia[fascia as keyof typeof totaliFascia].toString(), xPosition, yPosition);
+          xPosition += colWidths[i + 2];
+        });
+        doc.text(totaleMese.toString(), xPosition, yPosition);
+        yPosition += 10;
+
+        // Statistiche
+        doc.setFont(undefined, 'normal');
+        doc.text(`Totale mese: ${totaleMese} presenze`, margin, yPosition);
+        yPosition += 4;
+        doc.text(`Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno`, margin, yPosition);
+        yPosition += 4;
+        doc.text(`Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}`, margin, yPosition);
+        yPosition += 15;
+
+        // Separatore tra mesi (se non è l'ultimo)
+        if (monthIndex < pdfData.length - 1) {
+          doc.line(margin, yPosition, 210 - margin, yPosition);
+          yPosition += 10;
         }
       });
 
-      // Totali
-      content += '------|-----|------|-------|-------|-------|----\n';
-      content += 'TOT   |     |';
-      fasce.forEach(fascia => {
-        content += ` ${totaliFascia[fascia as keyof typeof totaliFascia].toString().padStart(4, ' ')} |`;
-      });
-      content += ` ${totaleMese.toString().padStart(3, ' ')}\n\n`;
-
-      // Statistiche
-      content += 'STATISTICHE:\n';
-      content += `- Totale mese: ${totaleMese} presenze\n`;
-      content += `- Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno\n`;
-      content += `- Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}\n`;
+      // Salva il PDF
+      doc.save(`presenze_report_${selectedMonths.length}_mesi.pdf`);
       
-      if (index < pdfData.length - 1) {
-        content += '\n\n';
-      }
-    });
+      // Rimuovi lo script dopo l'uso
+      document.head.removeChild(script);
+      
+    } catch (error) {
+      console.error('Errore nel caricamento di jsPDF:', error);
+      
+      // Fallback: scarica come testo se jsPDF non funziona
+      setMessage({ type: 'info', text: 'Generando report in formato testo...' });
+      
+      let content = '='.repeat(60) + '\n';
+      content += '              REPORT PRESENZE\n';
+      content += '='.repeat(60) + '\n';
+      content += `Generato il: ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}\n`;
+      content += `Periodo: ${pdfData.length} mesi selezionati\n\n`;
 
-    // Scarica come file di testo
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `presenze_report_${selectedMonths.length}_mesi.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+      pdfData.forEach((monthData, index) => {
+        const { monthInfo, presenze } = monthData;
+        
+        content += '\n' + '-'.repeat(50) + '\n';
+        content += `MESE: ${monthInfo.monthName.toUpperCase()}\n`;
+        content += '-'.repeat(50) + '\n\n';
+        
+        // Organizza presenze per data
+        const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
+        presenze.forEach((p: any) => {
+          if (!presenzeMap[p.data]) {
+            presenzeMap[p.data] = {};
+          }
+          presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
+        });
+
+        // Tabella giorni
+        content += 'DATA  | GG  | 9-13 | 13-16 | 16-19 | 21-24 | TOT\n';
+        content += '------|-----|------|-------|-------|-------|----\n';
+        
+        let totaliFascia = { '9-13': 0, '13-16': 0, '16-19': 0, '21-24': 0 };
+        let totaleMese = 0;
+        let giorniConPresenze = 0;
+
+        monthInfo.dates.forEach((data: string) => {
+          const date = new Date(data);
+          const dayOfWeek = date.getDay();
+          const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+          
+          const totaleGiorno = fasce.reduce((sum, fascia) => {
+            return sum + (presenzeMap[data]?.[fascia] || 0);
+          }, 0);
+
+          if (totaleGiorno > 0) {
+            giorniConPresenze++;
+            const giorno = date.getDate().toString().padStart(2, ' ');
+            const nomeGiorno = dayNames[dayOfWeek];
+            
+            content += `${giorno}    | ${nomeGiorno} |`;
+            
+            fasce.forEach(fascia => {
+              const numero = presenzeMap[data]?.[fascia] || 0;
+              content += ` ${numero.toString().padStart(4, ' ')} |`;
+              totaliFascia[fascia as keyof typeof totaliFascia] += numero;
+              totaleMese += numero;
+            });
+            
+            content += ` ${totaleGiorno.toString().padStart(3, ' ')}\n`;
+          }
+        });
+
+        // Totali
+        content += '------|-----|------|-------|-------|-------|----\n';
+        content += 'TOT   |     |';
+        fasce.forEach(fascia => {
+          content += ` ${totaliFascia[fascia as keyof typeof totaliFascia].toString().padStart(4, ' ')} |`;
+        });
+        content += ` ${totaleMese.toString().padStart(3, ' ')}\n\n`;
+
+        // Statistiche
+        content += 'STATISTICHE:\n';
+        content += `- Totale mese: ${totaleMese} presenze\n`;
+        content += `- Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno\n`;
+        content += `- Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}\n`;
+        
+        if (index < pdfData.length - 1) {
+          content += '\n\n';
+        }
+      });
+
+      // Scarica come file di testo
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `presenze_report_${selectedMonths.length}_mesi.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
   };
 
   const closeModal = () => {
