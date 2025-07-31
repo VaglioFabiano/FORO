@@ -48,14 +48,14 @@ interface Statistiche {
   month_info: MonthInfo;
 }
 
-type MeseType = 'precedente' | 'corrente' | 'successivo';
+//type MeseType = 'precedente' | 'corrente' | 'successivo';
 
 const Presenze: React.FC = () => {
   const [presenze, setPresenze] = useState<Presenza[]>([]);
   const [monthInfo, setMonthInfo] = useState<MonthInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<Message | null>(null);
-  const [selectedMese, setSelectedMese] = useState<MeseType>('corrente');
+  const [currentMonthOffset, setCurrentMonthOffset] = useState<number>(0); // 0 = mese corrente, -1 = precedente, +1 = successivo
   const [selectedCell, setSelectedCell] = useState<{data: string, fascia: string} | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editValue, setEditValue] = useState<string>('');
@@ -76,7 +76,7 @@ const Presenze: React.FC = () => {
   useEffect(() => {
     fetchPresenze();
     getCurrentUser();
-  }, [selectedMese]);
+  }, [currentMonthOffset]);
 
   useEffect(() => {
     if (message) {
@@ -86,6 +86,54 @@ const Presenze: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [message]);
+
+  // Controlli da tastiera per navigazione veloce
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Solo se non ci sono modal aperti e non si sta scrivendo in un input
+      if (!isModalOpen && !isPdfModalOpen && 
+          event.target instanceof HTMLElement && 
+          event.target.tagName !== 'INPUT' && 
+          event.target.tagName !== 'TEXTAREA') {
+        
+        switch (event.key) {
+          case 'ArrowLeft':
+            event.preventDefault();
+            navigateToMonth('prev');
+            break;
+          case 'ArrowRight':
+            event.preventDefault();
+            navigateToMonth('next');
+            break;
+          case 'Home':
+            event.preventDefault();
+            navigateToMonth('current');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isModalOpen, isPdfModalOpen]);
+
+  // Funzione per ottenere il nome del mese da offset
+  const getMonthNameFromOffset = (offset: number) => {
+    const now = new Date();
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    return targetDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+  };
+
+  // Funzione per navigare tra i mesi
+  const navigateToMonth = (direction: 'prev' | 'next' | 'current') => {
+    if (direction === 'prev') {
+      setCurrentMonthOffset(prev => prev - 1);
+    } else if (direction === 'next') {
+      setCurrentMonthOffset(prev => prev + 1);
+    } else {
+      setCurrentMonthOffset(0);
+    }
+  };
 
   const getCurrentUser = () => {
     const userData = localStorage.getItem('user');
@@ -102,7 +150,12 @@ const Presenze: React.FC = () => {
   const fetchPresenze = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/presenze?mese=${selectedMese}`);
+      // Converti l'offset in formato YYYY-MM
+      const now = new Date();
+      const targetDate = new Date(now.getFullYear(), now.getMonth() + currentMonthOffset, 1);
+      const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      const response = await fetch(`/api/presenze?mese=${monthString}`);
       const data = await response.json();
       
       if (data.success) {
@@ -121,7 +174,12 @@ const Presenze: React.FC = () => {
 
   const fetchStatistiche = async () => {
     try {
-      const response = await fetch(`/api/presenze?mese=${selectedMese}&stats=true`);
+      // Converti l'offset in formato YYYY-MM
+      const now = new Date();
+      const targetDate = new Date(now.getFullYear(), now.getMonth() + currentMonthOffset, 1);
+      const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      const response = await fetch(`/api/presenze?mese=${monthString}&stats=true`);
       const data = await response.json();
       
       if (data.success) {
@@ -710,16 +768,12 @@ const Presenze: React.FC = () => {
     const months: Array<{key: string, name: string}> = [];
     const currentDate = new Date();
     
-    // Genera gli ultimi 12 mesi senza duplicati
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    // Genera 24 mesi: 12 nel passato e 12 nel futuro rispetto al mese corrente
+    for (let i = -12; i <= 12; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = `${mesi[date.getMonth()]} ${date.getFullYear()}`;
-      
-      // Evita duplicati verificando se la chiave esiste già
-      if (!months.find(m => m.key === monthKey)) {
-        months.push({ key: monthKey, name: monthName });
-      }
+      months.push({ key: monthKey, name: monthName });
     }
 
     return (
@@ -791,22 +845,30 @@ const Presenze: React.FC = () => {
         
         <div className="month-selector">
           <button
-            className={`month-button ${selectedMese === 'precedente' ? 'active' : ''}`}
-            onClick={() => setSelectedMese('precedente')}
+            className="month-button"
+            onClick={() => navigateToMonth('prev')}
+            title="Mese precedente (← Freccia sinistra)"
           >
-            ← Precedente
+            ← {getMonthNameFromOffset(currentMonthOffset - 1)}
           </button>
           <button
-            className={`month-button ${selectedMese === 'corrente' ? 'active' : ''}`}
-            onClick={() => setSelectedMese('corrente')}
+            className={`month-button ${currentMonthOffset === 0 ? 'active' : ''}`}
+            onClick={() => navigateToMonth('current')}
+            title="Torna al mese corrente (Home)"
           >
-            {monthInfo?.monthName || 'Corrente'}
+            {getMonthNameFromOffset(currentMonthOffset)}
+            {currentMonthOffset !== 0 && (
+              <span className="month-offset-indicator">
+                {currentMonthOffset > 0 ? `+${currentMonthOffset}` : currentMonthOffset}
+              </span>
+            )}
           </button>
           <button
-            className={`month-button ${selectedMese === 'successivo' ? 'active' : ''}`}
-            onClick={() => setSelectedMese('successivo')}
+            className="month-button"
+            onClick={() => navigateToMonth('next')}
+            title="Mese successivo (→ Freccia destra)"
           >
-            Successivo →
+            {getMonthNameFromOffset(currentMonthOffset + 1)} →
           </button>
         </div>
 

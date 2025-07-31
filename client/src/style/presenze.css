@@ -42,6 +42,21 @@
   font-size: 12px;
   transition: all 0.3s ease;
   white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.month-offset-indicator {
+  background: #D2691E;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
 }
 
 .month-button:hover {
