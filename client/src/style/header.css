@@ -260,3 +260,93 @@ html {
     transform: translateY(0);
   }
 }
+
+
+.description-container {
+  position: relative;
+}
+
+.description-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.description-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid rgba(255, 232, 204, 0.3);
+  background-color: rgba(12, 73, 91, 0.8);
+  color: rgb(255, 232, 204);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-family: 'Inter', sans-serif;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.description-textarea:focus {
+  outline: none;
+  border-color: rgba(255, 232, 204, 0.7);
+}
+
+.description-edit-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-button {
+  background-color: rgba(255, 232, 204, 0.1);
+  color: rgb(255, 232, 204);
+  border: 1px solid rgba(255, 232, 204, 0.3);
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.edit-button:hover {
+  background-color: rgba(255, 232, 204, 0.2);
+}
+
+.save-button {
+  background-color: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.5);
+}
+
+.save-button:hover {
+  background-color: rgba(76, 175, 80, 0.3);
+}
+
+.cancel-button {
+  background-color: rgba(244, 67, 54, 0.2);
+  border-color: rgba(244, 67, 54, 0.5);
+}
+
+.cancel-button:hover {
+  background-color: rgba(244, 67, 54, 0.3);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .description-textarea {
+    min-height: 100px;
+    font-size: 1.1rem;
+  }
+  
+  .edit-button {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .description-textarea {
+    min-height: 80px;
+    font-size: 1rem;
+  }
+}

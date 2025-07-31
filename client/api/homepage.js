@@ -274,17 +274,22 @@ async function updateHomepageData(req, res) {
         break;
 
       case 'segnalazioni':
-        result = await client.execute({
-          sql: `UPDATE segnalazioni SET 
-                immagine = ?, link = ?, 
-                updated_at = CURRENT_TIMESTAMP, user_id = ? 
-                WHERE id = (SELECT id FROM segnalazioni ORDER BY updated_at DESC LIMIT 1)`,
-          args: [
-            data.immagine || '', 
-            data.link || '', 
-            user_id
-          ]
-        });
+        // Permette di aggiungere una nuova segnalazione invece di aggiornare l'ultima
+        if (data.immagine || data.link) {
+          result = await client.execute({
+            sql: `INSERT INTO segnalazioni (immagine, link, user_id) VALUES (?, ?, ?)`,
+            args: [
+              data.immagine || '', 
+              data.link || '', 
+              user_id
+            ]
+          });
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: 'Dati segnalazione mancanti'
+          });
+        }
         break;
 
       case 'contatti':
@@ -333,6 +338,57 @@ async function updateHomepageData(req, res) {
   }
 }
 
+// DELETE - Elimina una segnalazione
+async function deleteSegnalazione(req, res) {
+  try {
+    const { id, user_id } = req.body;
+
+    if (!id || !user_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID segnalazione e user_id richiesti'
+      });
+    }
+
+    // Verifica permessi utente
+    const userResult = await client.execute({
+      sql: 'SELECT level FROM users WHERE id = ?',
+      args: [user_id]
+    });
+
+    if (!userResult.rows.length || (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Non hai i permessi per eliminare segnalazioni'
+      });
+    }
+
+    const result = await client.execute({
+      sql: 'DELETE FROM segnalazioni WHERE id = ?',
+      args: [id]
+    });
+
+    if (result.rowsAffected > 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Segnalazione eliminata con successo'
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        error: 'Segnalazione non trovata'
+      });
+    }
+
+  } catch (error) {
+    console.error('Errore nell\'eliminazione segnalazione:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Errore interno del server'
+    });
+  }
+}
+
 // GET - Ottieni solo i dati dell'header (per il componente Header)
 async function getHeaderData(req, res) {
   try {
@@ -355,51 +411,20 @@ async function getHeaderData(req, res) {
   }
 }
 
-// GET - Log delle modifiche (opzionale per audit)
-async function getHomepageLog(req, res) {
+// GET - Ottieni tutte le segnalazioni
+async function getSegnalazioni(req, res) {
   try {
-    const { user_id } = req.query;
-
-    // Verifica permessi utente
-    const userResult = await client.execute({
-      sql: 'SELECT level FROM users WHERE id = ?',
-      args: [user_id]
-    });
-
-    if (!userResult.rows.length || (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Non hai i permessi per visualizzare il log'
-      });
-    }
-
-    // Per ora restituiamo un log base delle ultime modifiche
-    const queries = [
-      'SELECT "header" as table_name, updated_at, user_id FROM header ORDER BY updated_at DESC LIMIT 5',
-      'SELECT "sezione_social" as table_name, updated_at, user_id FROM sezione_social ORDER BY updated_at DESC LIMIT 5',
-      'SELECT "statuto" as table_name, updated_at, user_id FROM statuto ORDER BY updated_at DESC LIMIT 5',
-      'SELECT "conoscici" as table_name, updated_at, user_id FROM conoscici ORDER BY updated_at DESC LIMIT 5',
-      'SELECT "segnalazioni" as table_name, updated_at, user_id FROM segnalazioni ORDER BY updated_at DESC LIMIT 5',
-      'SELECT "contatti_footer" as table_name, updated_at, user_id FROM contatti_footer ORDER BY updated_at DESC LIMIT 5'
-    ];
-
-    const logEntries = [];
+    await initializeTables();
     
-    for (const query of queries) {
-      const result = await client.execute(query);
-      logEntries.push(...result.rows);
-    }
-
-    // Ordina per data più recente
-    logEntries.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-
+    const segnalazioniResult = await client.execute('SELECT * FROM segnalazioni ORDER BY updated_at DESC');
+    
     return res.status(200).json({
       success: true,
-      log: logEntries.slice(0, 20) // Ultimi 20 log
+      segnalazioni: segnalazioniResult.rows
     });
 
   } catch (error) {
-    console.error('Errore nel recupero log homepage:', error);
+    console.error('Errore nel recupero segnalazioni:', error);
     return res.status(500).json({
       success: false,
       error: 'Errore interno del server'
@@ -411,7 +436,7 @@ async function getHomepageLog(req, res) {
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -427,9 +452,9 @@ export default async function handler(req, res) {
       return await getHeaderData(req, res);
     }
     
-    // Route per ottenere il log delle modifiche
-    if (req.method === 'GET' && req.query.log === 'true') {
-      return await getHomepageLog(req, res);
+    // Route per ottenere tutte le segnalazioni
+    if (req.method === 'GET' && req.query.section === 'segnalazioni') {
+      return await getSegnalazioni(req, res);
     }
     
     switch (req.method) {
@@ -437,6 +462,14 @@ export default async function handler(req, res) {
         return await getHomepageData(req, res);
       case 'POST':
         return await updateHomepageData(req, res);
+      case 'DELETE':
+        if (req.query.section === 'segnalazioni') {
+          return await deleteSegnalazione(req, res);
+        }
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Azione non supportata' 
+        });
       default:
         return res.status(405).json({ 
           success: false, 
