@@ -4,6 +4,7 @@ import ModificaOrari from './ModificaOrari';
 import TelegramSender from './TelegramSender'; 
 import VisualizzaUtenti from './VisualizzaUtenti'; 
 import ProfiloUtente from './ProfiloUtente';
+import Turni from './Turni';
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -27,6 +28,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   // Elementi della dashboard con i livelli minimi richiesti
   const dashboardItems: DashboardItem[] = [
+    {
+      id: 'Turni',
+      title: 'Turni Aula Studio',
+      description: 'Form di gestione turni',
+      icon: '📅',
+      component: Turni,
+      minLevel: 0 // Livelli 0 e 1
+    },
     {
       id: 'profilo-utente',
       title: 'Il Mio Profilo',
