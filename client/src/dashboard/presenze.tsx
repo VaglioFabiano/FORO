@@ -436,6 +436,7 @@ const Presenze: React.FC = () => {
       </div>
     );
   };
+  
 
   const renderPdfModal = () => {
     interface MonthOption {
