@@ -13,12 +13,12 @@ if (!config.url || !config.authToken) {
 
 const client = createClient(config);
 
-// Funzione per ottenere i giorni della settimana corrente
-function getCurrentWeekDates() {
+// Funzione per ottenere i giorni di una settimana specifica
+function getWeekDates(weekOffset = 0) {
   const now = new Date();
   const currentDay = now.getDay();
   const monday = new Date(now);
-  monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+  monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + (weekOffset * 7));
   
   const weekDates = [];
   for (let i = 0; i < 7; i++) {
@@ -29,20 +29,24 @@ function getCurrentWeekDates() {
   return weekDates;
 }
 
+// Funzione per ottenere i giorni della settimana corrente
+function getCurrentWeekDates() {
+  return getWeekDates(0);
+}
+
 // Funzione per ottenere i giorni della prossima settimana
 function getNextWeekDates() {
-  const now = new Date();
-  const currentDay = now.getDay();
-  const nextMonday = new Date(now);
-  nextMonday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + 7);
-  
-  const weekDates = [];
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(nextMonday);
-    date.setDate(nextMonday.getDate() + i);
-    weekDates.push(date.toISOString().split('T')[0]);
-  }
-  return weekDates;
+  return getWeekDates(1);
+}
+
+// Funzione per ottenere i giorni della settimana +2
+function getWeekPlus2Dates() {
+  return getWeekDates(2);
+}
+
+// Funzione per ottenere i giorni della settimana +3
+function getWeekPlus3Dates() {
+  return getWeekDates(3);
 }
 
 // Funzione per convertire nome giorno in numero
@@ -54,52 +58,160 @@ function getDayNumber(dayName) {
   return days[dayName.toLowerCase()];
 }
 
+// Funzione per generare turni di default per settimane future
+function generateDefaultTurni(weekDates) {
+  const turni = [];
+  const turniTemplate = [
+    { inizio: '09:00', fine: '13:00', disponibile: true },
+    { inizio: '13:00', fine: '16:00', disponibile: true },
+    { inizio: '16:00', fine: '19:30', disponibile: true },
+    { inizio: '21:00', fine: '24:00', disponibile: false } // Chiuso di default
+  ];
+
+  weekDates.forEach((data, dayIndex) => {
+    turniTemplate.forEach((turno, turnoIndex) => {
+      // Lunedì-Venerdì: primi 3 turni aperti, 4° chiuso
+      // Sabato-Domenica: tutti chiusi
+      const isWeekend = dayIndex === 5 || dayIndex === 6; // Sabato o Domenica
+      const isAvailable = !isWeekend && turno.disponibile;
+
+      if (isAvailable) {
+        turni.push({
+          data,
+          turno_inizio: turno.inizio,
+          turno_fine: turno.fine,
+          fascia_id: 1, // ID di default, potresti volerlo parametrizzare
+          day_index: dayIndex,
+          turno_index: turnoIndex,
+          nota_automatica: '',
+          is_default: true
+        });
+      }
+    });
+  });
+
+  return turni;
+}
+
 // Funzione per generare turni in base alle fasce orarie
-function generateTurniFromFasce(fasce, weekDates) {
+function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
+  // Se è una settimana di default (settimana +2 o +3), usa turni di default
+  if (isDefaultWeek) {
+    return generateDefaultTurni(weekDates);
+  }
+
   const turni = [];
   const turniTemplate = [
     { inizio: '09:00', fine: '13:00' },
     { inizio: '13:00', fine: '16:00' },
-    { inizio: '16:00', fine: '19:30' }
+    { inizio: '16:00', fine: '19:30' },
+    { inizio: '21:00', fine: '24:00' }
   ];
 
   weekDates.forEach((data, dayIndex) => {
-    // Trova le fasce orarie per questo giorno
     const dayName = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'][dayIndex];
     const fascheGiorno = fasce.filter(f => f.giorno === dayName);
     
-    if (fascheGiorno.length === 0) return; // Giorno chiuso
-
-    // Trova l'orario di chiusura massimo
-    const maxChiusura = Math.max(...fascheGiorno.map(f => {
-      const [ore, minuti] = f.ora_fine.split(':').map(Number);
-      return ore * 60 + minuti;
-    }));
+    if (fascheGiorno.length === 0) return;
 
     turniTemplate.forEach((turno, turnoIndex) => {
       const [oreInizio, minutiInizio] = turno.inizio.split(':').map(Number);
       const [oreFine, minutiFine] = turno.fine.split(':').map(Number);
       const inizioMinuti = oreInizio * 60 + minutiInizio;
-      const fineMinuti = oreFine * 60 + minutiFine;
+      let fineMinuti = oreFine * 60 + minutiFine;
+      
+      if (oreFine === 24) {
+        fineMinuti = 24 * 60;
+      }
 
-      // Se il turno inizia dopo l'orario di chiusura, saltalo
-      if (inizioMinuti >= maxChiusura) return;
+      const fasciaCompatibile = fascheGiorno.find(fascia => {
+        const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
+        const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine.split(':').map(Number);
+        const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
+        let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
+        
+        if (fasciaFineOre === 24 || (fasciaFineOre === 0 && fasciaFineMin === 0)) {
+          fasciaFineMinuti = 24 * 60;
+        }
 
-      // Se il turno finirebbe dopo l'orario di chiusura, accorcialo
+        return fasciaInizioMinuti <= inizioMinuti && fasciaFineMinuti >= fineMinuti;
+      });
+
+      if (!fasciaCompatibile) {
+        const fasciaConSovrapposizione = fascheGiorno.find(fascia => {
+          const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
+          const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine.split(':').map(Number);
+          const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
+          let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
+          
+          if (fasciaFineOre === 24 || (fasciaFineOre === 0 && fasciaFineMin === 0)) {
+            fasciaFineMinuti = 24 * 60;
+          }
+
+          return fasciaInizioMinuti < fineMinuti && fasciaFineMinuti > inizioMinuti;
+        });
+
+        if (fasciaConSovrapposizione) {
+          const [fasciaInizioOre, fasciaInizioMin] = fasciaConSovrapposizione.ora_inizio.split(':').map(Number);
+          const [fasciaFineOre, fasciaFineMin] = fasciaConSovrapposizione.ora_fine.split(':').map(Number);
+          const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
+          let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
+          
+          if (fasciaFineOre === 24 || (fasciaFineOre === 0 && fasciaFineMin === 0)) {
+            fasciaFineMinuti = 24 * 60;
+          }
+
+          const nuovoInizio = Math.max(inizioMinuti, fasciaInizioMinuti);
+          const nuovaFine = Math.min(fineMinuti, fasciaFineMinuti);
+
+          if (nuovaFine > nuovoInizio) {
+            const nuovoInizioOre = Math.floor(nuovoInizio / 60);
+            const nuovoInizioMin = nuovoInizio % 60;
+            const nuovaFineOre = Math.floor(nuovaFine / 60);
+            const nuovaFineMin = nuovaFine % 60;
+
+            let turnoInizio = `${nuovoInizioOre.toString().padStart(2, '0')}:${nuovoInizioMin.toString().padStart(2, '0')}`;
+            let turnoFine = `${nuovaFineOre.toString().padStart(2, '0')}:${nuovaFineMin.toString().padStart(2, '0')}`;
+            
+            if (nuovaFineOre === 24) {
+              turnoFine = '24:00';
+            }
+
+            let nota = '';
+            if (nuovoInizio > inizioMinuti) {
+              nota = '(apertura posticipata)';
+            }
+            if (nuovaFine < fineMinuti) {
+              nota = nota ? nota + ' (chiusura anticipata)' : '(chiusura anticipata)';
+            }
+
+            turni.push({
+              data,
+              turno_inizio: turnoInizio,
+              turno_fine: turnoFine,
+              fascia_id: fasciaConSovrapposizione.id,
+              day_index: dayIndex,
+              turno_index: turnoIndex,
+              nota_automatica: nota
+            });
+          }
+        }
+        return;
+      }
+
       let turnoFine = turno.fine;
-      if (fineMinuti > maxChiusura) {
-        const ore = Math.floor(maxChiusura / 60);
-        const minuti = maxChiusura % 60;
-        turnoFine = `${ore.toString().padStart(2, '0')}:${minuti.toString().padStart(2, '0')}`;
+      if (turno.fine === '24:00') {
+        turnoFine = '24:00';
       }
 
       turni.push({
         data,
         turno_inizio: turno.inizio,
         turno_fine: turnoFine,
-        fascia_id: fascheGiorno[0].id, // Usa la prima fascia del giorno come riferimento
+        fascia_id: fasciaCompatibile.id,
         day_index: dayIndex,
-        turno_index: turnoIndex
+        turno_index: turnoIndex,
+        nota_automatica: ''
       });
     });
   });
@@ -107,25 +219,67 @@ function generateTurniFromFasce(fasce, weekDates) {
   return turni;
 }
 
+// Handler per notifiche (TODO)
+async function handleTurnoNotification(action, turnoData, currentUserId, targetUserId = null) {
+  // TODO: Implementare sistema di notifiche
+  console.log('TODO: Notifica turno', {
+    action, // 'assigned', 'removed', 'self_assigned', 'self_removed'
+    turnoData,
+    currentUserId,
+    targetUserId
+  });
+  
+  /*
+  Possibili azioni:
+  - 'self_assigned': utente si assegna un turno
+  - 'assigned': admin assegna turno a qualcuno
+  - 'self_removed': utente si rimuove da un turno
+  - 'removed': admin rimuove qualcuno da un turno
+  - 'closed_assigned': utente si mette in turno chiuso (caso speciale)
+  */
+}
+
 // GET - Ottieni turni della settimana
 async function getTurni(req, res) {
   try {
-    const { settimana } = req.query; // 'corrente' o 'prossima'
+    const { settimana } = req.query; // 'corrente', 'prossima', 'plus2', 'plus3'
     
-    // Ottieni fasce orarie
-    let fascheQuery = 'SELECT id, giorno, ora_inizio, ora_fine, note FROM fasce_orarie';
-    if (settimana === 'prossima') {
-      fascheQuery = 'SELECT id, giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima';
+    let weekDates;
+    let isDefaultWeek = false;
+    
+    switch (settimana) {
+      case 'prossima':
+        weekDates = getNextWeekDates();
+        break;
+      case 'plus2':
+        weekDates = getWeekPlus2Dates();
+        isDefaultWeek = true;
+        break;
+      case 'plus3':
+        weekDates = getWeekPlus3Dates();
+        isDefaultWeek = true;
+        break;
+      default:
+        weekDates = getCurrentWeekDates();
+        break;
     }
     
-    const fascheResult = await client.execute(fascheQuery);
-    const fasce = fascheResult.rows;
-
-    // Ottieni date della settimana
-    const weekDates = settimana === 'prossima' ? getNextWeekDates() : getCurrentWeekDates();
+    let turniPossibili = [];
     
-    // Genera turni possibili
-    const turniPossibili = generateTurniFromFasce(fasce, weekDates);
+    if (isDefaultWeek) {
+      // Per settimane +2 e +3, usa turni di default
+      turniPossibili = generateDefaultTurni(weekDates);
+    } else {
+      // Per settimana corrente e prossima, usa fasce orarie
+      let fascheQuery = 'SELECT id, giorno, ora_inizio, ora_fine, note FROM fasce_orarie';
+      if (settimana === 'prossima') {
+        fascheQuery = 'SELECT id, giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima';
+      }
+      
+      const fascheResult = await client.execute(fascheQuery);
+      const fasce = fascheResult.rows;
+      turniPossibili = generateTurniFromFasce(fasce, weekDates);
+    }
 
     // Ottieni turni già assegnati
     const turniAssegnati = await client.execute({
@@ -149,12 +303,14 @@ async function getTurni(req, res) {
       return {
         ...turno,
         id: assegnato?.id || null,
-        user_id: assegnato?.user_id || null,
-        note: assegnato?.note || '',
+        user_id: assegnato?.user_id !== undefined ? assegnato.user_id : null,
+        note: assegnato?.note || turno.nota_automatica || '',
         user_name: assegnato?.name || '',
         user_surname: assegnato?.surname || '',
         user_username: assegnato?.username || '',
-        assegnato: !!assegnato
+        assegnato: !!assegnato,
+        nota_automatica: turno.nota_automatica || '',
+        is_default: turno.is_default || false
       };
     });
 
@@ -177,28 +333,57 @@ async function getTurni(req, res) {
 // POST - Assegna un turno
 async function assegnaTurno(req, res) {
   try {
-    const { data, turno_inizio, turno_fine, fascia_id, user_id, note } = req.body;
+    const { data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override, current_user_id } = req.body;
 
-    if (!data || !turno_inizio || !turno_fine || !fascia_id || !user_id) {
+    if (!data || !turno_inizio || !turno_fine || user_id === undefined || user_id === null) {
       return res.status(400).json({
         success: false,
         error: 'Dati mancanti'
       });
     }
 
+    // TODO: Handler per turno chiuso
+    if (is_closed_override) {
+      console.log('TODO: Utente si sta mettendo in un turno chiuso', {
+        user_id,
+        data,
+        turno_inizio,
+        turno_fine
+      });
+    }
+
     // Verifica se esiste già un turno per questa combinazione
     const esistente = await client.execute({
-      sql: 'SELECT id FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?',
+      sql: 'SELECT id, user_id FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?',
       args: [data, turno_inizio, turno_fine]
     });
 
+    let action = 'assigned';
+    let targetUserId = user_id;
+    
     if (esistente.rows.length > 0) {
+      const oldUserId = esistente.rows[0].user_id;
+      
+      // Determina il tipo di azione per le notifiche
+      if (current_user_id === user_id && current_user_id === oldUserId) {
+        action = 'self_modified'; // Utente modifica le proprie note
+      } else if (current_user_id === user_id) {
+        action = 'self_assigned'; // Utente si assegna il turno
+      } else if (current_user_id === oldUserId) {
+        action = 'assigned'; // Admin assegna turno ad altri
+      } else {
+        action = 'assigned'; // Admin riassegna turno
+      }
+
       // Aggiorna il turno esistente
       const result = await client.execute({
-        sql: `UPDATE turni SET user_id = ?, note = ? WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
+        sql: `UPDATE turni SET user_id = ?, note = ?, fascia_id = ? WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
               RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note`,
-        args: [user_id, note || '', data, turno_inizio, turno_fine]
+        args: [user_id, note || '', fascia_id || 1, data, turno_inizio, turno_fine]
       });
+
+      // TODO: Invia notifica
+      await handleTurnoNotification(action, result.rows[0], current_user_id, targetUserId);
 
       return res.status(200).json({
         success: true,
@@ -206,13 +391,23 @@ async function assegnaTurno(req, res) {
         action: 'updated'
       });
     } else {
+      // Determina il tipo di azione per nuovo turno
+      if (current_user_id === user_id) {
+        action = is_closed_override ? 'closed_assigned' : 'self_assigned';
+      } else {
+        action = 'assigned';
+      }
+
       // Crea nuovo turno
       const result = await client.execute({
         sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note)
               VALUES (?, ?, ?, ?, ?, ?)
               RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note`,
-        args: [data, turno_inizio, turno_fine, fascia_id, user_id, note || '']
+        args: [data, turno_inizio, turno_fine, fascia_id || 1, user_id, note || '']
       });
+
+      // TODO: Invia notifica
+      await handleTurnoNotification(action, result.rows[0], current_user_id, targetUserId);
 
       return res.status(201).json({
         success: true,
@@ -233,7 +428,7 @@ async function assegnaTurno(req, res) {
 // DELETE - Rimuovi assegnazione turno
 async function rimuoviTurno(req, res) {
   try {
-    const { data, turno_inizio, turno_fine } = req.body;
+    const { data, turno_inizio, turno_fine, current_user_id } = req.body;
 
     if (!data || !turno_inizio || !turno_fine) {
       return res.status(400).json({
@@ -242,15 +437,45 @@ async function rimuoviTurno(req, res) {
       });
     }
 
-    const result = await client.execute({
-      sql: 'DELETE FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?',
+    // Ottieni info del turno prima di rimuoverlo per le notifiche
+    const turnoInfo = await client.execute({
+      sql: 'SELECT user_id FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?',
       args: [data, turno_inizio, turno_fine]
     });
 
-    return res.status(200).json({
-      success: true,
-      deleted: result.rowsAffected > 0
-    });
+    if (turnoInfo.rows.length > 0) {
+      const removedUserId = turnoInfo.rows[0].user_id;
+      
+      // Determina il tipo di azione
+      let action = 'removed';
+      if (current_user_id === removedUserId) {
+        action = 'self_removed';
+      }
+
+      const result = await client.execute({
+        sql: 'DELETE FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?',
+        args: [data, turno_inizio, turno_fine]
+      });
+
+      // TODO: Invia notifica
+      if (result.rowsAffected > 0) {
+        await handleTurnoNotification(action, {
+          data,
+          turno_inizio,
+          turno_fine
+        }, current_user_id, removedUserId);
+      }
+
+      return res.status(200).json({
+        success: true,
+        deleted: result.rowsAffected > 0
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        error: 'Turno non trovato'
+      });
+    }
 
   } catch (error) {
     console.error('Errore nella rimozione turno:', error);

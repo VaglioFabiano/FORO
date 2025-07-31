@@ -41,6 +41,7 @@
   font-weight: 600;
   font-size: 14px;
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 .week-button:hover {
@@ -270,11 +271,12 @@
 .turni-cell.closed {
   background: rgba(158, 158, 158, 0.1);
   border-left: 4px solid #9E9E9E;
-  cursor: not-allowed;
+  cursor: pointer; /* Manteniamo cursor pointer per permettere richieste */
 }
 
 .turni-cell.closed:hover {
-  background: rgba(158, 158, 158, 0.1);
+  background: rgba(255, 152, 0, 0.1); /* Colore diverso per indicare possibilità di richiesta */
+  border-left-color: #ff9800;
 }
 
 /* Contenuto delle celle */
@@ -282,6 +284,7 @@
   color: #2E7D32;
   font-weight: 600;
   font-size: 14px;
+  text-align: center;
 }
 
 .turno-assigned {
@@ -301,10 +304,20 @@
   font-style: italic;
 }
 
+.turno-nota-automatica {
+  color: #ff9800;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 2px;
+  text-align: center;
+}
+
 .turno-closed {
   color: #757575;
   font-weight: 500;
   font-size: 14px;
+  text-align: center;
 }
 
 /* Modal */
@@ -404,7 +417,7 @@
 }
 
 .form-group select,
-.form-group input {
+.form-group input[type="text"] {
   width: 100%;
   padding: 15px 20px;
   border: 2px solid rgba(139, 69, 19, 0.1);
@@ -414,10 +427,11 @@
   color: #333;
   transition: border-color 0.3s ease;
   outline: none;
+  box-sizing: border-box;
 }
 
 .form-group select:focus,
-.form-group input:focus {
+.form-group input[type="text"]:focus {
   border-color: #D2691E;
   background: rgba(255, 255, 255, 1);
   box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
@@ -432,9 +446,25 @@
   background-size: 1.5em;
 }
 
-.form-group input::placeholder {
+.form-group input[type="text"]::placeholder {
   color: #999;
   font-style: italic;
+}
+
+/* Checkbox styling */
+.form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+  transform: scale(1.2);
+}
+
+.form-group label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  text-transform: none;
+  font-size: 14px;
+  color: #ff9800;
+  font-weight: 500;
 }
 
 /* Azioni modal */
