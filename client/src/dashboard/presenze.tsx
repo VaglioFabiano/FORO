@@ -221,14 +221,16 @@ const Presenze: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/presenze/pdf', {
+      setMessage({ type: 'info', text: 'Generazione PDF in corso...' });
+      
+      const response = await fetch('/api/presenze/download-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           months: selectedMonths,
-          current_user_id: currentUser?.id
+          user_id: currentUser?.id
         }),
       });
 
@@ -238,19 +240,29 @@ const Presenze: React.FC = () => {
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `presenze_${selectedMonths.join('_')}.pdf`;
+        a.download = `presenze_report_${selectedMonths.length}_mesi.pdf`;
         document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
         setMessage({ type: 'success', text: 'PDF scaricato con successo!' });
         closePdfModal();
       } else {
-        const data = await response.json();
-        setMessage({ type: 'error', text: data.error || 'Errore nel download PDF' });
+        let errorMessage = 'Errore nel download PDF';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          errorMessage = `Errore ${response.status}: ${response.statusText}`;
+        }
+        setMessage({ type: 'error', text: errorMessage });
       }
     } catch (error) {
       console.error('Errore nel download PDF:', error);
-      setMessage({ type: 'error', text: 'Errore di connessione' });
+      setMessage({ 
+        type: 'error', 
+        text: 'Errore di connessione. Verifica che l\'endpoint /api/presenze/download-pdf sia disponibile.' 
+      });
     }
   };
 
@@ -413,16 +425,23 @@ const Presenze: React.FC = () => {
   };
 
   const renderPdfModal = () => {
-    //const currentYear = new Date().getFullYear();
-    const months = [];
+    interface MonthOption {
+      key: string;
+      name: string;
+    }
+    const months: MonthOption[] = [];
+    const currentDate = new Date();
     
-    // Genera gli ultimi 12 mesi
+    // Genera gli ultimi 12 mesi senza duplicati
     for (let i = 11; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = `${mesi[date.getMonth()]} ${date.getFullYear()}`;
-      months.push({ key: monthKey, name: monthName });
+      
+      // Evita duplicati verificando se la chiave esiste già
+      if (!months.find(m => m.key === monthKey)) {
+        months.push({ key: monthKey, name: monthName });
+      }
     }
 
     return (
