@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import '../style/gestisciEventi.css';
 
-
 // Definizione delle interfacce per i dati
 interface Evento {
   id: number;
@@ -432,137 +431,122 @@ const GestisciEventi: React.FC = () => {
 
   if (loading && eventi.length === 0) {
     return (
-      <div className="p-8">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <span className="ml-4 text-lg">Caricamento eventi...</span>
+      <div className="eventi-container">
+        <div className="eventi-loading">
+          <div className="loading-spinner"></div>
+          <p>Caricamento eventi...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-gray-800">Gestione Eventi</h1>
-          <div className="flex gap-3">
-            {canManageEvents() && (
-              <button
-                onClick={() => {
-                  setShowNewEventForm(!showNewEventForm);
-                  if (showNewEventForm) setError(null);
-                }}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  showNewEventForm 
-                    ? 'bg-red-500 hover:bg-red-600 text-white' 
-                    : 'bg-green-500 hover:bg-green-600 text-white'
-                }`}
-              >
-                {showNewEventForm ? '✕ Annulla' : '+ Nuovo Evento'}
-              </button>
-            )}
-            <button 
-              onClick={fetchEventi} 
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
-              disabled={loading}
+    <div className="eventi-container">
+      <div className="eventi-header-section">
+        <h1>🎭 Gestione Eventi</h1>
+        
+        <div className="eventi-actions">
+          {canManageEvents() && (
+            <button
+              onClick={() => {
+                setShowNewEventForm(!showNewEventForm);
+                if (showNewEventForm) setError(null);
+              }}
+              className={`action-button ${showNewEventForm ? 'cancel' : 'create'}`}
             >
-              🔄 Ricarica
+              {showNewEventForm ? '✕ Annulla' : '✨ Nuovo Evento'}
             </button>
-          </div>
+          )}
+          <button 
+            onClick={fetchEventi} 
+            className="refresh-button"
+            disabled={loading}
+          >
+            🔄 Aggiorna
+          </button>
         </div>
+      </div>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative">
-            {error}
-            <button 
-              onClick={() => setError(null)} 
-              className="absolute top-2 right-2 text-red-700 hover:text-red-900"
-            >
-              ×
-            </button>
+      {error && (
+        <div className="eventi-message error">
+          <div className="message-icon">❌</div>
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="close-message">×</button>
+        </div>
+      )}
+
+      {/* Form nuovo evento */}
+      {showNewEventForm && canManageEvents() && (
+        <div className="new-event-form">
+          <div className="form-header">
+            <h2>✨ Crea Nuovo Evento</h2>
           </div>
-        )}
-
-        {/* Form nuovo evento */}
-        {showNewEventForm && canManageEvents() && (
-          <div className="bg-gray-50 p-6 rounded-lg mb-6">
-            <h2 className="text-xl font-semibold mb-4">Crea Nuovo Evento</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Titolo *
-                </label>
+          <div className="form-content">
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="titolo">Titolo *</label>
                 <input
+                  id="titolo"
                   type="text"
                   value={nuovoEvento.titolo}
                   onChange={(e) => setNuovoEvento({ ...nuovoEvento, titolo: e.target.value })}
                   placeholder="Titolo dell'evento"
                   required
                   disabled={creatingEvent}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data Evento *
-                </label>
+              <div className="form-group">
+                <label htmlFor="data">Data Evento *</label>
                 <input
+                  id="data"
                   type="date"
                   value={nuovoEvento.data_evento}
                   onChange={(e) => setNuovoEvento({ ...nuovoEvento, data_evento: e.target.value })}
                   required
                   disabled={creatingEvent}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descrizione
-                </label>
+              <div className="form-group full-width">
+                <label htmlFor="descrizione">Descrizione</label>
                 <textarea
+                  id="descrizione"
                   value={nuovoEvento.descrizione}
                   onChange={(e) => setNuovoEvento({ ...nuovoEvento, descrizione: e.target.value })}
                   placeholder="Descrizione dettagliata dell'evento"
                   rows={3}
                   disabled={creatingEvent}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Carica Immagine
-                </label>
+              <div className="form-group">
+                <label htmlFor="immagine-file">Carica Immagine</label>
                 <input
+                  id="immagine-file"
                   type="file"
                   accept="image/*"
                   onChange={handleNewEventImageChange}
                   disabled={creatingEvent}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <p className="text-sm text-gray-500 mt-1">Formati supportati: JPG, PNG, GIF, WebP (max 5MB)</p>
+                <p className="form-help">Formati: JPG, PNG, GIF, WebP (max 5MB)</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Oppure URL Immagine
-                </label>
+              <div className="form-group">
+                <label htmlFor="immagine-url">Oppure URL Immagine</label>
                 <input
+                  id="immagine-url"
                   type="url"
                   value={nuovoEvento.immagine_url}
                   onChange={(e) => setNuovoEvento({ ...nuovoEvento, immagine_url: e.target.value, immagine_file: undefined })}
                   placeholder="https://example.com/image.jpg"
                   disabled={creatingEvent || !!nuovoEvento.immagine_file}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                 />
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
+            <div className="form-actions">
               <button 
                 onClick={creaEvento} 
-                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors" 
+                className="btn-create"
                 disabled={creatingEvent}
               >
-                {creatingEvent ? 'Creazione...' : '💾 Crea Evento'}
+                {creatingEvent ? '⏳ Creazione...' : '💾 Crea Evento'}
               </button>
               <button
                 onClick={() => {
@@ -570,38 +554,55 @@ const GestisciEventi: React.FC = () => {
                   setError(null);
                   setNuovoEvento({ titolo: '', descrizione: '', data_evento: '', immagine_url: '' });
                 }}
-                className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                className="btn-cancel"
                 disabled={creatingEvent}
               >
                 ✕ Annulla
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Lista eventi */}
-      <div className="space-y-4">
+      <div className="eventi-content">
         {eventi.length > 0 ? (
-          eventi.map((evento) => (
-            <div key={evento.id} className="bg-white rounded-lg shadow-sm border">
-              <div 
-                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => toggleEvent(evento.id)}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      {evento.titolo}
-                      <span className="ml-2 text-sm text-gray-500 font-normal">
-                        ({getParticipantCount(evento.id)} partecipanti)
-                      </span>
-                    </h3>
-                    <div className="text-gray-600 mt-1">
+          <div className="eventi-grid">
+            {eventi.map((evento) => (
+              <div key={evento.id} className="event-card">
+                <div 
+                  className="event-header"
+                  onClick={() => toggleEvent(evento.id)}
+                >
+                  <div className="event-image">
+                    {getImageUrl(evento) ? (
+                      <img
+                        src={getImageUrl(evento)}
+                        alt={`Immagine di ${evento.titolo}`}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik04NS41IDUwQzg1LjUgNTQuMTQyMSA4Mi4xNDIxIDU3LjUgNzggNTcuNUM3My44NTc5IDU3LjUgNzAuNSA1NC4xNDIxIDcwLjUgNTBDNzAuNSA0NS44NTc5IDczLjg1NzkgNDIuNSA3OCA0Mi41QzgyLjE0MjEgNDIuNSA4NS41IDQ1Ljg1NzkgODUuNSA1MFoiIGZpbGw9IiNDQ0MiLz4KPHBhdGggZD0iTTEzMC41IDYwTDExNC41IDc1TDk1IDU1LjVMNjkuNSA4MUgxMzAuNVY2MFoiIGZpbGw9IiNDQ0MiLz4KPC9zdmc+';
+                        }}
+                      />
+                    ) : (
+                      <div className="no-image">
+                        <span>🖼️</span>
+                        <span>Nessuna immagine</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="event-info">
+                    <div className="event-title">
+                      <h3>{evento.titolo}</h3>
+                      <span className="participant-count">{getParticipantCount(evento.id)} partecipanti</span>
+                    </div>
+                    <div className="event-date">
                       📅 {formatDate(evento.data_evento)}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+
+                  <div className="event-actions">
                     {canManageEvents() && (
                       <>
                         <button
@@ -609,7 +610,7 @@ const GestisciEventi: React.FC = () => {
                             e.stopPropagation();
                             iniziaModifica(evento);
                           }}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="btn-edit"
                           title="Modifica evento"
                           disabled={editingEventId === evento.id}
                         >
@@ -620,195 +621,171 @@ const GestisciEventi: React.FC = () => {
                             e.stopPropagation();
                             eliminaEvento(evento.id);
                           }}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="btn-delete"
                           title="Elimina evento"
                         >
                           🗑️
                         </button>
                       </>
                     )}
-                    <span className={`transform transition-transform ${expandedEvents[evento.id] ? 'rotate-180' : ''}`}>
+                    <span className={`expand-icon ${expandedEvents[evento.id] ? 'expanded' : ''}`}>
                       ▼
                     </span>
                   </div>
                 </div>
-              </div>
 
-              {expandedEvents[evento.id] && (
-                <div className="px-4 pb-4">
-                  {editingEventId === evento.id ? (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-lg font-semibold mb-4">Modifica Evento</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Titolo *
-                          </label>
-                          <input
-                            type="text"
-                            value={editData.titolo || ''}
-                            onChange={(e) => setEditData({ ...editData, titolo: e.target.value })}
-                            required
-                            disabled={updatingEvent}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Data Evento *
-                          </label>
-                          <input
-                            type="date"
-                            value={editData.data_evento || ''}
-                            onChange={(e) => setEditData({ ...editData, data_evento: e.target.value })}
-                            required
-                            disabled={updatingEvent}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Descrizione
-                          </label>
-                          <textarea
-                            value={editData.descrizione || ''}
-                            onChange={(e) => setEditData({ ...editData, descrizione: e.target.value })}
-                            rows={3}
-                            disabled={updatingEvent}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Nuova Immagine
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleEditImageChange}
-                            disabled={updatingEvent}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            URL Immagine
-                          </label>
-                          <input
-                            type="url"
-                            value={editData.immagine_url || ''}
-                            onChange={(e) => setEditData({ ...editData, immagine_url: e.target.value, immagine_file: undefined })}
-                            disabled={updatingEvent || !!editData.immagine_file}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex gap-3 mt-4">
-                        <button 
-                          onClick={aggiornaEvento} 
-                          className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors" 
-                          disabled={updatingEvent}
-                        >
-                          {updatingEvent ? 'Salvataggio...' : '💾 Salva Modifiche'}
-                        </button>
-                        <button 
-                          onClick={annullaModifica} 
-                          className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors" 
-                          disabled={updatingEvent}
-                        >
-                          ✕ Annulla
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex flex-col md:flex-row gap-6">
-                        {getImageUrl(evento) && (
-                          <div className="md:w-1/3">
-                            <img
-                              src={getImageUrl(evento)}
-                              alt={`Immagine di ${evento.titolo}`}
-                              className="w-full h-48 object-cover rounded-lg shadow-sm"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                              }}
+                {expandedEvents[evento.id] && (
+                  <div className="event-content">
+                    {editingEventId === evento.id ? (
+                      <div className="edit-form">
+                        <h4>✏️ Modifica Evento</h4>
+                        <div className="form-grid">
+                          <div className="form-group">
+                            <label htmlFor={`edit-titolo-${evento.id}`}>Titolo *</label>
+                            <input
+                              id={`edit-titolo-${evento.id}`}
+                              type="text"
+                              value={editData.titolo || ''}
+                              onChange={(e) => setEditData({ ...editData, titolo: e.target.value })}
+                              required
+                              disabled={updatingEvent}
                             />
                           </div>
-                        )}
-                        <div className={getImageUrl(evento) ? 'md:w-2/3' : 'w-full'}>
-                          <p className="text-gray-700 leading-relaxed">
-                            {evento.descrizione || 'Nessuna descrizione disponibile per questo evento.'}
-                          </p>
+                          <div className="form-group">
+                            <label htmlFor={`edit-data-${evento.id}`}>Data Evento *</label>
+                            <input
+                              id={`edit-data-${evento.id}`}
+                              type="date"
+                              value={editData.data_evento || ''}
+                              onChange={(e) => setEditData({ ...editData, data_evento: e.target.value })}
+                              required
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group full-width">
+                            <label htmlFor={`edit-descrizione-${evento.id}`}>Descrizione</label>
+                            <textarea
+                              id={`edit-descrizione-${evento.id}`}
+                              value={editData.descrizione || ''}
+                              onChange={(e) => setEditData({ ...editData, descrizione: e.target.value })}
+                              rows={3}
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label htmlFor={`edit-file-${evento.id}`}>Nuova Immagine</label>
+                            <input
+                              id={`edit-file-${evento.id}`}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleEditImageChange}
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label htmlFor={`edit-url-${evento.id}`}>URL Immagine</label>
+                            <input
+                              id={`edit-url-${evento.id}`}
+                              type="url"
+                              value={editData.immagine_url || ''}
+                              onChange={(e) => setEditData({ ...editData, immagine_url: e.target.value, immagine_file: undefined })}
+                              disabled={updatingEvent || !!editData.immagine_file}
+                            />
+                          </div>
+                        </div>
+                        <div className="form-actions">
+                          <button 
+                            onClick={aggiornaEvento} 
+                            className="btn-save"
+                            disabled={updatingEvent}
+                          >
+                            {updatingEvent ? '⏳ Salvataggio...' : '💾 Salva Modifiche'}
+                          </button>
+                          <button 
+                            onClick={annullaModifica} 
+                            className="btn-cancel"
+                            disabled={updatingEvent}
+                          >
+                            ✕ Annulla
+                          </button>
                         </div>
                       </div>
+                    ) : (
+                      <>
+                        <div className="event-description">
+                          <p>{evento.descrizione || 'Nessuna descrizione disponibile per questo evento.'}</p>
+                        </div>
 
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <h4 className="text-lg font-semibold mb-4">
-                          Prenotazioni ({(prenotazioni[evento.id] || []).length})
-                          <span className="text-sm font-normal text-gray-600 ml-2">
-                            - Totale partecipanti: {getParticipantCount(evento.id)}
-                          </span>
-                        </h4>
-                        {prenotazioni[evento.id]?.length > 0 ? (
-                          <div className="space-y-3">
-                            {prenotazioni[evento.id].map((prenotazione) => (
-                              <div key={prenotazione.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                <div>
-                                  <div className="font-medium text-gray-800">
-                                    {prenotazione.nome} {prenotazione.cognome}
+                        <div className="prenotazioni-section">
+                          <h4>
+                            🎫 Prenotazioni ({(prenotazioni[evento.id] || []).length})
+                            <span className="total-participants">
+                              - Totale partecipanti: {getParticipantCount(evento.id)}
+                            </span>
+                          </h4>
+                          {prenotazioni[evento.id]?.length > 0 ? (
+                            <div className="prenotazioni-list">
+                              {prenotazioni[evento.id].map((prenotazione) => (
+                                <div key={prenotazione.id} className="prenotazione-item">
+                                  <div className="prenotazione-info">
+                                    <div className="partecipante-nome">
+                                      👤 {prenotazione.nome} {prenotazione.cognome}
+                                    </div>
+                                    <div className="partecipante-email">
+                                      📧 {prenotazione.email}
+                                    </div>
+                                    <div className="prenotazione-data">
+                                      📅 Prenotato il: {formatDate(prenotazione.data_prenotazione)}
+                                    </div>
+                                    {prenotazione.num_biglietti && prenotazione.num_biglietti > 1 && (
+                                      <div className="num-biglietti">
+                                        🎫 {prenotazione.num_biglietti} biglietti
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="text-sm text-gray-600">
-                                    {prenotazione.email}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    Prenotato il: {formatDate(prenotazione.data_prenotazione)}
-                                  </div>
-                                  {prenotazione.num_biglietti && prenotazione.num_biglietti > 1 && (
-                                    <div className="text-sm text-blue-600 font-medium">
-                                      🎫 {prenotazione.num_biglietti} biglietti
+                                  {canManageEvents() && (
+                                    <div className="prenotazione-actions">
+                                      <button
+                                        onClick={() => {
+                                          if (confirm('Sei sicuro di voler eliminare questa prenotazione?')) {
+                                            console.log('Elimina prenotazione:', prenotazione.id);
+                                          }
+                                        }}
+                                        className="btn-delete-small"
+                                        title="Elimina prenotazione"
+                                      >
+                                        🗑️
+                                      </button>
                                     </div>
                                   )}
                                 </div>
-                                {canManageEvents() && (
-                                  <button
-                                    onClick={() => {
-                                      if (confirm('Sei sicuro di voler eliminare questa prenotazione?')) {
-                                        // Implementa eliminazione prenotazione
-                                        console.log('Elimina prenotazione:', prenotazione.id);
-                                      }
-                                    }}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Elimina prenotazione"
-                                  >
-                                    🗑️
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 text-gray-500">
-                            Nessuna prenotazione per questo evento.
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          ))
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="no-prenotazioni">
+                              <span>📭</span>
+                              <p>Nessuna prenotazione per questo evento</p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Nessun evento trovato</h2>
-            <p className="text-gray-600 mb-6">Non ci sono eventi da visualizzare al momento. Inizia creando il primo!</p>
+          <div className="no-eventi">
+            <div className="no-eventi-icon">🎭</div>
+            <h2>Nessun evento trovato</h2>
+            <p>Non ci sono eventi da visualizzare al momento.</p>
             {canManageEvents() && (
               <button
                 onClick={() => setShowNewEventForm(true)}
-                className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                className="btn-create-first"
               >
-                + Crea il primo evento
+                ✨ Crea il primo evento
               </button>
             )}
           </div>
