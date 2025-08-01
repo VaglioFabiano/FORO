@@ -13,6 +13,7 @@ interface Evento {
   immagine_nome?: string;
 }
 
+
 interface PrenotazioneForm {
   nome: string;
   cognome: string;
