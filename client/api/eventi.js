@@ -92,7 +92,7 @@ async function sendConfirmationEmail(prenotazione, evento) {
     });
 
     // Verifica configurazione
-    if (!process.env.WEB3FORMS_ACCESS_KEY) {
+    if (!process.env.WEB3FORMS_ACCESS_KEY?.trim()) {
       logEmail('warn', 'WEB3FORMS_ACCESS_KEY non configurato', {
         available_env_vars: Object.keys(process.env).filter(key => key.includes('WEB3'))
       });
@@ -665,18 +665,9 @@ export default async function handler(req, res) {
           });
         }
 
-        // Verifica se l'utente ha già una prenotazione per questo evento
-        const esistenteResult = await client.execute({
-          sql: 'SELECT id FROM prenotazioni_eventi WHERE evento_id = ? AND email = ?',
-          args: [evento_id, email.toLowerCase()]
-        });
+        
 
-        if (esistenteResult.rows.length > 0) {
-          return res.status(400).json({
-            success: false,
-            error: 'Hai già una prenotazione per questo evento'
-          });
-        }
+       
 
         // Crea la prenotazione
         const dataPrenotazione = data_prenotazione || new Date().toISOString();
