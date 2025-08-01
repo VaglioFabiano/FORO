@@ -145,7 +145,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
 
   const handleCardClick = (item: DashboardItem) => {
     if (item.isHomepageLink) {
-      // Se esiste la funzione onBackToHome, usala
+      // Usa la funzione onBackToHome per tornare alla homepage
       if (onBackToHome) {
         onBackToHome();
         // Dopo un breve delay, scrolla alla sezione header
@@ -154,10 +154,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
           if (element) {
             element.scrollIntoView({ behavior: 'smooth' });
           }
-        }, 300);
-      } else {
-        // Altrimenti forza il reload della pagina con l'anchor
-        window.location.replace('/#header');
+        }, 100);
       }
       return;
     }
