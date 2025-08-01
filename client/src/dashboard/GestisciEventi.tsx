@@ -398,21 +398,22 @@ const GestisciEventi: React.FC = () => {
   const convertGoogleDriveUrl = (url: string) => {
     if (!url) return '';
     
-    // Se è già un URL diretto, restituiscilo
-    if (url.includes('drive.google.com/uc?') || url.includes('googleusercontent.com')) {
-      return url;
+    // Se è già un URL diretto per la visualizzazione
+    if (url.includes('drive.google.com/uc?') || 
+        url.includes('googleusercontent.com') || 
+        url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        return url;
     }
     
     // Converte i link di condivisione di Google Drive
-    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)|id=([a-zA-Z0-9-_]+)/);
     if (fileIdMatch) {
-      const fileId = fileIdMatch[1];
-      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        const fileId = fileIdMatch[1] || fileIdMatch[2];
+        return `https://drive.google.com/uc?export=view&id=${fileId}`;
     }
     
-    // Se non è un link di Google Drive, restituisce l'URL originale
     return url;
-  };
+    };
 
   const iniziaModifica = (evento: Evento) => {
     setEditingEventId(evento.id);
@@ -649,19 +650,20 @@ const GestisciEventi: React.FC = () => {
                     <>
                       <div className="event-details">
                         {evento.immagine_url && (
-                          <div className="event-image">
-                            <img 
-                              src={convertGoogleDriveUrl(evento.immagine_url)} 
-                              alt={evento.titolo}
-                              className="event-image-content"
-                              onError={(e) => {
-                                // Nasconde l'immagine se fallisce il caricamento, come nel componente Segnalazioni
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                        )}
+                            <div className="event-image">
+                                <img 
+                                src={convertGoogleDriveUrl(evento.immagine_url)} 
+                                alt={evento.titolo}
+                                className="event-image-content"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    // Fallback a un'immagine placeholder invece di nasconderla
+                                    target.src = 'https://via.placeholder.com/400x200?text=Immagine+non+disponibile';
+                                    target.style.display = 'block';
+                                }}
+                                />
+                            </div>
+                            )}
                         <div className="event-description">
                           <p>{evento.descrizione || 'Nessuna descrizione disponibile'}</p>
                         </div>
