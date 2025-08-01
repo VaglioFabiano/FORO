@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, MapPin, Mail, User, Phone, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Calendar, Users, MapPin, Mail, User, ArrowLeft, CheckCircle } from 'lucide-react';
 import '../style/componentiEventi.css';
 
 interface Evento {
@@ -17,7 +17,6 @@ interface PrenotazioneForm {
   nome: string;
   cognome: string;
   email: string;
-  telefono?: string;
   num_biglietti: number;
   note?: string;
 }
@@ -71,7 +70,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     nome: '',
     cognome: '',
     email: '',
-    telefono: '',
     num_biglietti: 1,
     note: ''
   });
@@ -173,48 +171,49 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     setError(null);
 
     try {
-      // Prova a inviare alla vera API
-      try {
-        const response = await fetch('/api/prenotazioni', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            evento_id: eventoId,
-            ...formData,
-            data_prenotazione: new Date().toISOString()
-          }),
+      const response = await fetch('/api/eventi?section=prenotazioni', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          evento_id: eventoId,
+          nome: formData.nome,
+          cognome: formData.cognome,
+          email: formData.email,
+          num_biglietti: formData.num_biglietti,
+          note: formData.note,
+          data_prenotazione: new Date().toISOString()
+        }),
+      });
+
+      const data: ApiResponse = await response.json();
+
+      if (data.success) {
+        setSuccess(true);
+        setFormData({
+          nome: '',
+          cognome: '',
+          email: '',
+          num_biglietti: 1,
+          note: ''
         });
+      } else {
+        throw new Error(data.error || 'Errore nella prenotazione');
+      }
 
-        const data: ApiResponse = await response.json();
-
-        if (data.success) {
-          setSuccess(true);
-          setFormData({
-            nome: '',
-            cognome: '',
-            email: '',
-            telefono: '',
-            num_biglietti: 1,
-            note: ''
-          });
-          setSubmitting(false);
-          return;
-        } else {
-          throw new Error(data.error || 'Errore nella prenotazione');
-        }
-      } catch (apiError) {
-        console.log('API prenotazioni non disponibile, simulando successo');
-        
-        // Simula una prenotazione riuscita per test
+    } catch (err) {
+      console.error('Submit error:', err);
+      
+      // Fallback: se l'API non funziona, simula successo per test
+      if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as any).message === 'string' && (err as any).message.includes('fetch')) {
+        console.log('API non disponibile, simulando successo per test');
         setTimeout(() => {
           setSuccess(true);
           setFormData({
             nome: '',
             cognome: '',
             email: '',
-            telefono: '',
             num_biglietti: 1,
             note: ''
           });
@@ -222,10 +221,9 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
         }, 2000);
         return;
       }
-
-    } catch (err) {
-      console.error('Submit error:', err);
+      
       setError(err instanceof Error ? err.message : 'Errore durante la prenotazione');
+    } finally {
       setSubmitting(false);
     }
   };
@@ -426,20 +424,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                     {formErrors.email && <span className="field-error">{formErrors.email}</span>}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="telefono">
-                      <Phone size={16} />
-                      Telefono (opzionale)
-                    </label>
-                    <input
-                      type="tel"
-                      id="telefono"
-                      name="telefono"
-                      value={formData.telefono}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                    />
-                  </div>
+                  
                 </div>
 
                 <div className="form-row">

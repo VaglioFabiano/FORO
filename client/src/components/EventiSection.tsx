@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, ExternalLink, MapPin } from 'lucide-react';
+import { Calendar, Users, ExternalLink } from 'lucide-react';
 import '../style/componentiEventi.css';
 
 interface Evento {
@@ -207,16 +207,7 @@ const EventiSection: React.FC = () => {
                       {evento.descrizione || 'Nessuna descrizione disponibile'}
                     </p>
 
-                    <div className="evento-stats">
-                      <div className="stat-item">
-                        <Users size={14} />
-                        <span>{getParticipantCount(evento.id)} partecipanti</span>
-                      </div>
-                      <div className="stat-item">
-                        <MapPin size={14} />
-                        <span>Aula Studio Foro</span>
-                      </div>
-                    </div>
+                    
                   </div>
 
                   <div className="evento-actions">
