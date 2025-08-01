@@ -6,11 +6,12 @@ import VisualizzaUtenti from './VisualizzaUtenti';
 import ProfiloUtente from './ProfiloUtente';
 import Turni from './Turni';
 import presenze from './presenze';
+import { useNavigate } from 'react-router-dom'; // Aggiungi questa importazione
 import '../style/homeDash.css';
 
 interface HomeDashProps {
   onLogout: () => void;
-  onBackToHome: () => void; // Rendiamo questa prop obbligatoria
+  onBackToHome?: () => void; // Rendiamo questa prop opzionale
 }
 
 interface DashboardItem {
@@ -18,19 +19,29 @@ interface DashboardItem {
   title: string;
   description: string;
   icon: string;
-  component?: React.ComponentType; // Ora opzionale
-  minLevel?: number; // Livello minimo richiesto per vedere l'elemento
-  isHomepageLink?: boolean; // Nuovo campo per identificare i link homepage
+  component?: React.ComponentType;
+  minLevel?: number;
+  isHomepageLink?: boolean;
+  externalLink?: string; // Nuovo campo per link esterni
 }
 
 const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComponent, setSelectedComponent] = useState<React.ComponentType | null>(null);
-  const [userLevel, setUserLevel] = useState<number>(-1); // Default a -1 (non autenticato)
+  const [userLevel, setUserLevel] = useState<number>(-1);
+  const navigate = useNavigate(); // Usiamo il hook di navigazione
 
-  // Elementi della dashboard con i livelli minimi richiesti
   const dashboardItems: DashboardItem[] = [
+    {
+      id: 'homepage',
+      title: 'Torna alla Homepage',
+      description: 'Vai alla pagina principale del sito',
+      icon: '✏️🏠📄',
+      minLevel: 0, // Accessibile a tutti i livelli
+      isHomepageLink: true,
+      externalLink: '/' // Link alla homepage
+    },
     {
       id: 'Turni',
       title: 'Turni Aula Studio',
@@ -69,7 +80,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: 'Visualizza tutti gli utenti registrati',
       icon: '👀',
       component: VisualizzaUtenti,
-      minLevel: 1 // Livello 0 e 1
+      minLevel: 1
     },
     {
       id: 'modifica-orari',
@@ -77,7 +88,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: 'Gestisci gli orari di apertura',
       icon: '🕒',
       component: ModificaOrari,
-      minLevel: 2 // Livelli 0 e 1
+      minLevel: 2
     },
     {
       id: 'telegram-sender',
@@ -85,17 +96,8 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: 'Invia messaggi via Telegram',
       icon: '📱',
       component: TelegramSender,
-      minLevel: 0 // Livelli 0 e 1
+      minLevel: 0
     },
-     {
-      id: 'homepage',
-      title: 'Modifica Homepage',
-      description: 'Modifica il contenuto della homepage',
-      icon: '✏️🏠📄',
-      minLevel: 2, // Accessibile a livelli 0, 1, 2
-      isHomepageLink: true
-    },
-    // Aggiungi altri elementi della dashboard qui
   ];
 
   useEffect(() => {
@@ -109,7 +111,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
           throw new Error('Dati di autenticazione mancanti');
         }
 
-        // Verifica validità sessione
         const now = new Date().getTime();
         const loginTimestamp = parseInt(loginTime);
         const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
@@ -138,35 +139,27 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     checkAuth();
   }, [onLogout]);
 
-  // Filtra gli elementi visibili in base al livello utente
   const visibleItems = dashboardItems.filter(item => 
     item.minLevel === undefined || userLevel <= item.minLevel
   );
 
-  // Copia la logica di navigazione dalla navbar
-  const handleNavigation = (sectionId?: string) => {
-    // Siamo sempre in dashboard quando questa funzione viene chiamata
-    onBackToHome();
-    
-    if (sectionId) {
-      setTimeout(() => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 300);
-    }
-  };
-
   const handleCardClick = (item: DashboardItem) => {
     if (item.isHomepageLink) {
-      // Usa la stessa logica della navbar per navigare alla sezione header
-      handleNavigation('header');
+      // Se abbiamo una prop onBackToHome, usiamo quella
+      if (onBackToHome) {
+        onBackToHome();
+      } 
+      // Altrimenti usiamo il link esterno o la navigazione
+      else if (item.externalLink) {
+        window.location.href = item.externalLink;
+      } else {
+        navigate('/'); // Usa React Router per la navigazione
+      }
       return;
     }
     
     if (item.component) {
-      setSelectedComponent(item.component ?? null);
+      setSelectedComponent(item.component);
     }
   };
 
@@ -206,7 +199,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   return (
     <div className="dashboard-container">
       <div className="user-info">
-        
+        {/* Qui puoi aggiungere informazioni utente se necessario */}
       </div>
       
       <div className="dashboard-grid">
@@ -220,7 +213,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
               <div className="card-icon">{item.icon}</div>
               <h3 className="card-title">{item.title}</h3>
               <p className="card-description">{item.description}</p>
-              
             </div>
           ))
         ) : (
