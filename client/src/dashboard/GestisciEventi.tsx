@@ -395,6 +395,63 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
+  // Funzione per convertire URL di Google Drive in formato viewable
+  const convertGoogleDriveUrl = (url: string) => {
+    if (!url) return '';
+    
+    // Se è già un URL diretto, restituiscilo
+    if (url.includes('drive.google.com/uc?') || url.includes('googleusercontent.com')) {
+      return url;
+    }
+    
+    // Converte i link di condivisione di Google Drive
+    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (fileIdMatch) {
+      const fileId = fileIdMatch[1];
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
+    }
+    
+    // Se non è un link di Google Drive, restituisce l'URL originale
+    return url;
+  };
+
+  const renderImageWithFallback = (imageUrl: string, altText: string, className: string) => {
+    const [imageSrc] = useState(convertGoogleDriveUrl(imageUrl));
+    const [imageError, setImageError] = useState(false);
+
+    const handleImageError = () => {
+      console.log('Image failed to load:', imageSrc);
+      setImageError(true);
+    };
+
+    const handleImageLoad = () => {
+      console.log('Image loaded successfully:', imageSrc);
+      setImageError(false);
+    };
+
+    if (!imageUrl || imageError) {
+      return (
+        <div className={`${className} image-placeholder`}>
+          <div className="placeholder-content">
+            🖼️
+            <p>Nessuna immagine disponibile</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <img 
+        src={imageSrc}
+        alt={altText}
+        className={className}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+        loading="lazy"
+      />
+    );
+  };
+
   const iniziaModifica = (evento: Evento) => {
     setEditingEventId(evento.id);
     setEditData({
@@ -408,13 +465,6 @@ const GestisciEventi: React.FC = () => {
   const annullaModifica = () => {
     setEditingEventId(null);
     setEditData({});
-  };
-
-  const toggleEvent = (eventoId: number) => {
-    setExpandedEvents(prev => ({
-      ...prev,
-      [eventoId]: !prev[eventoId]
-    }));
   };
 
   const formatDate = (dateString: string) => {
@@ -435,6 +485,14 @@ const GestisciEventi: React.FC = () => {
 
   const canManageEvents = () => {
     return userLevel <= 2; // Livelli 0, 1, 2 possono gestire eventi
+  };
+
+  // Funzione per espandere/collassare i dettagli di un evento
+  const toggleEvent = (eventoId: number) => {
+    setExpandedEvents(prev => ({
+      ...prev,
+      [eventoId]: !prev[eventoId]
+    }));
   };
 
   if (loading && eventi.length === 0) {
@@ -630,14 +688,11 @@ const GestisciEventi: React.FC = () => {
                       <div className="event-details">
                         {evento.immagine_url && (
                           <div className="event-image">
-                            <img 
-                              src={evento.immagine_url} 
-                              alt={evento.titolo}
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                              }}
-                            />
+                            {renderImageWithFallback(
+                              evento.immagine_url,
+                              evento.titolo,
+                              "event-image-content"
+                            )}
                           </div>
                         )}
                         <div className="event-description">
