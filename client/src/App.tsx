@@ -65,7 +65,7 @@ function App() {
       />
       
       {currentPage === 'dashboard' ? (
-        <HomeDash onLogout={handleLogout} />
+        <HomeDash onLogout={handleLogout} onBackToHome={handleBackToHome} />
       ) : currentPage === 'login' ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (

@@ -10,7 +10,7 @@ import '../style/homeDash.css';
 
 interface HomeDashProps {
   onLogout: () => void;
-  onBackToHome?: () => void; // Aggiungiamo questa prop opzionale
+  onBackToHome: () => void; // Rendiamo questa prop obbligatoria
 }
 
 interface DashboardItem {
@@ -143,19 +143,25 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     item.minLevel === undefined || userLevel <= item.minLevel
   );
 
+  // Copia la logica di navigazione dalla navbar
+  const handleNavigation = (sectionId?: string) => {
+    // Siamo sempre in dashboard quando questa funzione viene chiamata
+    onBackToHome();
+    
+    if (sectionId) {
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 300);
+    }
+  };
+
   const handleCardClick = (item: DashboardItem) => {
     if (item.isHomepageLink) {
-      // Usa la funzione onBackToHome per tornare alla homepage
-      if (onBackToHome) {
-        onBackToHome();
-        // Dopo un breve delay, scrolla alla sezione header
-        setTimeout(() => {
-          const element = document.getElementById('header');
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      }
+      // Usa la stessa logica della navbar per navigare alla sezione header
+      handleNavigation('header');
       return;
     }
     
