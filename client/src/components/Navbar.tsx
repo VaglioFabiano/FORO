@@ -93,12 +93,20 @@ const Navbar: React.FC<NavbarProps> = ({
       localStorage.clear();
       setIsLoggedIn(false);
       onLogout();
+      
+      // Reindirizza alla homepage e ricarica la pagina
+      window.location.href = '/';
+      
     } catch (error) {
       console.error('Errore durante il logout:', error);
       // Anche in caso di errore, pulisci il localStorage
       localStorage.clear();
       setIsLoggedIn(false);
       onLogout();
+      
+      // Reindirizza alla homepage anche in caso di errore
+      window.location.href = '/';
+      
     } finally {
       setIsLoggingOut(false);
     }

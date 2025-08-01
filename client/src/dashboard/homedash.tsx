@@ -32,10 +32,10 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   const dashboardItems: DashboardItem[] = [
     {
       id: 'homepage',
-      title: 'Torna alla Homepage',
-      description: 'Vai alla pagina principale del sito',
-      icon: '✏️🏠📄',
-      minLevel: 2, 
+      title: 'Modifica la Homepage',
+      description: 'Modifica la homepage',
+      icon: '🏠',
+      minLevel: 2, // Accessibile a livelli 0, 1, 2
       isHomepageLink: true
     },
     {
@@ -144,8 +144,8 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   const handleCardClick = (item: DashboardItem) => {
     if (item.isHomepageLink) {
-      // Reindirizza alla homepage
-      window.location.href = '/'; // Oppure usa il router se stai usando React Router
+      // Vai alla homepage visitatori (sezione header della homepage)
+      window.location.href = '/#header';
       return;
     }
     
