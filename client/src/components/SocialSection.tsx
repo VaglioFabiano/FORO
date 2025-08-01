@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ExternalLink, MessageCircle, RefreshCw } from 'lucide-react';
+import { ExternalLink, MessageCircle, RefreshCw, Edit } from 'lucide-react';
 import '../style/social.css';
 
 declare global {
@@ -12,40 +12,92 @@ declare global {
   }
 }
 
+interface SocialData {
+  post_instagram: string;
+  post_facebook: string;
+  canale_telegram: string;
+}
+
+interface User {
+  id: number;
+  level: number;
+}
+
 const SocialSection: React.FC = () => {
   const [embedLoaded, setEmbedLoaded] = useState(false);
+  const [socialData, setSocialData] = useState<SocialData>({
+    post_instagram: '',
+    post_facebook: '',
+    canale_telegram: ''
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<SocialData>({
+    post_instagram: '',
+    post_facebook: '',
+    canale_telegram: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
   const instagramCardRef = useRef<HTMLDivElement>(null);
   const facebookIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
+    loadSocialData();
+    checkUserPermissions();
     loadSocialScripts();
-    
-    const timer = setTimeout(() => {
-      if (window.instgrm) {
-        window.instgrm.Embeds.process();
-        setEmbedLoaded(true);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!instagramCardRef.current) return;
+    if (socialData.post_instagram) {
+      const timer = setTimeout(() => {
+        if (window.instgrm) {
+          window.instgrm.Embeds.process();
+          setEmbedLoaded(true);
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [socialData.post_instagram]);
 
-    const card = instagramCardRef.current;
-    const handleMouseEnter = () => {
-      const iframe = card.querySelector('iframe');
-      if (iframe) {
-        iframe.src += '&autoplay=1';
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  const checkUserPermissions = () => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Errore nel parsing user data:', error);
       }
-    };
+    }
+  };
 
-    card.addEventListener('mouseenter', handleMouseEnter);
-    return () => {
-      card.removeEventListener('mouseenter', handleMouseEnter);
-    };
-  }, [embedLoaded]);
+  const loadSocialData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/homepage');
+      const data = await response.json();
+      
+      if (data.success && data.social) {
+        setSocialData(data.social);
+        setEditData(data.social);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento dati social:', error);
+      setMessage({ type: 'error', text: 'Errore nel caricamento dei dati social' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadSocialScripts = () => {
     if (!document.querySelector('#instagram-embed-script')) {
@@ -68,10 +120,85 @@ const SocialSection: React.FC = () => {
     if (event) {
       event.preventDefault();
     }
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditData(socialData);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditData(socialData);
+  };
+
+  const handleSave = async () => {
+    if (!currentUser) {
+      setMessage({ type: 'error', text: 'Devi essere loggato per modificare i social' });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      const response = await fetch('/api/homepage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'social',
+          data: editData,
+          user_id: currentUser.id
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSocialData(editData);
+        setIsEditing(false);
+        setMessage({ type: 'success', text: 'Link social aggiornati con successo!' });
+        
+        // Ricarica gli embed dopo l'aggiornamento
+        setTimeout(() => {
+          if (window.instgrm) {
+            window.instgrm.Embeds.process();
+          }
+        }, 500);
+      } else {
+        throw new Error(data.error || 'Errore nel salvataggio');
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio:', error);
+      setMessage({ type: 'error', text: 'Errore durante il salvataggio dei link social' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const canEdit = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
+
+  /*
+  const extractInstagramPostId = (url: string) => {
+    const match = url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/);
+    return match ? (match[1] || match[2]) : null;
+  };*/
+
   const renderInstagramContent = () => {
+    const postUrl = socialData.post_instagram;
+    
+    if (!postUrl) {
+      return (
+        <div className="loading-state">
+          <p>Nessun post Instagram configurato</p>
+        </div>
+      );
+    }
+
     return (
       <div className="posts-container">
         <div className="posts-grid">
@@ -79,7 +206,7 @@ const SocialSection: React.FC = () => {
             <blockquote 
               className="instagram-media" 
               data-instgrm-captioned 
-              data-instgrm-permalink="https://www.instagram.com/reel/DB9E6wptM1V/?utm_source=ig_embed&utm_campaign=loading&autoplay=1" 
+              data-instgrm-permalink={postUrl}
               data-instgrm-version="14"
               style={{
                 width: '100%',
@@ -90,7 +217,7 @@ const SocialSection: React.FC = () => {
               }}
             >
               <div style={{padding: '16px'}}>
-                <a href="https://www.instagram.com/reel/DB9E6wptM1V/" target="_blank" rel="noopener noreferrer">
+                <a href={postUrl} target="_blank" rel="noopener noreferrer">
                   Visualizza questo post su Instagram
                 </a>
               </div>
@@ -109,11 +236,21 @@ const SocialSection: React.FC = () => {
   };
 
   const renderFacebookContent = () => {
+    const postUrl = socialData.post_facebook;
+    
+    if (!postUrl) {
+      return (
+        <div className="loading-state">
+          <p>Nessun post Facebook configurato</p>
+        </div>
+      );
+    }
+
     return (
       <div className="facebook-embed-container">
         <iframe 
           ref={facebookIframeRef}
-          src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fassociazioneforopiossasco%2Fposts%2Fpfbid0355NGksgUsUpB5xW6uKkEp5aNDWFcTSBGvCNng9AmQqmDZf55zZqS2Co2v5aLA799l&show_text=true&width=500" 
+          src={postUrl}
           width="100%" 
           height="100%" 
           style={{
@@ -132,9 +269,9 @@ const SocialSection: React.FC = () => {
           frameBorder="0" 
           allowFullScreen={true}
           allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-          title="Post Facebook di Associazione Foro"
+          title="Post Facebook"
           onLoad={() => setEmbedLoaded(true)}
-        ></iframe>
+        />
         
         {!embedLoaded && (
           <div className="loading-state">
@@ -146,31 +283,127 @@ const SocialSection: React.FC = () => {
     );
   };
 
+  const renderEditModal = () => {
+    if (!isEditing) return null;
+
+    return (
+      <div className="social-edit-modal-overlay" onClick={handleCancel}>
+        <div className="social-edit-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>Modifica Link Social</h3>
+            <button className="close-button" onClick={handleCancel}>×</button>
+          </div>
+          
+          <div className="modal-body">
+            <div className="form-group">
+              <label htmlFor="instagram-post">Link Post Instagram</label>
+              <input
+                id="instagram-post"
+                type="url"
+                value={editData.post_instagram}
+                onChange={(e) => setEditData({...editData, post_instagram: e.target.value})}
+                placeholder="https://www.instagram.com/reel/..."
+                disabled={isSaving}
+              />
+              <small>Inserisci il link del post o reel Instagram da mostrare</small>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="facebook-post">Link Post Facebook (Embed)</label>
+              <input
+                id="facebook-post"
+                type="url"
+                value={editData.post_facebook}
+                onChange={(e) => setEditData({...editData, post_facebook: e.target.value})}
+                placeholder="https://www.facebook.com/plugins/post.php?href=..."
+                disabled={isSaving}
+              />
+              <small>Inserisci il link embed del post Facebook</small>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="telegram-channel">Link Canale Telegram</label>
+              <input
+                id="telegram-channel"
+                type="url"
+                value={editData.canale_telegram}
+                onChange={(e) => setEditData({...editData, canale_telegram: e.target.value})}
+                placeholder="https://t.me/nomecanale"
+                disabled={isSaving}
+              />
+              <small>Inserisci il link del canale Telegram</small>
+            </div>
+          </div>
+          
+          <div className="modal-actions">
+            <button 
+              className="cancel-button" 
+              onClick={handleCancel}
+              disabled={isSaving}
+            >
+              Annulla
+            </button>
+            <button 
+              className="save-button" 
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Salvando...' : 'Salva'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <section className="social-section">
+        <div className="loading-state">
+          <RefreshCw className="loading-spinner" size={24} />
+          <p>Caricamento sezione social...</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="social-section">
-      <h2 className="social-title">Seguici sui social</h2>
+      <div className="social-header">
+        <h2 className="social-title">Seguici sui social</h2>
+        {canEdit && (
+          <button className="edit-social-button" onClick={handleEdit}>
+            <Edit size={16} />
+            Modifica Link
+          </button>
+        )}
+      </div>
+
+      {message && (
+        <div className={`social-message ${message.type}`}>
+          <span>{message.text}</span>
+          <button onClick={() => setMessage(null)}>×</button>
+        </div>
+      )}
       
       <div className="social-grid">
         {/* Instagram Card */}
         <div 
           ref={instagramCardRef}
           className="social-card instagram-card"
-          onClick={(e) => handleSocialClick('https://www.instagram.com/associazioneforo/', e)}
+          onClick={(e) => {
+            const profileUrl = socialData.post_instagram ? 
+              socialData.post_instagram.replace(/\/p\/.*|\/reel\/.*/, '') : 
+              'https://www.instagram.com/associazioneforo/';
+            handleSocialClick(profileUrl, e);
+          }}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleSocialClick('https://www.instagram.com/associazioneforo/');
-            }
-          }}
-          aria-label="Visita il profilo Instagram di Associazione Foro"
+          aria-label="Visita il profilo Instagram"
         >
           <div className="social-card-header">
             <div className="social-platform-info">
-              <div className="instagram-icon">
-                📸
-              </div>
+              <div className="instagram-icon">📸</div>
               <div>
                 <h3 className="platform-title">Instagram</h3>
                 <p className="platform-username">@associazioneforo</p>
@@ -179,7 +412,10 @@ const SocialSection: React.FC = () => {
             <button 
               onClick={(e) => {
                 e.stopPropagation();
-                handleSocialClick('https://www.instagram.com/associazioneforo/', e);
+                const profileUrl = socialData.post_instagram ? 
+                  socialData.post_instagram.replace(/\/p\/.*|\/reel\/.*/, '') : 
+                  'https://www.instagram.com/associazioneforo/';
+                handleSocialClick(profileUrl, e);
               }}
               className="external-link-btn"
               aria-label="Apri Instagram in una nuova scheda"
@@ -199,19 +435,11 @@ const SocialSection: React.FC = () => {
           onClick={(e) => handleSocialClick('https://www.facebook.com/associazioneforopiossasco', e)}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleSocialClick('https://www.facebook.com/associazioneforopiossasco');
-            }
-          }}
-          aria-label="Visita la pagina Facebook di Associazione Foro"
+          aria-label="Visita la pagina Facebook"
         >
           <div className="social-card-header">
             <div className="social-platform-info">
-              <div className="facebook-icon-header">
-                👥
-              </div>
+              <div className="facebook-icon-header">👥</div>
               <div>
                 <h3 className="platform-title">Facebook</h3>
                 <p className="platform-username">Associazione Foro</p>
@@ -239,16 +467,10 @@ const SocialSection: React.FC = () => {
       <div className="telegram-container">
         <div 
           className="telegram-bar"
-          onClick={(e) => handleSocialClick('https://t.me/aulastudioforo', e)}
+          onClick={(e) => handleSocialClick(socialData.canale_telegram, e)}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleSocialClick('https://t.me/aulastudioforo');
-            }
-          }}
-          aria-label="Unisciti al canale Telegram di Associazione Foro"
+          aria-label="Unisciti al canale Telegram"
         >
           <div className="telegram-content">
             <div className="telegram-info">
@@ -273,6 +495,8 @@ const SocialSection: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {renderEditModal()}
     </section>
   );
 };
