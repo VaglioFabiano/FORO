@@ -108,6 +108,7 @@ const GestisciEventi: React.FC = () => {
     });
   }, []);
 
+
   // Aggiungi debug per il caricamento
   useEffect(() => {
     console.log('GestisciEventi component mounted');
