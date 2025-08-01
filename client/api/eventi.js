@@ -88,8 +88,9 @@ export default async function handler(req, res) {
           });
         }
 
+        // CORREZIONE: Usa il nome corretto della tabella
         const prenotazioniResult = await client.execute({
-          sql: 'SELECT * FROM prenotazioni WHERE evento_id = ? ORDER BY data_prenotazione DESC',
+          sql: 'SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC',
           args: [id]
         });
 
@@ -119,8 +120,9 @@ export default async function handler(req, res) {
           });
         }
 
+        // CORREZIONE: Usa il nome corretto della tabella
         const prenotazioniResult = await client.execute({
-          sql: 'SELECT * FROM prenotazioni WHERE evento_id = ? ORDER BY data_prenotazione DESC',
+          sql: 'SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC',
           args: [evento_id]
         });
 
@@ -251,8 +253,9 @@ export default async function handler(req, res) {
           });
         }
 
+        // CORREZIONE: Usa il nome corretto della tabella
         const result = await client.execute({
-          sql: 'DELETE FROM prenotazioni WHERE id = ?',
+          sql: 'DELETE FROM prenotazioni_eventi WHERE id = ?',
           args: [id]
         });
 
