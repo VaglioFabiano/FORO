@@ -32,14 +32,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   // Elementi della dashboard con i livelli minimi richiesti
   const dashboardItems: DashboardItem[] = [
     {
-      id: 'homepage',
-      title: 'Home Visitatori',
-      description: 'Torna alla homepage per visitatori',
-      icon: '🏠',
-      minLevel: 2, // Accessibile a livelli 0, 1, 2
-      isHomepageLink: true
-    },
-    {
       id: 'Turni',
       title: 'Turni Aula Studio',
       description: 'Form di gestione turni',
@@ -94,6 +86,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       icon: '📱',
       component: TelegramSender,
       minLevel: 0 // Livelli 0 e 1
+    },
+     {
+      id: 'homepage',
+      title: 'Modifica Homepage',
+      description: 'Modifica il contenuto della homepage',
+      icon: '✏️🏠📄',
+      minLevel: 2, // Accessibile a livelli 0, 1, 2
+      isHomepageLink: true
     },
     // Aggiungi altri elementi della dashboard qui
   ];
