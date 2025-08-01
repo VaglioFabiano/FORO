@@ -59,39 +59,95 @@ const GestisciEventi: React.FC = () => {
   const [userLevel, setUserLevel] = useState<number>(-1);
   const [userId, setUserId] = useState<number | null>(null);
 
+  // Test API connection
+  const testApiConnection = async () => {
+    try {
+      console.log('Testing API connection...');
+      const response = await fetch('/api/eventi');
+      console.log('API test response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API test response data:', data);
+        return true;
+      } else {
+        console.error('API test failed with status:', response.status);
+        const text = await response.text();
+        console.error('API test error response:', text);
+        return false;
+      }
+    } catch (err) {
+      console.error('API test connection error:', err);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Recupera i dati dell'utente dal localStorage
+    console.log('Setting up user data...');
     const user = localStorage.getItem('user');
     if (user) {
       const userData = JSON.parse(user);
+      console.log('User data:', userData);
       setUserLevel(userData.level || -1);
       setUserId(userData.id || null);
+    } else {
+      console.log('No user data found in localStorage');
     }
     
-    fetchEventi();
+    // Test API e poi carica eventi
+    testApiConnection().then(apiWorking => {
+      if (apiWorking) {
+        console.log('API is working, fetching eventi...');
+        fetchEventi();
+      } else {
+        console.error('API is not working, setting error message');
+        setError('Impossibile connettersi al server. Verifica che il file API /api/eventi.js esista.');
+        setLoading(false);
+      }
+    });
+  }, []);
+
+
+  // Aggiungi debug per il caricamento
+  useEffect(() => {
+    console.log('GestisciEventi component mounted');
   }, []);
 
   const fetchEventi = async () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Fetching eventi...');
       
-      const response = await fetch('/api/eventi?section=eventi');
+      // Prova prima con il percorso completo, poi con quello semplificato
+      let response = await fetch('/api/eventi?section=eventi');
+      console.log('First response status:', response.status);
       
       if (!response.ok) {
-        throw new Error(`Errore nel caricamento eventi: ${response.status}`);
+        console.log('First fetch failed, trying alternative...');
+        // Se fallisce, prova senza parametri di sezione
+        response = await fetch('/api/eventi');
+        console.log('Second response status:', response.status);
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Errore nel caricamento eventi: ${response.status} - ${response.statusText}`);
       }
       
       const data: ApiResponse = await response.json();
+      console.log('Eventi response data:', data);
       
       if (!data.success) {
         throw new Error(data.error || 'Errore nel caricamento eventi');
       }
       
       setEventi(data.eventi || []);
+      console.log('Eventi loaded:', data.eventi?.length || 0);
       
       // Carica le prenotazioni per ogni evento
-      if (data.eventi) {
+      if (data.eventi && data.eventi.length > 0) {
+        console.log('Loading prenotazioni for', data.eventi.length, 'events');
         for (const evento of data.eventi) {
           await fetchPrenotazioni(evento.id);
         }
@@ -107,20 +163,29 @@ const GestisciEventi: React.FC = () => {
 
   const fetchPrenotazioni = async (eventoId: number) => {
     try {
-      const response = await fetch(`/api/eventi?section=prenotazioni&evento_id=${eventoId}`);
+      console.log('Fetching prenotazioni for event:', eventoId);
+      let response = await fetch(`/api/eventi?section=prenotazioni&evento_id=${eventoId}`);
       
       if (!response.ok) {
-        console.error(`Errore nel caricamento prenotazioni per evento ${eventoId}`);
+        console.log('Prenotazioni fetch failed, trying alternative...');
+        // Prova con il formato alternativo
+        response = await fetch(`/api/eventi?action=single&id=${eventoId}`);
+      }
+      
+      if (!response.ok) {
+        console.error(`Errore nel caricamento prenotazioni per evento ${eventoId}: ${response.status}`);
         return;
       }
       
       const data: ApiResponse = await response.json();
+      console.log(`Prenotazioni for event ${eventoId}:`, data);
       
       if (data.success && data.prenotazioni) {
         setPrenotazioni(prev => ({
           ...prev,
           [eventoId]: data.prenotazioni || []
         }));
+        console.log(`Loaded ${data.prenotazioni.length} prenotazioni for event ${eventoId}`);
       }
     } catch (err) {
       console.error('Errore nel caricamento prenotazioni:', err);
@@ -139,12 +204,13 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/eventi?section=eventi', {
+      const response = await fetch('/api/eventi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          section: 'eventi',
           ...nuovoEvento,
           user_id: userId
         }),
@@ -186,12 +252,13 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/eventi?section=eventi', {
+      const response = await fetch('/api/eventi', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          section: 'eventi',
           id: editingEventId,
           ...editData,
           user_id: userId
@@ -228,12 +295,13 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/eventi?section=eventi', {
+      const response = await fetch('/api/eventi', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          section: 'eventi',
           id: eventoId,
           user_id: userId
         }),
@@ -267,12 +335,13 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/eventi?section=prenotazioni', {
+      const response = await fetch('/api/eventi', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          section: 'prenotazioni',
           id: prenotazioneId,
           user_id: userId
         }),

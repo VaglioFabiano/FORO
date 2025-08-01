@@ -1,6 +1,6 @@
 import { createClient } from '@libsql/client/web';
 
-// Configurazione database
+// Configurazione con validazione
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
   authToken: process.env.TURSO_AUTH_TOKEN?.trim()
@@ -12,6 +12,80 @@ if (!config.url || !config.authToken) {
 }
 
 const client = createClient(config);
+
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    // Test connessione DB
+    await client.execute("SELECT 1");
+    
+    const { section, action } = req.query;
+
+    // Routes per eventi
+    if (section === 'eventi' || (!section && req.method === 'GET')) {
+      switch (req.method) {
+        case 'GET':
+          if (action === 'single') {
+            return await getSingoloEvento(req, res);
+          }
+          return await getEventi(req, res);
+        case 'POST':
+          return await creaEvento(req, res);
+        case 'PUT':
+          return await aggiornaEvento(req, res);
+        case 'DELETE':
+          return await eliminaEvento(req, res);
+        default:
+          return res.status(405).json({ 
+            success: false, 
+            error: 'Metodo non supportato per eventi' 
+          });
+      }
+    }
+
+    // Routes per prenotazioni
+    if (section === 'prenotazioni') {
+      switch (req.method) {
+        case 'GET':
+          return await getPrenotazioni(req, res);
+        case 'POST':
+          return await creaPrenotazione(req, res);
+        case 'DELETE':
+          return await eliminaPrenotazione(req, res);
+        default:
+          return res.status(405).json({ 
+            success: false, 
+            error: 'Metodo non supportato per prenotazioni' 
+          });
+      }
+    }
+
+    // Default: ottieni tutti gli eventi se non è specificata una sezione
+    if (req.method === 'GET') {
+      return await getEventi(req, res);
+    }
+
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Sezione non specificata. Utilizzare ?section=eventi o ?section=prenotazioni' 
+    });
+
+  } catch (error) {
+    console.error('Errore API eventi:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: 'Errore interno del server: ' + error.message
+    });
+  }
+}
 
 // GET - Ottieni tutti gli eventi
 async function getEventi(req, res) {
@@ -87,7 +161,7 @@ async function creaEvento(req, res) {
   try {
     const { titolo, descrizione, data_evento, immagine_url, user_id } = req.body;
 
-    console.log('Received evento data:', { titolo, descrizione, data_evento, immagine_url, user_id }); // Debug
+    console.log('Received evento data:', { titolo, descrizione, data_evento, immagine_url, user_id });
 
     if (!titolo || !data_evento || (user_id === undefined || user_id === null)) {
       return res.status(400).json({
@@ -140,8 +214,6 @@ async function creaEvento(req, res) {
       ]
     });
 
-    console.log('Evento created result:', result); // Debug
-
     if (result.rowsAffected > 0) {
       return res.status(201).json({
         success: true,
@@ -169,8 +241,6 @@ async function creaEvento(req, res) {
 async function aggiornaEvento(req, res) {
   try {
     const { id, titolo, descrizione, data_evento, immagine_url, user_id } = req.body;
-
-    console.log('Received update data:', { id, titolo, descrizione, data_evento, immagine_url, user_id }); // Debug
 
     if (!id || !titolo || !data_evento || (user_id === undefined || user_id === null)) {
       return res.status(400).json({
@@ -237,8 +307,6 @@ async function aggiornaEvento(req, res) {
       ]
     });
 
-    console.log('Evento updated result:', result); // Debug
-
     if (result.rowsAffected > 0) {
       return res.status(200).json({
         success: true,
@@ -279,7 +347,7 @@ async function eliminaEvento(req, res) {
       args: [user_id]
     });
 
-    if (!userResult.rows.length || (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1)) {
+    if (!userResult.rows.length || (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1 && userResult.rows[0].level !== 2)) {
       return res.status(403).json({
         success: false,
         error: 'Non hai i permessi per eliminare eventi'
@@ -322,86 +390,6 @@ async function eliminaEvento(req, res) {
     return res.status(500).json({
       success: false,
       error: 'Errore interno del server'
-    });
-  }
-}
-
-// POST - Crea una nuova prenotazione
-async function creaPrenotazione(req, res) {
-  try {
-    const { evento_id, nome, cognome, email } = req.body;
-
-    console.log('Received prenotazione data:', { evento_id, nome, cognome, email }); // Debug
-
-    if (!evento_id || !nome || !cognome || !email) {
-      return res.status(400).json({
-        success: false,
-        error: 'Evento_id, nome, cognome ed email sono richiesti'
-      });
-    }
-
-    // Valida formato email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Formato email non valido'
-      });
-    }
-
-    // Verifica che l'evento esista
-    const eventoExists = await client.execute({
-      sql: 'SELECT id, titolo FROM eventi WHERE id = ?',
-      args: [evento_id]
-    });
-
-    if (!eventoExists.rows.length) {
-      return res.status(404).json({
-        success: false,
-        error: 'Evento non trovato'
-      });
-    }
-
-    // Verifica se esiste già una prenotazione con la stessa email per questo evento
-    const prenotazioneExists = await client.execute({
-      sql: 'SELECT id FROM prenotazioni WHERE evento_id = ? AND email = ?',
-      args: [evento_id, email]
-    });
-
-    if (prenotazioneExists.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        error: 'Esiste già una prenotazione con questa email per questo evento'
-      });
-    }
-
-    const result = await client.execute({
-      sql: 'INSERT INTO prenotazioni (evento_id, nome, cognome, email) VALUES (?, ?, ?, ?)',
-      args: [evento_id, nome, cognome, email]
-    });
-
-    console.log('Prenotazione created result:', result); // Debug
-
-    if (result.rowsAffected > 0) {
-      return res.status(201).json({
-        success: true,
-        message: 'Prenotazione creata con successo',
-        prenotazione_id: result.lastInsertRowid,
-        evento_titolo: eventoExists.rows[0].titolo,
-        created_at: new Date().toISOString()
-      });
-    } else {
-      return res.status(400).json({
-        success: false,
-        error: 'Errore nella creazione della prenotazione'
-      });
-    }
-
-  } catch (error) {
-    console.error('Errore nella creazione prenotazione:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Errore interno del server: ' + error.message
     });
   }
 }
@@ -451,6 +439,84 @@ async function getPrenotazioni(req, res) {
   }
 }
 
+// POST - Crea una nuova prenotazione
+async function creaPrenotazione(req, res) {
+  try {
+    const { evento_id, nome, cognome, email } = req.body;
+
+    console.log('Received prenotazione data:', { evento_id, nome, cognome, email });
+
+    if (!evento_id || !nome || !cognome || !email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Evento_id, nome, cognome ed email sono richiesti'
+      });
+    }
+
+    // Valida formato email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato email non valido'
+      });
+    }
+
+    // Verifica che l'evento esista
+    const eventoExists = await client.execute({
+      sql: 'SELECT id, titolo FROM eventi WHERE id = ?',
+      args: [evento_id]
+    });
+
+    if (!eventoExists.rows.length) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento non trovato'
+      });
+    }
+
+    // Verifica se esiste già una prenotazione con la stessa email per questo evento
+    const prenotazioneExists = await client.execute({
+      sql: 'SELECT id FROM prenotazioni WHERE evento_id = ? AND email = ?',
+      args: [evento_id, email]
+    });
+
+    if (prenotazioneExists.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Esiste già una prenotazione con questa email per questo evento'
+      });
+    }
+
+    const result = await client.execute({
+      sql: 'INSERT INTO prenotazioni (evento_id, nome, cognome, email) VALUES (?, ?, ?, ?)',
+      args: [evento_id, nome, cognome, email]
+    });
+
+    if (result.rowsAffected > 0) {
+      return res.status(201).json({
+        success: true,
+        message: 'Prenotazione creata con successo',
+        prenotazione_id: result.lastInsertRowid,
+        evento_titolo: eventoExists.rows[0].titolo,
+        created_at: new Date().toISOString()
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Errore nella creazione della prenotazione'
+      });
+    }
+
+  } catch (error) {
+    console.error('Errore nella creazione prenotazione:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Errore interno del server: ' + error.message
+    });
+  }
+}
+
 // DELETE - Elimina una prenotazione
 async function eliminaPrenotazione(req, res) {
   try {
@@ -469,7 +535,7 @@ async function eliminaPrenotazione(req, res) {
       args: [user_id]
     });
 
-    if (!userResult.rows.length || (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1)) {
+    if (!userResult.rows.length || (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1 && userResult.rows[0].level !== 2)) {
       return res.status(403).json({
         success: false,
         error: 'Non hai i permessi per eliminare prenotazioni'
@@ -511,81 +577,6 @@ async function eliminaPrenotazione(req, res) {
     return res.status(500).json({
       success: false,
       error: 'Errore interno del server'
-    });
-  }
-}
-
-// Handler principale
-export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  try {
-    // Test connessione DB
-    await client.execute("SELECT 1");
-    
-    const { section, action } = req.query;
-
-    // Routes per eventi
-    if (section === 'eventi') {
-      switch (req.method) {
-        case 'GET':
-          if (action === 'single') {
-            return await getSingoloEvento(req, res);
-          }
-          return await getEventi(req, res);
-        case 'POST':
-          return await creaEvento(req, res);
-        case 'PUT':
-          return await aggiornaEvento(req, res);
-        case 'DELETE':
-          return await eliminaEvento(req, res);
-        default:
-          return res.status(405).json({ 
-            success: false, 
-            error: 'Metodo non supportato per eventi' 
-          });
-      }
-    }
-
-    // Routes per prenotazioni
-    if (section === 'prenotazioni') {
-      switch (req.method) {
-        case 'GET':
-          return await getPrenotazioni(req, res);
-        case 'POST':
-          return await creaPrenotazione(req, res);
-        case 'DELETE':
-          return await eliminaPrenotazione(req, res);
-        default:
-          return res.status(405).json({ 
-            success: false, 
-            error: 'Metodo non supportato per prenotazioni' 
-          });
-      }
-    }
-
-    // Default: ottieni tutti gli eventi se non è specificata una sezione
-    if (req.method === 'GET') {
-      return await getEventi(req, res);
-    }
-
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Sezione non specificata. Utilizzare ?section=eventi o ?section=prenotazioni' 
-    });
-
-  } catch (error) {
-    console.error('Errore API eventi:', error);
-    return res.status(500).json({ 
-      success: false,
-      error: 'Errore interno del server: ' + error.message
     });
   }
 }
