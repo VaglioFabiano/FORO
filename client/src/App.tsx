@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Header from './components/Header';
 import OrariSection from './components/OrariSection';
+import EventiSection from './components/EventiSection';
 import SocialSection from './components/SocialSection';
 import StatutoSection from './components/StatutoSection';
 import Footer from './components/Footer';
@@ -75,6 +76,9 @@ function App() {
           </div>
           <div id="orari">
             <OrariSection />
+          </div>
+          <div id="eventi">
+            <EventiSection />
           </div>
           <div id="social">
             <SocialSection />

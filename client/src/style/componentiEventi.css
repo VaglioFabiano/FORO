@@ -1,0 +1,798 @@
+/* ========== SEZIONE EVENTI HOMEPAGE ========== */
+
+.eventi-section {
+  padding: 80px 0;
+  background: linear-gradient(135deg, rgb(248, 233, 205) 0%, rgba(210, 105, 30, 0.1) 100%);
+  position: relative;
+}
+
+.eventi-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 25% 25%, rgba(139, 69, 19, 0.05) 0%, transparent 25%),
+                    radial-gradient(circle at 75% 75%, rgba(210, 105, 30, 0.05) 0%, transparent 25%);
+  pointer-events: none;
+}
+
+.eventi-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.eventi-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.eventi-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #8B4513;
+  margin-bottom: 15px;
+  letter-spacing: -0.5px;
+}
+
+.eventi-subtitle {
+  font-size: 1.1rem;
+  color: #A0522D;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Loading e Error States */
+.eventi-loading,
+.eventi-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #8B4513;
+}
+
+.eventi-loading .loading-spinner,
+.eventi-error .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(139, 69, 19, 0.1);
+  border-top: 4px solid #8B4513;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.eventi-error p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.retry-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #D2691E 0%, #CD853F 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  background: linear-gradient(135deg, #CD853F 0%, #D2691E 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(210, 105, 30, 0.3);
+}
+
+/* Grid Eventi */
+.eventi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+/* Card Evento */
+.evento-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(139, 69, 19, 0.1);
+  border: 2px solid rgba(139, 69, 19, 0.05);
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.evento-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(139, 69, 19, 0.2);
+  border-color: rgba(210, 105, 30, 0.2);
+}
+
+.evento-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.1) 0%, rgba(210, 105, 30, 0.1) 100%);
+}
+
+.evento-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.evento-card:hover .evento-image img {
+  transform: scale(1.1);
+}
+
+.evento-overlay {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 8px 12px;
+}
+
+.partecipanti-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.evento-content {
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.evento-info {
+  flex: 1;
+}
+
+.evento-titolo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #8B4513;
+  margin-bottom: 15px;
+  line-height: 1.3;
+}
+
+.evento-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #D2691E;
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.evento-descrizione {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.evento-stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(139, 69, 19, 0.1);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8B4513;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.evento-actions {
+  margin-top: auto;
+}
+
+.prenota-button {
+  width: 100%;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.prenota-button:hover {
+  background: linear-gradient(135deg, #45A049 0%, #4CAF50 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+}
+
+/* Nessun evento */
+.no-eventi {
+  text-align: center;
+  padding: 80px 40px;
+  color: #8B4513;
+}
+
+.no-eventi-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.no-eventi h3 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.no-eventi p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #A0522D;
+  margin-bottom: 10px;
+}
+
+/* ========== PAGINA PRENOTAZIONE EVENTO ========== */
+
+.prenota-evento-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, rgb(248, 233, 205) 0%, rgba(210, 105, 30, 0.1) 100%);
+  padding: 20px 0;
+}
+
+.prenota-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.prenota-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+  padding: 20px 0;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #8B4513;
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #D2691E;
+  transform: translateX(-3px);
+}
+
+.prenota-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #8B4513;
+  margin: 0;
+}
+
+/* Loading, Error e Success States */
+.loading-section,
+.error-section,
+.success-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(139, 69, 19, 0.1);
+  text-align: center;
+}
+
+.loading-section .loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(139, 69, 19, 0.1);
+  border-top: 4px solid #8B4513;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.success-icon {
+  color: #4CAF50;
+  margin-bottom: 20px;
+}
+
+.success-section h2 {
+  color: #4CAF50;
+  font-size: 2rem;
+  margin-bottom: 15px;
+}
+
+.success-section p {
+  color: #666;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.success-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.prenota-altro-button,
+.chiudi-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.prenota-altro-button {
+  background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+  color: white;
+}
+
+.chiudi-button {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+  border: 2px solid rgba(108, 117, 125, 0.2);
+}
+
+/* Dettagli evento */
+.evento-details {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+}
+
+.evento-info-card,
+.prenotazione-form-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(139, 69, 19, 0.1);
+  border: 2px solid rgba(139, 69, 19, 0.05);
+}
+
+.evento-banner {
+  height: 200px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.1) 0%, rgba(210, 105, 30, 0.1) 100%);
+}
+
+.evento-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.evento-info-content {
+  padding: 30px;
+}
+
+.evento-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #8B4513;
+  margin-bottom: 20px;
+  line-height: 1.3;
+}
+
+.evento-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #D2691E;
+  font-weight: 600;
+}
+
+.evento-description {
+  padding-top: 20px;
+  border-top: 1px solid rgba(139, 69, 19, 0.1);
+}
+
+.evento-description p {
+  color: #666;
+  line-height: 1.7;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+/* Form prenotazione */
+.form-header {
+  padding: 25px 30px;
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+  color: white;
+}
+
+.form-header h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.form-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+.form-error {
+  margin: 20px 30px 0;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.prenotazione-form {
+  padding: 30px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8B4513;
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 15px 18px;
+  border: 2px solid rgba(139, 69, 19, 0.1);
+  border-radius: 10px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #D2691E;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
+}
+
+.form-group input.error,
+.form-group select.error {
+  border-color: #e74c3c;
+  background: rgba(231, 76, 60, 0.05);
+}
+
+.form-group input:disabled,
+.form-group select:disabled,
+.form-group textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.field-error {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.form-actions {
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 1px solid rgba(139, 69, 19, 0.1);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #45A049 0%, #4CAF50 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(76, 175, 80, 0.4);
+}
+
+.submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.button-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.form-footer {
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(139, 69, 19, 0.05);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.form-footer p {
+  color: #8B4513;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Animazioni */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .eventi-section {
+    padding: 60px 0;
+  }
+  
+  .eventi-container {
+    padding: 0 15px;
+  }
+  
+  .eventi-title {
+    font-size: 2rem;
+  }
+  
+  .eventi-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .evento-card {
+    margin: 0 5px;
+  }
+  
+  .evento-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .prenota-container {
+    padding: 0 15px;
+  }
+  
+  .prenota-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .prenota-header h1 {
+    font-size: 1.8rem;
+    text-align: center;
+  }
+  
+  .back-button {
+    align-self: flex-start;
+  }
+  
+  .evento-title {
+    font-size: 1.6rem;
+  }
+  
+  .evento-meta {
+    gap: 8px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .evento-info-content,
+  .prenotazione-form,
+  .form-header {
+    padding: 20px;
+  }
+  
+  .success-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .prenota-altro-button,
+  .chiudi-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .eventi-title {
+    font-size: 1.7rem;
+  }
+  
+  .eventi-subtitle {
+    font-size: 1rem;
+  }
+  
+  .evento-card {
+    margin: 0;
+  }
+  
+  .evento-content {
+    padding: 20px;
+  }
+  
+  .evento-titolo {
+    font-size: 1.2rem;
+  }
+  
+  .prenota-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .evento-title {
+    font-size: 1.4rem;
+  }
+  
+  .evento-info-content,
+  .prenotazione-form {
+    padding: 15px;
+  }
+  
+  .form-header {
+    padding: 20px 15px;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 12px 15px;
+  }
+  
+  .submit-button {
+    padding: 15px 20px;
+    font-size: 1rem;
+  }
+}
+
+/* Miglioramenti accessibilità */
+@media (prefers-reduced-motion: reduce) {
+  .evento-card,
+  .prenota-button,
+  .submit-button,
+  .back-button,
+  .retry-button {
+    transition: none;
+    animation: none;
+  }
+  
+  .loading-spinner,
+  .button-spinner {
+    animation: none;
+  }
+  
+  .evento-card:hover {
+    transform: none;
+  }
+  
+  .evento-card:hover .evento-image img {
+    transform: none;
+  }
+}
+
+/* Focus states */
+.prenota-button:focus,
+.submit-button:focus,
+.back-button:focus,
+.retry-button:focus {
+  outline: 2px solid #D2691E;
+  outline-offset: 2px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: 2px solid #D2691E;
+  outline-offset: 2px;
+}
