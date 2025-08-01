@@ -28,30 +28,11 @@ export default async function handler(req, res) {
     await client.execute("SELECT 1");
     
     const { section, action } = req.query;
+    
+    console.log('API Call - Method:', req.method, 'Section:', section, 'Action:', action);
+    console.log('Request body:', req.body);
 
-    // Routes per eventi
-    if (section === 'eventi' || (!section && req.method === 'GET')) {
-      switch (req.method) {
-        case 'GET':
-          if (action === 'single') {
-            return await getSingoloEvento(req, res);
-          }
-          return await getEventi(req, res);
-        case 'POST':
-          return await creaEvento(req, res);
-        case 'PUT':
-          return await aggiornaEvento(req, res);
-        case 'DELETE':
-          return await eliminaEvento(req, res);
-        default:
-          return res.status(405).json({ 
-            success: false, 
-            error: 'Metodo non supportato per eventi' 
-          });
-      }
-    }
-
-    // Routes per prenotazioni
+    // Routes per prenotazioni (controlliamo per primo)
     if (section === 'prenotazioni') {
       switch (req.method) {
         case 'GET':
@@ -68,15 +49,25 @@ export default async function handler(req, res) {
       }
     }
 
-    // Default: ottieni tutti gli eventi se non è specificata una sezione
-    if (req.method === 'GET') {
-      return await getEventi(req, res);
+    // Routes per eventi (default behavior)
+    switch (req.method) {
+      case 'GET':
+        if (action === 'single') {
+          return await getSingoloEvento(req, res);
+        }
+        return await getEventi(req, res);
+      case 'POST':
+        return await creaEvento(req, res);
+      case 'PUT':
+        return await aggiornaEvento(req, res);
+      case 'DELETE':
+        return await eliminaEvento(req, res);
+      default:
+        return res.status(405).json({ 
+          success: false, 
+          error: 'Metodo non supportato' 
+        });
     }
-
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Sezione non specificata. Utilizzare ?section=eventi o ?section=prenotazioni' 
-    });
 
   } catch (error) {
     console.error('Errore API eventi:', error);
@@ -161,12 +152,37 @@ async function creaEvento(req, res) {
   try {
     const { titolo, descrizione, data_evento, immagine_url, user_id } = req.body;
 
-    console.log('Received evento data:', { titolo, descrizione, data_evento, immagine_url, user_id });
+    console.log('Received evento data:', { 
+      titolo, 
+      descrizione, 
+      data_evento, 
+      immagine_url, 
+      user_id,
+      body: req.body 
+    });
 
-    if (!titolo || !data_evento || (user_id === undefined || user_id === null)) {
+    // Validazione campi obbligatori
+    if (!titolo) {
+      console.log('Missing titolo');
       return res.status(400).json({
         success: false,
-        error: 'Titolo, data_evento e user_id sono richiesti'
+        error: 'Titolo è richiesto'
+      });
+    }
+
+    if (!data_evento) {
+      console.log('Missing data_evento');
+      return res.status(400).json({
+        success: false,
+        error: 'Data evento è richiesta'
+      });
+    }
+
+    if (user_id === undefined || user_id === null) {
+      console.log('Missing user_id');
+      return res.status(400).json({
+        success: false,
+        error: 'User ID è richiesto'
       });
     }
 
@@ -182,6 +198,7 @@ async function creaEvento(req, res) {
           console.log(`User with ID ${user_id} not found, continuing anyway`);
         } else {
           const userLevel = userResult.rows[0].level;
+          console.log(`User level: ${userLevel}`);
           if (userLevel !== 0 && userLevel !== 1 && userLevel !== 2) {
             return res.status(403).json({
               success: false,
@@ -198,12 +215,14 @@ async function creaEvento(req, res) {
     // Valida formato data (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(data_evento)) {
+      console.log('Invalid date format:', data_evento);
       return res.status(400).json({
         success: false,
-        error: 'Formato data non valido. Utilizzare YYYY-MM-DD'
+        error: 'Formato data non valido. Utilizzare YYYY-MM-DD (es: 2024-12-25)'
       });
     }
 
+    console.log('Inserting evento into database...');
     const result = await client.execute({
       sql: 'INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url) VALUES (?, ?, ?, ?)',
       args: [
@@ -213,6 +232,8 @@ async function creaEvento(req, res) {
         immagine_url || ''
       ]
     });
+
+    console.log('Insert result:', result);
 
     if (result.rowsAffected > 0) {
       return res.status(201).json({

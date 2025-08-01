@@ -108,7 +108,6 @@ const GestisciEventi: React.FC = () => {
     });
   }, []);
 
-
   // Aggiungi debug per il caricamento
   useEffect(() => {
     console.log('GestisciEventi component mounted');
@@ -204,23 +203,33 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
+      console.log('Creating event with data:', { ...nuovoEvento, user_id: userId });
+      
       const response = await fetch('/api/eventi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          section: 'eventi',
-          ...nuovoEvento,
+          // Non includiamo section nel body, la gestiamo nell'URL o nell'handler
+          titolo: nuovoEvento.titolo,
+          descrizione: nuovoEvento.descrizione,
+          data_evento: nuovoEvento.data_evento,
+          immagine_url: nuovoEvento.immagine_url,
           user_id: userId
         }),
       });
 
+      console.log('Create response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
+        console.error('Create error response:', errorData);
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
+      console.log('Create success response:', data);
       
       if (data.success) {
         setNuovoEvento({
@@ -252,24 +261,33 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
+      console.log('Updating event with data:', { id: editingEventId, ...editData, user_id: userId });
+      
       const response = await fetch('/api/eventi', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          section: 'eventi',
           id: editingEventId,
-          ...editData,
+          titolo: editData.titolo,
+          descrizione: editData.descrizione,
+          data_evento: editData.data_evento,
+          immagine_url: editData.immagine_url,
           user_id: userId
         }),
       });
 
+      console.log('Update response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
+        console.error('Update error response:', errorData);
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
+      console.log('Update success response:', data);
       
       if (data.success) {
         setEditingEventId(null);
@@ -295,23 +313,29 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
+      console.log('Deleting event:', { id: eventoId, user_id: userId });
+      
       const response = await fetch('/api/eventi', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          section: 'eventi',
           id: eventoId,
           user_id: userId
         }),
       });
 
+      console.log('Delete response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
+        console.error('Delete error response:', errorData);
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
+      console.log('Delete success response:', data);
       
       if (data.success) {
         await fetchEventi();
@@ -335,23 +359,29 @@ const GestisciEventi: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/eventi', {
+      console.log('Deleting prenotazione:', { id: prenotazioneId, user_id: userId });
+      
+      const response = await fetch('/api/eventi?section=prenotazioni', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          section: 'prenotazioni',
           id: prenotazioneId,
           user_id: userId
         }),
       });
 
+      console.log('Delete prenotazione response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
+        console.error('Delete prenotazione error response:', errorData);
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
+      console.log('Delete prenotazione success response:', data);
       
       if (data.success) {
         await fetchPrenotazioni(eventoId);
