@@ -49,12 +49,12 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       minLevel: 4 
     },
     {
-      id: 'profilo-utente',
-      title: 'Il Mio Profilo',
-      description: 'Modifica le tue informazioni personali',
-      icon: '👤',
-      component: ProfiloUtente,
-      minLevel: 4 
+      id: 'modifica-orari',
+      title: 'Modifica Orari',
+      description: 'Gestisci gli orari di apertura',
+      icon: '🕒',
+      component: ModificaOrari,
+      minLevel: 2
     },
     {
       id: 'crea-utenti',
@@ -71,14 +71,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       icon: '👀',
       component: VisualizzaUtenti,
       minLevel: 1
-    },
-    {
-      id: 'modifica-orari',
-      title: 'Modifica Orari',
-      description: 'Gestisci gli orari di apertura',
-      icon: '🕒',
-      component: ModificaOrari,
-      minLevel: 2
     },
     {
       id: 'gestisci-eventi',
@@ -103,6 +95,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       icon: '✏️🏠📄',
       minLevel: 2,
       isHomepageLink: true
+    },
+    {
+      id: 'profilo-utente',
+      title: 'Il Mio Profilo',
+      description: 'Modifica le tue informazioni personali',
+      icon: '👤',
+      component: ProfiloUtente,
+      minLevel: 4 
     },
   ];
 
