@@ -10,7 +10,7 @@ import '../style/homeDash.css';
 
 interface HomeDashProps {
   onLogout: () => void;
-  onBackToHome: () => void; // Prop obbligatoria per la navigazione
+  onBackToHome: () => void; // Prop per tornare alla homepage
 }
 
 interface DashboardItem {
@@ -35,9 +35,9 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: 'homepage',
       title: 'Torna alla Homepage',
       description: 'Vai alla pagina principale del sito',
-      icon: '✏️🏠📄',
-      minLevel: 0, // Accessibile a tutti i livelli
-      isHomepageLink: true,
+      icon: '🏠',
+      minLevel: 4,
+      isHomepageLink: true
     },
     {
       id: 'Turni',
@@ -142,24 +142,16 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     item.minLevel === undefined || userLevel <= item.minLevel
   );
 
-  // Gestisce la navigazione verso la homepage con scroll smooth
-  const handleNavigation = (sectionId?: string) => {
-    onBackToHome();
-    
-    if (sectionId) {
+  const handleCardClick = (item: DashboardItem) => {
+    if (item.isHomepageLink) {
+      // Naviga alla homepage con scroll alla sezione header
+      onBackToHome();
       setTimeout(() => {
-        const element = document.getElementById(sectionId);
+        const element = document.getElementById('header');
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
         }
       }, 300);
-    }
-  };
-
-  const handleCardClick = (item: DashboardItem) => {
-    if (item.isHomepageLink) {
-      // Naviga alla homepage (sezione header di default)
-      handleNavigation('header');
       return;
     }
     
