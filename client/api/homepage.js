@@ -99,6 +99,8 @@ async function updateHomepageData(req, res) {
   try {
     const { type, data, user_id } = req.body;
 
+    console.log('Received data:', { type, data, user_id }); // Debug
+
     if (!type || !data || !user_id) {
       return res.status(400).json({
         success: false,
@@ -140,44 +142,84 @@ async function updateHomepageData(req, res) {
           });
         }
         
-        // Aggiorna il primo (e unico) record
-        result = await client.execute({
-          sql: 'UPDATE header SET descrizione = ?',
-          args: [data.descrizione]
-        });
+        // Prima controlla se esiste un record, poi aggiorna o inserisce
+        const headerExists = await client.execute('SELECT COUNT(*) as count FROM header');
+        if (headerExists.rows[0].count > 0) {
+          result = await client.execute({
+            sql: 'UPDATE header SET descrizione = ?',
+            args: [data.descrizione]
+          });
+        } else {
+          result = await client.execute({
+            sql: 'INSERT INTO header (descrizione) VALUES (?)',
+            args: [data.descrizione]
+          });
+        }
         break;
 
       case 'social':
-        result = await client.execute({
-          sql: 'UPDATE sezione_social SET post_instagram = ?, post_facebook = ?, canale_telegram = ?',
-          args: [
-            data.post_instagram || '', 
-            data.post_facebook || '', 
-            data.canale_telegram || ''
-          ]
-        });
+        const socialExists = await client.execute('SELECT COUNT(*) as count FROM sezione_social');
+        if (socialExists.rows[0].count > 0) {
+          result = await client.execute({
+            sql: 'UPDATE sezione_social SET post_instagram = ?, post_facebook = ?, canale_telegram = ?',
+            args: [
+              data.post_instagram || '', 
+              data.post_facebook || '', 
+              data.canale_telegram || ''
+            ]
+          });
+        } else {
+          result = await client.execute({
+            sql: 'INSERT INTO sezione_social (post_instagram, post_facebook, canale_telegram) VALUES (?, ?, ?)',
+            args: [
+              data.post_instagram || '', 
+              data.post_facebook || '', 
+              data.canale_telegram || ''
+            ]
+          });
+        }
         break;
 
       case 'statuto':
-        result = await client.execute({
-          sql: 'UPDATE statuto SET link_drive = ?',
-          args: [data.link_drive || '']
-        });
+        const statutoExists = await client.execute('SELECT COUNT(*) as count FROM statuto');
+        if (statutoExists.rows[0].count > 0) {
+          result = await client.execute({
+            sql: 'UPDATE statuto SET link_drive = ?',
+            args: [data.link_drive || '']
+          });
+        } else {
+          result = await client.execute({
+            sql: 'INSERT INTO statuto (link_drive) VALUES (?)',
+            args: [data.link_drive || '']
+          });
+        }
         break;
 
       case 'conoscici':
-        result = await client.execute({
-          sql: 'UPDATE conoscici SET file1 = ?, file2 = ?, file3 = ?',
-          args: [
-            data.file1 || '', 
-            data.file2 || '', 
-            data.file3 || ''
-          ]
-        });
+        const conosciExists = await client.execute('SELECT COUNT(*) as count FROM conoscici');
+        if (conosciExists.rows[0].count > 0) {
+          result = await client.execute({
+            sql: 'UPDATE conoscici SET file1 = ?, file2 = ?, file3 = ?',
+            args: [
+              data.file1 || '', 
+              data.file2 || '', 
+              data.file3 || ''
+            ]
+          });
+        } else {
+          result = await client.execute({
+            sql: 'INSERT INTO conoscici (file1, file2, file3) VALUES (?, ?, ?)',
+            args: [
+              data.file1 || '', 
+              data.file2 || '', 
+              data.file3 || ''
+            ]
+          });
+        }
         break;
 
       case 'segnalazioni':
-        // Aggiunge una nuova segnalazione
+        // Aggiunge sempre una nuova segnalazione
         if (data.immagine || data.link) {
           result = await client.execute({
             sql: 'INSERT INTO segnalazioni (immagine, link) VALUES (?, ?)',
@@ -195,15 +237,28 @@ async function updateHomepageData(req, res) {
         break;
 
       case 'contatti':
-        result = await client.execute({
-          sql: 'UPDATE contatti_footer SET link_instagram = ?, link_facebook = ?, link_telegram = ?, email = ?',
-          args: [
-            data.link_instagram || '', 
-            data.link_facebook || '', 
-            data.link_telegram || '', 
-            data.email || ''
-          ]
-        });
+        const contattiExists = await client.execute('SELECT COUNT(*) as count FROM contatti_footer');
+        if (contattiExists.rows[0].count > 0) {
+          result = await client.execute({
+            sql: 'UPDATE contatti_footer SET link_instagram = ?, link_facebook = ?, link_telegram = ?, email = ?',
+            args: [
+              data.link_instagram || '', 
+              data.link_facebook || '', 
+              data.link_telegram || '', 
+              data.email || ''
+            ]
+          });
+        } else {
+          result = await client.execute({
+            sql: 'INSERT INTO contatti_footer (link_instagram, link_facebook, link_telegram, email) VALUES (?, ?, ?, ?)',
+            args: [
+              data.link_instagram || '', 
+              data.link_facebook || '', 
+              data.link_telegram || '', 
+              data.email || ''
+            ]
+          });
+        }
         break;
 
       default:
@@ -212,6 +267,8 @@ async function updateHomepageData(req, res) {
           error: 'Tipo di aggiornamento non supportato'
         });
     }
+
+    console.log('Query result:', result); // Debug
 
     if (result.rowsAffected > 0) {
       return res.status(200).json({
@@ -231,7 +288,7 @@ async function updateHomepageData(req, res) {
     console.error('Errore nell\'aggiornamento homepage:', error);
     return res.status(500).json({
       success: false,
-      error: 'Errore interno del server'
+      error: 'Errore interno del server: ' + error.message
     });
   }
 }
@@ -380,7 +437,7 @@ export default async function handler(req, res) {
     console.error('Errore API homepage:', error);
     return res.status(500).json({ 
       success: false,
-      error: 'Errore interno del server'
+      error: 'Errore interno del server: ' + error.message
     });
   }
 }
