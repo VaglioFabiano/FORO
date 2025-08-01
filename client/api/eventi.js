@@ -38,9 +38,7 @@ function convertBigIntToNumber(obj) {
 
 // Funzione per validare il formato base64 dell'immagine
 function validateBase64Image(base64String) {
-  if (!base64String) return true; // Opzionale
-  
-  // Verifica che sia un data URL valido per immagini
+  if (!base64String) return true;
   const base64Regex = /^data:image\/(jpeg|jpg|png|gif|webp);base64,/;
   return base64Regex.test(base64String);
 }
@@ -49,12 +47,10 @@ function validateBase64Image(base64String) {
 function blobToBase64(blob) {
   if (!blob) return null;
   
-  // Se è già una stringa base64, restituiscila
   if (typeof blob === 'string' && blob.startsWith('data:image/')) {
     return blob;
   }
   
-  // Se è un Buffer, convertilo
   if (Buffer.isBuffer(blob)) {
     return `data:image/jpeg;base64,${blob.toString('base64')}`;
   }
@@ -68,16 +64,176 @@ function validateEmail(email) {
   return emailRegex.test(email);
 }
 
-// ========== SISTEMA EMAIL INTEGRATO ==========
+// ========== SISTEMA EMAIL MIGLIORATO CON LOGGING ==========
 
-// Funzione per inviare email di conferma con Web3Forms (più semplice)
+// Funzione per creare un log strutturato
+function logEmail(level, message, data = {}) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level,
+    service: 'email-system',
+    message,
+    ...data
+  };
+  console.log(`[EMAIL-${level.toUpperCase()}] ${timestamp}: ${message}`, 
+    Object.keys(data).length > 0 ? data : '');
+}
+
+// Funzione per inviare email di conferma con Web3Forms
 async function sendConfirmationEmail(prenotazione, evento) {
-  if (!process.env.WEB3FORMS_ACCESS_KEY) {
-    console.log('WEB3FORMS_ACCESS_KEY non configurato, email non inviata');
-    return false;
-  }
+  const startTime = Date.now();
+  
+  try {
+    logEmail('info', 'Inizio processo invio email', {
+      prenotazione_id: prenotazione.id,
+      evento_id: evento.id,
+      destinatario: prenotazione.email
+    });
 
-  const htmlContent = `
+    // Verifica configurazione
+    if (!process.env.WEB3FORMS_ACCESS_KEY) {
+      logEmail('warn', 'WEB3FORMS_ACCESS_KEY non configurato', {
+        available_env_vars: Object.keys(process.env).filter(key => key.includes('WEB3'))
+      });
+      return {
+        success: false,
+        error: 'Configurazione email mancante',
+        details: 'WEB3FORMS_ACCESS_KEY non configurato'
+      };
+    }
+
+    logEmail('info', 'Configurazione email trovata', {
+      access_key_length: process.env.WEB3FORMS_ACCESS_KEY.length,
+      access_key_preview: process.env.WEB3FORMS_ACCESS_KEY.substring(0, 8) + '...'
+    });
+
+    // Costruzione contenuto HTML
+    const htmlContent = createEmailTemplate(prenotazione, evento);
+    
+    logEmail('info', 'Template email generato', {
+      html_length: htmlContent.length,
+      contains_evento_title: htmlContent.includes(evento.titolo),
+      contains_user_name: htmlContent.includes(prenotazione.nome)
+    });
+
+    // Preparazione payload
+    const payload = {
+      access_key: process.env.WEB3FORMS_ACCESS_KEY,
+      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
+      email: prenotazione.email,
+      name: `${prenotazione.nome} ${prenotazione.cognome}`,
+      message: htmlContent,
+      from_name: "Aula Studio Foro",
+      replyto: "info@aulastudioforo.it",
+      // Parametri aggiuntivi per debugging
+      _template: "box",
+      _format: "html"
+    };
+
+    logEmail('info', 'Payload preparato per Web3Forms', {
+      subject: payload.subject,
+      email: payload.email,
+      name: payload.name,
+      from_name: payload.from_name,
+      payload_size: JSON.stringify(payload).length
+    });
+
+    // Invio richiesta
+    logEmail('info', 'Invio richiesta a Web3Forms API...');
+    
+    const response = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'AulaStudioForo/1.0'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const responseTime = Date.now() - startTime;
+    
+    logEmail('info', 'Risposta ricevuta da Web3Forms', {
+      status: response.status,
+      statusText: response.statusText,
+      response_time_ms: responseTime,
+      content_type: response.headers.get('content-type'),
+      rate_limit_remaining: response.headers.get('x-ratelimit-remaining')
+    });
+
+    // Parsing risposta
+    let result;
+    try {
+      const responseText = await response.text();
+      logEmail('debug', 'Raw response text', { 
+        response_text: responseText.substring(0, 500) + (responseText.length > 500 ? '...' : '')
+      });
+      
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      logEmail('error', 'Errore parsing risposta JSON', {
+        parse_error: parseError.message,
+        response_status: response.status
+      });
+      throw new Error(`Errore parsing risposta: ${parseError.message}`);
+    }
+
+    if (response.ok && result.success !== false) {
+      logEmail('success', 'Email inviata con successo', {
+        response_time_ms: responseTime,
+        web3forms_response: result,
+        message_id: result.message_id || 'unknown'
+      });
+      
+      return {
+        success: true,
+        message_id: result.message_id,
+        response_time: responseTime,
+        web3forms_response: result
+      };
+    } else {
+      logEmail('error', 'Web3Forms ha restituito un errore', {
+        response_status: response.status,
+        response_body: result,
+        error_message: result.message || 'Errore sconosciuto'
+      });
+      
+      return {
+        success: false,
+        error: result.message || `HTTP ${response.status}: ${response.statusText}`,
+        details: result,
+        http_status: response.status
+      };
+    }
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logEmail('error', 'Errore durante invio email', {
+      error_name: error.name,
+      error_message: error.message,
+      error_stack: error.stack?.substring(0, 500),
+      response_time_ms: responseTime,
+      prenotazione_email: prenotazione.email,
+      evento_titolo: evento.titolo
+    });
+
+    return {
+      success: false,
+      error: error.message,
+      details: {
+        name: error.name,
+        stack: error.stack
+      },
+      response_time: responseTime
+    };
+  }
+}
+
+// Funzione separata per creare il template email
+function createEmailTemplate(prenotazione, evento) {
+  return `
     <!DOCTYPE html>
     <html lang="it">
     <head>
@@ -200,16 +356,6 @@ async function sendConfirmationEmail(prenotazione, evento) {
           margin-top: 0;
           font-size: 1.2rem;
         }
-        .notes {
-          background: #fff3e0;
-          border: 1px solid #ffcc02;
-          padding: 20px;
-          border-radius: 10px;
-          margin: 20px 0;
-        }
-        .notes strong {
-          color: #ef6c00;
-        }
         .footer {
           text-align: center;
           margin-top: 35px;
@@ -321,37 +467,6 @@ async function sendConfirmationEmail(prenotazione, evento) {
     </body>
     </html>
   `;
-
-  try {
-    const response = await fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        access_key: process.env.WEB3FORMS_ACCESS_KEY,
-        subject: `✅ Conferma prenotazione: ${evento.titolo}`,
-        email: prenotazione.email,
-        name: `${prenotazione.nome} ${prenotazione.cognome}`,
-        message: htmlContent,
-        from_name: "Aula Studio Foro",
-        replyto: "info@aulastudioforo.it"
-      })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log('Email di conferma inviata con successo:', result);
-      return true;
-    } else {
-      console.error('Errore nell\'invio dell\'email:', response.statusText);
-      return false;
-    }
-  } catch (error) {
-    console.error('Errore nell\'invio dell\'email:', error);
-    return false;
-  }
 }
 
 // ========== HANDLER PRINCIPALE ==========
@@ -374,7 +489,8 @@ export default async function handler(req, res) {
     console.log('API Request:', { method: req.method, section, action, id, evento_id });
 
     if (req.method === 'GET') {
-      // GET eventi
+      // ... (resto del codice GET invariato) ...
+      
       if (!section && !action) {
         console.log('Getting all eventi');
         const eventiResult = await client.execute(`
@@ -395,7 +511,6 @@ export default async function handler(req, res) {
         });
       }
       
-      // GET singolo evento con prenotazioni
       if (action === 'single' && id) {
         console.log('Getting single evento:', id);
         
@@ -429,7 +544,6 @@ export default async function handler(req, res) {
         });
       }
       
-      // GET prenotazioni per un evento
       if (section === 'prenotazioni' && evento_id) {
         console.log('Getting prenotazioni for evento:', evento_id);
         
@@ -460,9 +574,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // ========== GESTIONE PRENOTAZIONI ==========
-      
-      // GET tutte le prenotazioni o per evento specifico
       if (section === 'prenotazioni' && !evento_id) {
         console.log('Getting all prenotazioni');
         
@@ -483,7 +594,6 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      // ========== CREAZIONE PRENOTAZIONE ==========
       if (section === 'prenotazioni') {
         const { 
           evento_id, 
@@ -601,19 +711,18 @@ export default async function handler(req, res) {
             data_prenotazione: dataPrenotazione
           };
 
-          // Invia email di conferma (in modo asincrono per non bloccare la risposta)
-          let emailSent = false;
-          try {
-            emailSent = await sendConfirmationEmail(prenotazioneData, evento);
-          } catch (emailError) {
-            console.error('Errore nell\'invio email:', emailError);
-          }
+          // Invia email di conferma con logging dettagliato
+          console.log('🚀 Tentativo invio email di conferma...');
+          const emailResult = await sendConfirmationEmail(prenotazioneData, evento);
+          
+          console.log('📧 Risultato invio email:', emailResult);
 
           return res.status(201).json({
             success: true,
             message: 'Prenotazione creata con successo',
             prenotazione_id: prenotazioneId,
-            email_sent: emailSent,
+            email_sent: emailResult.success,
+            email_details: emailResult,
             created_at: dataPrenotazione
           });
         } else {
@@ -624,7 +733,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // ========== CREAZIONE EVENTO ==========
+      // ... (resto del codice POST per eventi invariato) ...
       else {
         const { 
           titolo, 
@@ -655,7 +764,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // Valida formato data (YYYY-MM-DD)
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
         if (!dateRegex.test(data_evento)) {
           return res.status(400).json({
@@ -664,7 +772,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // Valida immagine base64 se presente
         if (immagine_blob && !validateBase64Image(immagine_blob)) {
           return res.status(400).json({
             success: false,
@@ -672,11 +779,9 @@ export default async function handler(req, res) {
           });
         }
 
-        // Prepara il blob per il salvataggio (converte da base64 a Buffer se necessario)
         let blobToSave = null;
         if (immagine_blob) {
           try {
-            // Rimuovi il prefisso data:image/...;base64, se presente
             const base64Data = immagine_blob.replace(/^data:image\/[a-z]+;base64,/, '');
             blobToSave = Buffer.from(base64Data, 'base64');
           } catch (error) {
@@ -751,7 +856,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // Valida formato data (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(data_evento)) {
         return res.status(400).json({
@@ -760,7 +864,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // Verifica che l'evento esista
       const eventoExists = await client.execute({
         sql: 'SELECT id FROM eventi WHERE id = ?',
         args: [id]
@@ -773,7 +876,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // Valida immagine base64 se presente
       if (immagine_blob && !validateBase64Image(immagine_blob)) {
         return res.status(400).json({
           success: false,
@@ -781,7 +883,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // Prepara il blob per il salvataggio
       let blobToSave = null;
       let shouldUpdateBlob = false;
       
@@ -799,7 +900,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // Query di aggiornamento dinamica
       let sql, args;
       
       if (shouldUpdateBlob) {
@@ -850,7 +950,6 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
-      // DELETE prenotazione
       if (section === 'prenotazioni') {
         const { id, user_id } = req.body;
         console.log('Deleting prenotazione:', { id, user_id });
@@ -862,7 +961,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // Verifica che la prenotazione esista
         const prenotazioneExists = await client.execute({
           sql: 'SELECT id FROM prenotazioni_eventi WHERE id = ?',
           args: [id]
@@ -875,7 +973,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // Elimina la prenotazione
         const result = await client.execute({
           sql: 'DELETE FROM prenotazioni_eventi WHERE id = ?',
           args: [id]
@@ -894,7 +991,6 @@ export default async function handler(req, res) {
         }
       }
       
-      // DELETE evento
       else {
         const { id, user_id } = req.body;
         console.log('Deleting evento:', { id, user_id });
@@ -906,7 +1002,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // Verifica che l'evento esista
         const eventoExists = await client.execute({
           sql: 'SELECT id FROM eventi WHERE id = ?',
           args: [id]
@@ -919,13 +1014,11 @@ export default async function handler(req, res) {
           });
         }
 
-        // Elimina prima le prenotazioni associate (CASCADE)
         await client.execute({
           sql: 'DELETE FROM prenotazioni_eventi WHERE evento_id = ?',
           args: [id]
         });
 
-        // Poi elimina l'evento
         const result = await client.execute({
           sql: 'DELETE FROM eventi WHERE id = ?',
           args: [id]
