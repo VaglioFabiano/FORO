@@ -17,8 +17,9 @@ interface DashboardItem {
   title: string;
   description: string;
   icon: string;
-  component: React.ComponentType;
+  component?: React.ComponentType; // Ora opzionale
   minLevel?: number; // Livello minimo richiesto per vedere l'elemento
+  isHomepageLink?: boolean; // Nuovo campo per identificare i link homepage
 }
 
 const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
@@ -29,6 +30,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   // Elementi della dashboard con i livelli minimi richiesti
   const dashboardItems: DashboardItem[] = [
+    {
+      id: 'homepage',
+      title: 'Torna alla Homepage',
+      description: 'Vai alla pagina principale del sito',
+      icon: '✏️🏠📄',
+      minLevel: 2, 
+      isHomepageLink: true
+    },
     {
       id: 'Turni',
       title: 'Turni Aula Studio',
@@ -134,7 +143,15 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   );
 
   const handleCardClick = (item: DashboardItem) => {
-    setSelectedComponent(() => item.component);
+    if (item.isHomepageLink) {
+      // Reindirizza alla homepage
+      window.location.href = '/'; // Oppure usa il router se stai usando React Router
+      return;
+    }
+    
+    if (item.component) {
+      setSelectedComponent(item.component ?? null);
+    }
   };
 
   const handleBackToDashboard = () => {
