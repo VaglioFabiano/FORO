@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, ExternalLink, MapPin } from 'lucide-react';
+import '../style/componentiEventi.css';
 
 interface Evento {
   id: number;
@@ -124,8 +125,8 @@ const EventiSection: React.FC = () => {
   };
 
   const handlePrenotaClick = (eventoId: number) => {
-    // Apri la pagina di prenotazione in una nuova finestra/tab
-    window.open(`/prenota-evento/${eventoId}`, '_blank', 'noopener,noreferrer');
+    // Naviga alla pagina di prenotazione
+    window.location.href = `/prenota-evento/${eventoId}`;
   };
 
   if (loading) {

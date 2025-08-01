@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, MapPin, Mail, User, Phone, ArrowLeft, CheckCircle } from 'lucide-react';
+import '../style/componentiEventi.css';
 
 interface Evento {
   id: number;
@@ -207,7 +208,7 @@ const PrenotaEventoPage: React.FC = () => {
           <div className="error-section">
             <h2>⚠️ Errore</h2>
             <p>{error}</p>
-            <button onClick={() => window.history.back()} className="back-button">
+            <button onClick={() => window.location.href = '/'} className="back-button">
               <ArrowLeft size={16} />
               Torna indietro
             </button>
@@ -230,7 +231,7 @@ const PrenotaEventoPage: React.FC = () => {
               <button onClick={() => setSuccess(false)} className="prenota-altro-button">
                 Prenota per un'altra persona
               </button>
-              <button onClick={() => window.close()} className="chiudi-button">
+              <button onClick={() => window.location.href = '/'} className="chiudi-button">
                 Chiudi finestra
               </button>
             </div>
@@ -244,7 +245,7 @@ const PrenotaEventoPage: React.FC = () => {
     <div className="prenota-evento-page">
       <div className="prenota-container">
         <div className="prenota-header">
-          <button onClick={() => window.history.back()} className="back-button">
+                      <button onClick={() => window.location.href = '/'} className="back-button">
             <ArrowLeft size={16} />
             Torna indietro
           </button>
