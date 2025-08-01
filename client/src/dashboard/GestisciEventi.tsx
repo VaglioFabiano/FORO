@@ -108,7 +108,6 @@ const GestisciEventi: React.FC = () => {
     });
   }, []);
 
-
   // Aggiungi debug per il caricamento
   useEffect(() => {
     console.log('GestisciEventi component mounted');
@@ -395,7 +394,7 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
-  // Funzione per convertire URL di Google Drive in formato viewable
+  // Funzione per convertire URL di Google Drive nel formato corretto
   const convertGoogleDriveUrl = (url: string) => {
     if (!url) return '';
     
@@ -413,43 +412,6 @@ const GestisciEventi: React.FC = () => {
     
     // Se non è un link di Google Drive, restituisce l'URL originale
     return url;
-  };
-
-  const renderImageWithFallback = (imageUrl: string, altText: string, className: string) => {
-    const [imageSrc] = useState(convertGoogleDriveUrl(imageUrl));
-    const [imageError, setImageError] = useState(false);
-
-    const handleImageError = () => {
-      console.log('Image failed to load:', imageSrc);
-      setImageError(true);
-    };
-
-    const handleImageLoad = () => {
-      console.log('Image loaded successfully:', imageSrc);
-      setImageError(false);
-    };
-
-    if (!imageUrl || imageError) {
-      return (
-        <div className={`${className} image-placeholder`}>
-          <div className="placeholder-content">
-            🖼️
-            <p>Nessuna immagine disponibile</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <img 
-        src={imageSrc}
-        alt={altText}
-        className={className}
-        onError={handleImageError}
-        onLoad={handleImageLoad}
-        loading="lazy"
-      />
-    );
   };
 
   const iniziaModifica = (evento: Evento) => {
@@ -688,11 +650,16 @@ const GestisciEventi: React.FC = () => {
                       <div className="event-details">
                         {evento.immagine_url && (
                           <div className="event-image">
-                            {renderImageWithFallback(
-                              evento.immagine_url,
-                              evento.titolo,
-                              "event-image-content"
-                            )}
+                            <img 
+                              src={convertGoogleDriveUrl(evento.immagine_url)} 
+                              alt={evento.titolo}
+                              className="event-image-content"
+                              onError={(e) => {
+                                // Nasconde l'immagine se fallisce il caricamento, come nel componente Segnalazioni
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
                           </div>
                         )}
                         <div className="event-description">
