@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import '..style/gestisciEventi.css';
+
 
 // Definizione delle interfacce per i dati
 interface Evento {
