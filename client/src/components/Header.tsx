@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Edit } from 'lucide-react';
 import '../style/header.css';
 
 const Header: React.FC = () => {
@@ -220,6 +221,7 @@ const Header: React.FC = () => {
               </p>
               {canEdit && (
                 <button onClick={handleEditClick} className="edit-button">
+                 <Edit size={16} />
                   Modifica
                 </button>
               )}

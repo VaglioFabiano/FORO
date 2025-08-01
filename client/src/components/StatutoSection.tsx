@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Edit } from 'lucide-react';
 import statutoImageFallback from '../assets/statuto.png';
 import '../style/statuto.css';
 
@@ -256,7 +257,8 @@ const Statuto: React.FC = () => {
         <div className="statuto-banner-content">
           {canEdit && (
             <button className="edit-statuto-button" onClick={handleEdit}>
-              ✏️ Modifica Statuto
+              <Edit size={16} />
+               Modifica Statuto
             </button>
           )}
 

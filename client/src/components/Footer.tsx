@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Edit } from 'lucide-react';
 import '../style/footer.css';
 
 interface FooterData {
@@ -239,7 +240,8 @@ const Footer: React.FC = () => {
           <h3>Contatti</h3>
           {canEdit && (
             <button className="edit-footer-button" onClick={handleEdit}>
-              ✏️ Modifica
+              <Edit size={16} />
+               Modifica
             </button>
           )}
         </div>

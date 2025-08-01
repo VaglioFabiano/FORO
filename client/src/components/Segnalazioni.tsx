@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Edit } from 'lucide-react';
 import qrCodeFallback from '../assets/qrcodeSegnalazioni.png';
 import '../style/segnalazioni.css';
 
@@ -256,7 +257,8 @@ const Segnalazioni: React.FC = () => {
           <h2 style={{ color: 'rgb(12, 73, 91)' }}>Segnalazioni</h2>
           {canEdit && (
             <button className="edit-segnalazioni-button" onClick={handleEdit}>
-              ✏️ Modifica Segnalazioni
+              <Edit size={16} />
+               Modifica Segnalazioni
             </button>
           )}
         </div>
