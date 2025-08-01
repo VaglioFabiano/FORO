@@ -13,86 +13,6 @@ if (!config.url || !config.authToken) {
 
 const client = createClient(config);
 
-// Funzione per inizializzare le tabelle se non esistono
-async function initializeTables() {
-  try {
-    // Crea tabella header se non esiste
-    await client.execute(`
-      CREATE TABLE IF NOT EXISTS header (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        descrizione TEXT NOT NULL DEFAULT '',
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER
-      )
-    `);
-
-    // Crea tabella sezione_social se non esiste
-    await client.execute(`
-      CREATE TABLE IF NOT EXISTS sezione_social (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        post_instagram TEXT DEFAULT '',
-        post_facebook TEXT DEFAULT '',
-        canale_telegram TEXT DEFAULT '',
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER
-      )
-    `);
-
-    // Crea tabella statuto se non esiste
-    await client.execute(`
-      CREATE TABLE IF NOT EXISTS statuto (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        link_drive TEXT DEFAULT '',
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER
-      )
-    `);
-
-    // Crea tabella conoscici se non esiste
-    await client.execute(`
-      CREATE TABLE IF NOT EXISTS conoscici (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        file1 TEXT DEFAULT '',
-        file2 TEXT DEFAULT '',
-        file3 TEXT DEFAULT '',
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER
-      )
-    `);
-
-    // Crea tabella segnalazioni se non esiste
-    await client.execute(`
-      CREATE TABLE IF NOT EXISTS segnalazioni (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        immagine TEXT DEFAULT '',
-        link TEXT DEFAULT '',
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER
-      )
-    `);
-
-    // Crea tabella contatti_footer se non esiste
-    await client.execute(`
-      CREATE TABLE IF NOT EXISTS contatti_footer (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        link_instagram TEXT DEFAULT '',
-        link_facebook TEXT DEFAULT '',
-        link_telegram TEXT DEFAULT '',
-        email TEXT DEFAULT '',
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        user_id INTEGER
-      )
-    `);
-
-    // Inserisci dati di default se le tabelle sono vuote
-    await insertDefaultData();
-
-  } catch (error) {
-    console.error('Errore nell\'inizializzazione tabelle:', error);
-    throw error;
-  }
-}
-
 // Funzione per inserire dati di default
 async function insertDefaultData() {
   try {
@@ -130,14 +50,6 @@ async function insertDefaultData() {
       });
     }
 
-    const segnalazioniExists = await client.execute('SELECT COUNT(*) as count FROM segnalazioni');
-    if (segnalazioniExists.rows[0].count === 0) {
-      await client.execute({
-        sql: 'INSERT INTO segnalazioni (immagine, link) VALUES (?, ?)',
-        args: ['', '']
-      });
-    }
-
     const contattiExists = await client.execute('SELECT COUNT(*) as count FROM contatti_footer');
     if (contattiExists.rows[0].count === 0) {
       await client.execute({
@@ -153,15 +65,15 @@ async function insertDefaultData() {
 // GET - Ottieni tutti i dati della homepage
 async function getHomepageData(req, res) {
   try {
-    await initializeTables();
+    await insertDefaultData();
 
-    // Recupera dati da tutte le tabelle
-    const headerResult = await client.execute('SELECT * FROM header ORDER BY updated_at DESC LIMIT 1');
-    const socialResult = await client.execute('SELECT * FROM sezione_social ORDER BY updated_at DESC LIMIT 1');
-    const statutoResult = await client.execute('SELECT * FROM statuto ORDER BY updated_at DESC LIMIT 1');
-    const conosciResult = await client.execute('SELECT * FROM conoscici ORDER BY updated_at DESC LIMIT 1');
-    const segnalazioniResult = await client.execute('SELECT * FROM segnalazioni ORDER BY updated_at DESC LIMIT 1');
-    const contattiResult = await client.execute('SELECT * FROM contatti_footer ORDER BY updated_at DESC LIMIT 1');
+    // Recupera dati da tutte le tabelle (prende il primo e unico record)
+    const headerResult = await client.execute('SELECT * FROM header LIMIT 1');
+    const socialResult = await client.execute('SELECT * FROM sezione_social LIMIT 1');
+    const statutoResult = await client.execute('SELECT * FROM statuto LIMIT 1');
+    const conosciResult = await client.execute('SELECT * FROM conoscici LIMIT 1');
+    const segnalazioniResult = await client.execute('SELECT ROWID, * FROM segnalazioni');
+    const contattiResult = await client.execute('SELECT * FROM contatti_footer LIMIT 1');
 
     return res.status(200).json({
       success: true,
@@ -169,7 +81,7 @@ async function getHomepageData(req, res) {
       social: socialResult.rows[0] || { post_instagram: '', post_facebook: '', canale_telegram: '' },
       statuto: statutoResult.rows[0] || { link_drive: '' },
       conoscici: conosciResult.rows[0] || { file1: '', file2: '', file3: '' },
-      segnalazioni: segnalazioniResult.rows[0] || { immagine: '', link: '' },
+      segnalazioni: segnalazioniResult.rows || [],
       contatti: contattiResult.rows[0] || { link_instagram: '', link_facebook: '', link_telegram: '', email: '' }
     });
 
@@ -194,7 +106,7 @@ async function updateHomepageData(req, res) {
       });
     }
 
-    // Verifica permessi utente
+    // Verifica permessi utente (assumo che la tabella users esista)
     const userResult = await client.execute({
       sql: 'SELECT level FROM users WHERE id = ?',
       args: [user_id]
@@ -215,7 +127,7 @@ async function updateHomepageData(req, res) {
       });
     }
 
-    await initializeTables();
+    await insertDefaultData();
 
     let result;
 
@@ -228,60 +140,50 @@ async function updateHomepageData(req, res) {
           });
         }
         
+        // Aggiorna il primo (e unico) record
         result = await client.execute({
-          sql: `UPDATE header SET descrizione = ?, updated_at = CURRENT_TIMESTAMP, user_id = ? 
-                WHERE id = (SELECT id FROM header ORDER BY updated_at DESC LIMIT 1)`,
-          args: [data.descrizione, user_id]
+          sql: 'UPDATE header SET descrizione = ?',
+          args: [data.descrizione]
         });
         break;
 
       case 'social':
         result = await client.execute({
-          sql: `UPDATE sezione_social SET 
-                post_instagram = ?, post_facebook = ?, canale_telegram = ?, 
-                updated_at = CURRENT_TIMESTAMP, user_id = ? 
-                WHERE id = (SELECT id FROM sezione_social ORDER BY updated_at DESC LIMIT 1)`,
+          sql: 'UPDATE sezione_social SET post_instagram = ?, post_facebook = ?, canale_telegram = ?',
           args: [
             data.post_instagram || '', 
             data.post_facebook || '', 
-            data.canale_telegram || '', 
-            user_id
+            data.canale_telegram || ''
           ]
         });
         break;
 
       case 'statuto':
         result = await client.execute({
-          sql: `UPDATE statuto SET link_drive = ?, updated_at = CURRENT_TIMESTAMP, user_id = ? 
-                WHERE id = (SELECT id FROM statuto ORDER BY updated_at DESC LIMIT 1)`,  
-          args: [data.link_drive || '', user_id]
+          sql: 'UPDATE statuto SET link_drive = ?',
+          args: [data.link_drive || '']
         });
         break;
 
       case 'conoscici':
         result = await client.execute({
-          sql: `UPDATE conoscici SET 
-                file1 = ?, file2 = ?, file3 = ?, 
-                updated_at = CURRENT_TIMESTAMP, user_id = ? 
-                WHERE id = (SELECT id FROM conoscici ORDER BY updated_at DESC LIMIT 1)`,
+          sql: 'UPDATE conoscici SET file1 = ?, file2 = ?, file3 = ?',
           args: [
             data.file1 || '', 
             data.file2 || '', 
-            data.file3 || '', 
-            user_id
+            data.file3 || ''
           ]
         });
         break;
 
       case 'segnalazioni':
-        // Permette di aggiungere una nuova segnalazione invece di aggiornare l'ultima
+        // Aggiunge una nuova segnalazione
         if (data.immagine || data.link) {
           result = await client.execute({
-            sql: `INSERT INTO segnalazioni (immagine, link, user_id) VALUES (?, ?, ?)`,
+            sql: 'INSERT INTO segnalazioni (immagine, link) VALUES (?, ?)',
             args: [
               data.immagine || '', 
-              data.link || '', 
-              user_id
+              data.link || ''
             ]
           });
         } else {
@@ -294,16 +196,12 @@ async function updateHomepageData(req, res) {
 
       case 'contatti':
         result = await client.execute({
-          sql: `UPDATE contatti_footer SET 
-                link_instagram = ?, link_facebook = ?, link_telegram = ?, email = ?, 
-                updated_at = CURRENT_TIMESTAMP, user_id = ? 
-                WHERE id = (SELECT id FROM contatti_footer ORDER BY updated_at DESC LIMIT 1)`,
+          sql: 'UPDATE contatti_footer SET link_instagram = ?, link_facebook = ?, link_telegram = ?, email = ?',
           args: [
             data.link_instagram || '', 
             data.link_facebook || '', 
             data.link_telegram || '', 
-            data.email || '', 
-            user_id
+            data.email || ''
           ]
         });
         break;
@@ -363,8 +261,9 @@ async function deleteSegnalazione(req, res) {
       });
     }
 
+    // Usa ROWID per identificare il record da eliminare
     const result = await client.execute({
-      sql: 'DELETE FROM segnalazioni WHERE id = ?',
+      sql: 'DELETE FROM segnalazioni WHERE ROWID = ?',
       args: [id]
     });
 
@@ -392,9 +291,9 @@ async function deleteSegnalazione(req, res) {
 // GET - Ottieni solo i dati dell'header (per il componente Header)
 async function getHeaderData(req, res) {
   try {
-    await initializeTables();
+    await insertDefaultData();
     
-    const headerResult = await client.execute('SELECT descrizione FROM header ORDER BY updated_at DESC LIMIT 1');
+    const headerResult = await client.execute('SELECT descrizione FROM header LIMIT 1');
     
     return res.status(200).json({
       success: true,
@@ -414,9 +313,10 @@ async function getHeaderData(req, res) {
 // GET - Ottieni tutte le segnalazioni
 async function getSegnalazioni(req, res) {
   try {
-    await initializeTables();
+    await insertDefaultData();
     
-    const segnalazioniResult = await client.execute('SELECT * FROM segnalazioni ORDER BY updated_at DESC');
+    // Usa ROWID per avere un identificatore unico
+    const segnalazioniResult = await client.execute('SELECT ROWID, * FROM segnalazioni');
     
     return res.status(200).json({
       success: true,

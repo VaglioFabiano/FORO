@@ -107,6 +107,18 @@ html, body {
   line-height: 1.6;
   font-family: 'Inter', sans-serif;
   font-weight: 400;
+  animation: fadeInDescription 0.5s ease-in-out;
+}
+
+@keyframes fadeInDescription {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .scroll-hint {
@@ -136,6 +148,147 @@ html, body {
   60% {
     transform: translateY(-5px) rotate(45deg);
   }
+}
+
+/* Loading per la descrizione */
+.description-loading {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 60px;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 232, 204, 0.8);
+  animation: loadingDots 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes loadingDots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Sezione di modifica */
+.description-container {
+  position: relative;
+}
+
+.description-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  animation: fadeInDescription 0.3s ease-in-out;
+}
+
+.description-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 15px;
+  border: 2px solid rgba(255, 232, 204, 0.3);
+  background-color: rgba(12, 73, 91, 0.9);
+  color: rgb(255, 232, 204);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-family: 'Inter', sans-serif;
+  border-radius: 8px;
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.description-textarea:focus {
+  outline: none;
+  border-color: rgba(255, 232, 204, 0.7);
+  box-shadow: 0 0 0 3px rgba(255, 232, 204, 0.1);
+}
+
+.description-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.description-textarea::placeholder {
+  color: rgba(255, 232, 204, 0.5);
+}
+
+.description-edit-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.edit-button {
+  background-color: rgba(255, 232, 204, 0.1);
+  color: rgb(255, 232, 204);
+  border: 2px solid rgba(255, 232, 204, 0.3);
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  min-width: 80px;
+}
+
+.edit-button:hover:not(:disabled) {
+  background-color: rgba(255, 232, 204, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.edit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.save-button {
+  background-color: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.5);
+  color: #4CAF50;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: rgba(76, 175, 80, 0.3);
+  border-color: rgba(76, 175, 80, 0.7);
+}
+
+.cancel-button {
+  background-color: rgba(244, 67, 54, 0.2);
+  border-color: rgba(244, 67, 54, 0.5);
+  color: #f44336;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background-color: rgba(244, 67, 54, 0.3);
+  border-color: rgba(244, 67, 54, 0.7);
 }
 
 /* Mobile styles */
@@ -172,6 +325,21 @@ html, body {
   .description {
     font-size: 1.1rem;
   }
+  
+  .description-textarea {
+    min-height: 100px;
+    font-size: 1.1rem;
+    padding: 12px;
+  }
+  
+  .edit-button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+  
+  .description-loading {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 480px) {
@@ -192,161 +360,24 @@ html, body {
   .main-title {
     font-size: 2.8rem;
   }
+  
+  .description-textarea {
+    min-height: 80px;
+    font-size: 1rem;
+    padding: 10px;
+  }
+  
+  .edit-button {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+  
+  .description-edit-buttons {
+    justify-content: center;
+  }
 }
 
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
-}
-
-/* Aggiungi queste regole al file header.css esistente */
-
-/* Loading per la descrizione */
-.description-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60px;
-}
-
-.loading-dots {
-  display: flex;
-  gap: 8px;
-}
-
-.loading-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.8);
-  animation: loadingDots 1.4s infinite ease-in-out both;
-}
-
-.loading-dots span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.loading-dots span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-.loading-dots span:nth-child(3) {
-  animation-delay: 0s;
-}
-
-@keyframes loadingDots {
-  0%, 80%, 100% {
-    transform: scale(0);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Transizione smooth per la descrizione */
-.description {
-  animation: fadeInDescription 0.5s ease-in-out;
-}
-
-@keyframes fadeInDescription {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-.description-container {
-  position: relative;
-}
-
-.description-edit {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.description-textarea {
-  width: 100%;
-  min-height: 120px;
-  padding: 12px;
-  border: 1px solid rgba(255, 232, 204, 0.3);
-  background-color: rgba(12, 73, 91, 0.8);
-  color: rgb(255, 232, 204);
-  font-size: 1.25rem;
-  line-height: 1.6;
-  font-family: 'Inter', sans-serif;
-  border-radius: 4px;
-  resize: vertical;
-}
-
-.description-textarea:focus {
-  outline: none;
-  border-color: rgba(255, 232, 204, 0.7);
-}
-
-.description-edit-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.edit-button {
-  background-color: rgba(255, 232, 204, 0.1);
-  color: rgb(255, 232, 204);
-  border: 1px solid rgba(255, 232, 204, 0.3);
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  margin-top: 10px;
-}
-
-.edit-button:hover {
-  background-color: rgba(255, 232, 204, 0.2);
-}
-
-.save-button {
-  background-color: rgba(76, 175, 80, 0.2);
-  border-color: rgba(76, 175, 80, 0.5);
-}
-
-.save-button:hover {
-  background-color: rgba(76, 175, 80, 0.3);
-}
-
-.cancel-button {
-  background-color: rgba(244, 67, 54, 0.2);
-  border-color: rgba(244, 67, 54, 0.5);
-}
-
-.cancel-button:hover {
-  background-color: rgba(244, 67, 54, 0.3);
-}
-
-/* Mobile styles */
-@media (max-width: 768px) {
-  .description-textarea {
-    min-height: 100px;
-    font-size: 1.1rem;
-  }
-  
-  .edit-button {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .description-textarea {
-    min-height: 80px;
-    font-size: 1rem;
-  }
 }

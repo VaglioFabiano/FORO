@@ -7,6 +7,9 @@ const Header: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempDescrizione, setTempDescrizione] = useState('');
   const [userLevel, setUserLevel] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const defaultDescription = 'Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce: un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.';
 
   useEffect(() => {
     loadDescrizione();
@@ -14,33 +17,45 @@ const Header: React.FC = () => {
   }, []);
 
   const checkUserLevel = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      setUserLevel(userData.level);
+    try {
+      const user = localStorage.getItem('user');
+      if (user) {
+        const userData = JSON.parse(user);
+        console.log('User data:', userData); // Debug
+        setUserLevel(userData.level);
+      } else {
+        console.log('No user found in localStorage'); // Debug
+      }
+    } catch (error) {
+      console.error('Errore nel parsing user data:', error);
+      setUserLevel(null);
     }
   };
 
   const loadDescrizione = async () => {
     try {
+      setIsLoading(true);
       const response = await fetch('/api/homepage?section=header');
-      const data = await response.json();
       
-      if (data.success) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Response data:', data); // Debug
+      
+      if (data.success && data.descrizione) {
         setDescrizione(data.descrizione);
         setTempDescrizione(data.descrizione);
       } else {
-        // Fallback alla descrizione di default
-        const defaultDesc = 'Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce: un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.';
-        setDescrizione(defaultDesc);
-        setTempDescrizione(defaultDesc);
+        console.log('Using default description');
+        setDescrizione(defaultDescription);
+        setTempDescrizione(defaultDescription);
       }
     } catch (error) {
       console.error('Errore nel caricamento descrizione header:', error);
-      // Fallback alla descrizione di default
-      const defaultDesc = 'Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce: un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.';
-      setDescrizione(defaultDesc);
-      setTempDescrizione(defaultDesc);
+      setDescrizione(defaultDescription);
+      setTempDescrizione(defaultDescription);
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +63,8 @@ const Header: React.FC = () => {
 
   const handleEditClick = () => {
     setIsEditing(true);
+    // Assicurati che tempDescrizione sia aggiornata
+    setTempDescrizione(descrizione);
   };
 
   const handleCancelClick = () => {
@@ -56,35 +73,56 @@ const Header: React.FC = () => {
   };
 
   const handleSaveClick = async () => {
+    if (isSaving) return; // Previeni doppi click
+
     try {
+      setIsSaving(true);
+      
       const user = localStorage.getItem('user');
-      if (!user) throw new Error('Utente non loggato');
+      if (!user) {
+        alert('Devi essere loggato per modificare la descrizione');
+        return;
+      }
 
       const userData = JSON.parse(user);
+      console.log('Saving with user:', userData); // Debug
+      
+      const requestBody = {
+        type: 'header',
+        data: { descrizione: tempDescrizione.trim() },
+        user_id: userData.id
+      };
+      
+      console.log('Request body:', requestBody); // Debug
       
       const response = await fetch('/api/homepage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          type: 'header',
-          data: { descrizione: tempDescrizione },
-          user_id: userData.id
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log('Save response:', data); // Debug
 
       if (data.success) {
-        setDescrizione(tempDescrizione);
+        setDescrizione(tempDescrizione.trim());
         setIsEditing(false);
+        console.log('Descrizione salvata con successo');
       } else {
         throw new Error(data.error || 'Errore nel salvataggio');
       }
     } catch (error) {
       console.error('Errore nel salvataggio descrizione:', error);
-      alert('Errore durante il salvataggio della descrizione');
+      const errorMessage = (error instanceof Error) ? error.message : String(error);
+      alert(`Errore durante il salvataggio: ${errorMessage}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -97,7 +135,7 @@ const Header: React.FC = () => {
     }
   };
 
-  const canEdit = userLevel !== null && userLevel <= 2;
+  const canEdit = userLevel !== null && (userLevel === 0 || userLevel === 1 || userLevel === 2);
 
   return (
     <header id="header" className="header">
@@ -133,12 +171,22 @@ const Header: React.FC = () => {
                 value={tempDescrizione}
                 onChange={(e) => setTempDescrizione(e.target.value)}
                 className="description-textarea"
+                placeholder="Inserisci la descrizione..."
+                disabled={isSaving}
               />
               <div className="description-edit-buttons">
-                <button onClick={handleSaveClick} className="edit-button save-button">
-                  Salva
+                <button 
+                  onClick={handleSaveClick} 
+                  className="edit-button save-button"
+                  disabled={isSaving || tempDescrizione.trim() === ''}
+                >
+                  {isSaving ? 'Salvando...' : 'Salva'}
                 </button>
-                <button onClick={handleCancelClick} className="edit-button cancel-button">
+                <button 
+                  onClick={handleCancelClick} 
+                  className="edit-button cancel-button"
+                  disabled={isSaving}
+                >
                   Annulla
                 </button>
               </div>
