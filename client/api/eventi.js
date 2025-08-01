@@ -36,6 +36,32 @@ function convertBigIntToNumber(obj) {
   return obj;
 }
 
+// Funzione per validare il formato base64 dell'immagine
+function validateBase64Image(base64String) {
+  if (!base64String) return true; // Opzionale
+  
+  // Verifica che sia un data URL valido per immagini
+  const base64Regex = /^data:image\/(jpeg|jpg|png|gif|webp);base64,/;
+  return base64Regex.test(base64String);
+}
+
+// Funzione per convertire blob in base64 per la risposta
+function blobToBase64(blob) {
+  if (!blob) return null;
+  
+  // Se è già una stringa base64, restituiscila
+  if (typeof blob === 'string' && blob.startsWith('data:image/')) {
+    return blob;
+  }
+  
+  // Se è un Buffer, convertilo
+  if (Buffer.isBuffer(blob)) {
+    return `data:image/jpeg;base64,${blob.toString('base64')}`;
+  }
+  
+  return null;
+}
+
 // Handler principale
 export default async function handler(req, res) {
   // CORS headers
@@ -59,12 +85,16 @@ export default async function handler(req, res) {
       if (!section && !action) {
         console.log('Getting all eventi');
         const eventiResult = await client.execute(`
-          SELECT id, titolo, descrizione, data_evento, immagine_url 
+          SELECT id, titolo, descrizione, data_evento, immagine_url, 
+                 immagine_blob, immagine_tipo, immagine_nome
           FROM eventi 
           ORDER BY data_evento ASC
         `);
         
-        const eventiConverted = convertBigIntToNumber(eventiResult.rows);
+        const eventiConverted = convertBigIntToNumber(eventiResult.rows).map(evento => ({
+          ...evento,
+          immagine_blob: blobToBase64(evento.immagine_blob)
+        }));
         
         return res.status(200).json({
           success: true,
@@ -77,7 +107,9 @@ export default async function handler(req, res) {
         console.log('Getting single evento:', id);
         
         const eventoResult = await client.execute({
-          sql: 'SELECT * FROM eventi WHERE id = ?',
+          sql: `SELECT id, titolo, descrizione, data_evento, immagine_url, 
+                       immagine_blob, immagine_tipo, immagine_nome
+                FROM eventi WHERE id = ?`,
           args: [id]
         });
 
@@ -88,13 +120,13 @@ export default async function handler(req, res) {
           });
         }
 
-        // CORREZIONE: Usa il nome corretto della tabella
         const prenotazioniResult = await client.execute({
           sql: 'SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC',
           args: [id]
         });
 
         const eventoConverted = convertBigIntToNumber(eventoResult.rows[0]);
+        eventoConverted.immagine_blob = blobToBase64(eventoConverted.immagine_blob);
         const prenotazioniConverted = convertBigIntToNumber(prenotazioniResult.rows);
 
         return res.status(200).json({
@@ -120,7 +152,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // CORREZIONE: Usa il nome corretto della tabella
         const prenotazioniResult = await client.execute({
           sql: 'SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC',
           args: [evento_id]
@@ -138,8 +169,27 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { titolo, descrizione, data_evento, immagine_url, user_id } = req.body;
-      console.log('Creating evento:', { titolo, descrizione, data_evento, immagine_url, user_id });
+      const { 
+        titolo, 
+        descrizione, 
+        data_evento, 
+        immagine_url, 
+        immagine_blob, 
+        immagine_tipo, 
+        immagine_nome, 
+        user_id 
+      } = req.body;
+      
+      console.log('Creating evento:', { 
+        titolo, 
+        descrizione, 
+        data_evento, 
+        immagine_url: immagine_url ? 'present' : 'empty',
+        immagine_blob: immagine_blob ? 'present' : 'empty',
+        immagine_tipo, 
+        immagine_nome, 
+        user_id 
+      });
 
       if (!titolo || !data_evento || (user_id === undefined || user_id === null)) {
         return res.status(400).json({
@@ -157,13 +207,42 @@ export default async function handler(req, res) {
         });
       }
 
+      // Valida immagine base64 se presente
+      if (immagine_blob && !validateBase64Image(immagine_blob)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Formato immagine non valido'
+        });
+      }
+
+      // Prepara il blob per il salvataggio (converte da base64 a Buffer se necessario)
+      let blobToSave = null;
+      if (immagine_blob) {
+        try {
+          // Rimuovi il prefisso data:image/...;base64, se presente
+          const base64Data = immagine_blob.replace(/^data:image\/[a-z]+;base64,/, '');
+          blobToSave = Buffer.from(base64Data, 'base64');
+        } catch (error) {
+          console.error('Error converting base64 to buffer:', error);
+          return res.status(400).json({
+            success: false,
+            error: 'Errore nella conversione dell\'immagine'
+          });
+        }
+      }
+
       const result = await client.execute({
-        sql: 'INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url) VALUES (?, ?, ?, ?)',
+        sql: `INSERT INTO eventi 
+              (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome) 
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
         args: [
           titolo,
           descrizione || '',
           data_evento,
-          immagine_url || ''
+          immagine_url || '',
+          blobToSave,
+          immagine_tipo || '',
+          immagine_nome || ''
         ]
       });
 
@@ -183,8 +262,29 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { id, titolo, descrizione, data_evento, immagine_url, user_id } = req.body;
-      console.log('Updating evento:', { id, titolo, descrizione, data_evento, immagine_url, user_id });
+      const { 
+        id, 
+        titolo, 
+        descrizione, 
+        data_evento, 
+        immagine_url, 
+        immagine_blob, 
+        immagine_tipo, 
+        immagine_nome, 
+        user_id 
+      } = req.body;
+      
+      console.log('Updating evento:', { 
+        id, 
+        titolo, 
+        descrizione, 
+        data_evento, 
+        immagine_url: immagine_url ? 'present' : 'empty',
+        immagine_blob: immagine_blob ? 'present' : 'empty',
+        immagine_tipo, 
+        immagine_nome, 
+        user_id 
+      });
 
       if (!id || !titolo || !data_evento || (user_id === undefined || user_id === null)) {
         return res.status(400).json({
@@ -215,15 +315,66 @@ export default async function handler(req, res) {
         });
       }
 
-      const result = await client.execute({
-        sql: 'UPDATE eventi SET titolo = ?, descrizione = ?, data_evento = ?, immagine_url = ? WHERE id = ?',
-        args: [
+      // Valida immagine base64 se presente
+      if (immagine_blob && !validateBase64Image(immagine_blob)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Formato immagine non valido'
+        });
+      }
+
+      // Prepara il blob per il salvataggio
+      let blobToSave = null;
+      let shouldUpdateBlob = false;
+      
+      if (immagine_blob) {
+        shouldUpdateBlob = true;
+        try {
+          const base64Data = immagine_blob.replace(/^data:image\/[a-z]+;base64,/, '');
+          blobToSave = Buffer.from(base64Data, 'base64');
+        } catch (error) {
+          console.error('Error converting base64 to buffer:', error);
+          return res.status(400).json({
+            success: false,
+            error: 'Errore nella conversione dell\'immagine'
+          });
+        }
+      }
+
+      // Query di aggiornamento dinamica
+      let sql, args;
+      
+      if (shouldUpdateBlob) {
+        sql = `UPDATE eventi 
+               SET titolo = ?, descrizione = ?, data_evento = ?, immagine_url = ?, 
+                   immagine_blob = ?, immagine_tipo = ?, immagine_nome = ?
+               WHERE id = ?`;
+        args = [
+          titolo,
+          descrizione || '',
+          data_evento,
+          immagine_url || '',
+          blobToSave,
+          immagine_tipo || '',
+          immagine_nome || '',
+          id
+        ];
+      } else {
+        sql = `UPDATE eventi 
+               SET titolo = ?, descrizione = ?, data_evento = ?, immagine_url = ?
+               WHERE id = ?`;
+        args = [
           titolo,
           descrizione || '',
           data_evento,
           immagine_url || '',
           id
-        ]
+        ];
+      }
+
+      const result = await client.execute({
+        sql: sql,
+        args: args
       });
 
       if (result.rowsAffected > 0) {
@@ -253,7 +404,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // CORREZIONE: Usa il nome corretto della tabella
         const result = await client.execute({
           sql: 'DELETE FROM prenotazioni_eventi WHERE id = ?',
           args: [id]
@@ -297,6 +447,13 @@ export default async function handler(req, res) {
           });
         }
 
+        // Elimina prima le prenotazioni associate (CASCADE)
+        await client.execute({
+          sql: 'DELETE FROM prenotazioni_eventi WHERE evento_id = ?',
+          args: [id]
+        });
+
+        // Poi elimina l'evento
         const result = await client.execute({
           sql: 'DELETE FROM eventi WHERE id = ?',
           args: [id]
