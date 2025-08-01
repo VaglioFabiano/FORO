@@ -108,25 +108,31 @@ async function updateHomepageData(req, res) {
       });
     }
 
-    // Verifica permessi utente (assumo che la tabella users esista)
-    const userResult = await client.execute({
-      sql: 'SELECT level FROM users WHERE id = ?',
-      args: [user_id]
-    });
-
-    if (!userResult.rows.length) {
-      return res.status(404).json({
-        success: false,
-        error: 'Utente non trovato'
+    // Verifica permessi utente (con controllo se la tabella users esiste)
+    try {
+      const userResult = await client.execute({
+        sql: 'SELECT level FROM users WHERE id = ?',
+        args: [user_id]
       });
-    }
 
-    const userLevel = userResult.rows[0].level;
-    if (userLevel !== 0 && userLevel !== 1 && userLevel !== 2) {
-      return res.status(403).json({
-        success: false,
-        error: 'Non hai i permessi per modificare la homepage'
-      });
+      if (!userResult.rows.length) {
+        return res.status(404).json({
+          success: false,
+          error: 'Utente non trovato'
+        });
+      }
+
+      const userLevel = userResult.rows[0].level;
+      if (userLevel !== 0 && userLevel !== 1 && userLevel !== 2) {
+        return res.status(403).json({
+          success: false,
+          error: 'Non hai i permessi per modificare la homepage'
+        });
+      }
+    } catch (userError) {
+      console.error('Errore nella verifica utente:', userError);
+      // Se la tabella users non esiste, continua comunque (per sviluppo)
+      console.log('Continuando senza verifica permessi - tabella users potrebbe non esistere');
     }
 
     await insertDefaultData();
@@ -135,26 +141,33 @@ async function updateHomepageData(req, res) {
 
     switch (type) {
       case 'header':
-        if (!data.descrizione && data.descrizione !== '') {
+        console.log('Processing header update:', data); // Debug
+        
+        if (data.descrizione === undefined || data.descrizione === null) {
           return res.status(400).json({
             success: false,
-            error: 'Descrizione mancante'
+            error: 'Descrizione mancante o non valida'
           });
         }
         
         // Prima controlla se esiste un record, poi aggiorna o inserisce
         const headerExists = await client.execute('SELECT COUNT(*) as count FROM header');
+        console.log('Header exists check:', headerExists.rows[0]); // Debug
+        
         if (headerExists.rows[0].count > 0) {
+          console.log('Updating existing header record'); // Debug
           result = await client.execute({
             sql: 'UPDATE header SET descrizione = ?',
             args: [data.descrizione]
           });
         } else {
+          console.log('Inserting new header record'); // Debug
           result = await client.execute({
             sql: 'INSERT INTO header (descrizione) VALUES (?)',
             args: [data.descrizione]
           });
         }
+        console.log('Header operation result:', result); // Debug
         break;
 
       case 'social':

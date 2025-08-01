@@ -94,6 +94,7 @@ const Header: React.FC = () => {
       };
       
       console.log('Request body:', requestBody); // Debug
+      console.log('Request URL:', '/api/homepage'); // Debug
       
       const response = await fetch('/api/homepage', {
         method: 'POST',
@@ -103,8 +104,20 @@ const Header: React.FC = () => {
         body: JSON.stringify(requestBody),
       });
 
+      console.log('Response status:', response.status); // Debug
+      console.log('Response ok:', response.ok); // Debug
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Prova a leggere il messaggio di errore dal server
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.log('Error response data:', errorData); // Debug
+        } catch (e) {
+          console.log('Could not parse error response as JSON'); // Debug
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
