@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import '../style/gestisciEventi.css';
+import React, { useState, useEffect, useCallback } from 'react';
+import '../style/gestisciEventi.css'; // Assumi che questo file CSS esista e sia corretto
 
+// Definizione delle interfacce per i dati
 interface Evento {
   id: number;
   titolo: string;
@@ -16,7 +17,7 @@ interface Prenotazione {
   cognome: string;
   email: string;
   data_prenotazione: string;
-  num_biglietti?: number;
+  num_biglietti?: number; // Opzionale, può essere 1 di default se non specificato
 }
 
 interface NuovoEvento {
@@ -42,7 +43,7 @@ const GestisciEventi: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Record<number, boolean>>({});
-  
+
   // Stato per nuovo evento
   const [nuovoEvento, setNuovoEvento] = useState<NuovoEvento>({
     titolo: '',
@@ -51,24 +52,42 @@ const GestisciEventi: React.FC = () => {
     immagine_url: ''
   });
   const [showNewEventForm, setShowNewEventForm] = useState(false);
-  
+  const [creatingEvent, setCreatingEvent] = useState(false); // Stato di caricamento per la creazione
+
   // Stato per modifica evento
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<Evento>>({});
+  const [updatingEvent, setUpdatingEvent] = useState(false); // Stato di caricamento per la modifica
 
+  // Stato per l'utente loggato
   const [userLevel, setUserLevel] = useState<number>(-1);
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Test API connection
+  // Debug per il montaggio del componente
+  useEffect(() => {
+    console.log('GestisciEventi component mounted');
+  }, []);
+
+  // Gestione automatica della scomparsa dei messaggi di errore
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 7000); // Messaggio di errore scompare dopo 7 secondi
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Funzione per testare la connessione API (utile in fase di sviluppo)
   const testApiConnection = async () => {
     try {
       console.log('Testing API connection...');
-      const response = await fetch('/api/eventi');
+      const response = await fetch('/api/eventi'); // Prova una GET semplice
       console.log('API test response status:', response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
-        console.log('API test response data:', data);
+        console.log('API test response data (truncated for brevity):', JSON.stringify(data).substring(0, 200) + '...');
         return true;
       } else {
         console.error('API test failed with status:', response.status);
@@ -82,19 +101,101 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
+  // Funzione per recuperare tutti gli eventi
+  const fetchEventi = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching eventi...');
+
+      // Tenta prima con il percorso 'canonico', poi con fallback se necessario
+      let response = await fetch('/api/eventi'); // Assumiamo che il root /api/eventi restituisca tutti gli eventi
+      console.log('Eventi fetch response status:', response.status);
+
+      if (!response.ok) {
+        // Se il primo tentativo fallisce, potresti loggare l'errore dettagliato
+        const errorText = await response.text();
+        console.error('Failed to fetch events (initial attempt):', response.status, errorText);
+        throw new Error(`Errore nel caricamento eventi: ${response.status} - ${errorText}`);
+      }
+
+      const data: ApiResponse = await response.json();
+      console.log('Eventi response data:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || 'Errore sconosciuto nel caricamento eventi');
+      }
+
+      const fetchedEventi = data.eventi || [];
+      setEventi(fetchedEventi);
+      console.log('Eventi loaded:', fetchedEventi.length);
+
+      // Carica le prenotazioni per ogni evento
+      // Si potrebbe ottimizzare questo, magari fetchando le prenotazioni solo all'espansione dell'evento
+      // Ma per semplicità, lo manteniamo come nel codice originale.
+      if (fetchedEventi.length > 0) {
+        console.log('Loading prenotazioni for', fetchedEventi.length, 'events');
+        // Usiamo Promise.all per fetchare le prenotazioni in parallelo
+        await Promise.all(fetchedEventi.map(evento => fetchPrenotazioni(evento.id)));
+      }
+
+    } catch (err) {
+      console.error('Fetch eventi error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Dipendenza vuota perché fetchEventi non dipende da stati interni che cambiano
+
+  // Funzione per recuperare le prenotazioni di un singolo evento
+  const fetchPrenotazioni = useCallback(async (eventoId: number) => {
+    try {
+      console.log('Fetching prenotazioni for event:', eventoId);
+      const response = await fetch(`/api/eventi?section=prenotazioni&evento_id=${eventoId}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Errore nel caricamento prenotazioni per evento ${eventoId}: ${response.status} - ${errorText}`);
+        return; // Non lanciare errore globale, solo loggare
+      }
+
+      const data: ApiResponse = await response.json();
+      console.log(`Prenotazioni for event ${eventoId} response:`, data);
+
+      if (data.success && data.prenotazioni) {
+        setPrenotazioni(prev => ({
+          ...prev,
+          [eventoId]: data.prenotazioni || []
+        }));
+        console.log(`Loaded ${data.prenotazioni.length} prenotazioni for event ${eventoId}`);
+      } else {
+        console.warn(`API returned success:false or no prenotazioni for event ${eventoId}:`, data.error);
+      }
+    } catch (err) {
+      console.error('Errore nel caricamento prenotazioni:', err);
+    }
+  }, []); // Dipendenza vuota
+
+  // Effetto per il caricamento iniziale e recupero dati utente
   useEffect(() => {
     // Recupera i dati dell'utente dal localStorage
     console.log('Setting up user data...');
     const user = localStorage.getItem('user');
     if (user) {
-      const userData = JSON.parse(user);
-      console.log('User data:', userData);
-      setUserLevel(userData.level || -1);
-      setUserId(userData.id || null);
+      try {
+        const userData = JSON.parse(user);
+        console.log('User data from localStorage:', userData);
+        setUserLevel(userData.level || -1);
+        setUserId(userData.id || null);
+      } catch (e) {
+        console.error('Error parsing user data from localStorage:', e);
+        // Potresti voler clearare il localStorage qui o gestire l'errore
+        localStorage.removeItem('user');
+      }
     } else {
       console.log('No user data found in localStorage');
     }
-    
+
     // Test API e poi carica eventi
     testApiConnection().then(apiWorking => {
       if (apiWorking) {
@@ -102,135 +203,70 @@ const GestisciEventi: React.FC = () => {
         fetchEventi();
       } else {
         console.error('API is not working, setting error message');
-        setError('Impossibile connettersi al server. Verifica che il file API /api/eventi.js esista.');
+        setError('Impossibile connettersi al server. Verifica che il file API /api/eventi.js esista e sia configurato.');
         setLoading(false);
       }
     });
-  }, []);
+  }, [fetchEventi]); // Dipendenza da fetchEventi per assicurare che sia sempre la versione più recente
 
-  // Aggiungi debug per il caricamento
-  useEffect(() => {
-    console.log('GestisciEventi component mounted');
-  }, []);
-
-  const fetchEventi = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log('Fetching eventi...');
-      
-      // Prova prima con il percorso completo, poi con quello semplificato
-      let response = await fetch('/api/eventi?section=eventi');
-      console.log('First response status:', response.status);
-      
-      if (!response.ok) {
-        console.log('First fetch failed, trying alternative...');
-        // Se fallisce, prova senza parametri di sezione
-        response = await fetch('/api/eventi');
-        console.log('Second response status:', response.status);
-      }
-      
-      if (!response.ok) {
-        throw new Error(`Errore nel caricamento eventi: ${response.status} - ${response.statusText}`);
-      }
-      
-      const data: ApiResponse = await response.json();
-      console.log('Eventi response data:', data);
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Errore nel caricamento eventi');
-      }
-      
-      setEventi(data.eventi || []);
-      console.log('Eventi loaded:', data.eventi?.length || 0);
-      
-      // Carica le prenotazioni per ogni evento
-      if (data.eventi && data.eventi.length > 0) {
-        console.log('Loading prenotazioni for', data.eventi.length, 'events');
-        for (const evento of data.eventi) {
-          await fetchPrenotazioni(evento.id);
-        }
-      }
-
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPrenotazioni = async (eventoId: number) => {
-    try {
-      console.log('Fetching prenotazioni for event:', eventoId);
-      let response = await fetch(`/api/eventi?section=prenotazioni&evento_id=${eventoId}`);
-      
-      if (!response.ok) {
-        console.log('Prenotazioni fetch failed, trying alternative...');
-        // Prova con il formato alternativo
-        response = await fetch(`/api/eventi?action=single&id=${eventoId}`);
-      }
-      
-      if (!response.ok) {
-        console.error(`Errore nel caricamento prenotazioni per evento ${eventoId}: ${response.status}`);
-        return;
-      }
-      
-      const data: ApiResponse = await response.json();
-      console.log(`Prenotazioni for event ${eventoId}:`, data);
-      
-      if (data.success && data.prenotazioni) {
-        setPrenotazioni(prev => ({
-          ...prev,
-          [eventoId]: data.prenotazioni || []
-        }));
-        console.log(`Loaded ${data.prenotazioni.length} prenotazioni for event ${eventoId}`);
-      }
-    } catch (err) {
-      console.error('Errore nel caricamento prenotazioni:', err);
-    }
-  };
-
+  // Funzione per creare un nuovo evento
   const creaEvento = async () => {
-    if (!nuovoEvento.titolo || !nuovoEvento.data_evento) {
-      setError('Titolo e data evento sono obbligatori');
+    if (!nuovoEvento.titolo.trim() || !nuovoEvento.data_evento.trim()) {
+      setError('Titolo e data evento sono obbligatori.');
       return;
     }
 
     if (!userId) {
-      setError('Utente non autenticato');
+      setError('Utente non autenticato. Impossibile creare eventi.');
       return;
     }
 
+    setCreatingEvent(true);
+    setError(null);
     try {
+      // Basic date validation (YYYY-MM-DD format)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(nuovoEvento.data_evento)) {
+        setError('Formato data non valido. Utilizzare YYYY-MM-DD.');
+        setCreatingEvent(false);
+        return;
+      }
+      // Also check if it's a valid date
+      const dateObj = new Date(nuovoEvento.data_evento);
+      if (isNaN(dateObj.getTime())) {
+          setError('Data evento non valida.');
+          setCreatingEvent(false);
+          return;
+      }
+
       console.log('Creating event with data:', { ...nuovoEvento, user_id: userId });
-      
+
       const response = await fetch('/api/eventi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Aggiungi un header di autorizzazione se usi JWT o sessione basata su token
+          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
-          // Non includiamo section nel body, la gestiamo nell'URL o nell'handler
-          titolo: nuovoEvento.titolo,
-          descrizione: nuovoEvento.descrizione,
-          data_evento: nuovoEvento.data_evento,
-          immagine_url: nuovoEvento.immagine_url,
-          user_id: userId
+          titolo: nuovoEvento.titolo.trim(),
+          descrizione: nuovoEvento.descrizione.trim(),
+          data_evento: nuovoEvento.data_evento.trim(),
+          immagine_url: nuovoEvento.immagine_url.trim(),
+          user_id: userId // Questo deve essere validato severamente dal backend
         }),
       });
 
       console.log('Create response status:', response.status);
-      
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
-        console.error('Create error response:', errorData);
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto nella risposta del server.' }));
+        throw new Error(errorData.error || `Errore HTTP! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
       console.log('Create success response:', data);
-      
+
       if (data.success) {
         setNuovoEvento({
           titolo: '',
@@ -239,188 +275,218 @@ const GestisciEventi: React.FC = () => {
           immagine_url: ''
         });
         setShowNewEventForm(false);
+        // Ricarica tutti gli eventi per riflettere la modifica
         await fetchEventi();
+        setError(null); // Clear any previous error on success
       } else {
-        throw new Error(data.error || 'Errore nella creazione dell\'evento');
+        throw new Error(data.error || 'Errore nella creazione dell\'evento.');
       }
     } catch (err) {
-      console.error('Create error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+      console.error('Create event error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione o del server.');
+    } finally {
+      setCreatingEvent(false);
     }
   };
 
+  // Funzione per aggiornare un evento esistente
   const aggiornaEvento = async () => {
-    if (!editingEventId || !editData.titolo || !editData.data_evento) {
-      setError('Titolo e data evento sono obbligatori');
+    if (!editingEventId || !editData.titolo?.trim() || !editData.data_evento?.trim()) {
+      setError('Titolo e data evento sono obbligatori per la modifica.');
       return;
     }
 
     if (!userId) {
-      setError('Utente non autenticato');
+      setError('Utente non autenticato. Impossibile modificare eventi.');
       return;
     }
 
+    setUpdatingEvent(true);
+    setError(null);
     try {
+        // Basic date validation (YYYY-MM-DD format)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(editData.data_evento)) {
+          setError('Formato data non valido. Utilizzare YYYY-MM-DD.');
+          setUpdatingEvent(false);
+          return;
+        }
+        const dateObj = new Date(editData.data_evento);
+        if (isNaN(dateObj.getTime())) {
+            setError('Data evento non valida.');
+            setUpdatingEvent(false);
+            return;
+        }
+
       console.log('Updating event with data:', { id: editingEventId, ...editData, user_id: userId });
-      
+
       const response = await fetch('/api/eventi', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
           id: editingEventId,
-          titolo: editData.titolo,
-          descrizione: editData.descrizione,
-          data_evento: editData.data_evento,
-          immagine_url: editData.immagine_url,
-          user_id: userId
+          titolo: editData.titolo.trim(),
+          descrizione: editData.descrizione?.trim() || '',
+          data_evento: editData.data_evento.trim(),
+          immagine_url: editData.immagine_url?.trim() || '',
+          user_id: userId // Questo deve essere validato severamente dal backend per l'autorizzazione
         }),
       });
 
       console.log('Update response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
-        console.error('Update error response:', errorData);
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto nella risposta del server.' }));
+        throw new Error(errorData.error || `Errore HTTP! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
       console.log('Update success response:', data);
-      
+
       if (data.success) {
         setEditingEventId(null);
         setEditData({});
-        await fetchEventi();
+        await fetchEventi(); // Ricarica per avere dati aggiornati
+        setError(null);
       } else {
-        throw new Error(data.error || 'Errore nell\'aggiornamento dell\'evento');
+        throw new Error(data.error || 'Errore nell\'aggiornamento dell\'evento.');
       }
     } catch (err) {
-      console.error('Update error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+      console.error('Update event error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione o del server.');
+    } finally {
+      setUpdatingEvent(false);
     }
   };
 
+  // Funzione per eliminare un evento
   const eliminaEvento = async (eventoId: number) => {
-    if (!confirm('Sei sicuro di voler eliminare questo evento? Tutte le prenotazioni saranno eliminate.')) {
+    if (!confirm('Sei sicuro di voler eliminare questo evento? Tutte le prenotazioni associate saranno eliminate.')) {
       return;
     }
 
     if (!userId) {
-      setError('Utente non autenticato');
+      setError('Utente non autenticato. Impossibile eliminare eventi.');
       return;
     }
 
+    setError(null);
     try {
       console.log('Deleting event:', { id: eventoId, user_id: userId });
-      
+
       const response = await fetch('/api/eventi', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
           id: eventoId,
-          user_id: userId
+          user_id: userId // Questo deve essere validato severamente dal backend per l'autorizzazione
         }),
       });
 
       console.log('Delete response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
-        console.error('Delete error response:', errorData);
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto nella risposta del server.' }));
+        throw new Error(errorData.error || `Errore HTTP! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
       console.log('Delete success response:', data);
-      
+
       if (data.success) {
-        await fetchEventi();
+        await fetchEventi(); // Ricarica per riflettere l'eliminazione
+        setError(null);
       } else {
-        throw new Error(data.error || 'Errore nell\'eliminazione dell\'evento');
+        throw new Error(data.error || 'Errore nell\'eliminazione dell\'evento.');
       }
     } catch (err) {
-      console.error('Delete error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+      console.error('Delete event error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione o del server.');
     }
   };
 
+  // Funzione per eliminare una prenotazione
   const eliminaPrenotazione = async (prenotazioneId: number, eventoId: number) => {
     if (!confirm('Sei sicuro di voler eliminare questa prenotazione?')) {
       return;
     }
 
     if (!userId) {
-      setError('Utente non autenticato');
+      setError('Utente non autenticato. Impossibile eliminare prenotazioni.');
       return;
     }
 
+    setError(null);
     try {
       console.log('Deleting prenotazione:', { id: prenotazioneId, user_id: userId });
-      
+
       const response = await fetch('/api/eventi?section=prenotazioni', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
           id: prenotazioneId,
-          user_id: userId
+          user_id: userId // Questo deve essere validato severamente dal backend per l'autorizzazione
         }),
       });
 
       console.log('Delete prenotazione response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto' }));
-        console.error('Delete prenotazione error response:', errorData);
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto nella risposta del server.' }));
+        throw new Error(errorData.error || `Errore HTTP! status: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
       console.log('Delete prenotazione success response:', data);
-      
+
       if (data.success) {
-        await fetchPrenotazioni(eventoId);
+        await fetchPrenotazioni(eventoId); // Ricarica solo le prenotazioni per questo evento
+        setError(null);
       } else {
-        throw new Error(data.error || 'Errore nell\'eliminazione della prenotazione');
+        throw new Error(data.error || 'Errore nell\'eliminazione della prenotazione.');
       }
     } catch (err) {
       console.error('Delete booking error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+      setError(err instanceof Error ? err.message : 'Errore di connessione o del server.');
     }
   };
 
   // Funzione per convertire URL di Google Drive nel formato corretto
   const convertGoogleDriveUrl = (url: string) => {
     if (!url) return '';
-    
-    // Se è già un URL diretto per la visualizzazione
-    if (url.includes('drive.google.com/uc?') || 
-        url.includes('googleusercontent.com') || 
-        url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-        return url;
+
+    // Se è già un URL diretto di Google Drive o Googleusercontent, lo restituisce
+    if (url.includes('drive.google.com/uc?') || url.includes('googleusercontent.com')) {
+      return url;
     }
-    
-    // Converte i link di condivisione di Google Drive
-    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)|id=([a-zA-Z0-9-_]+)/);
-    if (fileIdMatch) {
-        const fileId = fileIdMatch[1] || fileIdMatch[2];
-        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+
+    // Converte i link di condivisione di Google Drive (es. /file/d/.../view)
+    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (fileIdMatch && fileIdMatch[1]) {
+      const fileId = fileIdMatch[1];
+      return `https://drive.google.com/uc?export=view&id=${fileId}`;
     }
-    
+
+    // Se non è un link di Google Drive riconoscibile, restituisce l'URL originale
     return url;
-    };
+  };
 
   const iniziaModifica = (evento: Evento) => {
     setEditingEventId(evento.id);
     setEditData({
       titolo: evento.titolo,
       descrizione: evento.descrizione,
-      data_evento: evento.data_evento,
+      // Assicurati che data_evento sia nel formato YYYY-MM-DD
+      data_evento: evento.data_evento.split('T')[0], // Split per rimuovere l'orario se presente
       immagine_url: evento.immagine_url
     });
   };
@@ -428,26 +494,38 @@ const GestisciEventi: React.FC = () => {
   const annullaModifica = () => {
     setEditingEventId(null);
     setEditData({});
+    setError(null); // Pulisci l'errore se si annulla la modifica
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('it-IT', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) return 'Data non specificata';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return `Data non valida: ${dateString}`;
+      }
+      return date.toLocaleDateString('it-IT', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      console.error('Error formatting date:', dateString, e);
+      return `Errore formato data: ${dateString}`;
+    }
   };
 
   const getParticipantCount = (eventoId: number) => {
     const eventoPrenotazioni = prenotazioni[eventoId] || [];
     return eventoPrenotazioni.reduce((total, prenotazione) => {
-      return total + (prenotazione.num_biglietti || 1);
+      // Se num_biglietti non è definito, assumi 1 biglietto per prenotazione
+      return total + (prenotazione.num_biglietti && !isNaN(prenotazione.num_biglietti) ? prenotazione.num_biglietti : 1);
     }, 0);
   };
 
+  // Funzione per determinare se l'utente può gestire gli eventi (livello 0, 1, 2)
   const canManageEvents = () => {
-    return userLevel <= 2; // Livelli 0, 1, 2 possono gestire eventi
+    return userLevel >= 0 && userLevel <= 2; // Assumendo 0 è superadmin, 1 admin, 2 gestore eventi
   };
 
   // Funzione per espandere/collassare i dettagli di un evento
@@ -475,9 +553,12 @@ const GestisciEventi: React.FC = () => {
         <h1>Gestione Eventi</h1>
         <div className="header-actions">
           {canManageEvents() && (
-            <button 
-              onClick={() => setShowNewEventForm(!showNewEventForm)} 
-              className="btn btn-success btn-large"
+            <button
+              onClick={() => {
+                setShowNewEventForm(!showNewEventForm);
+                if (showNewEventForm) setError(null); // Pulisci l'errore se si chiude il form
+              }}
+              className={`btn btn-success ${showNewEventForm ? 'btn-cancel' : ''}`}
             >
               {showNewEventForm ? '✕ Annulla' : '+ Nuovo Evento'}
             </button>
@@ -491,58 +572,73 @@ const GestisciEventi: React.FC = () => {
       {error && (
         <div className="error-message">
           {error}
-          <button onClick={() => setError(null)} className="close-error">×</button>
+          <button onClick={() => setError(null)} className="close-error" aria-label="Chiudi errore">×</button>
         </div>
       )}
 
       {/* Form nuovo evento */}
       {showNewEventForm && canManageEvents() && (
-        <div className="new-event-form">
+        <div className="new-event-form card">
           <h2>Crea Nuovo Evento</h2>
           <div className="form-grid">
             <div className="form-group">
-              <label>Titolo *</label>
+              <label htmlFor="titolo-nuovo">Titolo *</label>
               <input
+                id="titolo-nuovo"
                 type="text"
                 value={nuovoEvento.titolo}
                 onChange={(e) => setNuovoEvento({ ...nuovoEvento, titolo: e.target.value })}
                 placeholder="Titolo dell'evento"
+                required
+                disabled={creatingEvent}
               />
             </div>
             <div className="form-group">
-              <label>Data Evento *</label>
+              <label htmlFor="data-nuovo">Data Evento *</label>
               <input
+                id="data-nuovo"
                 type="date"
                 value={nuovoEvento.data_evento}
                 onChange={(e) => setNuovoEvento({ ...nuovoEvento, data_evento: e.target.value })}
+                required
+                disabled={creatingEvent}
               />
             </div>
             <div className="form-group full-width">
-              <label>Descrizione</label>
+              <label htmlFor="descrizione-nuovo">Descrizione</label>
               <textarea
+                id="descrizione-nuovo"
                 value={nuovoEvento.descrizione}
                 onChange={(e) => setNuovoEvento({ ...nuovoEvento, descrizione: e.target.value })}
-                placeholder="Descrizione dell'evento"
+                placeholder="Descrizione dettagliata dell'evento"
                 rows={3}
+                disabled={creatingEvent}
               />
             </div>
             <div className="form-group full-width">
-              <label>URL Immagine</label>
+              <label htmlFor="immagine-nuovo">URL Immagine</label>
               <input
+                id="immagine-nuovo"
                 type="url"
                 value={nuovoEvento.immagine_url}
                 onChange={(e) => setNuovoEvento({ ...nuovoEvento, immagine_url: e.target.value })}
-                placeholder="https://drive.google.com/..."
+                placeholder="https://drive.google.com/d/..."
+                disabled={creatingEvent}
               />
             </div>
           </div>
           <div className="form-actions">
-            <button onClick={creaEvento} className="btn btn-success">
-              💾 Crea Evento
+            <button onClick={creaEvento} className="btn btn-success" disabled={creatingEvent}>
+              {creatingEvent ? 'Creazione...' : '💾 Crea Evento'}
             </button>
-            <button 
-              onClick={() => setShowNewEventForm(false)} 
+            <button
+              onClick={() => {
+                setShowNewEventForm(false);
+                setError(null);
+                setNuovoEvento({ titolo: '', descrizione: '', data_evento: '', immagine_url: '' }); // Reset form
+              }}
               className="btn btn-secondary"
+              disabled={creatingEvent}
             >
               ✕ Annulla
             </button>
@@ -554,7 +650,7 @@ const GestisciEventi: React.FC = () => {
       <div className="eventi-list">
         {eventi.length > 0 ? (
           eventi.map((evento) => (
-            <div key={evento.id} className="event-section">
+            <div key={evento.id} className="event-section card">
               <div className="event-header" onClick={() => toggleEvent(evento.id)}>
                 <div className="event-info">
                   <h3 className="event-title">
@@ -572,11 +668,12 @@ const GestisciEventi: React.FC = () => {
                     <>
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
+                          e.stopPropagation(); // Previene l'espansione/collasso dell'evento
                           iniziaModifica(evento);
                         }}
                         className="btn btn-edit btn-small"
                         title="Modifica evento"
+                        disabled={editingEventId === evento.id} // Disabilita se già in modifica
                       >
                         ✏️
                       </button>
@@ -587,6 +684,7 @@ const GestisciEventi: React.FC = () => {
                         }}
                         className="btn btn-delete btn-small"
                         title="Elimina evento"
+                        disabled={false} // Aggiungi logica di disabilitazione se in corso un'eliminazione
                       >
                         🗑️
                       </button>
@@ -597,51 +695,61 @@ const GestisciEventi: React.FC = () => {
                   </span>
                 </div>
               </div>
-              
+
               {expandedEvents[evento.id] && (
                 <div className="event-content">
                   {editingEventId === evento.id ? (
-                    <div className="edit-form">
+                    <div className="edit-form card-inner">
                       <h4>Modifica Evento</h4>
                       <div className="form-grid">
                         <div className="form-group">
-                          <label>Titolo *</label>
+                          <label htmlFor={`edit-titolo-${evento.id}`}>Titolo *</label>
                           <input
+                            id={`edit-titolo-${evento.id}`}
                             type="text"
                             value={editData.titolo || ''}
                             onChange={(e) => setEditData({ ...editData, titolo: e.target.value })}
+                            required
+                            disabled={updatingEvent}
                           />
                         </div>
                         <div className="form-group">
-                          <label>Data Evento *</label>
+                          <label htmlFor={`edit-data-${evento.id}`}>Data Evento *</label>
                           <input
+                            id={`edit-data-${evento.id}`}
                             type="date"
                             value={editData.data_evento || ''}
                             onChange={(e) => setEditData({ ...editData, data_evento: e.target.value })}
+                            required
+                            disabled={updatingEvent}
                           />
                         </div>
                         <div className="form-group full-width">
-                          <label>Descrizione</label>
+                          <label htmlFor={`edit-descrizione-${evento.id}`}>Descrizione</label>
                           <textarea
+                            id={`edit-descrizione-${evento.id}`}
                             value={editData.descrizione || ''}
                             onChange={(e) => setEditData({ ...editData, descrizione: e.target.value })}
                             rows={3}
+                            disabled={updatingEvent}
                           />
                         </div>
                         <div className="form-group full-width">
-                          <label>URL Immagine</label>
+                          <label htmlFor={`edit-immagine-${evento.id}`}>URL Immagine</label>
                           <input
+                            id={`edit-immagine-${evento.id}`}
                             type="url"
                             value={editData.immagine_url || ''}
                             onChange={(e) => setEditData({ ...editData, immagine_url: e.target.value })}
+                            disabled={updatingEvent}
                           />
                         </div>
                       </div>
                       <div className="form-actions">
-                        <button onClick={aggiornaEvento} className="btn btn-success">
-                          💾 Salva Modifiche
+                        <button onClick={aggiornaEvento} className="btn btn-success" disabled={updatingEvent}>
+                          {updatingEvent ? 'Salvataggio...' : '💾 Salva Modifiche'}
                         </button>
-                        <button onClick={annullaModifica} className="btn btn-secondary">
+                        <button onClick={annullaModifica} className="btn btn-secondary" disabled={updatingEvent}>
                           ✕ Annulla
                         </button>
                       </div>
@@ -650,22 +758,21 @@ const GestisciEventi: React.FC = () => {
                     <>
                       <div className="event-details">
                         {evento.immagine_url && (
-                            <div className="event-image">
-                                <img 
-                                src={convertGoogleDriveUrl(evento.immagine_url)} 
-                                alt={evento.titolo}
-                                className="event-image-content"
-                                onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    // Fallback a un'immagine placeholder invece di nasconderla
-                                    target.src = 'https://via.placeholder.com/400x200?text=Immagine+non+disponibile';
-                                    target.style.display = 'block';
-                                }}
-                                />
-                            </div>
-                            )}
+                          <div className="event-image">
+                            <img
+                              src={convertGoogleDriveUrl(evento.immagine_url)}
+                              alt={`Immagine di ${evento.titolo}`}
+                              className="event-image-content"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none'; // Nasconde l'immagine se il caricamento fallisce
+                                console.warn(`Failed to load image for event ${evento.id}: ${evento.immagine_url}`);
+                              }}
+                            />
+                          </div>
+                        )}
                         <div className="event-description">
-                          <p>{evento.descrizione || 'Nessuna descrizione disponibile'}</p>
+                          <p>{evento.descrizione || 'Nessuna descrizione disponibile per questo evento.'}</p>
                         </div>
                       </div>
 
@@ -688,7 +795,7 @@ const GestisciEventi: React.FC = () => {
                                     {prenotazione.email}
                                   </div>
                                   <div className="prenotazione-data">
-                                    Prenotato il: {new Date(prenotazione.data_prenotazione).toLocaleDateString('it-IT')}
+                                    Prenotato il: {formatDate(prenotazione.data_prenotazione)}
                                   </div>
                                   {prenotazione.num_biglietti && prenotazione.num_biglietti > 1 && (
                                     <div className="num-biglietti">
@@ -702,6 +809,7 @@ const GestisciEventi: React.FC = () => {
                                       onClick={() => eliminaPrenotazione(prenotazione.id, evento.id)}
                                       className="btn btn-delete btn-small"
                                       title="Elimina prenotazione"
+                                      disabled={false} // Aggiungi logica di disabilitazione se in corso un'eliminazione
                                     >
                                       🗑️
                                     </button>
@@ -712,7 +820,7 @@ const GestisciEventi: React.FC = () => {
                           </div>
                         ) : (
                           <div className="no-prenotazioni">
-                            Nessuna prenotazione per questo evento
+                            Nessuna prenotazione per questo evento.
                           </div>
                         )}
                       </div>
@@ -723,12 +831,12 @@ const GestisciEventi: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="no-eventi">
+          <div className="no-eventi card">
             <h2>Nessun evento trovato</h2>
-            <p>Non ci sono eventi da visualizzare al momento.</p>
+            <p>Non ci sono eventi da visualizzare al momento. Inizia creando il primo!</p>
             {canManageEvents() && (
-              <button 
-                onClick={() => setShowNewEventForm(true)} 
+              <button
+                onClick={() => setShowNewEventForm(true)}
                 className="btn btn-success"
               >
                 + Crea il primo evento
