@@ -131,11 +131,8 @@ const GestisciEventi: React.FC = () => {
       console.log('Eventi loaded:', fetchedEventi.length);
 
       // Carica le prenotazioni per ogni evento
-      // Si potrebbe ottimizzare questo, magari fetchando le prenotazioni solo all'espansione dell'evento
-      // Ma per semplicità, lo manteniamo come nel codice originale.
       if (fetchedEventi.length > 0) {
         console.log('Loading prenotazioni for', fetchedEventi.length, 'events');
-        // Usiamo Promise.all per fetchare le prenotazioni in parallelo
         await Promise.all(fetchedEventi.map(evento => fetchPrenotazioni(evento.id)));
       }
 
@@ -145,7 +142,7 @@ const GestisciEventi: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []); // Dipendenza vuota perché fetchEventi non dipende da stati interni che cambiano
+  }, []);
 
   // Funzione per recuperare le prenotazioni di un singolo evento
   const fetchPrenotazioni = useCallback(async (eventoId: number) => {
@@ -156,7 +153,7 @@ const GestisciEventi: React.FC = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Errore nel caricamento prenotazioni per evento ${eventoId}: ${response.status} - ${errorText}`);
-        return; // Non lanciare errore globale, solo loggare
+        return;
       }
 
       const data: ApiResponse = await response.json();
@@ -174,7 +171,7 @@ const GestisciEventi: React.FC = () => {
     } catch (err) {
       console.error('Errore nel caricamento prenotazioni:', err);
     }
-  }, []); // Dipendenza vuota
+  }, []);
 
   // Effetto per il caricamento iniziale e recupero dati utente
   useEffect(() => {
@@ -189,7 +186,6 @@ const GestisciEventi: React.FC = () => {
         setUserId(userData.id || null);
       } catch (e) {
         console.error('Error parsing user data from localStorage:', e);
-        // Potresti voler clearare il localStorage qui o gestire l'errore
         localStorage.removeItem('user');
       }
     } else {
@@ -207,7 +203,7 @@ const GestisciEventi: React.FC = () => {
         setLoading(false);
       }
     });
-  }, [fetchEventi]); // Dipendenza da fetchEventi per assicurare che sia sempre la versione più recente
+  }, [fetchEventi]);
 
   // Funzione per creare un nuovo evento
   const creaEvento = async () => {
@@ -224,14 +220,12 @@ const GestisciEventi: React.FC = () => {
     setCreatingEvent(true);
     setError(null);
     try {
-      // Basic date validation (YYYY-MM-DD format)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(nuovoEvento.data_evento)) {
         setError('Formato data non valido. Utilizzare YYYY-MM-DD.');
         setCreatingEvent(false);
         return;
       }
-      // Also check if it's a valid date
       const dateObj = new Date(nuovoEvento.data_evento);
       if (isNaN(dateObj.getTime())) {
           setError('Data evento non valida.');
@@ -245,15 +239,13 @@ const GestisciEventi: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Aggiungi un header di autorizzazione se usi JWT o sessione basata su token
-          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
           titolo: nuovoEvento.titolo.trim(),
           descrizione: nuovoEvento.descrizione.trim(),
           data_evento: nuovoEvento.data_evento.trim(),
           immagine_url: nuovoEvento.immagine_url.trim(),
-          user_id: userId // Questo deve essere validato severamente dal backend
+          user_id: userId
         }),
       });
 
@@ -275,9 +267,8 @@ const GestisciEventi: React.FC = () => {
           immagine_url: ''
         });
         setShowNewEventForm(false);
-        // Ricarica tutti gli eventi per riflettere la modifica
         await fetchEventi();
-        setError(null); // Clear any previous error on success
+        setError(null);
       } else {
         throw new Error(data.error || 'Errore nella creazione dell\'evento.');
       }
@@ -304,19 +295,18 @@ const GestisciEventi: React.FC = () => {
     setUpdatingEvent(true);
     setError(null);
     try {
-        // Basic date validation (YYYY-MM-DD format)
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(editData.data_evento)) {
-          setError('Formato data non valido. Utilizzare YYYY-MM-DD.');
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(editData.data_evento)) {
+        setError('Formato data non valido. Utilizzare YYYY-MM-DD.');
+        setUpdatingEvent(false);
+        return;
+      }
+      const dateObj = new Date(editData.data_evento);
+      if (isNaN(dateObj.getTime())) {
+          setError('Data evento non valida.');
           setUpdatingEvent(false);
           return;
-        }
-        const dateObj = new Date(editData.data_evento);
-        if (isNaN(dateObj.getTime())) {
-            setError('Data evento non valida.');
-            setUpdatingEvent(false);
-            return;
-        }
+      }
 
       console.log('Updating event with data:', { id: editingEventId, ...editData, user_id: userId });
 
@@ -324,7 +314,6 @@ const GestisciEventi: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
           id: editingEventId,
@@ -332,7 +321,7 @@ const GestisciEventi: React.FC = () => {
           descrizione: editData.descrizione?.trim() || '',
           data_evento: editData.data_evento.trim(),
           immagine_url: editData.immagine_url?.trim() || '',
-          user_id: userId // Questo deve essere validato severamente dal backend per l'autorizzazione
+          user_id: userId
         }),
       });
 
@@ -349,7 +338,7 @@ const GestisciEventi: React.FC = () => {
       if (data.success) {
         setEditingEventId(null);
         setEditData({});
-        await fetchEventi(); // Ricarica per avere dati aggiornati
+        await fetchEventi();
         setError(null);
       } else {
         throw new Error(data.error || 'Errore nell\'aggiornamento dell\'evento.');
@@ -381,11 +370,10 @@ const GestisciEventi: React.FC = () => {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
           id: eventoId,
-          user_id: userId // Questo deve essere validato severamente dal backend per l'autorizzazione
+          user_id: userId
         }),
       });
 
@@ -400,7 +388,7 @@ const GestisciEventi: React.FC = () => {
       console.log('Delete success response:', data);
 
       if (data.success) {
-        await fetchEventi(); // Ricarica per riflettere l'eliminazione
+        await fetchEventi();
         setError(null);
       } else {
         throw new Error(data.error || 'Errore nell\'eliminazione dell\'evento.');
@@ -430,11 +418,10 @@ const GestisciEventi: React.FC = () => {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify({
           id: prenotazioneId,
-          user_id: userId // Questo deve essere validato severamente dal backend per l'autorizzazione
+          user_id: userId
         }),
       });
 
@@ -449,7 +436,7 @@ const GestisciEventi: React.FC = () => {
       console.log('Delete prenotazione success response:', data);
 
       if (data.success) {
-        await fetchPrenotazioni(eventoId); // Ricarica solo le prenotazioni per questo evento
+        await fetchPrenotazioni(eventoId);
         setError(null);
       } else {
         throw new Error(data.error || 'Errore nell\'eliminazione della prenotazione.');
@@ -463,16 +450,30 @@ const GestisciEventi: React.FC = () => {
   // Funzione per convertire URL di Google Drive nel formato corretto
   const convertGoogleDriveUrl = (url: string) => {
     if (!url) return '';
-
+    
     // Se è già un URL diretto di Google Drive o Googleusercontent, lo restituisce
     if (url.includes('drive.google.com/uc?') || url.includes('googleusercontent.com')) {
       return url;
     }
 
-    // Converte i link di condivisione di Google Drive (es. /file/d/.../view)
-    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    if (fileIdMatch && fileIdMatch[1]) {
-      const fileId = fileIdMatch[1];
+    // Estrae l'ID file da vari formati di URL di Google Drive
+    let fileId = '';
+    
+    // Formato standard: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    const standardMatch = url.match(/\/file\/d\/([^\/]+)/);
+    if (standardMatch && standardMatch[1]) {
+      fileId = standardMatch[1];
+    } 
+    // Formato alternativo: https://drive.google.com/open?id=FILE_ID
+    else {
+      const openMatch = url.match(/[?&]id=([^&]+)/);
+      if (openMatch && openMatch[1]) {
+        fileId = openMatch[1];
+      }
+    }
+
+    if (fileId) {
+      // Costruisce l'URL diretto per l'anteprima dell'immagine
       return `https://drive.google.com/uc?export=view&id=${fileId}`;
     }
 
@@ -485,8 +486,7 @@ const GestisciEventi: React.FC = () => {
     setEditData({
       titolo: evento.titolo,
       descrizione: evento.descrizione,
-      // Assicurati che data_evento sia nel formato YYYY-MM-DD
-      data_evento: evento.data_evento.split('T')[0], // Split per rimuovere l'orario se presente
+      data_evento: evento.data_evento.split('T')[0],
       immagine_url: evento.immagine_url
     });
   };
@@ -494,7 +494,7 @@ const GestisciEventi: React.FC = () => {
   const annullaModifica = () => {
     setEditingEventId(null);
     setEditData({});
-    setError(null); // Pulisci l'errore se si annulla la modifica
+    setError(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -518,17 +518,14 @@ const GestisciEventi: React.FC = () => {
   const getParticipantCount = (eventoId: number) => {
     const eventoPrenotazioni = prenotazioni[eventoId] || [];
     return eventoPrenotazioni.reduce((total, prenotazione) => {
-      // Se num_biglietti non è definito, assumi 1 biglietto per prenotazione
       return total + (prenotazione.num_biglietti && !isNaN(prenotazione.num_biglietti) ? prenotazione.num_biglietti : 1);
     }, 0);
   };
 
-  // Funzione per determinare se l'utente può gestire gli eventi (livello 0, 1, 2)
   const canManageEvents = () => {
-    return userLevel >= 0 && userLevel <= 2; // Assumendo 0 è superadmin, 1 admin, 2 gestore eventi
+    return userLevel >= 0 && userLevel <= 2;
   };
 
-  // Funzione per espandere/collassare i dettagli di un evento
   const toggleEvent = (eventoId: number) => {
     setExpandedEvents(prev => ({
       ...prev,
@@ -556,7 +553,7 @@ const GestisciEventi: React.FC = () => {
             <button
               onClick={() => {
                 setShowNewEventForm(!showNewEventForm);
-                if (showNewEventForm) setError(null); // Pulisci l'errore se si chiude il form
+                if (showNewEventForm) setError(null);
               }}
               className={`btn btn-success ${showNewEventForm ? 'btn-cancel' : ''}`}
             >
@@ -625,6 +622,9 @@ const GestisciEventi: React.FC = () => {
                 placeholder="https://drive.google.com/d/..."
                 disabled={creatingEvent}
               />
+              <small className="form-hint">
+                Inserisci un link di Google Drive (condiviso pubblicamente) o un URL diretto all'immagine
+              </small>
             </div>
           </div>
           <div className="form-actions">
@@ -635,7 +635,7 @@ const GestisciEventi: React.FC = () => {
               onClick={() => {
                 setShowNewEventForm(false);
                 setError(null);
-                setNuovoEvento({ titolo: '', descrizione: '', data_evento: '', immagine_url: '' }); // Reset form
+                setNuovoEvento({ titolo: '', descrizione: '', data_evento: '', immagine_url: '' });
               }}
               className="btn btn-secondary"
               disabled={creatingEvent}
@@ -668,12 +668,12 @@ const GestisciEventi: React.FC = () => {
                     <>
                       <button
                         onClick={(e) => {
-                          e.stopPropagation(); // Previene l'espansione/collasso dell'evento
+                          e.stopPropagation();
                           iniziaModifica(evento);
                         }}
                         className="btn btn-edit btn-small"
                         title="Modifica evento"
-                        disabled={editingEventId === evento.id} // Disabilita se già in modifica
+                        disabled={editingEventId === evento.id}
                       >
                         ✏️
                       </button>
@@ -684,7 +684,6 @@ const GestisciEventi: React.FC = () => {
                         }}
                         className="btn btn-delete btn-small"
                         title="Elimina evento"
-                        disabled={false} // Aggiungi logica di disabilitazione se in corso un'eliminazione
                       >
                         🗑️
                       </button>
@@ -743,6 +742,9 @@ const GestisciEventi: React.FC = () => {
                             onChange={(e) => setEditData({ ...editData, immagine_url: e.target.value })}
                             disabled={updatingEvent}
                           />
+                          <small className="form-hint">
+                            Inserisci un link di Google Drive (condiviso pubblicamente) o un URL diretto all'immagine
+                          </small>
                         </div>
                       </div>
                       <div className="form-actions">
@@ -765,7 +767,7 @@ const GestisciEventi: React.FC = () => {
                               className="event-image-content"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.style.display = 'none'; // Nasconde l'immagine se il caricamento fallisce
+                                target.style.display = 'none';
                                 console.warn(`Failed to load image for event ${evento.id}: ${evento.immagine_url}`);
                               }}
                             />
@@ -809,7 +811,6 @@ const GestisciEventi: React.FC = () => {
                                       onClick={() => eliminaPrenotazione(prenotazione.id, evento.id)}
                                       className="btn btn-delete btn-small"
                                       title="Elimina prenotazione"
-                                      disabled={false} // Aggiungi logica di disabilitazione se in corso un'eliminazione
                                     >
                                       🗑️
                                     </button>
