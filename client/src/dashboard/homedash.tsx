@@ -92,7 +92,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       title: 'Modifica Homepage',
       description: 'Modifica la homepage del sito',
       icon: '✏️🏠📄',
-      minLevel: 4,
+      minLevel: 2,
       isHomepageLink: true
     },
   ];
