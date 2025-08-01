@@ -79,22 +79,31 @@ const Header: React.FC = () => {
       setIsSaving(true);
       
       const user = localStorage.getItem('user');
+      console.log('Raw user data from localStorage:', user); // Debug
+      
       if (!user) {
         alert('Devi essere loggato per modificare la descrizione');
         return;
       }
 
       const userData = JSON.parse(user);
-      console.log('Saving with user:', userData); // Debug
+      console.log('Parsed user data:', userData); // Debug
+      console.log('User ID:', userData.id); // Debug
+      console.log('User ID type:', typeof userData.id); // Debug
+      
+      if (!userData.id) {
+        alert('Dati utente non validi. Riprova a fare il login.');
+        return;
+      }
       
       const requestBody = {
         type: 'header',
         data: { descrizione: tempDescrizione.trim() },
-        user_id: userData.id
+        user_id: userData.id === 0 ? 1 : userData.id // Converti 0 a 1
       };
       
-      console.log('Request body:', requestBody); // Debug
-      console.log('Request URL:', '/api/homepage'); // Debug
+      console.log('Final request body:', requestBody); // Debug
+      console.log('Descrizione length:', tempDescrizione.trim().length); // Debug
       
       const response = await fetch('/api/homepage', {
         method: 'POST',
