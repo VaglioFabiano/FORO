@@ -78,6 +78,29 @@ export default async function handler(req, res) {
   }
 }
 
+// Funzione helper per convertire BigInt in numeri normali
+function convertBigIntToNumber(obj) {
+  if (obj === null || obj === undefined) return obj;
+  
+  if (typeof obj === 'bigint') {
+    return Number(obj);
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(convertBigIntToNumber);
+  }
+  
+  if (typeof obj === 'object') {
+    const converted = {};
+    for (const [key, value] of Object.entries(obj)) {
+      converted[key] = convertBigIntToNumber(value);
+    }
+    return converted;
+  }
+  
+  return obj;
+}
+
 // GET - Ottieni tutti gli eventi
 async function getEventi(req, res) {
   try {
@@ -87,9 +110,12 @@ async function getEventi(req, res) {
       ORDER BY data_evento ASC
     `);
     
+    // Converti BigInt in numeri normali
+    const eventiConverted = convertBigIntToNumber(eventiResult.rows);
+    
     return res.status(200).json({
       success: true,
-      eventi: eventiResult.rows
+      eventi: eventiConverted
     });
 
   } catch (error) {
@@ -132,10 +158,14 @@ async function getSingoloEvento(req, res) {
       args: [id]
     });
 
+    // Converti BigInt in numeri normali
+    const eventoConverted = convertBigIntToNumber(eventoResult.rows[0]);
+    const prenotazioniConverted = convertBigIntToNumber(prenotazioniResult.rows);
+
     return res.status(200).json({
       success: true,
-      evento: eventoResult.rows[0],
-      prenotazioni: prenotazioniResult.rows
+      evento: eventoConverted,
+      prenotazioni: prenotazioniConverted
     });
 
   } catch (error) {
@@ -415,6 +445,117 @@ async function eliminaEvento(req, res) {
   }
 }
 
+// POST - Crea un nuovo evento
+async function creaEvento(req, res) {
+  try {
+    const { titolo, descrizione, data_evento, immagine_url, user_id } = req.body;
+
+    console.log('Received evento data:', { 
+      titolo, 
+      descrizione, 
+      data_evento, 
+      immagine_url, 
+      user_id,
+      body: req.body 
+    });
+
+    // Validazione campi obbligatori
+    if (!titolo) {
+      console.log('Missing titolo');
+      return res.status(400).json({
+        success: false,
+        error: 'Titolo è richiesto'
+      });
+    }
+
+    if (!data_evento) {
+      console.log('Missing data_evento');
+      return res.status(400).json({
+        success: false,
+        error: 'Data evento è richiesta'
+      });
+    }
+
+    if (user_id === undefined || user_id === null) {
+      console.log('Missing user_id');
+      return res.status(400).json({
+        success: false,
+        error: 'User ID è richiesto'
+      });
+    }
+
+    // Verifica permessi utente
+    if (user_id !== undefined && user_id !== null) {
+      try {
+        const userResult = await client.execute({
+          sql: 'SELECT level FROM users WHERE id = ?',
+          args: [user_id]
+        });
+
+        if (!userResult.rows.length) {
+          console.log(`User with ID ${user_id} not found, continuing anyway`);
+        } else {
+          const userLevel = userResult.rows[0].level;
+          console.log(`User level: ${userLevel}`);
+          if (userLevel !== 0 && userLevel !== 1 && userLevel !== 2) {
+            return res.status(403).json({
+              success: false,
+              error: 'Non hai i permessi per creare eventi'
+            });
+          }
+        }
+      } catch (userError) {
+        console.error('Errore nella verifica utente:', userError);
+        console.log('Continuando senza verifica permessi - tabella users potrebbe non esistere');
+      }
+    }
+
+    // Valida formato data (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(data_evento)) {
+      console.log('Invalid date format:', data_evento);
+      return res.status(400).json({
+        success: false,
+        error: 'Formato data non valido. Utilizzare YYYY-MM-DD (es: 2024-12-25)'
+      });
+    }
+
+    console.log('Inserting evento into database...');
+    const result = await client.execute({
+      sql: 'INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url) VALUES (?, ?, ?, ?)',
+      args: [
+        titolo,
+        descrizione || '',
+        data_evento,
+        immagine_url || ''
+      ]
+    });
+
+    console.log('Insert result:', result);
+
+    if (result.rowsAffected > 0) {
+      return res.status(201).json({
+        success: true,
+        message: 'Evento creato con successo',
+        evento_id: convertBigIntToNumber(result.lastInsertRowid),
+        created_at: new Date().toISOString()
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Errore nella creazione dell\'evento'
+      });
+    }
+
+  } catch (error) {
+    console.error('Errore nella creazione evento:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Errore interno del server: ' + error.message
+    });
+  }
+}
+
 // GET - Ottieni prenotazioni per un evento specifico
 async function getPrenotazioni(req, res) {
   try {
@@ -445,10 +586,14 @@ async function getPrenotazioni(req, res) {
       args: [evento_id]
     });
 
+    // Converti BigInt in numeri normali
+    const eventoConverted = convertBigIntToNumber(eventoExists.rows[0]);
+    const prenotazioniConverted = convertBigIntToNumber(prenotazioniResult.rows);
+
     return res.status(200).json({
       success: true,
-      evento: eventoExists.rows[0],
-      prenotazioni: prenotazioniResult.rows
+      evento: eventoConverted,
+      prenotazioni: prenotazioniConverted
     });
 
   } catch (error) {
@@ -518,7 +663,7 @@ async function creaPrenotazione(req, res) {
       return res.status(201).json({
         success: true,
         message: 'Prenotazione creata con successo',
-        prenotazione_id: result.lastInsertRowid,
+        prenotazione_id: convertBigIntToNumber(result.lastInsertRowid),
         evento_titolo: eventoExists.rows[0].titolo,
         created_at: new Date().toISOString()
       });
