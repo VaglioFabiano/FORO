@@ -5,12 +5,12 @@ import TelegramSender from './TelegramSender';
 import VisualizzaUtenti from './VisualizzaUtenti'; 
 import ProfiloUtente from './ProfiloUtente';
 import Turni from './Turni';
-import presenze from './presenze';
+import Presenze from './presenze'; 
 import '../style/homeDash.css';
 
 interface HomeDashProps {
   onLogout: () => void;
-  onBackToHome: () => void; // Prop per tornare alla homepage
+  onBackToHome: () => void;
 }
 
 interface DashboardItem {
@@ -18,7 +18,7 @@ interface DashboardItem {
   title: string;
   description: string;
   icon: string;
-  component?: React.ComponentType;
+  component?: React.ComponentType<any>; // Aggiungi <any> per maggiore flessibilità
   minLevel?: number;
   isHomepageLink?: boolean;
 }
@@ -26,7 +26,7 @@ interface DashboardItem {
 const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedComponent, setSelectedComponent] = useState<React.ComponentType | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(null); // Cambia da ComponentType a string
   const [userLevel, setUserLevel] = useState<number>(-1);
 
   // Elementi della dashboard con i livelli minimi richiesti
@@ -40,7 +40,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       isHomepageLink: true
     },
     {
-      id: 'Turni',
+      id: 'turni',
       title: 'Turni Aula Studio',
       description: 'Form di gestione turni',
       icon: '📅',
@@ -48,11 +48,11 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       minLevel: 4 
     },
     {
-      id: 'Presenze',
+      id: 'presenze',
       title: 'Presenze Aula Studio',
       description: 'Form di gestione delle presenze',
       icon: '🙋',
-      component: presenze,
+      component: Presenze,
       minLevel: 4 
     },
     {
@@ -118,7 +118,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
         }
 
         const userData = JSON.parse(user);
-        if (!userData.level && userData.level !== 0) {
+        if (userData.level === undefined && userData.level !== 0) {
           throw new Error('Livello utente non valido');
         }
 
@@ -143,6 +143,8 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   );
 
   const handleCardClick = (item: DashboardItem) => {
+    console.log('Card clicked:', item.id); // Debug log
+    
     if (item.isHomepageLink) {
       // Naviga alla homepage con scroll alla sezione header
       onBackToHome();
@@ -156,12 +158,20 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     }
     
     if (item.component) {
-      setSelectedComponent(item.component);
+      console.log('Setting selected component:', item.id); // Debug log
+      setSelectedComponent(item.id);
     }
   };
 
   const handleBackToDashboard = () => {
+    console.log('Back to dashboard'); // Debug log
     setSelectedComponent(null);
+  };
+
+  // Funzione per ottenere il componente selezionato
+  const getSelectedComponent = () => {
+    const item = dashboardItems.find(item => item.id === selectedComponent);
+    return item?.component || null;
   };
 
   if (isLoading) {
@@ -177,8 +187,16 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     return null;
   }
 
+  // Rendering del componente selezionato
   if (selectedComponent) {
-    const SelectedComponent = selectedComponent;
+    const SelectedComponent = getSelectedComponent();
+    
+    if (!SelectedComponent) {
+      console.error('Componente non trovato:', selectedComponent);
+      setSelectedComponent(null);
+      return null;
+    }
+
     return (
       <div className="dashboard-container">
         <div className="dashboard-header">
@@ -193,10 +211,11 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     );
   }
 
+  // Rendering della dashboard principale
   return (
     <div className="dashboard-container">
       <div className="user-info">
-        
+        <p>Livello utente: {userLevel}</p>
       </div>
       
       <div className="dashboard-grid">
@@ -206,6 +225,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
               key={item.id}
               className="dashboard-card"
               onClick={() => handleCardClick(item)}
+              style={{ cursor: 'pointer' }}
             >
               <div className="card-icon">{item.icon}</div>
               <h3 className="card-title">{item.title}</h3>
