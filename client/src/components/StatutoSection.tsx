@@ -207,17 +207,7 @@ const Statuto: React.FC = () => {
               </small>
             </div>
               
-            {(editData.link_drive || editData.anteprima) && (
-              <div className="link-preview">
-                <p><strong>Anteprima Collegamenti:</strong></p>
-                {editData.link_drive && (
-                  <p><strong>Download:</strong> <span className="preview-url">{editData.link_drive}</span></p>
-                )}
-                {editData.anteprima && (
-                  <p><strong>Immagine:</strong> <span className="preview-url">{getImagePreviewUrl(editData.anteprima)}</span></p>
-                )}
-              </div>
-            )}
+           
           </div>
           
           <div className="modal-actions">
