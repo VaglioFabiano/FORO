@@ -2,7 +2,7 @@
 
 .eventi-section {
   padding: 80px 0;
-  background: linear-gradient(135deg, rgb(12, 73, 91) 0%, rgba(12, 73, 91, 0.9) 100%);
+  background: rgb(12, 73, 91);
   position: relative;
 }
 

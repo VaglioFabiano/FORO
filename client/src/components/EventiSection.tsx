@@ -125,8 +125,10 @@ const EventiSection: React.FC = () => {
   };
 
   const handlePrenotaClick = (eventoId: number) => {
-    // Naviga alla pagina di prenotazione
-    window.location.href = `/prenota-evento/${eventoId}`;
+    // Usa la funzione di navigazione globale
+    if ((window as any).navigateToPrenotaEvento) {
+      (window as any).navigateToPrenotaEvento(eventoId);
+    }
   };
 
   if (loading) {

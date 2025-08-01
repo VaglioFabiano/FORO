@@ -30,10 +30,11 @@ interface ApiResponse {
   prenotazione_id?: number;
 }
 
-const PrenotaEventoPage: React.FC = () => {
-  // Ottieni l'ID evento dall'URL (simulato per questo esempio)
-  const eventoId = 1; // In una vera app, questo verrebbe da useParams() di React Router
-  
+interface Props {
+  eventoId?: number;
+}
+
+const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +53,9 @@ const PrenotaEventoPage: React.FC = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetchEvento();
+    if (eventoId) {
+      fetchEvento();
+    }
   }, [eventoId]);
 
   const fetchEvento = async () => {
@@ -165,6 +168,12 @@ const PrenotaEventoPage: React.FC = () => {
     }
   };
 
+  const handleBackToHome = () => {
+    if ((window as any).navigateToHome) {
+      (window as any).navigateToHome();
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -208,9 +217,9 @@ const PrenotaEventoPage: React.FC = () => {
           <div className="error-section">
             <h2>⚠️ Errore</h2>
             <p>{error}</p>
-            <button onClick={() => window.location.href = '/'} className="back-button">
+            <button onClick={handleBackToHome} className="back-button">
               <ArrowLeft size={16} />
-              Torna indietro
+              Torna alla home
             </button>
           </div>
         </div>
@@ -231,8 +240,8 @@ const PrenotaEventoPage: React.FC = () => {
               <button onClick={() => setSuccess(false)} className="prenota-altro-button">
                 Prenota per un'altra persona
               </button>
-              <button onClick={() => window.location.href = '/'} className="chiudi-button">
-                Chiudi finestra
+              <button onClick={handleBackToHome} className="chiudi-button">
+                Torna alla home
               </button>
             </div>
           </div>
@@ -245,9 +254,9 @@ const PrenotaEventoPage: React.FC = () => {
     <div className="prenota-evento-page">
       <div className="prenota-container">
         <div className="prenota-header">
-                      <button onClick={() => window.location.href = '/'} className="back-button">
+          <button onClick={handleBackToHome} className="back-button">
             <ArrowLeft size={16} />
-            Torna indietro
+            Torna alla home
           </button>
           <h1>Prenota il tuo posto</h1>
         </div>
