@@ -10,6 +10,7 @@ import '../style/homeDash.css';
 
 interface HomeDashProps {
   onLogout: () => void;
+  onBackToHome?: () => void; // Aggiungiamo questa prop opzionale
 }
 
 interface DashboardItem {
@@ -22,7 +23,7 @@ interface DashboardItem {
   isHomepageLink?: boolean; // Nuovo campo per identificare i link homepage
 }
 
-const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
+const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComponent, setSelectedComponent] = useState<React.ComponentType | null>(null);
@@ -32,8 +33,8 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
   const dashboardItems: DashboardItem[] = [
     {
       id: 'homepage',
-      title: 'Modifica la Homepage',
-      description: 'Modifica la homepage',
+      title: 'Home Visitatori',
+      description: 'Torna alla homepage per visitatori',
       icon: '🏠',
       minLevel: 2, // Accessibile a livelli 0, 1, 2
       isHomepageLink: true
@@ -144,8 +145,20 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout }) => {
 
   const handleCardClick = (item: DashboardItem) => {
     if (item.isHomepageLink) {
-      // Vai alla homepage visitatori (sezione header della homepage)
-      window.location.href = '/#header';
+      // Se esiste la funzione onBackToHome, usala
+      if (onBackToHome) {
+        onBackToHome();
+        // Dopo un breve delay, scrolla alla sezione header
+        setTimeout(() => {
+          const element = document.getElementById('header');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 300);
+      } else {
+        // Altrimenti forza il reload della pagina con l'anchor
+        window.location.replace('/#header');
+      }
       return;
     }
     
