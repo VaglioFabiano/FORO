@@ -6,6 +6,7 @@ import VisualizzaUtenti from './VisualizzaUtenti';
 import ProfiloUtente from './ProfiloUtente';
 import Turni from './Turni';
 import Presenze from './presenze'; 
+import GestisciEventi from './GestisciEventi';
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -77,6 +78,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: 'Gestisci gli orari di apertura',
       icon: '🕒',
       component: ModificaOrari,
+      minLevel: 2
+    },
+    {
+      id: 'gestisci-eventi',
+      title: 'Gestisci Eventi',
+      description: 'Crea e gestisci eventi e prenotazioni',
+      icon: '🎉',
+      component: GestisciEventi,
       minLevel: 2
     },
     {
