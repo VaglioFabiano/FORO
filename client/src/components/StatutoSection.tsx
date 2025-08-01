@@ -4,6 +4,7 @@ import '../style/statuto.css';
 
 interface StatutoData {
   link_drive: string;
+  anteprima: string;
 }
 
 interface User {
@@ -13,19 +14,22 @@ interface User {
 
 const Statuto: React.FC = () => {
   const [statutoData, setStatutoData] = useState<StatutoData>({
-    link_drive: ''
+    link_drive: '',
+    anteprima: ''
   });
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<StatutoData>({
-    link_drive: ''
+    link_drive: '',
+    anteprima: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   // Link di fallback
-  const fallbackLink = "https://drive.google.com/file/d/19RWrdBR22kAbuwPdPwVjxxLjuTfzixaL/view?usp=sharing";
+  const fallbackDownloadLink = "https://drive.google.com/file/d/19RWrdBR22kAbuwPdPwVjxxLjuTfzixaL/view?usp=sharing";
+  const fallbackPreviewLink = "https://drive.google.com/file/d/13NQvWyiiOdIMEdEFN0jIe4VByXn_-zKN/view?usp=drive_link";
 
   useEffect(() => {
     loadStatutoData();
@@ -58,19 +62,20 @@ const Statuto: React.FC = () => {
       const data = await response.json();
       
       if (data.success && data.statuto) {
-        const linkDrive = data.statuto.link_drive || fallbackLink;
-        setStatutoData({ link_drive: linkDrive });
-        setEditData({ link_drive: linkDrive });
+        const linkDrive = data.statuto.link_drive || fallbackDownloadLink;
+        const anteprima = data.statuto.anteprima || fallbackPreviewLink;
+        setStatutoData({ link_drive: linkDrive, anteprima: anteprima });
+        setEditData({ link_drive: linkDrive, anteprima: anteprima });
       } else {
-        // Usa il link di fallback
-        setStatutoData({ link_drive: fallbackLink });
-        setEditData({ link_drive: fallbackLink });
+        // Usa i link di fallback
+        setStatutoData({ link_drive: fallbackDownloadLink, anteprima: fallbackPreviewLink });
+        setEditData({ link_drive: fallbackDownloadLink, anteprima: fallbackPreviewLink });
       }
     } catch (error) {
       console.error('Errore nel caricamento dati statuto:', error);
-      // Usa il link di fallback in caso di errore
-      setStatutoData({ link_drive: fallbackLink });
-      setEditData({ link_drive: fallbackLink });
+      // Usa i link di fallback in caso di errore
+      setStatutoData({ link_drive: fallbackDownloadLink, anteprima: fallbackPreviewLink });
+      setEditData({ link_drive: fallbackDownloadLink, anteprima: fallbackPreviewLink });
       setMessage({ type: 'error', text: 'Errore nel caricamento dati dello statuto' });
     } finally {
       setIsLoading(false);
@@ -95,7 +100,12 @@ const Statuto: React.FC = () => {
 
     // Validazione URL
     if (editData.link_drive && !isValidGoogleDriveUrl(editData.link_drive)) {
-      setMessage({ type: 'error', text: 'Inserisci un link valido di Google Drive' });
+      setMessage({ type: 'error', text: 'Inserisci un link valido di Google Drive per il download' });
+      return;
+    }
+
+    if (editData.anteprima && !isValidGoogleDriveUrl(editData.anteprima)) {
+      setMessage({ type: 'error', text: 'Inserisci un link valido di Google Drive per l\'anteprima' });
       return;
     }
 
@@ -142,11 +152,15 @@ const Statuto: React.FC = () => {
   };
 
   const getImagePreviewUrl = (driveUrl: string): string => {
+    // Se non c'è URL anteprima, usa l'immagine di fallback locale
+    if (!driveUrl) return statutoImageFallback;
+    
     const fileId = extractFileIdFromDriveUrl(driveUrl);
     if (fileId) {
-      return `https://drive.google.com/file/d/${fileId}/view?usp=drive_link`;
+      // Usa il formato thumbnail di Google Drive per le immagini
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400-h300`;
     }
-    return driveUrl;
+    return statutoImageFallback;
   };
 
   const canEdit = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
@@ -164,7 +178,7 @@ const Statuto: React.FC = () => {
           
           <div className="modal-body">
             <div className="form-group">
-              <label htmlFor="drive-link">Link Google Drive dello Statuto</label>
+              <label htmlFor="drive-link">Link Google Drive dello Statuto (Download)</label>
               <input
                 id="drive-link"
                 type="url"
@@ -174,17 +188,36 @@ const Statuto: React.FC = () => {
                 disabled={isSaving}
               />
               <small>
-                Inserisci il link completo del file dello statuto su Google Drive. 
-                Il link deve essere pubblico e iniziare con "https://drive.google.com/file/d/"
+                Link del file PDF dello statuto per il download. Deve essere pubblico.
               </small>
-              
-              {editData.link_drive && (
-                <div className="link-preview">
-                  <p><strong>Anteprima URL:</strong></p>
-                  <p className="preview-url">{getImagePreviewUrl(editData.link_drive)}</p>
-                </div>
-              )}
             </div>
+            
+            <div className="form-group">
+              <label htmlFor="anteprima-link">Link Google Drive Anteprima Immagine</label>
+              <input
+                id="anteprima-link"
+                type="url"
+                value={editData.anteprima}
+                onChange={(e) => setEditData({...editData, anteprima: e.target.value})}
+                placeholder="https://drive.google.com/file/d/..."
+                disabled={isSaving}
+              />
+              <small>
+                Link dell'immagine di anteprima dello statuto. Deve essere un'immagine (JPG, PNG) pubblica su Google Drive.
+              </small>
+            </div>
+              
+            {(editData.link_drive || editData.anteprima) && (
+              <div className="link-preview">
+                <p><strong>Anteprima Collegamenti:</strong></p>
+                {editData.link_drive && (
+                  <p><strong>Download:</strong> <span className="preview-url">{editData.link_drive}</span></p>
+                )}
+                {editData.anteprima && (
+                  <p><strong>Immagine:</strong> <span className="preview-url">{getImagePreviewUrl(editData.anteprima)}</span></p>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="modal-actions">
@@ -198,7 +231,11 @@ const Statuto: React.FC = () => {
             <button 
               className="save-button" 
               onClick={handleSave}
-              disabled={isSaving || (!!editData.link_drive && !isValidGoogleDriveUrl(editData.link_drive))}
+              disabled={
+                isSaving ||
+                (!!editData.link_drive && !isValidGoogleDriveUrl(editData.link_drive)) ||
+                (!!editData.anteprima && !isValidGoogleDriveUrl(editData.anteprima))
+              }
             >
               {isSaving ? 'Salvando...' : 'Salva'}
             </button>
@@ -220,7 +257,8 @@ const Statuto: React.FC = () => {
     );
   }
 
-  const currentLink = statutoData.link_drive || fallbackLink;
+  const currentDownloadLink = statutoData.link_drive || fallbackDownloadLink;
+  const currentPreviewLink = statutoData.anteprima || fallbackPreviewLink;
 
   return (
     <div className="statuto-container">
@@ -240,14 +278,15 @@ const Statuto: React.FC = () => {
           )}
 
           <div className="statuto-image-wrapper">
-            <a href={currentLink} target="_blank" rel="noopener noreferrer">
+            <a href={currentDownloadLink} target="_blank" rel="noopener noreferrer">
               <img 
-                src={statutoImageFallback} 
+                src={getImagePreviewUrl(currentPreviewLink)} 
                 alt="Anteprima Statuto" 
                 className="statuto-image"
-                onError={() => {
-                  // Fallback in caso l'immagine non si carichi
-                  console.log('Errore nel caricamento immagine statuto');
+                onError={(e) => {
+                  // Fallback all'immagine locale se Google Drive fallisce
+                  const target = e.target as HTMLImageElement;
+                  target.src = statutoImageFallback;
                 }}
               />
             </a>
@@ -261,7 +300,7 @@ const Statuto: React.FC = () => {
               la partecipazione dei soci.
             </p>
             <a 
-              href={currentLink} 
+              href={currentDownloadLink} 
               target="_blank"
               rel="noopener noreferrer"
               className="statuto-download-btn"

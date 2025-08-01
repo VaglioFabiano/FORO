@@ -37,8 +37,8 @@ async function insertDefaultData() {
     const statutoExists = await client.execute('SELECT COUNT(*) as count FROM statuto');
     if (statutoExists.rows[0].count === 0) {
       await client.execute({
-        sql: 'INSERT INTO statuto (link_drive) VALUES (?)',
-        args: ['']
+        sql: 'INSERT INTO statuto (link_drive, anteprima) VALUES (?, ?)',
+        args: ['', '']
       });
     }
 
@@ -79,7 +79,7 @@ async function getHomepageData(req, res) {
       success: true,
       header: headerResult.rows[0] || { descrizione: '' },
       social: socialResult.rows[0] || { post_instagram: '', post_facebook: '', canale_telegram: '' },
-      statuto: statutoResult.rows[0] || { link_drive: '' },
+      statuto: statutoResult.rows[0] || { link_drive: '', anteprima: '' },
       conoscici: conosciResult.rows[0] || { file1: '', file2: '', file3: '' },
       segnalazioni: segnalazioniResult.rows || [],
       contatti: contattiResult.rows[0] || { link_instagram: '', link_facebook: '', link_telegram: '', email: '' }
@@ -197,13 +197,13 @@ async function updateHomepageData(req, res) {
         const statutoExists = await client.execute('SELECT COUNT(*) as count FROM statuto');
         if (statutoExists.rows[0].count > 0) {
           result = await client.execute({
-            sql: 'UPDATE statuto SET link_drive = ?',
-            args: [data.link_drive || '']
+            sql: 'UPDATE statuto SET link_drive = ?, anteprima = ?',
+            args: [data.link_drive || '', data.anteprima || '']
           });
         } else {
           result = await client.execute({
-            sql: 'INSERT INTO statuto (link_drive) VALUES (?)',
-            args: [data.link_drive || '']
+            sql: 'INSERT INTO statuto (link_drive, anteprima) VALUES (?, ?)',
+            args: [data.link_drive || '', data.anteprima || '']
           });
         }
         break;
