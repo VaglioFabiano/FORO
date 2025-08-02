@@ -17,6 +17,9 @@ const client = createClient(config);
 const TELEGRAM_BOT_TOKEN = '7608037480:AAGkJbIf02G98dTEnREBhfjI2yna5-Y1pzc';
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
+// Chat ID fisso per notifiche admin
+const ADMIN_CHAT_ID = '6008973822';
+
 // Funzione per ottenere i giorni di una settimana specifica
 function getWeekDates(weekOffset = 0) {
   const now = new Date();
@@ -235,12 +238,35 @@ async function handleClosedTurnoRepercussions(turnoData, userId, note) {
     timestamp: new Date().toISOString()
   });
   
-  // TODO: Implementare logiche aggiuntive per turni straordinari
-  // - Invio email a manager
-  // - Notifica su Slack
-  // - Log speciale
-  // - Richiesta approvazione
-  // - Calcolo costi extra
+  try {
+    // Ottieni informazioni dell'utente che ha fatto la richiesta
+    const userInfo = await getUserInfo(userId);
+    if (!userInfo) {
+      console.error('Informazioni utente non trovate per notifica admin');
+      return;
+    }
+
+    // Formatta data e orario per il messaggio
+    const dayAndDate = formatDateForMessage(turnoData.data);
+    const orario = `${turnoData.turno_inizio}-${turnoData.turno_fine}`;
+
+    // Crea messaggio per l'admin
+    const adminMessage = `🚨 <b>Richiesta Turno Straordinario</b>
+
+👤 <b>Richiesto da:</b> ${userInfo.name} ${userInfo.surname} (${userInfo.username})
+📅 <b>Data:</b> ${dayAndDate}
+⏰ <b>Orario:</b> ${orario}
+${note ? `📝 <b>Motivo:</b> ${note}` : ''}
+
+⚠️ Questo turno è normalmente chiuso e richiede approvazione.`;
+
+    // Invia notifica al chat admin fisso
+    await sendTelegramMessage(ADMIN_CHAT_ID, adminMessage);
+    console.log('Notifica admin inviata per turno straordinario');
+
+  } catch (error) {
+    console.error('Errore nell\'invio notifica admin turno straordinario:', error);
+  }
 }
 
 // Funzione per generare turni di default per settimane future
