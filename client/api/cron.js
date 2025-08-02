@@ -23,9 +23,9 @@ const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 const TEST_CHAT_ID = '1129901266'; // Chat ID per i test
 
 export default async function handler(req, res) {
-  // Verifica metodo HTTP
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  // Accetta sia GET che POST per test
+  if (!['GET', 'POST'].includes(req.method)) {
+    return res.status(405).json({ error: 'Method not allowed. Use GET or POST.' });
   }
 
   const now = new Date();
@@ -91,11 +91,11 @@ function determineTaskType(hour, minute, day) {
     return 'telegram_test_1';
   }
   
-  if (hour === 14 && minute === 45) {
+  if (hour === 14 && minute === 50) {
     return 'telegram_test_2';
   }
   
-  if (hour === 14 && minute === 46) {
+  if (hour === 14 && minute === 51) {
     return 'telegram_test_3';
   }
   
