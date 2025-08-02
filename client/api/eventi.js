@@ -84,7 +84,7 @@ function logEmail(level, message, data = {}) {
     Object.keys(data).length > 0 ? data : '');
 }
 
-// Funzione per creare il template email
+// Funzione per creare il template email di conferma
 function createEmailTemplate(prenotazione, evento) {
   return `
     <!DOCTYPE html>
@@ -256,7 +256,7 @@ function createEmailTemplate(prenotazione, evento) {
           </div>
           <div class="event-detail">
             <span class="event-detail-icon">📍</span>
-            <span>Aula Studio Foro - Via Roma, Piossasco (TO)</span>
+            <span>Aula Studio Foro - Via Alfieri, 4 - 10045 Piossasco (TO)</span>
           </div>
           <div class="event-detail">
             <span class="event-detail-icon">👥</span>
@@ -296,15 +296,15 @@ function createEmailTemplate(prenotazione, evento) {
           <h3>📞 Hai bisogno di aiuto?</h3>
           <p>Se hai domande, devi fare modifiche o hai problemi:</p>
           <p>
-            <strong>📧 Email:</strong> associazioneforopiossasco@gmail.com <br>
-            <strong>📱 Telegram:</strong> https://t.me/aulastudioforo<br>
+            <strong>📧 Email:</strong> associazioneforopiossasco@gmail.com<br>
+            <strong>📱 Telegram:</strong> https://t.me/aulastudioforo
           </p>
         </div>
         
         <div class="footer">
           <p><strong>🏛️ Associazione Foro - Aula Studio</strong></p>
           <p>📍 Via Alfieri, 4 - 10045 Piossasco (TO)</p>
-          <p> 📧 associazioneforopiossasco@gmail.com</p>
+          <p>📧 associazioneforopiossasco@gmail.com</p>
           <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
           <p style="font-size: 0.8rem; color: #999;">
             Questa email è stata generata automaticamente dal sistema di prenotazioni.<br>
@@ -317,252 +317,7 @@ function createEmailTemplate(prenotazione, evento) {
   `;
 }
 
-// Funzione per inviare email con Resend
-async function sendConfirmationEmailWithResend(prenotazione, evento) {
-  const startTime = Date.now();
-  
-  try {
-    logEmail('info', 'Inizio invio email con Resend', {
-      prenotazione_id: prenotazione.id,
-      evento_id: evento.id,
-      destinatario: prenotazione.email
-    });
-
-    // Crea il contenuto HTML
-    const htmlContent = createEmailTemplate(prenotazione, evento);
-    
-    logEmail('info', 'Template email generato', {
-      html_length: htmlContent.length,
-      contains_evento_title: htmlContent.includes(evento.titolo),
-      contains_user_name: htmlContent.includes(prenotazione.nome)
-    });
-
-    // Prepara il contenuto testuale di fallback
-    const textContent = `
-Conferma Prenotazione - ${evento.titolo}
-
-Ciao ${prenotazione.nome} ${prenotazione.cognome},
-
-La tua prenotazione per l'evento "${evento.titolo}" è stata confermata!
-
-Dettagli evento:
-- Data: ${new Date(evento.data_evento).toLocaleDateString('it-IT')}
-- Luogo: Aula Studio Foro - Via Roma, Piossasco (TO)
-- Partecipanti: ${prenotazione.num_partecipanti}
-
-I tuoi dati:
-- Nome: ${prenotazione.nome} ${prenotazione.cognome}
-- Email: ${prenotazione.email}
-- Prenotazione effettuata: ${new Date(prenotazione.data_prenotazione).toLocaleDateString('it-IT')}
-${prenotazione.note ? `- Note: ${prenotazione.note}` : ''}
-
-Per informazioni: info@aulastudioforo.it
-
-Associazione Foro - Aula Studio
-Via Roma, 123 - 10045 Piossasco (TO)
-    `.trim();
-
-    logEmail('info', 'Invio email tramite Resend API...');
-    
-    // Invia l'email con Resend
-    const { data, error } = await resend.emails.send({
-      from: 'Aula Studio Foro <onboarding@resend.dev>', // Usa il dominio di default di Resend per test
-      to: [prenotazione.email],
-      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
-      html: htmlContent,
-      text: textContent,
-      reply_to: 'info@aulastudioforo.it',
-      headers: {
-        'X-Entity-Ref-ID': `prenotazione-${prenotazione.id}`,
-      },
-    });
-
-    const responseTime = Date.now() - startTime;
-
-    if (error) {
-      logEmail('error', 'Errore Resend API', {
-        error_name: error.name,
-        error_message: error.message,
-        response_time_ms: responseTime
-      });
-      
-      return {
-        success: false,
-        error: error.message,
-        details: error,
-        response_time: responseTime,
-        service: 'resend'
-      };
-    }
-
-    // Successo!
-    logEmail('success', 'Email inviata con successo tramite Resend', {
-      message_id: data.id,
-      response_time_ms: responseTime,
-      destinatario: prenotazione.email
-    });
-
-    return {
-      success: true,
-      message_id: data.id,
-      response_time: responseTime,
-      service: 'resend',
-      resend_data: data
-    };
-
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    
-    logEmail('error', 'Errore durante invio email con Resend', {
-      error_name: error.name,
-      error_message: error.message,
-      error_stack: error.stack?.substring(0, 500),
-      response_time_ms: responseTime,
-      prenotazione_email: prenotazione.email,
-      evento_titolo: evento.titolo
-    });
-
-    return {
-      success: false,
-      error: error.message,
-      details: {
-        name: error.name,
-        stack: error.stack
-      },
-      response_time: responseTime,
-      service: 'resend'
-    };
-  }
-}
-// ========== FUNZIONE PER INVIO EMAIL BROADCAST PERSONALIZZATA ==========
-
-// Aggiungi questa funzione nel tuo file API eventi (dopo le altre funzioni email)
-
-async function sendBroadcastEmail(prenotazioni, eventoInfo, emailData) {
-  const startTime = Date.now();
-  const results = [];
-  
-  try {
-    logEmail('info', 'Inizio invio email broadcast', {
-      destinatari_count: prenotazioni.length,
-      evento_id: eventoInfo.id,
-      evento_titolo: eventoInfo.titolo,
-      subject: emailData.subject
-    });
-
-    // Invia email a tutti i prenotati
-    for (const prenotazione of prenotazioni) {
-      try {
-        logEmail('info', `Invio email a ${prenotazione.email}`, {
-          prenotazione_id: prenotazione.id,
-          destinatario: prenotazione.email
-        });
-
-        // Crea il contenuto HTML personalizzato
-        const htmlContent = createBroadcastEmailTemplate(prenotazione, eventoInfo, emailData);
-        
-        // Crea il contenuto testuale di fallback
-        const textContent = createBroadcastTextContent(prenotazione, eventoInfo, emailData);
-
-        // Invia l'email con Resend
-        const { data, error } = await resend.emails.send({
-          from: 'Aula Studio Foro <onboarding@resend.dev>',
-          to: [prenotazione.email],
-          subject: emailData.subject,
-          html: htmlContent,
-          text: textContent,
-          reply_to: 'associazioneforopiossasco@gmail.com',
-          headers: {
-            'X-Entity-Ref-ID': `broadcast-${eventoInfo.id}-${prenotazione.id}`,
-          },
-        });
-
-        if (error) {
-          logEmail('error', `Errore invio email a ${prenotazione.email}`, {
-            error: error.message,
-            prenotazione_id: prenotazione.id
-          });
-          
-          results.push({
-            prenotazione_id: prenotazione.id,
-            email: prenotazione.email,
-            success: false,
-            error: error.message
-          });
-        } else {
-          logEmail('success', `Email inviata con successo a ${prenotazione.email}`, {
-            message_id: data.id,
-            prenotazione_id: prenotazione.id
-          });
-          
-          results.push({
-            prenotazione_id: prenotazione.id,
-            email: prenotazione.email,
-            success: true,
-            message_id: data.id
-          });
-        }
-
-        // Pausa tra gli invii per evitare rate limiting
-        if (prenotazioni.indexOf(prenotazione) < prenotazioni.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-      } catch (emailError) {
-        logEmail('error', `Errore durante invio email a ${prenotazione.email}`, {
-          error: emailError.message,
-          prenotazione_id: prenotazione.id
-        });
-        
-        results.push({
-          prenotazione_id: prenotazione.id,
-          email: prenotazione.email,
-          success: false,
-          error: emailError.message
-        });
-      }
-    }
-
-    const responseTime = Date.now() - startTime;
-    const successCount = results.filter(r => r.success).length;
-    const errorCount = results.filter(r => !r.success).length;
-
-    logEmail('info', 'Broadcast completato', {
-      response_time_ms: responseTime,
-      total_emails: prenotazioni.length,
-      success_count: successCount,
-      error_count: errorCount,
-      success_rate: `${((successCount / prenotazioni.length) * 100).toFixed(1)}%`
-    });
-
-    return {
-      success: true,
-      total_sent: prenotazioni.length,
-      successful: successCount,
-      failed: errorCount,
-      response_time: responseTime,
-      results: results
-    };
-
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    
-    logEmail('error', 'Errore generale durante broadcast', {
-      error: error.message,
-      response_time_ms: responseTime,
-      destinatari_count: prenotazioni.length
-    });
-
-    return {
-      success: false,
-      error: error.message,
-      response_time: responseTime,
-      results: results
-    };
-  }
-}
-
-// Funzione per creare il template email personalizzato per broadcast
+// Funzione per creare il template email broadcast
 function createBroadcastEmailTemplate(prenotazione, evento, emailData) {
   return `
     <!DOCTYPE html>
@@ -734,21 +489,141 @@ function createBroadcastEmailTemplate(prenotazione, evento, emailData) {
   `;
 }
 
-// Funzione per creare il contenuto testuale di fallback per broadcast
-function createBroadcastTextContent(prenotazione, evento, emailData) {
-  return `
+// Funzione per inviare email con Resend
+async function sendConfirmationEmailWithResend(prenotazione, evento) {
+  const startTime = Date.now();
+  
+  try {
+    logEmail('info', 'Inizio invio email con Resend', {
+      prenotazione_id: prenotazione.id,
+      evento_id: evento.id,
+      destinatario: prenotazione.email
+    });
+
+    const htmlContent = createEmailTemplate(prenotazione, evento);
+    
+    const textContent = `
+Conferma Prenotazione - ${evento.titolo}
+
+Ciao ${prenotazione.nome} ${prenotazione.cognome},
+
+La tua prenotazione per l'evento "${evento.titolo}" è stata confermata!
+
+Dettagli evento:
+- Data: ${new Date(evento.data_evento).toLocaleDateString('it-IT')}
+- Luogo: Aula Studio Foro - Via Alfieri, 4 - 10045 Piossasco (TO)
+- Partecipanti: ${prenotazione.num_partecipanti}
+
+I tuoi dati:
+- Nome: ${prenotazione.nome} ${prenotazione.cognome}
+- Email: ${prenotazione.email}
+- Prenotazione effettuata: ${new Date(prenotazione.data_prenotazione).toLocaleDateString('it-IT')}
+${prenotazione.note ? `- Note: ${prenotazione.note}` : ''}
+
+Per informazioni: associazioneforopiossasco@gmail.com
+
+Associazione Foro - Aula Studio
+Via Alfieri, 4 - 10045 Piossasco (TO)
+    `.trim();
+
+    const { data, error } = await resend.emails.send({
+      from: 'Aula Studio Foro <onboarding@resend.dev>',
+      to: [prenotazione.email],
+      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
+      html: htmlContent,
+      text: textContent,
+      reply_to: 'associazioneforopiossasco@gmail.com',
+      headers: {
+        'X-Entity-Ref-ID': `prenotazione-${prenotazione.id}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+
+    if (error) {
+      logEmail('error', 'Errore Resend API', {
+        error_name: error.name,
+        error_message: error.message,
+        response_time_ms: responseTime
+      });
+      
+      return {
+        success: false,
+        error: error.message,
+        details: error,
+        response_time: responseTime,
+        service: 'resend'
+      };
+    }
+
+    logEmail('success', 'Email inviata con successo tramite Resend', {
+      message_id: data.id,
+      response_time_ms: responseTime,
+      destinatario: prenotazione.email
+    });
+
+    return {
+      success: true,
+      message_id: data.id,
+      response_time: responseTime,
+      service: 'resend',
+      resend_data: data
+    };
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logEmail('error', 'Errore durante invio email con Resend', {
+      error_name: error.name,
+      error_message: error.message,
+      response_time_ms: responseTime,
+      prenotazione_email: prenotazione.email,
+      evento_titolo: evento.titolo
+    });
+
+    return {
+      success: false,
+      error: error.message,
+      details: {
+        name: error.name,
+        stack: error.stack
+      },
+      response_time: responseTime,
+      service: 'resend'
+    };
+  }
+}
+
+// Funzione per inviare email broadcast
+async function sendBroadcastEmail(prenotazioni, eventoInfo, emailData) {
+  const startTime = Date.now();
+  const results = [];
+  
+  try {
+    logEmail('info', 'Inizio invio email broadcast', {
+      destinatari_count: prenotazioni.length,
+      evento_id: eventoInfo.id,
+      evento_titolo: eventoInfo.titolo,
+      subject: emailData.subject
+    });
+
+    for (const prenotazione of prenotazioni) {
+      try {
+        const htmlContent = createBroadcastEmailTemplate(prenotazione, eventoInfo, emailData);
+        
+        const textContent = `
 ${emailData.subject}
 
 Ciao ${prenotazione.nome}!
 
-Ti scriviamo in merito alla tua prenotazione per l'evento "${evento.titolo}".
+Ti scriviamo in merito alla tua prenotazione per l'evento "${eventoInfo.titolo}".
 
 MESSAGGIO:
 ${emailData.message}
 
 DETTAGLI EVENTO:
-- Titolo: ${evento.titolo}
-- Data: ${new Date(evento.data_evento).toLocaleDateString('it-IT')}
+- Titolo: ${eventoInfo.titolo}
+- Data: ${new Date(eventoInfo.data_evento).toLocaleDateString('it-IT')}
 - Luogo: Via Alfieri, 4 - 10045 Piossasco (TO)
 
 CONTATTI:
@@ -757,83 +632,75 @@ CONTATTI:
 
 Associazione Foro - Aula Studio
 Via Alfieri, 4 - 10045 Piossasco (TO)
-  `.trim();
+        `.trim();
+
+        const { data, error } = await resend.emails.send({
+          from: 'Aula Studio Foro <onboarding@resend.dev>',
+          to: [prenotazione.email],
+          subject: emailData.subject,
+          html: htmlContent,
+          text: textContent,
+          reply_to: 'associazioneforopiossasco@gmail.com',
+          headers: {
+            'X-Entity-Ref-ID': `broadcast-${eventoInfo.id}-${prenotazione.id}`,
+          },
+        });
+
+        if (error) {
+          results.push({
+            prenotazione_id: prenotazione.id,
+            email: prenotazione.email,
+            success: false,
+            error: error.message
+          });
+        } else {
+          results.push({
+            prenotazione_id: prenotazione.id,
+            email: prenotazione.email,
+            success: true,
+            message_id: data.id
+          });
+        }
+
+        // Pausa tra invii
+        if (prenotazioni.indexOf(prenotazione) < prenotazioni.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+      } catch (emailError) {
+        results.push({
+          prenotazione_id: prenotazione.id,
+          email: prenotazione.email,
+          success: false,
+          error: emailError.message
+        });
+      }
+    }
+
+    const responseTime = Date.now() - startTime;
+    const successCount = results.filter(r => r.success).length;
+    const errorCount = results.filter(r => !r.success).length;
+
+    return {
+      success: true,
+      total_sent: prenotazioni.length,
+      successful: successCount,
+      failed: errorCount,
+      response_time: responseTime,
+      results: results
+    };
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    return {
+      success: false,
+      error: error.message,
+      response_time: responseTime,
+      results: results
+    };
+  }
 }
 
-// ========== ENDPOINT PER INVIO BROADCAST ==========
-// Aggiungi questo endpoint nel tuo handler principale
-
-// Nel metodo POST, aggiungi questa sezione:
-if (section === 'broadcast') {
-  const { 
-    evento_id, 
-    subject, 
-    message, 
-    user_id 
-  } = req.body;
-  
-  console.log('Invio broadcast email:', { 
-    evento_id, 
-    subject: subject ? 'present' : 'missing',
-    message: message ? 'present' : 'missing',
-    user_id 
-  });
-
-  // Validazione campi obbligatori
-  if (!evento_id || !subject || !message || !user_id) {
-    return res.status(400).json({
-      success: false,
-      error: 'Evento ID, oggetto, messaggio e user_id sono richiesti'
-    });
-  }
-
-  // Verifica che l'evento esista
-  const eventoResult = await client.execute({
-    sql: 'SELECT * FROM eventi WHERE id = ?',
-    args: [evento_id]
-  });
-
-  if (!eventoResult.rows.length) {
-    return res.status(404).json({
-      success: false,
-      error: 'Evento non trovato'
-    });
-  }
-
-  const evento = convertBigIntToNumber(eventoResult.rows[0]);
-
-  // Recupera tutte le prenotazioni per l'evento
-  const prenotazioniResult = await client.execute({
-    sql: 'SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione ASC',
-    args: [evento_id]
-  });
-
-  const prenotazioni = convertBigIntToNumber(prenotazioniResult.rows);
-
-  if (prenotazioni.length === 0) {
-    return res.status(400).json({
-      success: false,
-      error: 'Nessuna prenotazione trovata per questo evento'
-    });
-  }
-
-  // Invia le email broadcast
-  console.log('🚀 Invio email broadcast a', prenotazioni.length, 'destinatari...');
-  const broadcastResult = await sendBroadcastEmail(prenotazioni, evento, {
-    subject: subject.trim(),
-    message: message.trim()
-  });
-  
-  console.log('📧 Risultato broadcast:', broadcastResult);
-
-  return res.status(200).json({
-    success: true,
-    message: 'Email broadcast inviate',
-    broadcast_details: broadcastResult,
-    evento_titolo: evento.titolo,
-    destinatari_count: prenotazioni.length
-  });
-}
 // ========== HANDLER PRINCIPALE ==========
 
 export default async function handler(req, res) {
@@ -958,6 +825,80 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      
+      // ENDPOINT BROADCAST EMAIL
+      if (section === 'broadcast') {
+        const { 
+          evento_id, 
+          subject, 
+          message, 
+          user_id 
+        } = req.body;
+        
+        console.log('Invio broadcast email:', { 
+          evento_id, 
+          subject: subject ? 'present' : 'missing',
+          message: message ? 'present' : 'missing',
+          user_id 
+        });
+
+        // Validazione campi obbligatori
+        if (!evento_id || !subject || !message || !user_id) {
+          return res.status(400).json({
+            success: false,
+            error: 'Evento ID, oggetto, messaggio e user_id sono richiesti'
+          });
+        }
+
+        // Verifica che l'evento esista
+        const eventoResult = await client.execute({
+          sql: 'SELECT * FROM eventi WHERE id = ?',
+          args: [evento_id]
+        });
+
+        if (!eventoResult.rows.length) {
+          return res.status(404).json({
+            success: false,
+            error: 'Evento non trovato'
+          });
+        }
+
+        const evento = convertBigIntToNumber(eventoResult.rows[0]);
+
+        // Recupera tutte le prenotazioni per l'evento
+        const prenotazioniResult = await client.execute({
+          sql: 'SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione ASC',
+          args: [evento_id]
+        });
+
+        const prenotazioni = convertBigIntToNumber(prenotazioniResult.rows);
+
+        if (prenotazioni.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'Nessuna prenotazione trovata per questo evento'
+          });
+        }
+
+        // Invia le email broadcast
+        console.log('🚀 Invio email broadcast a', prenotazioni.length, 'destinatari...');
+        const broadcastResult = await sendBroadcastEmail(prenotazioni, evento, {
+          subject: subject.trim(),
+          message: message.trim()
+        });
+        
+        console.log('📧 Risultato broadcast:', broadcastResult);
+
+        return res.status(200).json({
+          success: true,
+          message: 'Email broadcast inviate',
+          broadcast_details: broadcastResult,
+          evento_titolo: evento.titolo,
+          destinatari_count: prenotazioni.length
+        });
+      }
+      
+      // ENDPOINT PRENOTAZIONI
       if (section === 'prenotazioni') {
         const { 
           evento_id, 
@@ -1062,7 +1003,7 @@ export default async function handler(req, res) {
             data_prenotazione: dataPrenotazione
           };
 
-          // 🚀 Invia email di conferma con Resend
+          // Invia email di conferma con Resend
           console.log('🚀 Invio email di conferma con Resend...');
           const emailResult = await sendConfirmationEmailWithResend(prenotazioneData, evento);
           
@@ -1084,7 +1025,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // Creazione eventi
+      // ENDPOINT EVENTI
       else {
         const { 
           titolo, 
