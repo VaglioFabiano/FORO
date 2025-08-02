@@ -75,7 +75,17 @@ export default async function handler(req, res) {
 }
 
 // Funzione per determinare il tipo di task in base all'orario
+// Funzione per determinare il tipo di task in base all'orario
 function determineTaskType(hour, minute, day) {
+  // TEST IMMEDIATI - 15:15 e 15:16
+  if (hour === 15 && minute === 15) {
+    return 'test_15_15';
+  }
+  
+  if (hour === 15 && minute === 16) {
+    return 'test_15_16';
+  }
+  
   // Task mattutino
   if (hour === 8 && minute === 0) {
     return 'morning_task';
@@ -86,7 +96,7 @@ function determineTaskType(hour, minute, day) {
     return 'lunch_task';
   }
   
-  // Test Telegram - ORARI CORRETTI
+  // Test Telegram originali
   if (hour === 14 && minute === 25) {
     return 'telegram_test_1';
   }
@@ -127,6 +137,100 @@ function determineTaskType(hour, minute, day) {
   }
   
   return null;
+}
+
+// Funzione principale per gestire i diversi task
+async function handleTask(taskType, timestamp) {
+  console.log(`🚀 Eseguendo task: ${taskType} alle ${timestamp.toISOString()}`);
+  
+  switch (taskType) {
+    case 'test_15_15':
+      await test1515(timestamp);
+      break;
+      
+    case 'test_15_16':
+      await test1516(timestamp);
+      break;
+      
+    case 'morning_task':
+      await morningTask(timestamp);
+      break;
+      
+    case 'lunch_task':
+      await lunchTask(timestamp);
+      break;
+      
+    case 'telegram_test_1':
+      await telegramTest1(timestamp);
+      break;
+      
+    case 'telegram_test_2':
+      await telegramTest2(timestamp);
+      break;
+      
+    case 'telegram_test_3':
+      await telegramTest3(timestamp);
+      break;
+      
+    case 'afternoon_task':
+      await afternoonTask(timestamp);
+      break;
+      
+    case 'late_afternoon_task':
+      await lateAfternoonTask(timestamp);
+      break;
+      
+    case 'evening_task':
+      await eveningTask(timestamp);
+      break;
+      
+    case 'night_task':
+      await nightTask(timestamp);
+      break;
+      
+    case 'late_night_task':
+      await lateNightTask(timestamp);
+      break;
+      
+    case 'sunday_end_task':
+      await sundayEndTask(timestamp);
+      break;
+      
+    case 'general_task':
+      await generalTask(timestamp);
+      break;
+      
+    default:
+      console.log('⚠️ Task non riconosciuto:', taskType);
+      await generalTask(timestamp);
+  }
+}
+
+// NUOVI TEST PER 15:15 e 15:16
+async function test1515(timestamp) {
+  console.log('🚀 Test immediato 15:15');
+  
+  const message = `🚀 TEST IMMEDIATO 15:15
+⏰ Orario: 15:15
+📅 Data: ${timestamp.toLocaleDateString('it-IT')}
+✅ GitHub Actions ha funzionato!
+
+Questo è il test delle 15:15 - Sistema operativo! 🎉`;
+
+  await sendTelegramMessage(TEST_CHAT_ID, message);
+}
+
+async function test1516(timestamp) {
+  console.log('🎯 Test immediato 15:16');
+  
+  const message = `🎯 TEST IMMEDIATO 15:16
+⏰ Orario: 15:16
+📅 Data: ${timestamp.toLocaleDateString('it-IT')}
+🔥 Secondo test consecutivo!
+
+Sistema completamente funzionante! 🚀`;
+
+  await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
 // Funzione principale per gestire i diversi task

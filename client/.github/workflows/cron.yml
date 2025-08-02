@@ -2,15 +2,14 @@
 name: Vercel Cron Jobs
 on:
   schedule:
-    # Test Telegram alle 12:20, 12:30, 12:31
-    - cron: '25 14 * * *'  # 12:20 ogni giorno
-    - cron: '50 14 * * *'  # 14:30 ogni giorno  
-    - cron: '51 14 * * *'  # 12:31 ogni giorno
+    # Test Telegram alle 12:20, 14:30, 14:31
+    - cron: '20 12 * * *'  # 12:20 ogni giorno
+    - cron: '30 14 * * *'  # 14:30 ogni giorno  
+    - cron: '31 14 * * *'  # 14:31 ogni giorno
     
     # Cron jobs originali
     - cron: '0 8 * * *'    # 8:00 ogni giorno
     - cron: '0 12 * * *'   # 12:00 ogni giorno
-    - cron: '30 12 * * *'  # 12:30 ogni giorno
     - cron: '0 15 * * *'   # 15:00 ogni giorno
     - cron: '30 15 * * *'  # 15:30 ogni giorno
     - cron: '0 19 * * *'   # 19:00 ogni giorno
