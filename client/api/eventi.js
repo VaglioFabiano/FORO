@@ -1,4 +1,5 @@
 import { createClient } from '@libsql/client/web';
+import { Resend } from 'resend';
 
 // Configurazione database
 const config = {
@@ -12,6 +13,9 @@ if (!config.url || !config.authToken) {
 }
 
 const client = createClient(config);
+
+// Configurazione Resend
+const resend = new Resend('re_WmxYBNKM_LPaMSt1JEMMLY5Ci7QPFx7Xp');
 
 // Funzione helper per convertire BigInt in numeri normali
 function convertBigIntToNumber(obj) {
@@ -64,7 +68,7 @@ function validateEmail(email) {
   return emailRegex.test(email);
 }
 
-// ========== SISTEMA EMAIL MIGLIORATO CON LOGGING ==========
+// ========== SISTEMA EMAIL CON RESEND ==========
 
 // Funzione per creare un log strutturato
 function logEmail(level, message, data = {}) {
@@ -80,203 +84,7 @@ function logEmail(level, message, data = {}) {
     Object.keys(data).length > 0 ? data : '');
 }
 
-// Funzione per inviare email di conferma con Web3Forms
-async function sendConfirmationEmail(prenotazione, evento) {
-  const startTime = Date.now();
-  
-  try {
-    logEmail('info', 'Inizio processo invio email', {
-      prenotazione_id: prenotazione.id,
-      evento_id: evento.id,
-      destinatario: prenotazione.email
-    });
-
-    // Verifica configurazione
-    if (!process.env.WEB3FORMS_ACCESS_KEY?.trim()) {
-      logEmail('warn', 'WEB3FORMS_ACCESS_KEY non configurato', {
-        available_env_vars: Object.keys(process.env).filter(key => key.includes('WEB3'))
-      });
-      return {
-        success: false,
-        error: 'Configurazione email mancante',
-        details: 'WEB3FORMS_ACCESS_KEY non configurato'
-      };
-    }
-
-    logEmail('info', 'Configurazione email trovata', {
-      access_key_length: process.env.WEB3FORMS_ACCESS_KEY.length,
-      access_key_preview: process.env.WEB3FORMS_ACCESS_KEY.substring(0, 8) + '...'
-    });
-
-    // Costruzione contenuto HTML
-    const htmlContent = createEmailTemplate(prenotazione, evento);
-    
-    logEmail('info', 'Template email generato', {
-      html_length: htmlContent.length,
-      contains_evento_title: htmlContent.includes(evento.titolo),
-      contains_user_name: htmlContent.includes(prenotazione.nome)
-    });
-
-    // Preparazione payload
-    const payload = {
-      access_key: process.env.WEB3FORMS_ACCESS_KEY,
-      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
-      email: prenotazione.email,
-      name: `${prenotazione.nome} ${prenotazione.cognome}`,
-      message: htmlContent,
-      from_name: "Aula Studio Foro",
-      replyto: "info@aulastudioforo.it",
-      // Parametri aggiuntivi per debugging
-      _template: "box",
-      _format: "html"
-    };
-
-    logEmail('info', 'Payload preparato per Web3Forms', {
-      subject: payload.subject,
-      email: payload.email,
-      name: payload.name,
-      from_name: payload.from_name,
-      payload_size: JSON.stringify(payload).length
-    });
-
-    // Invio richiesta
-    logEmail('info', 'Invio richiesta a Web3Forms API...');
-    
-    const response = await fetch('https://api.web3forms.com/submit', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'AulaStudioForo/1.0'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const responseTime = Date.now() - startTime;
-    
-    logEmail('info', 'Risposta ricevuta da Web3Forms', {
-      status: response.status,
-      statusText: response.statusText,
-      response_time_ms: responseTime,
-      content_type: response.headers.get('content-type'),
-      rate_limit_remaining: response.headers.get('x-ratelimit-remaining')
-    });
-
-    // Parsing risposta
-    let result;
-    try {
-      const responseText = await response.text();
-      logEmail('debug', 'Raw response text', { 
-        response_text: responseText.substring(0, 500) + (responseText.length > 500 ? '...' : '')
-      });
-      
-      result = JSON.parse(responseText);
-    } catch (parseError) {
-      logEmail('error', 'Errore parsing risposta JSON', {
-        parse_error: parseError.message,
-        response_status: response.status
-      });
-      throw new Error(`Errore parsing risposta: ${parseError.message}`);
-    }
-
-    if (response.ok && result.success !== false) {
-      logEmail('success', 'Email inviata con successo', {
-        response_time_ms: responseTime,
-        web3forms_response: result,
-        message_id: result.message_id || 'unknown'
-      });
-      
-      return {
-        success: true,
-        message_id: result.message_id,
-        response_time: responseTime,
-        web3forms_response: result
-      };
-    } else {
-      logEmail('error', 'Web3Forms ha restituito un errore', {
-        response_status: response.status,
-        response_body: result,
-        error_message: result.message || 'Errore sconosciuto'
-      });
-      
-      return {
-        success: false,
-        error: result.message || `HTTP ${response.status}: ${response.statusText}`,
-        details: result,
-        http_status: response.status
-      };
-    }
-
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    
-    logEmail('error', 'Errore durante invio email', {
-      error_name: error.name,
-      error_message: error.message,
-      error_stack: error.stack?.substring(0, 500),
-      response_time_ms: responseTime,
-      prenotazione_email: prenotazione.email,
-      evento_titolo: evento.titolo
-    });
-
-    return {
-      success: false,
-      error: error.message,
-      details: {
-        name: error.name,
-        stack: error.stack
-      },
-      response_time: responseTime
-    };
-  }
-}
-
-if (req.method === 'GET') {
-  // NUOVO: Test configurazione email
-  if (action === 'test-email') {
-    console.log('🧪 Test configurazione email...');
-    
-    // Dati di test
-    const testPrenotazione = {
-      id: 999,
-      evento_id: 1,
-      nome: 'Mario',
-      cognome: 'Rossi',
-      email: 'tua-email@example.com', // 🔥 CAMBIA QUESTA EMAIL CON LA TUA!
-      num_partecipanti: 1,
-      note: 'Test email system',
-      data_prenotazione: new Date().toISOString()
-    };
-    
-    const testEvento = {
-      id: 1,
-      titolo: 'Test Workshop Email',
-      descrizione: 'Evento di test per verificare il sistema email automatico',
-      data_evento: '2024-12-15T10:00:00Z'
-    };
-    
-    console.log('📧 Invio email di test...');
-    const emailResult = await sendConfirmationEmail(testPrenotazione, testEvento);
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Test email completato',
-      email_config_check: {
-        has_access_key: !!process.env.WEB3FORMS_ACCESS_KEY,
-        access_key_length: process.env.WEB3FORMS_ACCESS_KEY?.length || 0,
-        access_key_preview: process.env.WEB3FORMS_ACCESS_KEY ? 
-          process.env.WEB3FORMS_ACCESS_KEY.substring(0, 8) + '...' : 'MISSING',
-        environment: process.env.NODE_ENV || 'development'
-      },
-      email_result: emailResult,
-      test_data: {
-        prenotazione: testPrenotazione,
-        evento: testEvento
-      }
-    });
-  }}
-
-// Funzione separata per creare il template email
+// Funzione per creare il template email
 function createEmailTemplate(prenotazione, evento) {
   return `
     <!DOCTYPE html>
@@ -514,6 +322,124 @@ function createEmailTemplate(prenotazione, evento) {
   `;
 }
 
+// Funzione per inviare email con Resend
+async function sendConfirmationEmailWithResend(prenotazione, evento) {
+  const startTime = Date.now();
+  
+  try {
+    logEmail('info', 'Inizio invio email con Resend', {
+      prenotazione_id: prenotazione.id,
+      evento_id: evento.id,
+      destinatario: prenotazione.email
+    });
+
+    // Crea il contenuto HTML
+    const htmlContent = createEmailTemplate(prenotazione, evento);
+    
+    logEmail('info', 'Template email generato', {
+      html_length: htmlContent.length,
+      contains_evento_title: htmlContent.includes(evento.titolo),
+      contains_user_name: htmlContent.includes(prenotazione.nome)
+    });
+
+    // Prepara il contenuto testuale di fallback
+    const textContent = `
+Conferma Prenotazione - ${evento.titolo}
+
+Ciao ${prenotazione.nome} ${prenotazione.cognome},
+
+La tua prenotazione per l'evento "${evento.titolo}" è stata confermata!
+
+Dettagli evento:
+- Data: ${new Date(evento.data_evento).toLocaleDateString('it-IT')}
+- Luogo: Aula Studio Foro - Via Roma, Piossasco (TO)
+- Partecipanti: ${prenotazione.num_partecipanti}
+
+I tuoi dati:
+- Nome: ${prenotazione.nome} ${prenotazione.cognome}
+- Email: ${prenotazione.email}
+- Prenotazione effettuata: ${new Date(prenotazione.data_prenotazione).toLocaleDateString('it-IT')}
+${prenotazione.note ? `- Note: ${prenotazione.note}` : ''}
+
+Per informazioni: info@aulastudioforo.it
+
+Associazione Foro - Aula Studio
+Via Roma, 123 - 10045 Piossasco (TO)
+    `.trim();
+
+    logEmail('info', 'Invio email tramite Resend API...');
+    
+    // Invia l'email con Resend
+    const { data, error } = await resend.emails.send({
+      from: 'Aula Studio Foro <onboarding@resend.dev>', // Usa il dominio di default di Resend per test
+      to: [prenotazione.email],
+      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
+      html: htmlContent,
+      text: textContent,
+      reply_to: 'info@aulastudioforo.it',
+      headers: {
+        'X-Entity-Ref-ID': `prenotazione-${prenotazione.id}`,
+      },
+    });
+
+    const responseTime = Date.now() - startTime;
+
+    if (error) {
+      logEmail('error', 'Errore Resend API', {
+        error_name: error.name,
+        error_message: error.message,
+        response_time_ms: responseTime
+      });
+      
+      return {
+        success: false,
+        error: error.message,
+        details: error,
+        response_time: responseTime,
+        service: 'resend'
+      };
+    }
+
+    // Successo!
+    logEmail('success', 'Email inviata con successo tramite Resend', {
+      message_id: data.id,
+      response_time_ms: responseTime,
+      destinatario: prenotazione.email
+    });
+
+    return {
+      success: true,
+      message_id: data.id,
+      response_time: responseTime,
+      service: 'resend',
+      resend_data: data
+    };
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logEmail('error', 'Errore durante invio email con Resend', {
+      error_name: error.name,
+      error_message: error.message,
+      error_stack: error.stack?.substring(0, 500),
+      response_time_ms: responseTime,
+      prenotazione_email: prenotazione.email,
+      evento_titolo: evento.titolo
+    });
+
+    return {
+      success: false,
+      error: error.message,
+      details: {
+        name: error.name,
+        stack: error.stack
+      },
+      response_time: responseTime,
+      service: 'resend'
+    };
+  }
+}
+
 // ========== HANDLER PRINCIPALE ==========
 
 export default async function handler(req, res) {
@@ -534,7 +460,6 @@ export default async function handler(req, res) {
     console.log('API Request:', { method: req.method, section, action, id, evento_id });
 
     if (req.method === 'GET') {
-      // ... (resto del codice GET invariato) ...
       
       if (!section && !action) {
         console.log('Getting all eventi');
@@ -743,9 +668,9 @@ export default async function handler(req, res) {
             data_prenotazione: dataPrenotazione
           };
 
-          // Invia email di conferma con logging dettagliato
-          console.log('🚀 Tentativo invio email di conferma...');
-          const emailResult = await sendConfirmationEmail(prenotazioneData, evento);
+          // 🚀 Invia email di conferma con Resend
+          console.log('🚀 Invio email di conferma con Resend...');
+          const emailResult = await sendConfirmationEmailWithResend(prenotazioneData, evento);
           
           console.log('📧 Risultato invio email:', emailResult);
 
@@ -765,7 +690,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // ... (resto del codice POST per eventi invariato) ...
+      // Creazione eventi
       else {
         const { 
           titolo, 
