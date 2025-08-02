@@ -76,58 +76,38 @@ export default async function handler(req, res) {
 
 // Funzione per determinare il tipo di task in base all'orario
 function determineTaskType(hour, minute, day) {
-  // Test GitHub Actions
-  if (hour === 15 && minute === 40) {
-    return 'test_15_40';
-  }
-  
-  if (hour === 15 && minute === 45) {
-    return 'test_15_45';
-  }
-  
-  // Task mattutino
+  // PROMEMORIA TURNI
   if (hour === 8 && minute === 0) {
-    return 'morning_task';
+    return 'reminder_morning'; // Promemoria turni 9:00-13:00
   }
   
-  // Task pranzo
   if (hour === 12 && minute === 0) {
-    return 'lunch_task';
+    return 'reminder_early_afternoon'; // Promemoria turni 13:00-16:00
   }
   
-  // Test Telegram originali
-  if (hour === 14 && minute === 25) {
-    return 'telegram_test_1';
-  }
-  
-  if (hour === 14 && minute === 50) {
-    return 'telegram_test_2';
-  }
-  
-  if (hour === 14 && minute === 51) {
-    return 'telegram_test_3';
-  }
-  
-  // Task pomeridiani
   if (hour === 15 && minute === 0) {
-    return 'afternoon_task';
-  }
-  
-  if (hour === 15 && minute === 30) {
-    return 'late_afternoon_task';
-  }
-  
-  // Task serali
-  if (hour === 19 && minute === 0) {
-    return 'evening_task';
+    return 'reminder_late_afternoon'; // Promemoria turni 16:00-19:30
   }
   
   if (hour === 20 && minute === 30) {
-    return 'night_task';
+    return 'reminder_evening'; // Promemoria turni 21:00-24:00
+  }
+  
+  // PROMEMORIA PRESENZE
+  if (hour === 12 && minute === 30) {
+    return 'reminder_presenze_9_13'; // Promemoria riempire presenze 9-13
+  }
+  
+  if (hour === 15 && minute === 30) {
+    return 'reminder_presenze_13_16'; // Promemoria riempire presenze 13-16
+  }
+  
+  if (hour === 19 && minute === 0) {
+    return 'reminder_presenze_16_19'; // Promemoria riempire presenze 16-19:30
   }
   
   if (hour === 23 && minute === 30) {
-    return 'late_night_task';
+    return 'reminder_presenze_21_24'; // Promemoria riempire presenze 21-24
   }
   
   // Task domenica sera
@@ -143,52 +123,36 @@ async function handleTask(taskType, timestamp) {
   console.log(`🚀 Eseguendo task: ${taskType} alle ${timestamp.toISOString()}`);
   
   switch (taskType) {
-    case 'test_15_40':
-      await test1540(timestamp);
+    case 'reminder_morning':
+      await sendTurnoReminders('09:00', '13:00', timestamp);
       break;
       
-    case 'test_15_45':
-      await test1545(timestamp);
+    case 'reminder_early_afternoon':
+      await sendTurnoReminders('13:00', '16:00', timestamp);
       break;
       
-    case 'morning_task':
-      await morningTask(timestamp);
+    case 'reminder_late_afternoon':
+      await sendTurnoReminders('16:00', '19:30', timestamp);
       break;
       
-    case 'lunch_task':
-      await lunchTask(timestamp);
+    case 'reminder_evening':
+      await sendTurnoReminders('21:00', '24:00', timestamp);
       break;
       
-    case 'telegram_test_1':
-      await telegramTest1(timestamp);
+    case 'reminder_presenze_9_13':
+      await sendPresenzeReminder('9-13', timestamp);
       break;
       
-    case 'telegram_test_2':
-      await telegramTest2(timestamp);
+    case 'reminder_presenze_13_16':
+      await sendPresenzeReminder('13-16', timestamp);
       break;
       
-    case 'telegram_test_3':
-      await telegramTest3(timestamp);
+    case 'reminder_presenze_16_19':
+      await sendPresenzeReminder('16-19', timestamp);
       break;
       
-    case 'afternoon_task':
-      await afternoonTask(timestamp);
-      break;
-      
-    case 'late_afternoon_task':
-      await lateAfternoonTask(timestamp);
-      break;
-      
-    case 'evening_task':
-      await eveningTask(timestamp);
-      break;
-      
-    case 'night_task':
-      await nightTask(timestamp);
-      break;
-      
-    case 'late_night_task':
-      await lateNightTask(timestamp);
+    case 'reminder_presenze_21_24':
+      await sendPresenzeReminder('21-24', timestamp);
       break;
       
     case 'sunday_end_task':
@@ -234,31 +198,105 @@ async function sendTelegramMessage(chatId, message) {
   }
 }
 
-// Task di test per GitHub Actions
-async function test1540(timestamp) {
-  console.log('🚀 Test GitHub Actions 15:40');
-  
-  const message = `🚀 GITHUB ACTIONS TEST 15:40
-⏰ Orario: 15:40
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-✅ GitHub Actions funziona perfettamente!
-
-Sistema automatico operativo! 🎉`;
-
-  await sendTelegramMessage(TEST_CHAT_ID, message);
+// Funzione per ottenere il chat_id di un utente
+async function getUserTelegramChatId(userId) {
+  try {
+    if (!db) return null;
+    
+    const result = await db.execute({
+      sql: `SELECT telegram_chat_id FROM users WHERE id = ? AND telegram_chat_id IS NOT NULL`,
+      args: [userId]
+    });
+    
+    return result.rows.length > 0 ? result.rows[0].telegram_chat_id : null;
+  } catch (error) {
+    console.error('Errore nel recupero chat_id:', error);
+    return null;
+  }
 }
 
-async function test1545(timestamp) {
-  console.log('🎯 Test GitHub Actions 15:45');
-  
-  const message = `🎯 GITHUB ACTIONS TEST 15:45
-⏰ Orario: 15:45
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-🔥 Secondo test GitHub Actions!
+// FUNZIONE PRINCIPALE: Invia promemoria turni
+async function sendTurnoReminders(turnoInizio, turnoFine, timestamp) {
+  try {
+    if (!db) {
+      console.log('⚠️ Database non disponibile, invio messaggio di test');
+      await sendTelegramMessage(TEST_CHAT_ID, 
+        `🔔 Test Promemoria Turni ${turnoInizio}-${turnoFine}\n⏰ ${timestamp.toLocaleTimeString('it-IT')}`);
+      return;
+    }
 
-Tutto funziona alla perfezione! 🚀`;
+    // Ottieni la data di oggi
+    const today = timestamp.toISOString().split('T')[0];
+    
+    console.log(`📋 Cercando turni per oggi ${today} dalle ${turnoInizio} alle ${turnoFine}`);
+    
+    // Query per ottenere tutti i turni di oggi per questa fascia oraria
+    const result = await db.execute({
+      sql: `SELECT t.data, t.turno_inizio, t.turno_fine, t.user_id, t.note,
+                   u.name, u.surname, u.telegram_chat_id
+            FROM turni t
+            JOIN users u ON t.user_id = u.id
+            WHERE t.data = ? AND t.turno_inizio = ? AND t.turno_fine = ?
+            AND u.telegram_chat_id IS NOT NULL`,
+      args: [today, turnoInizio, turnoFine]
+    });
 
-  await sendTelegramMessage(TEST_CHAT_ID, message);
+    const turni = result.rows;
+    console.log(`📊 Trovati ${turni.length} turni per la fascia ${turnoInizio}-${turnoFine}`);
+
+    if (turni.length === 0) {
+      // Nessun turno trovato per questa fascia
+      await sendTelegramMessage(TEST_CHAT_ID, 
+        `📋 Nessun turno programmato oggi ${today} dalle ${turnoInizio} alle ${turnoFine}`);
+      return;
+    }
+
+    // Invia promemoria a ogni persona in turno
+    let messagessent = 0;
+    let messagesFailed = 0;
+
+    for (const turno of turni) {
+      try {
+        const message = `🔔 <b>Promemoria Turno</b>
+
+Ciao <b>${turno.name} ${turno.surname}</b>, ti ricordo il tuo turno di oggi orario <b>${turno.turno_inizio}-${turno.turno_fine}</b> in aula studio foro.
+
+📅 Data: ${formatDate(turno.data)}
+⏰ Orario: ${turno.turno_inizio} - ${turno.turno_fine}
+${turno.note ? `📝 Note: ${turno.note}` : ''}
+
+Buon lavoro! 💪`;
+
+        await sendTelegramMessage(turno.telegram_chat_id, message);
+        messagesent++;
+        
+        // Piccola pausa tra i messaggi
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+      } catch (error) {
+        console.error(`❌ Errore invio promemoria a ${turno.name} ${turno.surname}:`, error);
+        messagesFailed++;
+      }
+    }
+
+    // Invia riepilogo al chat di test
+    const summary = `📊 <b>Riepilogo Promemoria ${turnoInizio}-${turnoFine}</b>
+
+✅ Messaggi inviati: ${messagesent}
+❌ Messaggi falliti: ${messagesFailed}
+📋 Totale turni: ${turni.length}
+
+Data: ${formatDate(today)}`;
+
+    await sendTelegramMessage(TEST_CHAT_ID, summary);
+
+  } catch (error) {
+    console.error('❌ Errore generale invio promemoria:', error);
+    
+    // Invia notifica di errore
+    await sendTelegramMessage(TEST_CHAT_ID, 
+      `❌ Errore nel sistema promemoria turni ${turnoInizio}-${turnoFine}: ${error.message}`);
+  }
 }
 
 // Task generale per test e chiamate non programmate
@@ -275,113 +313,117 @@ Chiamata ricevuta correttamente.`;
   await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
-// Task di test Telegram originali
-async function telegramTest1(timestamp) {
-  console.log('📱 Test Telegram 1 (14:25)');
-  
-  const message = `🕰️ Test Cron Job #1
-⏰ Orario: 14:25
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-🔄 Il sistema cron sta funzionando correttamente!
+// FUNZIONE PER PROMEMORIA PRESENZE
+async function sendPresenzeReminder(fasciaOraria, timestamp) {
+  try {
+    if (!db) {
+      console.log('⚠️ Database non disponibile, invio messaggio di test');
+      await sendTelegramMessage(TEST_CHAT_ID, 
+        `📊 Test Promemoria Presenze ${fasciaOraria}\n⏰ ${timestamp.toLocaleTimeString('it-IT')}`);
+      return;
+    }
 
-Questo è il primo test alle 14:25.`;
+    // Ottieni la data di oggi
+    const today = timestamp.toISOString().split('T')[0];
+    
+    console.log(`📊 Promemoria presenze per la fascia ${fasciaOraria} del ${today}`);
+    
+    // Verifica se le presenze per oggi sono già state inserite
+    const presenzeEsistenti = await db.execute({
+      sql: `SELECT numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?`,
+      args: [today, fasciaOraria]
+    });
 
-  await sendTelegramMessage(TEST_CHAT_ID, message);
+    // Ottieni tutti gli utenti con chat_id Telegram (qualsiasi livello)
+    const usersResult = await db.execute({
+      sql: `SELECT id, name, surname, telegram_chat_id, level
+            FROM users 
+            WHERE telegram_chat_id IS NOT NULL`,
+      args: []
+    });
+
+    const users = usersResult.rows;
+    console.log(`👥 Trovati ${users.length} utenti da notificare`);
+
+    if (users.length === 0) {
+      await sendTelegramMessage(TEST_CHAT_ID, 
+        `📊 Nessun utente con permessi trovato per promemoria presenze ${fasciaOraria}`);
+      return;
+    }
+
+    // Determina il messaggio da inviare
+    const isAlreadyFilled = presenzeEsistenti.rows.length > 0;
+    const numeroPresenze = isAlreadyFilled ? presenzeEsistenti.rows[0].numero_presenze : 0;
+
+    let messageType;
+    let messageIcon;
+    
+    if (isAlreadyFilled) {
+      messageType = `Presenze già inserite: <b>${numeroPresenze}</b>`;
+      messageIcon = '✅';
+    } else {
+      messageType = '<b>Presenze non ancora inserite</b>';
+      messageIcon = '⚠️';
+    }
+
+    // Invia notifica a ogni utente autorizzato
+    let messagesSent = 0;
+    let messagesFailed = 0;
+
+    for (const user of users) {
+      try {
+        const message = `${messageIcon} <b>Promemoria Presenze</b>
+
+Ciao <b>${user.name} ${user.surname}</b>,
+
+📊 Fascia oraria: <b>${fasciaOraria}</b>
+📅 Data: <b>${formatDate(today)}</b>
+${messageType}
+
+${isAlreadyFilled ? 
+  '✅ Le presenze sono già state registrate per questa fascia.' : 
+  '⚠️ Ricordati di inserire le presenze per questa fascia oraria nel sistema.'
 }
 
-async function telegramTest2(timestamp) {
-  console.log('📱 Test Telegram 2 (14:50)');
-  
-  const message = `🕰️ Test Cron Job #2
-⏰ Orario: 14:50
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-🌅 Pomeriggio! 
+🔗 Accedi al sistema per gestire le presenze.`;
 
-Questo è il secondo test alle 14:50.`;
+        await sendTelegramMessage(user.telegram_chat_id, message);
+        messagesSent++;
+        
+        // Piccola pausa tra i messaggi
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+      } catch (error) {
+        console.error(`❌ Errore invio promemoria presenze a ${user.name} ${user.surname}:`, error);
+        messagesFailed++;
+      }
+    }
 
-  await sendTelegramMessage(TEST_CHAT_ID, message);
-}
+    // Invia riepilogo al chat di test
+    const summary = `📊 <b>Riepilogo Promemoria Presenze ${fasciaOraria}</b>
 
-async function telegramTest3(timestamp) {
-  console.log('📱 Test Telegram 3 (14:51)');
-  
-  const message = `🕰️ Test Cron Job #3
-⏰ Orario: 14:51
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-✅ Test completato con successo!
+${messageIcon} Stato: ${messageType}
+✅ Messaggi inviati: ${messagesSent}
+❌ Messaggi falliti: ${messagesFailed}
+👥 Utenti notificati: ${users.length}
 
-Questo è il terzo e ultimo test alle 14:51.
-Il sistema cron è configurato correttamente! 🎉`;
+📅 Data: ${formatDate(today)}
+⏰ Invio alle: ${timestamp.toLocaleTimeString('it-IT')}`;
 
-  await sendTelegramMessage(TEST_CHAT_ID, message);
-}
+    await sendTelegramMessage(TEST_CHAT_ID, summary);
 
-// Task specifici originali
-async function morningTask(timestamp) {
-  console.log('☀️ Task mattutino (8:00) - Inizio giornata');
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '☀️ Buongiorno! Il task mattutino è stato eseguito alle 8:00.');
-  
-  await sendEmail({
-    subject: 'Buongiorno! Riepilogo della giornata',
-    content: 'La giornata è iniziata. Controlla gli aggiornamenti.',
-  });
-  
-  await updateDailyStats();
-}
-
-async function lunchTask(timestamp) {
-  console.log('🍽️ Task pranzo (12:00)');
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '🍽️ Task pranzo eseguito alle 12:00.');
-}
-
-async function afternoonTask(timestamp) {
-  console.log('🌅 Task pomeridiano (15:00)');
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '🌅 Task pomeridiano eseguito alle 15:00.');
-  await processMidDayData();
-}
-
-async function lateAfternoonTask(timestamp) {
-  console.log('🌆 Task tardo pomeriggio (15:30)');
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '🌆 Task del tardo pomeriggio eseguito alle 15:30.');
-  await prepareEndOfDayReport();
-}
-
-async function eveningTask(timestamp) {
-  console.log('🌃 Task serale (19:00)');
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '🌃 Task serale eseguito alle 19:00.');
-  await backupDailyData();
-}
-
-async function nightTask(timestamp) {
-  console.log('🌙 Task notturno (20:30)');
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '🌙 Task notturno eseguito alle 20:30.');
-  await cleanupAndOptimize();
-}
-
-async function lateNightTask(timestamp) {
-  console.log('🌌 Task tarda notte (23:30)');
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '🌌 Task di tarda notte eseguito alle 23:30.');
-  await prepareForNextDay();
+  } catch (error) {
+    console.error('❌ Errore generale invio promemoria presenze:', error);
+    
+    // Invia notifica di errore
+    await sendTelegramMessage(TEST_CHAT_ID, 
+      `❌ Errore nel sistema promemoria presenze ${fasciaOraria}: ${error.message}`);
+  }
 }
 
 async function sundayEndTask(timestamp) {
   console.log('📊 Task fine domenica (23:59)');
-  
-  await generateWeeklyReport();
-  
-  await sendTelegramMessage(TEST_CHAT_ID, '📊 Report settimanale generato! Fine settimana alle 23:59 di domenica.');
-  
-  await sendEmail({
-    subject: 'Report Settimanale',
-    content: 'Ecco il riepilogo della settimana appena conclusa.',
-  });
+  await sendTelegramMessage(TEST_CHAT_ID, '📊 Report settimanale - Domenica 23:59.');
 }
 
 // Funzioni di supporto
@@ -409,20 +451,6 @@ async function sendEmail({ subject, content, to = process.env.DEFAULT_EMAIL }) {
   }
 }
 
-async function updateDailyStats() {
-  try {
-    if (db) {
-      await db.execute({
-        sql: `INSERT INTO daily_stats (date, task_type, executed_at) VALUES (?, ?, ?)`,
-        args: [new Date().toISOString().split('T')[0], 'morning_task', new Date().toISOString()]
-      });
-    }
-    console.log('📊 Statistiche giornaliere aggiornate');
-  } catch (error) {
-    console.error('❌ Errore aggiornamento statistiche:', error);
-  }
-}
-
 async function logExecution(taskType, timestamp, status, errorMessage = null) {
   try {
     if (db) {
@@ -437,32 +465,17 @@ async function logExecution(taskType, timestamp, status, errorMessage = null) {
   }
 }
 
-// Implementa queste funzioni in base alle tue esigenze specifiche
-async function processMidDayData() {
-  console.log('📊 Elaborazione dati di metà giornata...');
+// Utility functions
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('it-IT', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 }
 
-async function prepareEndOfDayReport() {
-  console.log('📋 Preparazione report fine giornata...');
-}
-
-async function backupDailyData() {
-  console.log('💾 Backup dati giornalieri...');
-}
-
-async function cleanupAndOptimize() {
-  console.log('🧹 Pulizia e ottimizzazione...');
-}
-
-async function prepareForNextDay() {
-  console.log('🗓️ Preparazione per domani...');
-}
-
-async function generateWeeklyReport() {
-  console.log('📈 Generazione report settimanale...');
-}
-
-// Utility function
 function getDayName(dayIndex) {
   const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
   return days[dayIndex];
