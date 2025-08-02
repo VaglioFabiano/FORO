@@ -1,34 +1,17 @@
-# .github/workflows/cron.yml
-name: Vercel Cron Jobs
+name: Cron Test
 on:
   schedule:
-    # Test Telegram alle 12:20, 14:30, 14:31
-    - cron: '20 12 * * *'  # 12:20 ogni giorno
-    - cron: '30 14 * * *'  # 14:30 ogni giorno  
-    - cron: '31 14 * * *'  # 14:31 ogni giorno
-    
-    # Cron jobs originali
-    - cron: '0 8 * * *'    # 8:00 ogni giorno
-    - cron: '0 12 * * *'   # 12:00 ogni giorno
-    - cron: '0 15 * * *'   # 15:00 ogni giorno
-    - cron: '30 15 * * *'  # 15:30 ogni giorno
-    - cron: '0 19 * * *'   # 19:00 ogni giorno
-    - cron: '30 20 * * *'  # 20:30 ogni giorno
-    - cron: '30 23 * * *'  # 23:30 ogni giorno
-    - cron: '59 23 * * 0'  # 23:59 ogni domenica
+    - cron: '40 15 * * *'  # 15:40 (fra qualche minuto)
+    - cron: '45 15 * * *'  # 15:45 (backup)
+  workflow_dispatch:       # Permette trigger manuale
 
 jobs:
-  trigger-cron:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Vercel Cron API
+      - name: Test Vercel API
         run: |
-          curl -X POST ${{ secrets.VERCEL_APP_URL }}/api/cron \
-            -H "Content-Type: application/json" \
-            --fail-with-body
-        continue-on-error: false
-        
-      - name: Log execution
-        run: |
-          echo "Cron job triggered at $(date)"
-          echo "Target URL: ${{ secrets.VERCEL_APP_URL }}/api/cron"
+          echo "Triggering cron at $(date)"
+          curl -X POST https://vite-react-r24fznyt6-vagliofabianos-projects.vercel.app/api/cron \
+            -H "Content-Type: application/json"
+          echo "Cron triggered successfully"
