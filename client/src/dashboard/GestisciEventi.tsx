@@ -31,6 +31,11 @@ interface NuovoEvento {
   immagine_file?: File;
 }
 
+interface BroadcastEmail {
+  subject: string;
+  message: string;
+}
+
 interface ApiResponse {
   success: boolean;
   eventi?: Evento[];
@@ -39,6 +44,8 @@ interface ApiResponse {
   error?: string;
   message?: string;
   evento_id?: number;
+  broadcast_details?: any;
+  destinatari_count?: number;
 }
 
 const GestisciEventi: React.FC = () => {
@@ -63,6 +70,15 @@ const GestisciEventi: React.FC = () => {
   const [editData, setEditData] = useState<Partial<Evento & { immagine_file?: File }>>({});
   const [updatingEvent, setUpdatingEvent] = useState(false);
 
+  // Stato per email broadcast
+  const [broadcastEventId, setBroadcastEventId] = useState<number | null>(null);
+  const [broadcastData, setBroadcastData] = useState<BroadcastEmail>({
+    subject: '',
+    message: ''
+  });
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
+
   // Stato per l'utente loggato
   const [userLevel, setUserLevel] = useState<number>(-1);
   const [userId, setUserId] = useState<number | null>(null);
@@ -76,6 +92,16 @@ const GestisciEventi: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // Gestione automatica della scomparsa dei messaggi di successo
+  useEffect(() => {
+    if (broadcastSuccess) {
+      const timer = setTimeout(() => {
+        setBroadcastSuccess(null);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [broadcastSuccess]);
 
   // Funzione per convertire file in base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -170,6 +196,65 @@ const GestisciEventi: React.FC = () => {
     
     fetchEventi();
   }, [fetchEventi]);
+
+  // Funzione per inviare email broadcast
+  const inviaEmailBroadcast = async () => {
+    if (!broadcastEventId || !broadcastData.subject.trim() || !broadcastData.message.trim()) {
+      setError('Oggetto e messaggio sono obbligatori per l\'invio email.');
+      return;
+    }
+
+    if (!userId) {
+      setError('Utente non autenticato. Impossibile inviare email.');
+      return;
+    }
+
+    const eventoPrenotazioni = prenotazioni[broadcastEventId] || [];
+    if (eventoPrenotazioni.length === 0) {
+      setError('Nessuna prenotazione trovata per questo evento. Non è possibile inviare email.');
+      return;
+    }
+
+    setSendingBroadcast(true);
+    setError(null);
+    setBroadcastSuccess(null);
+
+    try {
+      const response = await fetch('/api/eventi?section=broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          evento_id: broadcastEventId,
+          subject: broadcastData.subject.trim(),
+          message: broadcastData.message.trim(),
+          user_id: userId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Errore sconosciuto nella risposta del server.' }));
+        throw new Error(errorData.error || `Errore HTTP! status: ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (data.success) {
+        setBroadcastSuccess(`Email inviate con successo a ${data.destinatari_count || eventoPrenotazioni.length} partecipanti!`);
+        setBroadcastData({ subject: '', message: '' });
+        setBroadcastEventId(null);
+        setError(null);
+      } else {
+        throw new Error(data.error || 'Errore nell\'invio delle email.');
+      }
+    } catch (err) {
+      console.error('Broadcast email error:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione o del server.');
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
 
   // Funzione per creare un nuovo evento
   const creaEvento = async () => {
@@ -394,6 +479,26 @@ const GestisciEventi: React.FC = () => {
     setError(null);
   };
 
+  const iniziaBroadcast = (eventoId: number) => {
+    const evento = eventi.find(e => e.id === eventoId);
+    if (!evento) return;
+    
+    setBroadcastEventId(eventoId);
+    setBroadcastData({
+      subject: `Aggiornamento per: ${evento.titolo}`,
+      message: `Ciao!\n\nTi scriviamo per darti alcune informazioni importanti riguardo all'evento "${evento.titolo}".\n\n[Scrivi qui il tuo messaggio personalizzato]\n\nGrazie per la tua partecipazione!\n\nIl team di Aula Studio Foro`
+    });
+    setError(null);
+    setBroadcastSuccess(null);
+  };
+
+  const annullaBroadcast = () => {
+    setBroadcastEventId(null);
+    setBroadcastData({ subject: '', message: '' });
+    setError(null);
+    setBroadcastSuccess(null);
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Data non specificata';
     try {
@@ -472,6 +577,83 @@ const GestisciEventi: React.FC = () => {
           <div className="message-icon">❌</div>
           <span>{error}</span>
           <button onClick={() => setError(null)} className="close-message">×</button>
+        </div>
+      )}
+
+      {broadcastSuccess && (
+        <div className="eventi-message success">
+          <div className="message-icon">✅</div>
+          <span>{broadcastSuccess}</span>
+          <button onClick={() => setBroadcastSuccess(null)} className="close-message">×</button>
+        </div>
+      )}
+
+      {/* Form email broadcast */}
+      {broadcastEventId && (
+        <div className="broadcast-form">
+          <div className="form-header">
+            <h2>📧 Invia Email ai Partecipanti</h2>
+            <p>
+              Evento: <strong>{eventi.find(e => e.id === broadcastEventId)?.titolo}</strong> 
+              ({(prenotazioni[broadcastEventId] || []).length} destinatari)
+            </p>
+          </div>
+          <div className="form-content">
+            <div className="form-grid">
+              <div className="form-group full-width">
+                <label htmlFor="broadcast-subject">Oggetto Email *</label>
+                <input
+                  id="broadcast-subject"
+                  type="text"
+                  value={broadcastData.subject}
+                  onChange={(e) => setBroadcastData({ ...broadcastData, subject: e.target.value })}
+                  placeholder="Oggetto dell'email"
+                  required
+                  disabled={sendingBroadcast}
+                />
+              </div>
+              <div className="form-group full-width">
+                <label htmlFor="broadcast-message">Messaggio *</label>
+                <textarea
+                  id="broadcast-message"
+                  value={broadcastData.message}
+                  onChange={(e) => setBroadcastData({ ...broadcastData, message: e.target.value })}
+                  placeholder="Scrivi qui il messaggio da inviare a tutti i partecipanti..."
+                  rows={8}
+                  required
+                  disabled={sendingBroadcast}
+                />
+                <p className="form-help">
+                  Questo messaggio sarà inviato a tutti i {(prenotazioni[broadcastEventId] || []).length} partecipanti dell'evento.
+                </p>
+              </div>
+            </div>
+            <div className="form-actions">
+              <button 
+                onClick={inviaEmailBroadcast} 
+                className="btn-send-broadcast"
+                disabled={sendingBroadcast || !broadcastData.subject.trim() || !broadcastData.message.trim()}
+              >
+                {sendingBroadcast ? (
+                  <>
+                    <div className="button-spinner"></div>
+                    📤 Invio in corso...
+                  </>
+                ) : (
+                  <>
+                    📧 Invia a {(prenotazioni[broadcastEventId] || []).length} partecipanti
+                  </>
+                )}
+              </button>
+              <button
+                onClick={annullaBroadcast}
+                className="btn-cancel"
+                disabled={sendingBroadcast}
+              >
+                ✕ Annulla
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -605,6 +787,19 @@ const GestisciEventi: React.FC = () => {
                   <div className="event-actions">
                     {canManageEvents() && (
                       <>
+                        {(prenotazioni[evento.id] || []).length > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              iniziaBroadcast(evento.id);
+                            }}
+                            className="btn-broadcast"
+                            title="Invia email ai partecipanti"
+                            disabled={broadcastEventId === evento.id}
+                          >
+                            📧
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -785,7 +980,7 @@ const GestisciEventi: React.FC = () => {
                 onClick={() => setShowNewEventForm(true)}
                 className="btn-create-first"
               >
-                ✨ Crea il primo evento
+                ✨ Crea evento
               </button>
             )}
           </div>

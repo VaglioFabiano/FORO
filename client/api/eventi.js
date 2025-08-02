@@ -281,10 +281,6 @@ function createEmailTemplate(prenotazione, evento) {
             <span class="detail-value">${prenotazione.email}</span>
           </div>
           <div class="detail-row">
-            <span class="detail-label">🎫 Partecipanti:</span>
-            <span class="detail-value"><strong>${prenotazione.num_partecipanti}</strong></span>
-          </div>
-          <div class="detail-row">
             <span class="detail-label">🕐 Prenotazione effettuata:</span>
             <span class="detail-value">${new Date(prenotazione.data_prenotazione).toLocaleDateString('it-IT')} alle ${new Date(prenotazione.data_prenotazione).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
@@ -300,16 +296,15 @@ function createEmailTemplate(prenotazione, evento) {
           <h3>📞 Hai bisogno di aiuto?</h3>
           <p>Se hai domande, devi fare modifiche o hai problemi:</p>
           <p>
-            <strong>📧 Email:</strong> info@aulastudioforo.it<br>
-            <strong>📱 Telefono:</strong> +39 011 123 4567<br>
-            <strong>🌐 Sito web:</strong> www.aulastudioforo.it
+            <strong>📧 Email:</strong> associazioneforopiossasco@gmail.com <br>
+            <strong>📱 Telegram:</strong> https://t.me/aulastudioforo<br>
           </p>
         </div>
         
         <div class="footer">
           <p><strong>🏛️ Associazione Foro - Aula Studio</strong></p>
-          <p>📍 Via Roma, 123 - 10045 Piossasco (TO)</p>
-          <p>🌐 www.aulastudioforo.it | 📧 info@aulastudioforo.it</p>
+          <p>📍 Via Alfieri, 4 - 10045 Piossasco (TO)</p>
+          <p> 📧 associazioneforopiossasco@gmail.com</p>
           <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
           <p style="font-size: 0.8rem; color: #999;">
             Questa email è stata generata automaticamente dal sistema di prenotazioni.<br>
@@ -439,7 +434,406 @@ Via Roma, 123 - 10045 Piossasco (TO)
     };
   }
 }
+// ========== FUNZIONE PER INVIO EMAIL BROADCAST PERSONALIZZATA ==========
 
+// Aggiungi questa funzione nel tuo file API eventi (dopo le altre funzioni email)
+
+async function sendBroadcastEmail(prenotazioni, eventoInfo, emailData) {
+  const startTime = Date.now();
+  const results = [];
+  
+  try {
+    logEmail('info', 'Inizio invio email broadcast', {
+      destinatari_count: prenotazioni.length,
+      evento_id: eventoInfo.id,
+      evento_titolo: eventoInfo.titolo,
+      subject: emailData.subject
+    });
+
+    // Invia email a tutti i prenotati
+    for (const prenotazione of prenotazioni) {
+      try {
+        logEmail('info', `Invio email a ${prenotazione.email}`, {
+          prenotazione_id: prenotazione.id,
+          destinatario: prenotazione.email
+        });
+
+        // Crea il contenuto HTML personalizzato
+        const htmlContent = createBroadcastEmailTemplate(prenotazione, eventoInfo, emailData);
+        
+        // Crea il contenuto testuale di fallback
+        const textContent = createBroadcastTextContent(prenotazione, eventoInfo, emailData);
+
+        // Invia l'email con Resend
+        const { data, error } = await resend.emails.send({
+          from: 'Aula Studio Foro <onboarding@resend.dev>',
+          to: [prenotazione.email],
+          subject: emailData.subject,
+          html: htmlContent,
+          text: textContent,
+          reply_to: 'associazioneforopiossasco@gmail.com',
+          headers: {
+            'X-Entity-Ref-ID': `broadcast-${eventoInfo.id}-${prenotazione.id}`,
+          },
+        });
+
+        if (error) {
+          logEmail('error', `Errore invio email a ${prenotazione.email}`, {
+            error: error.message,
+            prenotazione_id: prenotazione.id
+          });
+          
+          results.push({
+            prenotazione_id: prenotazione.id,
+            email: prenotazione.email,
+            success: false,
+            error: error.message
+          });
+        } else {
+          logEmail('success', `Email inviata con successo a ${prenotazione.email}`, {
+            message_id: data.id,
+            prenotazione_id: prenotazione.id
+          });
+          
+          results.push({
+            prenotazione_id: prenotazione.id,
+            email: prenotazione.email,
+            success: true,
+            message_id: data.id
+          });
+        }
+
+        // Pausa tra gli invii per evitare rate limiting
+        if (prenotazioni.indexOf(prenotazione) < prenotazioni.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+      } catch (emailError) {
+        logEmail('error', `Errore durante invio email a ${prenotazione.email}`, {
+          error: emailError.message,
+          prenotazione_id: prenotazione.id
+        });
+        
+        results.push({
+          prenotazione_id: prenotazione.id,
+          email: prenotazione.email,
+          success: false,
+          error: emailError.message
+        });
+      }
+    }
+
+    const responseTime = Date.now() - startTime;
+    const successCount = results.filter(r => r.success).length;
+    const errorCount = results.filter(r => !r.success).length;
+
+    logEmail('info', 'Broadcast completato', {
+      response_time_ms: responseTime,
+      total_emails: prenotazioni.length,
+      success_count: successCount,
+      error_count: errorCount,
+      success_rate: `${((successCount / prenotazioni.length) * 100).toFixed(1)}%`
+    });
+
+    return {
+      success: true,
+      total_sent: prenotazioni.length,
+      successful: successCount,
+      failed: errorCount,
+      response_time: responseTime,
+      results: results
+    };
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    logEmail('error', 'Errore generale durante broadcast', {
+      error: error.message,
+      response_time_ms: responseTime,
+      destinatari_count: prenotazioni.length
+    });
+
+    return {
+      success: false,
+      error: error.message,
+      response_time: responseTime,
+      results: results
+    };
+  }
+}
+
+// Funzione per creare il template email personalizzato per broadcast
+function createBroadcastEmailTemplate(prenotazione, evento, emailData) {
+  return `
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${emailData.subject}</title>
+      <style>
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: #f8f9fa;
+        }
+        .email-container {
+          background: white;
+          border-radius: 12px;
+          padding: 30px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 3px solid rgb(12, 73, 91);
+        }
+        .logo {
+          font-size: 2rem;
+          font-weight: bold;
+          color: rgb(12, 73, 91);
+          margin-bottom: 10px;
+        }
+        .title {
+          color: rgb(12, 73, 91);
+          font-size: 1.8rem;
+          margin-bottom: 10px;
+        }
+        .subtitle {
+          color: #666;
+          font-size: 1.1rem;
+        }
+        .greeting {
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          padding: 20px;
+          border-radius: 8px;
+          margin: 20px 0;
+          border-left: 4px solid #2196F3;
+        }
+        .greeting h3 {
+          color: rgb(12, 73, 91);
+          margin-top: 0;
+          margin-bottom: 10px;
+        }
+        .content-section {
+          background: #f8f9fa;
+          padding: 25px;
+          border-radius: 10px;
+          margin: 25px 0;
+          border: 1px solid #e9ecef;
+        }
+        .content-section h3 {
+          color: rgb(12, 73, 91);
+          margin-bottom: 20px;
+          font-size: 1.3rem;
+        }
+        .custom-message {
+          color: #333;
+          line-height: 1.7;
+          font-size: 1.05rem;
+          white-space: pre-line;
+        }
+        .event-reference {
+          background: linear-gradient(135deg, rgb(12, 73, 91) 0%, rgba(12, 73, 91, 0.9) 100%);
+          color: white;
+          padding: 20px;
+          border-radius: 12px;
+          margin: 25px 0;
+          text-align: center;
+        }
+        .event-reference h4 {
+          margin-top: 0;
+          font-size: 1.2rem;
+        }
+        .contact-info {
+          background: #e8f5e9;
+          padding: 20px;
+          border-radius: 10px;
+          margin-top: 25px;
+          text-align: center;
+          border: 1px solid #c8e6c9;
+        }
+        .contact-info h3 {
+          color: #2e7d32;
+          margin-top: 0;
+          font-size: 1.2rem;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 35px;
+          padding-top: 25px;
+          border-top: 2px solid #e9ecef;
+          color: #666;
+          font-size: 0.9rem;
+        }
+        @media (max-width: 600px) {
+          body { padding: 10px; }
+          .email-container { padding: 20px; }
+          .content-section { padding: 20px; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-container">
+        <div class="header">
+          <div class="logo">🎓 Aula Studio Foro</div>
+          <h1 class="title">${emailData.subject}</h1>
+          <p class="subtitle">Comunicazione per i partecipanti</p>
+        </div>
+        
+        <div class="greeting">
+          <h3>Ciao ${prenotazione.nome}! 👋</h3>
+          <p>Ti scriviamo in merito alla tua prenotazione per l'evento <strong>"${evento.titolo}"</strong>.</p>
+        </div>
+        
+        <div class="content-section">
+          <h3>📋 Messaggio per te</h3>
+          <div class="custom-message">${emailData.message}</div>
+        </div>
+        
+        <div class="event-reference">
+          <h4>📚 ${evento.titolo}</h4>
+          <p>📅 ${new Date(evento.data_evento).toLocaleDateString('it-IT', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}</p>
+          <p>📍 Via Alfieri, 4 - 10045 Piossasco (TO)</p>
+        </div>
+        
+        <div class="contact-info">
+          <h3>📞 Hai bisogno di aiuto?</h3>
+          <p>Se hai domande o hai bisogno di chiarimenti:</p>
+          <p>
+            <strong>📧 Email:</strong> associazioneforopiossasco@gmail.com<br>
+            <strong>📱 Telegram:</strong> https://t.me/aulastudioforo
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p><strong>🏛️ Associazione Foro - Aula Studio</strong></p>
+          <p>📍 Via Alfieri, 4 - 10045 Piossasco (TO)</p>
+          <p>📧 associazioneforopiossasco@gmail.com</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="font-size: 0.8rem; color: #999;">
+            Questa email è stata inviata a tutti i partecipanti dell'evento.<br>
+            Per comunicazioni dirette, rispondi a questa email.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Funzione per creare il contenuto testuale di fallback per broadcast
+function createBroadcastTextContent(prenotazione, evento, emailData) {
+  return `
+${emailData.subject}
+
+Ciao ${prenotazione.nome}!
+
+Ti scriviamo in merito alla tua prenotazione per l'evento "${evento.titolo}".
+
+MESSAGGIO:
+${emailData.message}
+
+DETTAGLI EVENTO:
+- Titolo: ${evento.titolo}
+- Data: ${new Date(evento.data_evento).toLocaleDateString('it-IT')}
+- Luogo: Via Alfieri, 4 - 10045 Piossasco (TO)
+
+CONTATTI:
+- Email: associazioneforopiossasco@gmail.com
+- Telegram: https://t.me/aulastudioforo
+
+Associazione Foro - Aula Studio
+Via Alfieri, 4 - 10045 Piossasco (TO)
+  `.trim();
+}
+
+// ========== ENDPOINT PER INVIO BROADCAST ==========
+// Aggiungi questo endpoint nel tuo handler principale
+
+// Nel metodo POST, aggiungi questa sezione:
+if (section === 'broadcast') {
+  const { 
+    evento_id, 
+    subject, 
+    message, 
+    user_id 
+  } = req.body;
+  
+  console.log('Invio broadcast email:', { 
+    evento_id, 
+    subject: subject ? 'present' : 'missing',
+    message: message ? 'present' : 'missing',
+    user_id 
+  });
+
+  // Validazione campi obbligatori
+  if (!evento_id || !subject || !message || !user_id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Evento ID, oggetto, messaggio e user_id sono richiesti'
+    });
+  }
+
+  // Verifica che l'evento esista
+  const eventoResult = await client.execute({
+    sql: 'SELECT * FROM eventi WHERE id = ?',
+    args: [evento_id]
+  });
+
+  if (!eventoResult.rows.length) {
+    return res.status(404).json({
+      success: false,
+      error: 'Evento non trovato'
+    });
+  }
+
+  const evento = convertBigIntToNumber(eventoResult.rows[0]);
+
+  // Recupera tutte le prenotazioni per l'evento
+  const prenotazioniResult = await client.execute({
+    sql: 'SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione ASC',
+    args: [evento_id]
+  });
+
+  const prenotazioni = convertBigIntToNumber(prenotazioniResult.rows);
+
+  if (prenotazioni.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Nessuna prenotazione trovata per questo evento'
+    });
+  }
+
+  // Invia le email broadcast
+  console.log('🚀 Invio email broadcast a', prenotazioni.length, 'destinatari...');
+  const broadcastResult = await sendBroadcastEmail(prenotazioni, evento, {
+    subject: subject.trim(),
+    message: message.trim()
+  });
+  
+  console.log('📧 Risultato broadcast:', broadcastResult);
+
+  return res.status(200).json({
+    success: true,
+    message: 'Email broadcast inviate',
+    broadcast_details: broadcastResult,
+    evento_titolo: evento.titolo,
+    destinatari_count: prenotazioni.length
+  });
+}
 // ========== HANDLER PRINCIPALE ==========
 
 export default async function handler(req, res) {
