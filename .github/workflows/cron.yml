@@ -1,17 +1,15 @@
 name: Cron Test
 on:
   schedule:
-    - cron: '55 15 * * *'  # 15:40 (fra qualche minuto)
-    - cron: '56 15 * * *'  # 15:45 (backup)
-  workflow_dispatch:       # Permette trigger manuale
+    - cron: '*/5 * * * *'  # Ogni 5 minuti (per test)
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Test Vercel API
+      - name: Test API
         run: |
-          echo "Triggering cron at $(date)"
+          echo "Auto-triggered at $(date)"
           curl -X POST https://vite-react-vagliofabianos-projects.vercel.app/api/cron \
             -H "Content-Type: application/json"
-          echo "Cron triggered successfully"
