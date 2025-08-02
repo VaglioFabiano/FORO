@@ -1,6 +1,6 @@
 import { createClient } from '@libsql/client/web';
 
-// Configurazione database
+// Configurazione database (stesso del tuo file esistente)
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
   authToken: process.env.TURSO_AUTH_TOKEN?.trim()
@@ -12,6 +12,10 @@ if (!config.url || !config.authToken) {
 }
 
 const client = createClient(config);
+
+// Token bot Telegram
+const TELEGRAM_BOT_TOKEN = '7608037480:AAGkJbIf02G98dTEnREBhfjI2yna5-Y1pzc';
+const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 // Funzione per ottenere i giorni di una settimana specifica
 function getWeekDates(weekOffset = 0) {
@@ -56,6 +60,187 @@ function getDayNumber(dayName) {
     'venerdì': 4, 'sabato': 5, 'domenica': 6
   };
   return days[dayName.toLowerCase()];
+}
+
+// Funzione per ottenere il nome del giorno dalla data
+function getDayNameFromDate(dateString) {
+  const date = new Date(dateString);
+  const giorni = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+  return giorni[date.getDay()];
+}
+
+// Funzione per formattare la data per i messaggi
+function formatDateForMessage(dateString) {
+  const date = new Date(dateString);
+  const dayName = getDayNameFromDate(dateString);
+  return `${dayName} ${date.getDate()}/${date.getMonth() + 1}`;
+}
+
+// Funzione per inviare messaggio Telegram
+async function sendTelegramMessage(chatId, message) {
+  try {
+    const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!data.ok) {
+      throw new Error(data.description || 'Errore nell\'invio del messaggio');
+    }
+    
+    return data.result;
+  } catch (error) {
+    console.error('Errore invio messaggio Telegram:', error);
+    throw error;
+  }
+}
+
+// Funzione per ottenere il chat_id di un utente dal database
+async function getUserTelegramChatId(userId) {
+  try {
+    const result = await client.execute({
+      sql: `SELECT telegram_chat_id FROM users WHERE id = ? AND telegram_chat_id IS NOT NULL`,
+      args: [userId]
+    });
+    
+    return result.rows.length > 0 ? result.rows[0].telegram_chat_id : null;
+  } catch (error) {
+    console.error('Errore nel recupero chat_id:', error);
+    return null;
+  }
+}
+
+// Funzione per ottenere informazioni utente dal database
+async function getUserInfo(userId) {
+  try {
+    const result = await client.execute({
+      sql: `SELECT name, surname, username FROM users WHERE id = ?`,
+      args: [userId]
+    });
+    
+    return result.rows.length > 0 ? result.rows[0] : null;
+  } catch (error) {
+    console.error('Errore nel recupero info utente:', error);
+    return null;
+  }
+}
+
+// Funzione per inviare notifica Telegram
+async function sendTurnoNotification(action, turnoData, currentUserId, targetUserId = null) {
+  try {
+    // Determina chi deve ricevere la notifica
+    let recipientUserId = null;
+    let message = '';
+    
+    // Ottieni informazioni sugli utenti coinvolti
+    const currentUserInfo = await getUserInfo(currentUserId);
+    const targetUserInfo = targetUserId ? await getUserInfo(targetUserId) : null;
+    
+    if (!currentUserInfo) {
+      console.error('Informazioni utente corrente non trovate');
+      return;
+    }
+    
+    // Formatta data e orario per il messaggio
+    const dayAndDate = formatDateForMessage(turnoData.data);
+    const orario = `${turnoData.turno_inizio}-${turnoData.turno_fine}`;
+    
+    switch (action) {
+      case 'self_assigned':
+        // L'utente si è assegnato un turno
+        recipientUserId = currentUserId;
+        message = `✅ Ti sei aggiunto al turno di ${dayAndDate} delle ${orario}`;
+        break;
+        
+      case 'assigned':
+        // Un admin ha assegnato un turno a qualcuno
+        if (targetUserId && targetUserId !== currentUserId) {
+          recipientUserId = targetUserId;
+          message = `📋 ${currentUserInfo.name} ${currentUserInfo.surname} ti ha aggiunto al turno di ${dayAndDate} delle ${orario}`;
+        }
+        break;
+        
+      case 'self_removed':
+        // L'utente si è rimosso da un turno
+        recipientUserId = currentUserId;
+        message = `❌ Ti sei rimosso dal turno di ${dayAndDate} delle ${orario}`;
+        break;
+        
+      case 'removed':
+        // Un admin ha rimosso qualcuno da un turno
+        if (targetUserId && targetUserId !== currentUserId) {
+          recipientUserId = targetUserId;
+          message = `🗑️ ${currentUserInfo.name} ${currentUserInfo.surname} ti ha rimosso dal turno di ${dayAndDate} delle ${orario}`;
+        }
+        break;
+        
+      case 'closed_assigned':
+        // Utente si è assegnato a un turno chiuso (straordinario)
+        recipientUserId = currentUserId;
+        message = `⚠️ Ti sei aggiunto al turno straordinario di ${dayAndDate} delle ${orario}`;
+        break;
+        
+      default:
+        console.log('Azione non riconosciuta per notifica:', action);
+        return;
+    }
+    
+    // Se non c'è un destinatario, non inviare nulla
+    if (!recipientUserId || !message) {
+      console.log('Nessuna notifica da inviare per questa azione');
+      return;
+    }
+    
+    // Ottieni il chat_id del destinatario
+    const chatId = await getUserTelegramChatId(recipientUserId);
+    
+    if (!chatId) {
+      console.log(`Chat ID non trovato per l'utente ${recipientUserId}, notifica non inviata`);
+      return;
+    }
+    
+    // Invia il messaggio
+    await sendTelegramMessage(chatId, message);
+    console.log(`Notifica inviata con successo a utente ${recipientUserId}: ${message}`);
+    
+    // Log della notifica nel database (opzionale)
+    await client.execute({
+      sql: `INSERT INTO telegram_messages (user_id, phone_number, message, success, created_at)
+            VALUES (?, '', ?, 1, datetime('now'))`,
+      args: [recipientUserId, message]
+    }).catch(error => {
+      console.error('Errore nel logging notifica:', error);
+    });
+    
+  } catch (error) {
+    console.error('Errore nell\'invio notifica turno:', error);
+  }
+}
+
+// Handler per ripercussioni turni straordinari
+async function handleClosedTurnoRepercussions(turnoData, userId, note) {
+  console.log('Gestione ripercussioni turno straordinario', {
+    turnoData,
+    userId,
+    note,
+    timestamp: new Date().toISOString()
+  });
+  
+  // TODO: Implementare logiche aggiuntive per turni straordinari
+  // - Invio email a manager
+  // - Notifica su Slack
+  // - Log speciale
+  // - Richiesta approvazione
+  // - Calcolo costi extra
 }
 
 // Funzione per generare turni di default per settimane future
@@ -124,7 +309,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
         fineMinuti = 24 * 60;
       }
 
-      const fasciaCompatibile = fascheGiorno.find(fascia => {
+      const fasciaCompatibile = fasce.find(fascia => {
         const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
         const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine.split(':').map(Number);
         const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
@@ -219,46 +404,6 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
   });
 
   return turni;
-}
-
-// Handler per notifiche (TODO)
-async function handleTurnoNotification(action, turnoData, currentUserId, targetUserId = null) {
-  // TODO: Implementare sistema di notifiche
-  console.log('TODO: Notifica turno', {
-    action, // 'assigned', 'removed', 'self_assigned', 'self_removed', 'closed_assigned'
-    turnoData,
-    currentUserId,
-    targetUserId
-  });
-  
-  /*
-  Possibili azioni:
-  - 'self_assigned': utente si assegna un turno
-  - 'assigned': admin assegna turno a qualcuno
-  - 'self_removed': utente si rimuove da un turno
-  - 'removed': admin rimuove qualcuno da un turno
-  - 'closed_assigned': utente si mette in turno chiuso (caso speciale)
-  */
-}
-
-// Handler per ripercussioni turni straordinari (TODO)
-async function handleClosedTurnoRepercussions(turnoData, userId, note) {
-  // TODO: Implementare gestione ripercussioni
-  console.log('TODO: Gestire ripercussioni turno straordinario', {
-    turnoData,
-    userId,
-    note,
-    timestamp: new Date().toISOString()
-  });
-  
-  /*
-  Possibili ripercussioni:
-  - Invio email a manager
-  - Notifica su Slack
-  - Log speciale
-  - Richiesta approvazione
-  - Calcolo costi extra
-  */
 }
 
 // GET - Ottieni turni della settimana
@@ -364,7 +509,7 @@ async function assegnaTurno(req, res) {
       });
     }
 
-    // TODO: Handler per ripercussioni turno chiuso
+    // Gestione ripercussioni turno chiuso
     if (is_closed_override) {
       await handleClosedTurnoRepercussions({
         data,
@@ -381,18 +526,17 @@ async function assegnaTurno(req, res) {
 
     let action = 'assigned';
     let targetUserId = user_id;
+    let turnoResult;
     
     if (esistente.rows.length > 0) {
       const oldUserId = esistente.rows[0].user_id;
       
       // Determina il tipo di azione per le notifiche
       if (current_user_id === user_id && current_user_id === oldUserId) {
-        action = 'self_modified'; // Utente modifica le proprie note
+        action = 'self_modified'; // Utente modifica le proprie note - nessuna notifica
       } else if (current_user_id === user_id) {
         action = is_closed_override ? 'closed_assigned' : 'self_assigned';
-      } else if (current_user_id === oldUserId) {
-        action = 'assigned'; // Admin assegna turno ad altri
-      } else {
+      } else if (oldUserId !== user_id) {
         action = 'assigned'; // Admin riassegna turno
       }
 
@@ -403,12 +547,16 @@ async function assegnaTurno(req, res) {
         args: [user_id, note || '', fascia_id || 1, data, turno_inizio, turno_fine]
       });
 
-      // TODO: Invia notifica
-      await handleTurnoNotification(action, result.rows[0], current_user_id, targetUserId);
+      turnoResult = result.rows[0];
+
+      // Invia notifica solo se non è una modifica delle proprie note
+      if (action !== 'self_modified') {
+        await sendTurnoNotification(action, turnoResult, current_user_id, targetUserId);
+      }
 
       return res.status(200).json({
         success: true,
-        turno: result.rows[0],
+        turno: turnoResult,
         action: 'updated'
       });
     } else {
@@ -427,12 +575,14 @@ async function assegnaTurno(req, res) {
         args: [data, turno_inizio, turno_fine, fascia_id || 1, user_id, note || '']
       });
 
-      // TODO: Invia notifica
-      await handleTurnoNotification(action, result.rows[0], current_user_id, targetUserId);
+      turnoResult = result.rows[0];
+
+      // Invia notifica
+      await sendTurnoNotification(action, turnoResult, current_user_id, targetUserId);
 
       return res.status(201).json({
         success: true,
-        turno: result.rows[0],
+        turno: turnoResult,
         action: 'created'
       });
     }
@@ -478,9 +628,9 @@ async function rimuoviTurno(req, res) {
         args: [data, turno_inizio, turno_fine]
       });
 
-      // TODO: Invia notifica
+      // Invia notifica se il turno è stato effettivamente rimosso
       if (result.rowsAffected > 0) {
-        await handleTurnoNotification(action, {
+        await sendTurnoNotification(action, {
           data,
           turno_inizio,
           turno_fine
