@@ -21,7 +21,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
@@ -30,72 +29,35 @@ export default async function handler(req, res) {
   console.log(`🕐 Cron job eseguito alle ${currentHour}:${currentMinute.toString().padStart(2, '0')} del ${getDayName(currentDay)}`);
 
   try {
-    let taskExecuted = false;
-    let taskType = '';
-
-    // Controlla quale task eseguire in base all'orario
-    if (currentHour === 8 && currentMinute === 0) {
-      taskType = 'morning_task';
-      taskExecuted = true;
-    } 
-    else if (currentHour === 12 && currentMinute === 20) {
-      taskType = 'telegram_test_1'; // TEST: 12:20
-      taskExecuted = true;
-    }
-    else if (currentHour === 12 && currentMinute === 30) {
-      taskType = 'telegram_test_2'; // TEST: 12:30
-      taskExecuted = true;
-    }
-    else if (currentHour === 12 && currentMinute === 31) {
-      taskType = 'telegram_test_3'; // TEST: 12:31
-      taskExecuted = true;
-    }
-    else if (currentHour === 15 && currentMinute === 0) {
-      taskType = 'afternoon_task';
-      taskExecuted = true;
-    }
-    else if (currentHour === 15 && currentMinute === 30) {
-      taskType = 'late_afternoon_task';
-      taskExecuted = true;
-    }
-    else if (currentHour === 19 && currentMinute === 0) {
-      taskType = 'evening_task';
-      taskExecuted = true;
-    }
-    else if (currentHour === 20 && currentMinute === 30) {
-      taskType = 'night_task';
-      taskExecuted = true;
-    }
-    else if (currentHour === 23 && currentMinute === 30) {
-      taskType = 'late_night_task';
-      taskExecuted = true;
-    }
-    else if (currentHour === 23 && currentMinute === 59 && currentDay === 0) {
-      taskType = 'sunday_end_task';
-      taskExecuted = true;
-    }
-
-    if (taskExecuted) {
+    // Determina il task in base all'orario attuale
+    const taskType = determineTaskType(currentHour, currentMinute, currentDay);
+    
+    if (taskType) {
       await handleTask(taskType, now);
-      
-      // Log dell'esecuzione nel database (opzionale)
       await logExecution(taskType, now, 'success');
+      
+      return res.status(200).json({ 
+        message: 'Cron job completato con successo',
+        taskType: taskType,
+        timestamp: now.toISOString(),
+        executed: true
+      });
+    } else {
+      // Esegui comunque un task di default per i test
+      await handleTask('general_task', now);
+      
+      return res.status(200).json({ 
+        message: 'Task generale eseguito',
+        taskType: 'general_task',
+        timestamp: now.toISOString(),
+        executed: true
+      });
     }
-
-    return res.status(200).json({ 
-      message: taskExecuted ? 'Cron job completato con successo' : 'Nessun task da eseguire per questo orario',
-      taskType: taskType || 'none',
-      timestamp: now.toISOString(),
-      executed: taskExecuted
-    });
 
   } catch (error) {
     console.error('❌ Errore nel cron job:', error);
     
-    // Log dell'errore nel database (opzionale)
-    if (taskType) {
-      await logExecution(taskType, now, 'error', error.message);
-    }
+    await logExecution('error_task', now, 'error', error.message);
     
     return res.status(500).json({ 
       error: 'Errore interno del server',
@@ -105,13 +67,74 @@ export default async function handler(req, res) {
   }
 }
 
+// Funzione per determinare il tipo di task in base all'orario
+function determineTaskType(hour, minute, day) {
+  // Task mattutino
+  if (hour === 8 && minute === 0) {
+    return 'morning_task';
+  }
+  
+  // Task pranzo
+  if (hour === 12 && minute === 0) {
+    return 'lunch_task';
+  }
+  
+  // Test Telegram
+  if (hour === 12 && minute === 20) {
+    return 'telegram_test_1';
+  }
+  
+// 14:30 invece di 12:30
+if (hour === 14 && minute === 30) {
+  return 'telegram_test_2';
+}
+
+// 14:31 invece di 12:31  
+if (hour === 14 && minute === 31) {
+  return 'telegram_test_3';
+}
+  
+  // Task pomeridiani
+  if (hour === 15 && minute === 0) {
+    return 'afternoon_task';
+  }
+  
+  if (hour === 15 && minute === 30) {
+    return 'late_afternoon_task';
+  }
+  
+  // Task serali
+  if (hour === 19 && minute === 0) {
+    return 'evening_task';
+  }
+  
+  if (hour === 20 && minute === 30) {
+    return 'night_task';
+  }
+  
+  if (hour === 23 && minute === 30) {
+    return 'late_night_task';
+  }
+  
+  // Task domenica sera
+  if (hour === 23 && minute === 59 && day === 0) {
+    return 'sunday_end_task';
+  }
+  
+  return null;
+}
+
 // Funzione principale per gestire i diversi task
 async function handleTask(taskType, timestamp) {
   console.log(`🚀 Eseguendo task: ${taskType} alle ${timestamp.toISOString()}`);
   
   switch (taskType) {
     case 'morning_task':
-      await morningTask();
+      await morningTask(timestamp);
+      break;
+      
+    case 'lunch_task':
+      await lunchTask(timestamp);
       break;
       
     case 'telegram_test_1':
@@ -127,31 +150,36 @@ async function handleTask(taskType, timestamp) {
       break;
       
     case 'afternoon_task':
-      await afternoonTask();
+      await afternoonTask(timestamp);
       break;
       
     case 'late_afternoon_task':
-      await lateAfternoonTask();
+      await lateAfternoonTask(timestamp);
       break;
       
     case 'evening_task':
-      await eveningTask();
+      await eveningTask(timestamp);
       break;
       
     case 'night_task':
-      await nightTask();
+      await nightTask(timestamp);
       break;
       
     case 'late_night_task':
-      await lateNightTask();
+      await lateNightTask(timestamp);
       break;
       
     case 'sunday_end_task':
-      await sundayEndTask();
+      await sundayEndTask(timestamp);
+      break;
+      
+    case 'general_task':
+      await generalTask(timestamp);
       break;
       
     default:
       console.log('⚠️ Task non riconosciuto:', taskType);
+      await generalTask(timestamp);
   }
 }
 
@@ -182,6 +210,20 @@ async function sendTelegramMessage(chatId, message) {
     console.error('❌ Errore invio messaggio Telegram:', error);
     throw error;
   }
+}
+
+// Task generale per test e chiamate non programmate
+async function generalTask(timestamp) {
+  console.log('🔧 Task generale eseguito');
+  
+  const message = `🔧 Task Generale Eseguito
+⏰ Orario: ${timestamp.getHours()}:${timestamp.getMinutes().toString().padStart(2, '0')}
+📅 Data: ${timestamp.toLocaleDateString('it-IT')}
+🚀 Il sistema GitHub Actions funziona!
+
+Chiamata ricevuta correttamente.`;
+
+  await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
 // Task di test Telegram
@@ -226,58 +268,61 @@ Il sistema cron è configurato correttamente! 🎉`;
 }
 
 // Task specifici originali
-async function morningTask() {
+async function morningTask(timestamp) {
   console.log('☀️ Task mattutino (8:00) - Inizio giornata');
   
-  // Invia anche un messaggio Telegram per il task mattutino
   await sendTelegramMessage(TEST_CHAT_ID, '☀️ Buongiorno! Il task mattutino è stato eseguito alle 8:00.');
   
-  // Esempio: invia email di riepilogo giornaliero
   await sendEmail({
     subject: 'Buongiorno! Riepilogo della giornata',
     content: 'La giornata è iniziata. Controlla gli aggiornamenti.',
   });
   
-  // Esempio: aggiorna statistiche nel database
   await updateDailyStats();
 }
 
-async function afternoonTask() {
+async function lunchTask(timestamp) {
+  console.log('🍽️ Task pranzo (12:00)');
+  
+  await sendTelegramMessage(TEST_CHAT_ID, '🍽️ Task pranzo eseguito alle 12:00.');
+}
+
+async function afternoonTask(timestamp) {
   console.log('🌅 Task pomeridiano (15:00)');
   
   await sendTelegramMessage(TEST_CHAT_ID, '🌅 Task pomeridiano eseguito alle 15:00.');
   await processMidDayData();
 }
 
-async function lateAfternoonTask() {
+async function lateAfternoonTask(timestamp) {
   console.log('🌆 Task tardo pomeriggio (15:30)');
   
   await sendTelegramMessage(TEST_CHAT_ID, '🌆 Task del tardo pomeriggio eseguito alle 15:30.');
   await prepareEndOfDayReport();
 }
 
-async function eveningTask() {
+async function eveningTask(timestamp) {
   console.log('🌃 Task serale (19:00)');
   
   await sendTelegramMessage(TEST_CHAT_ID, '🌃 Task serale eseguito alle 19:00.');
   await backupDailyData();
 }
 
-async function nightTask() {
+async function nightTask(timestamp) {
   console.log('🌙 Task notturno (20:30)');
   
   await sendTelegramMessage(TEST_CHAT_ID, '🌙 Task notturno eseguito alle 20:30.');
   await cleanupAndOptimize();
 }
 
-async function lateNightTask() {
+async function lateNightTask(timestamp) {
   console.log('🌌 Task tarda notte (23:30)');
   
   await sendTelegramMessage(TEST_CHAT_ID, '🌌 Task di tarda notte eseguito alle 23:30.');
   await prepareForNextDay();
 }
 
-async function sundayEndTask() {
+async function sundayEndTask(timestamp) {
   console.log('📊 Task fine domenica (23:59)');
   
   await generateWeeklyReport();
@@ -317,7 +362,6 @@ async function sendEmail({ subject, content, to = process.env.DEFAULT_EMAIL }) {
 
 async function updateDailyStats() {
   try {
-    // Esempio di query al database
     if (db) {
       await db.execute({
         sql: `INSERT INTO daily_stats (date, task_type, executed_at) VALUES (?, ?, ?)`,
@@ -347,32 +391,26 @@ async function logExecution(taskType, timestamp, status, errorMessage = null) {
 // Implementa queste funzioni in base alle tue esigenze specifiche
 async function processMidDayData() {
   console.log('📊 Elaborazione dati di metà giornata...');
-  // La tua logica qui
 }
 
 async function prepareEndOfDayReport() {
   console.log('📋 Preparazione report fine giornata...');
-  // La tua logica qui
 }
 
 async function backupDailyData() {
   console.log('💾 Backup dati giornalieri...');
-  // La tua logica qui
 }
 
 async function cleanupAndOptimize() {
   console.log('🧹 Pulizia e ottimizzazione...');
-  // La tua logica qui
 }
 
 async function prepareForNextDay() {
   console.log('🗓️ Preparazione per domani...');
-  // La tua logica qui
 }
 
 async function generateWeeklyReport() {
   console.log('📈 Generazione report settimanale...');
-  // La tua logica qui
 }
 
 // Utility function
