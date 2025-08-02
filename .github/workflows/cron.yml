@@ -1,8 +1,8 @@
 name: Cron Test
 on:
   schedule:
-    - cron: '51 15 * * *'  # 15:40 (fra qualche minuto)
-    - cron: '52 15 * * *'  # 15:45 (backup)
+    - cron: '55 15 * * *'  # 15:40 (fra qualche minuto)
+    - cron: '56 15 * * *'  # 15:45 (backup)
   workflow_dispatch:       # Permette trigger manuale
 
 jobs:
@@ -12,6 +12,6 @@ jobs:
       - name: Test Vercel API
         run: |
           echo "Triggering cron at $(date)"
-          curl -X POST https://vite-react-19lreeugm-vagliofabianos-projects.vercel.app/api/cron \
+          curl -X POST https://vite-react-vagliofabianos-projects.vercel.app/api/cron \
             -H "Content-Type: application/json"
           echo "Cron triggered successfully"
