@@ -1,5 +1,4 @@
-// api/cron.js
-import { Client } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 import { Resend } from 'resend';
 
 // Inizializza i client (usa le variabili d'ambiente di Vercel)
