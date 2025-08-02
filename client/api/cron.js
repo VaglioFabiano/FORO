@@ -85,12 +85,12 @@ function determineTaskType(hour, minute, day) {
   }
   
 // 14:30 invece di 12:30
-if (hour === 14 && minute === 30) {
+if (hour === 14 && minute === 36) {
   return 'telegram_test_2';
 }
 
 // 14:31 invece di 12:31  
-if (hour === 14 && minute === 31) {
+if (hour === 14 && minute === 35) {
   return 'telegram_test_3';
 }
   
