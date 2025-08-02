@@ -4,8 +4,8 @@ on:
   schedule:
     # Test Telegram alle 12:20, 12:30, 12:31
     - cron: '25 14 * * *'  # 12:20 ogni giorno
-    - cron: '40 14 * * *'  # 14:30 ogni giorno  
-    - cron: '41 14 * * *'  # 12:31 ogni giorno
+    - cron: '45 14 * * *'  # 14:30 ogni giorno  
+    - cron: '46 14 * * *'  # 12:31 ogni giorno
     
     # Cron jobs originali
     - cron: '0 8 * * *'    # 8:00 ogni giorno

@@ -1,13 +1,21 @@
+// api/cron.js
 import { createClient } from '@libsql/client/web';
 import { Resend } from 'resend';
 
 // Inizializza i client (usa le variabili d'ambiente di Vercel)
-const db = new Client({
-  url: process.env.LIBSQL_URL,
-  authToken: process.env.LIBSQL_AUTH_TOKEN,
-});
+const config = {
+  url: process.env.LIBSQL_URL?.trim(),
+  authToken: process.env.LIBSQL_AUTH_TOKEN?.trim()
+};
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let db = null;
+if (config.url && config.authToken) {
+  db = createClient(config);
+} else {
+  console.warn('⚠️ Database config mancante, alcune funzioni potrebbero non funzionare');
+}
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Configurazione Telegram
 const TELEGRAM_BOT_TOKEN = '7608037480:AAGkJbIf02G98dTEnREBhfjI2yna5-Y1pzc';
@@ -56,7 +64,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('❌ Errore nel cron job:', error);
     
-    await logExecution('error_task', now, 'error', error.message);
+    await logExecution('error_task', now, 'error', error.message).catch(() => {});
     
     return res.status(500).json({ 
       error: 'Errore interno del server',
@@ -78,20 +86,18 @@ function determineTaskType(hour, minute, day) {
     return 'lunch_task';
   }
   
-  // Test Telegram
-  if (hour === 12 && minute === 20) {
+  // Test Telegram - ORARI CORRETTI
+  if (hour === 14 && minute === 25) {
     return 'telegram_test_1';
   }
   
-// 14:30 invece di 12:30
-if (hour === 14 && minute === 40) {
-  return 'telegram_test_2';
-}
-
-// 14:31 invece di 12:31  
-if (hour === 14 && minute === 41) {
-  return 'telegram_test_3';
-}
+  if (hour === 14 && minute === 45) {
+    return 'telegram_test_2';
+  }
+  
+  if (hour === 14 && minute === 46) {
+    return 'telegram_test_3';
+  }
   
   // Task pomeridiani
   if (hour === 15 && minute === 0) {
@@ -225,42 +231,42 @@ Chiamata ricevuta correttamente.`;
   await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
-// Task di test Telegram
+// Task di test Telegram - MESSAGGI CORRETTI
 async function telegramTest1(timestamp) {
-  console.log('📱 Test Telegram 1 (12:20)');
+  console.log('📱 Test Telegram 1 (14:25)');
   
   const message = `🕰️ Test Cron Job #1
-⏰ Orario: 12:20
+⏰ Orario: 14:25
 📅 Data: ${timestamp.toLocaleDateString('it-IT')}
 🔄 Il sistema cron sta funzionando correttamente!
 
-Questo è il primo test alle 12:20.`;
+Questo è il primo test alle 14:25.`;
 
   await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
 async function telegramTest2(timestamp) {
-  console.log('📱 Test Telegram 2 (12:30)');
+  console.log('📱 Test Telegram 2 (14:40)');
   
   const message = `🕰️ Test Cron Job #2
-⏰ Orario: 12:30
+⏰ Orario: 14:40
 📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-🍽️ Ora di pranzo! 
+🌅 Pomeriggio! 
 
-Questo è il secondo test alle 12:30.`;
+Questo è il secondo test alle 14:40.`;
 
   await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
 async function telegramTest3(timestamp) {
-  console.log('📱 Test Telegram 3 (12:31)');
+  console.log('📱 Test Telegram 3 (14:41)');
   
   const message = `🕰️ Test Cron Job #3
-⏰ Orario: 12:31
+⏰ Orario: 14:41
 📅 Data: ${timestamp.toLocaleDateString('it-IT')}
 ✅ Test completato con successo!
 
-Questo è il terzo e ultimo test alle 12:31.
+Questo è il terzo e ultimo test alle 14:41.
 Il sistema cron è configurato correttamente! 🎉`;
 
   await sendTelegramMessage(TEST_CHAT_ID, message);
@@ -336,7 +342,7 @@ async function sundayEndTask(timestamp) {
 
 // Funzioni di supporto
 async function sendEmail({ subject, content, to = process.env.DEFAULT_EMAIL }) {
-  if (!process.env.RESEND_API_KEY || !to) {
+  if (!resend || !to) {
     console.log('📧 Email non inviata: configurazione mancante');
     return;
   }
