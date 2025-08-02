@@ -75,15 +75,14 @@ export default async function handler(req, res) {
 }
 
 // Funzione per determinare il tipo di task in base all'orario
-// Funzione per determinare il tipo di task in base all'orario
 function determineTaskType(hour, minute, day) {
-  // TEST IMMEDIATI - 15:15 e 15:16
-  if (hour === 15 && minute === 15) {
-    return 'test_15_15';
+  // Test GitHub Actions
+  if (hour === 15 && minute === 40) {
+    return 'test_15_40';
   }
   
-  if (hour === 15 && minute === 16) {
-    return 'test_15_16';
+  if (hour === 15 && minute === 45) {
+    return 'test_15_45';
   }
   
   // Task mattutino
@@ -144,100 +143,14 @@ async function handleTask(taskType, timestamp) {
   console.log(`🚀 Eseguendo task: ${taskType} alle ${timestamp.toISOString()}`);
   
   switch (taskType) {
-    case 'test_15_15':
-      await test1515(timestamp);
+    case 'test_15_40':
+      await test1540(timestamp);
       break;
       
-    case 'test_15_16':
-      await test1516(timestamp);
+    case 'test_15_45':
+      await test1545(timestamp);
       break;
       
-    case 'morning_task':
-      await morningTask(timestamp);
-      break;
-      
-    case 'lunch_task':
-      await lunchTask(timestamp);
-      break;
-      
-    case 'telegram_test_1':
-      await telegramTest1(timestamp);
-      break;
-      
-    case 'telegram_test_2':
-      await telegramTest2(timestamp);
-      break;
-      
-    case 'telegram_test_3':
-      await telegramTest3(timestamp);
-      break;
-      
-    case 'afternoon_task':
-      await afternoonTask(timestamp);
-      break;
-      
-    case 'late_afternoon_task':
-      await lateAfternoonTask(timestamp);
-      break;
-      
-    case 'evening_task':
-      await eveningTask(timestamp);
-      break;
-      
-    case 'night_task':
-      await nightTask(timestamp);
-      break;
-      
-    case 'late_night_task':
-      await lateNightTask(timestamp);
-      break;
-      
-    case 'sunday_end_task':
-      await sundayEndTask(timestamp);
-      break;
-      
-    case 'general_task':
-      await generalTask(timestamp);
-      break;
-      
-    default:
-      console.log('⚠️ Task non riconosciuto:', taskType);
-      await generalTask(timestamp);
-  }
-}
-
-// NUOVI TEST PER 15:15 e 15:16
-async function test1515(timestamp) {
-  console.log('🚀 Test immediato 15:15');
-  
-  const message = `🚀 TEST IMMEDIATO 15:15
-⏰ Orario: 15:15
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-✅ GitHub Actions ha funzionato!
-
-Questo è il test delle 15:15 - Sistema operativo! 🎉`;
-
-  await sendTelegramMessage(TEST_CHAT_ID, message);
-}
-
-async function test1516(timestamp) {
-  console.log('🎯 Test immediato 15:16');
-  
-  const message = `🎯 TEST IMMEDIATO 15:16
-⏰ Orario: 15:16
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-🔥 Secondo test consecutivo!
-
-Sistema completamente funzionante! 🚀`;
-
-  await sendTelegramMessage(TEST_CHAT_ID, message);
-}
-
-// Funzione principale per gestire i diversi task
-async function handleTask(taskType, timestamp) {
-  console.log(`🚀 Eseguendo task: ${taskType} alle ${timestamp.toISOString()}`);
-  
-  switch (taskType) {
     case 'morning_task':
       await morningTask(timestamp);
       break;
@@ -321,6 +234,33 @@ async function sendTelegramMessage(chatId, message) {
   }
 }
 
+// Task di test per GitHub Actions
+async function test1540(timestamp) {
+  console.log('🚀 Test GitHub Actions 15:40');
+  
+  const message = `🚀 GITHUB ACTIONS TEST 15:40
+⏰ Orario: 15:40
+📅 Data: ${timestamp.toLocaleDateString('it-IT')}
+✅ GitHub Actions funziona perfettamente!
+
+Sistema automatico operativo! 🎉`;
+
+  await sendTelegramMessage(TEST_CHAT_ID, message);
+}
+
+async function test1545(timestamp) {
+  console.log('🎯 Test GitHub Actions 15:45');
+  
+  const message = `🎯 GITHUB ACTIONS TEST 15:45
+⏰ Orario: 15:45
+📅 Data: ${timestamp.toLocaleDateString('it-IT')}
+🔥 Secondo test GitHub Actions!
+
+Tutto funziona alla perfezione! 🚀`;
+
+  await sendTelegramMessage(TEST_CHAT_ID, message);
+}
+
 // Task generale per test e chiamate non programmate
 async function generalTask(timestamp) {
   console.log('🔧 Task generale eseguito');
@@ -328,14 +268,14 @@ async function generalTask(timestamp) {
   const message = `🔧 Task Generale Eseguito
 ⏰ Orario: ${timestamp.getHours()}:${timestamp.getMinutes().toString().padStart(2, '0')}
 📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-🚀 Il sistema GitHub Actions funziona!
+🚀 Il sistema funziona!
 
 Chiamata ricevuta correttamente.`;
 
   await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
-// Task di test Telegram - MESSAGGI CORRETTI
+// Task di test Telegram originali
 async function telegramTest1(timestamp) {
   console.log('📱 Test Telegram 1 (14:25)');
   
@@ -350,27 +290,27 @@ Questo è il primo test alle 14:25.`;
 }
 
 async function telegramTest2(timestamp) {
-  console.log('📱 Test Telegram 2 (14:40)');
+  console.log('📱 Test Telegram 2 (14:50)');
   
   const message = `🕰️ Test Cron Job #2
-⏰ Orario: 14:40
+⏰ Orario: 14:50
 📅 Data: ${timestamp.toLocaleDateString('it-IT')}
 🌅 Pomeriggio! 
 
-Questo è il secondo test alle 14:40.`;
+Questo è il secondo test alle 14:50.`;
 
   await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
 async function telegramTest3(timestamp) {
-  console.log('📱 Test Telegram 3 (14:41)');
+  console.log('📱 Test Telegram 3 (14:51)');
   
   const message = `🕰️ Test Cron Job #3
-⏰ Orario: 14:41
+⏰ Orario: 14:51
 📅 Data: ${timestamp.toLocaleDateString('it-IT')}
 ✅ Test completato con successo!
 
-Questo è il terzo e ultimo test alle 14:41.
+Questo è il terzo e ultimo test alle 14:51.
 Il sistema cron è configurato correttamente! 🎉`;
 
   await sendTelegramMessage(TEST_CHAT_ID, message);
