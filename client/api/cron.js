@@ -22,21 +22,36 @@ const TELEGRAM_BOT_TOKEN = '7608037480:AAGkJbIf02G98dTEnREBhfjI2yna5-Y1pzc';
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 const TEST_CHAT_ID = '1129901266'; // Chat ID per i test
 
+// FUNZIONE PER OTTENERE L'ORARIO ITALIANO
+function getItalianTime() {
+  const now = new Date();
+  
+  // Crea un oggetto Date per il fuso orario italiano
+  const italianTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Rome"}));
+  
+  return {
+    date: italianTime,
+    hour: italianTime.getHours(),
+    minute: italianTime.getMinutes(),
+    day: italianTime.getDay(), // 0 = Domenica, 1 = Lunedì, etc.
+    dateString: italianTime.toISOString().split('T')[0] // YYYY-MM-DD
+  };
+}
+
 export default async function handler(req, res) {
   // Accetta sia GET che POST per test
   if (!['GET', 'POST'].includes(req.method)) {
     return res.status(405).json({ error: 'Method not allowed. Use GET or POST.' });
   }
 
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  const currentDay = now.getDay(); // 0 = Domenica, 1 = Lunedì, etc.
+  // Usa l'orario italiano invece di quello del server
+  const italianTime = getItalianTime();
+  const { date: now, hour: currentHour, minute: currentMinute, day: currentDay } = italianTime;
   
-  console.log(`🕐 Cron job eseguito alle ${currentHour}:${currentMinute.toString().padStart(2, '0')} del ${getDayName(currentDay)}`);
+  console.log(`🕐 Cron job eseguito alle ${currentHour}:${currentMinute.toString().padStart(2, '0')} del ${getDayName(currentDay)} (orario italiano)`);
 
   try {
-    // Determina il task in base all'orario attuale
+    // Determina il task in base all'orario attuale ITALIANO
     const taskType = determineTaskType(currentHour, currentMinute, currentDay);
     
     if (taskType) {
@@ -47,6 +62,7 @@ export default async function handler(req, res) {
         message: 'Cron job completato con successo',
         taskType: taskType,
         timestamp: now.toISOString(),
+        italianTime: `${currentHour}:${currentMinute.toString().padStart(2, '0')}`,
         executed: true
       });
     } else {
@@ -57,6 +73,7 @@ export default async function handler(req, res) {
         message: 'Task generale eseguito',
         taskType: 'general_task',
         timestamp: now.toISOString(),
+        italianTime: `${currentHour}:${currentMinute.toString().padStart(2, '0')}`,
         executed: true
       });
     }
@@ -69,12 +86,13 @@ export default async function handler(req, res) {
     return res.status(500).json({ 
       error: 'Errore interno del server',
       timestamp: now.toISOString(),
+      italianTime: `${currentHour}:${currentMinute.toString().padStart(2, '0')}`,
       details: error.message
     });
   }
 }
 
-// Funzione per determinare il tipo di task in base all'orario
+// Funzione per determinare il tipo di task in base all'orario ITALIANO
 function determineTaskType(hour, minute, day) {
   // PROMEMORIA TURNI
   if (hour === 8 && minute === 0) {
@@ -110,7 +128,7 @@ function determineTaskType(hour, minute, day) {
     return 'reminder_presenze_21_24'; // Promemoria riempire presenze 21-24
   }
   
-  // CAMBIO SETTIMANA - Domenica 23:59
+  // CAMBIO SETTIMANA - Domenica 23:59 (orario italiano)
   if (hour === 23 && minute === 59 && day === 0) {
     return 'sunday_end_task';
   }
@@ -120,7 +138,8 @@ function determineTaskType(hour, minute, day) {
 
 // Funzione principale per gestire i diversi task
 async function handleTask(taskType, timestamp) {
-  console.log(`🚀 Eseguendo task: ${taskType} alle ${timestamp.toISOString()}`);
+  const italianTime = getItalianTime();
+  console.log(`🚀 Eseguendo task: ${taskType} alle ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)`);
   
   switch (taskType) {
     case 'reminder_morning':
@@ -169,9 +188,10 @@ async function handleTask(taskType, timestamp) {
   }
 }
 
-// Funzione per ottenere i giorni della settimana corrente
+// Funzione per ottenere i giorni della settimana corrente (usando orario italiano)
 function getCurrentWeekDates() {
-  const now = new Date();
+  const italianTime = getItalianTime();
+  const now = italianTime.date;
   const currentDay = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
@@ -185,9 +205,10 @@ function getCurrentWeekDates() {
   return weekDates;
 }
 
-// Funzione per ottenere i giorni della prossima settimana
+// Funzione per ottenere i giorni della prossima settimana (usando orario italiano)
 function getNextWeekDates() {
-  const now = new Date();
+  const italianTime = getItalianTime();
+  const now = italianTime.date;
   const currentDay = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + 7);
@@ -234,14 +255,16 @@ async function sendTelegramMessage(chatId, message) {
 async function sendTurnoReminders(turnoInizio, turnoFine, timestamp) {
   try {
     if (!db) {
+      const italianTime = getItalianTime();
       console.log('⚠️ Database non disponibile, invio messaggio di test');
       await sendTelegramMessage(TEST_CHAT_ID, 
-        `🔔 Test Promemoria Turni ${turnoInizio}-${turnoFine}\n⏰ ${timestamp.toLocaleTimeString('it-IT')}`);
+        `🔔 Test Promemoria Turni ${turnoInizio}-${turnoFine}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)`);
       return;
     }
 
-    // Ottieni la data di oggi
-    const today = timestamp.toISOString().split('T')[0];
+    // Ottieni la data di oggi (italiana)
+    const italianTime = getItalianTime();
+    const today = italianTime.dateString;
     
     console.log(`📋 Cercando turni per oggi ${today} dalle ${turnoInizio} alle ${turnoFine}`);
     
@@ -318,14 +341,16 @@ Data: ${formatDate(today)}`;
 async function sendPresenzeReminder(fasciaOraria, timestamp) {
   try {
     if (!db) {
+      const italianTime = getItalianTime();
       console.log('⚠️ Database non disponibile, invio messaggio di test');
       await sendTelegramMessage(TEST_CHAT_ID, 
-        `📊 Test Promemoria Presenze ${fasciaOraria}\n⏰ ${timestamp.toLocaleTimeString('it-IT')}`);
+        `📊 Test Promemoria Presenze ${fasciaOraria}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)`);
       return;
     }
 
-    // Ottieni la data di oggi
-    const today = timestamp.toISOString().split('T')[0];
+    // Ottieni la data di oggi (italiana)
+    const italianTime = getItalianTime();
+    const today = italianTime.dateString;
     
     console.log(`📊 Promemoria presenze per la fascia ${fasciaOraria} del ${today}`);
     
@@ -409,7 +434,7 @@ ${messageIcon} Stato: ${messageType}
 👥 Utenti notificati: ${users.length}
 
 📅 Data: ${formatDate(today)}
-⏰ Invio alle: ${timestamp.toLocaleTimeString('it-IT')}`;
+⏰ Invio alle: ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)`;
 
     await sendTelegramMessage(TEST_CHAT_ID, summary);
 
@@ -422,9 +447,10 @@ ${messageIcon} Stato: ${messageType}
   }
 }
 
-// FUNZIONE CAMBIO SETTIMANA - Domenica 23:59
+// FUNZIONE CAMBIO SETTIMANA - Domenica 23:59 (orario italiano)
 async function sundayEndTask(timestamp) {
-  console.log('📊 Task fine domenica (23:59) - Cambio settimana');
+  const italianTime = getItalianTime();
+  console.log(`📊 Task fine domenica (23:59 orario italiano) - Cambio settimana`);
   
   try {
     if (!db) {
@@ -488,7 +514,7 @@ async function sundayEndTask(timestamp) {
     const summary = `🔄 <b>Cambio Settimana Completato</b>
 
 📅 Settimana terminata: ${formatDate(startDate)} - ${formatDate(endDate)}
-⏰ Eseguito alle: ${timestamp.toLocaleTimeString('it-IT')}
+⏰ Eseguito alle: ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)
 
 📊 <b>Operazioni eseguite:</b>
 🗑️ Turni eliminati: <b>${deleteTurniResult.rowsAffected}</b>
@@ -517,7 +543,7 @@ async function sundayEndTask(timestamp) {
     await sendTelegramMessage(TEST_CHAT_ID, 
       `❌ <b>Errore Cambio Settimana</b>
       
-⏰ Domenica 23:59
+⏰ Domenica 23:59 (orario italiano)
 🚨 Errore: ${error.message}
 
 ⚠️ Il cambio settimana potrebbe non essere stato completato correttamente!`);
@@ -528,14 +554,16 @@ async function sundayEndTask(timestamp) {
 
 // Task generale per test e chiamate non programmate
 async function generalTask(timestamp) {
+  const italianTime = getItalianTime();
   console.log('🔧 Task generale eseguito');
   
   const message = `🔧 Task Generale Eseguito
-⏰ Orario: ${timestamp.getHours()}:${timestamp.getMinutes().toString().padStart(2, '0')}
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
+⏰ Orario: ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (🇮🇹 ITALIA)
+📅 Data: ${italianTime.date.toLocaleDateString('it-IT')}
 🚀 Il sistema funziona!
 
-Chiamata ricevuta correttamente.`;
+Chiamata ricevuta correttamente.
+🌍 Fuso orario: Europe/Rome`;
 
   await sendTelegramMessage(TEST_CHAT_ID, message);
 }
