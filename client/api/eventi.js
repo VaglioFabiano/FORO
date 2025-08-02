@@ -231,6 +231,51 @@ async function sendConfirmationEmail(prenotazione, evento) {
   }
 }
 
+if (req.method === 'GET') {
+  // NUOVO: Test configurazione email
+  if (action === 'test-email') {
+    console.log('🧪 Test configurazione email...');
+    
+    // Dati di test
+    const testPrenotazione = {
+      id: 999,
+      evento_id: 1,
+      nome: 'Mario',
+      cognome: 'Rossi',
+      email: 'tua-email@example.com', // 🔥 CAMBIA QUESTA EMAIL CON LA TUA!
+      num_partecipanti: 1,
+      note: 'Test email system',
+      data_prenotazione: new Date().toISOString()
+    };
+    
+    const testEvento = {
+      id: 1,
+      titolo: 'Test Workshop Email',
+      descrizione: 'Evento di test per verificare il sistema email automatico',
+      data_evento: '2024-12-15T10:00:00Z'
+    };
+    
+    console.log('📧 Invio email di test...');
+    const emailResult = await sendConfirmationEmail(testPrenotazione, testEvento);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Test email completato',
+      email_config_check: {
+        has_access_key: !!process.env.WEB3FORMS_ACCESS_KEY,
+        access_key_length: process.env.WEB3FORMS_ACCESS_KEY?.length || 0,
+        access_key_preview: process.env.WEB3FORMS_ACCESS_KEY ? 
+          process.env.WEB3FORMS_ACCESS_KEY.substring(0, 8) + '...' : 'MISSING',
+        environment: process.env.NODE_ENV || 'development'
+      },
+      email_result: emailResult,
+      test_data: {
+        prenotazione: testPrenotazione,
+        evento: testEvento
+      }
+    });
+  }}
+
 // Funzione separata per creare il template email
 function createEmailTemplate(prenotazione, evento) {
   return `
@@ -664,10 +709,6 @@ export default async function handler(req, res) {
             error: 'Non è possibile prenotarsi per eventi già passati'
           });
         }
-
-        
-
-       
 
         // Crea la prenotazione
         const dataPrenotazione = data_prenotazione || new Date().toISOString();
