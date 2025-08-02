@@ -4,8 +4,8 @@ import { Resend } from 'resend';
 
 // Inizializza i client (usa le variabili d'ambiente di Vercel)
 const config = {
-  url: process.env.LIBSQL_URL?.trim(),
-  authToken: process.env.LIBSQL_AUTH_TOKEN?.trim()
+  url: process.env.TURSO_DATABASE_URL?.trim(),
+  authToken: process.env.TURSO_AUTH_TOKEN?.trim()
 };
 
 let db = null;
@@ -110,7 +110,7 @@ function determineTaskType(hour, minute, day) {
     return 'reminder_presenze_21_24'; // Promemoria riempire presenze 21-24
   }
   
-  // Task domenica sera
+  // CAMBIO SETTIMANA - Domenica 23:59
   if (hour === 23 && minute === 59 && day === 0) {
     return 'sunday_end_task';
   }
@@ -169,6 +169,38 @@ async function handleTask(taskType, timestamp) {
   }
 }
 
+// Funzione per ottenere i giorni della settimana corrente
+function getCurrentWeekDates() {
+  const now = new Date();
+  const currentDay = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+  
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    weekDates.push(date.toISOString().split('T')[0]);
+  }
+  return weekDates;
+}
+
+// Funzione per ottenere i giorni della prossima settimana
+function getNextWeekDates() {
+  const now = new Date();
+  const currentDay = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + 7);
+  
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    weekDates.push(date.toISOString().split('T')[0]);
+  }
+  return weekDates;
+}
+
 // Funzione per inviare messaggi Telegram
 async function sendTelegramMessage(chatId, message) {
   try {
@@ -190,28 +222,11 @@ async function sendTelegramMessage(chatId, message) {
       throw new Error(data.description || 'Errore nell\'invio del messaggio');
     }
     
-    console.log('✅ Messaggio Telegram inviato con successo:', message);
+    console.log('✅ Messaggio Telegram inviato con successo');
     return data.result;
   } catch (error) {
     console.error('❌ Errore invio messaggio Telegram:', error);
     throw error;
-  }
-}
-
-// Funzione per ottenere il chat_id di un utente
-async function getUserTelegramChatId(userId) {
-  try {
-    if (!db) return null;
-    
-    const result = await db.execute({
-      sql: `SELECT telegram_chat_id FROM users WHERE id = ? AND telegram_chat_id IS NOT NULL`,
-      args: [userId]
-    });
-    
-    return result.rows.length > 0 ? result.rows[0].telegram_chat_id : null;
-  } catch (error) {
-    console.error('Errore nel recupero chat_id:', error);
-    return null;
   }
 }
 
@@ -252,7 +267,7 @@ async function sendTurnoReminders(turnoInizio, turnoFine, timestamp) {
     }
 
     // Invia promemoria a ogni persona in turno
-    let messagessent = 0;
+    let messagesSent = 0;
     let messagesFailed = 0;
 
     for (const turno of turni) {
@@ -268,7 +283,7 @@ ${turno.note ? `📝 Note: ${turno.note}` : ''}
 Buon lavoro! 💪`;
 
         await sendTelegramMessage(turno.telegram_chat_id, message);
-        messagesent++;
+        messagesSent++;
         
         // Piccola pausa tra i messaggi
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -282,7 +297,7 @@ Buon lavoro! 💪`;
     // Invia riepilogo al chat di test
     const summary = `📊 <b>Riepilogo Promemoria ${turnoInizio}-${turnoFine}</b>
 
-✅ Messaggi inviati: ${messagesent}
+✅ Messaggi inviati: ${messagesSent}
 ❌ Messaggi falliti: ${messagesFailed}
 📋 Totale turni: ${turni.length}
 
@@ -297,20 +312,6 @@ Data: ${formatDate(today)}`;
     await sendTelegramMessage(TEST_CHAT_ID, 
       `❌ Errore nel sistema promemoria turni ${turnoInizio}-${turnoFine}: ${error.message}`);
   }
-}
-
-// Task generale per test e chiamate non programmate
-async function generalTask(timestamp) {
-  console.log('🔧 Task generale eseguito');
-  
-  const message = `🔧 Task Generale Eseguito
-⏰ Orario: ${timestamp.getHours()}:${timestamp.getMinutes().toString().padStart(2, '0')}
-📅 Data: ${timestamp.toLocaleDateString('it-IT')}
-🚀 Il sistema funziona!
-
-Chiamata ricevuta correttamente.`;
-
-  await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
 // FUNZIONE PER PROMEMORIA PRESENZE
@@ -347,7 +348,7 @@ async function sendPresenzeReminder(fasciaOraria, timestamp) {
 
     if (users.length === 0) {
       await sendTelegramMessage(TEST_CHAT_ID, 
-        `📊 Nessun utente con permessi trovato per promemoria presenze ${fasciaOraria}`);
+        `📊 Nessun utente trovato per promemoria presenze ${fasciaOraria}`);
       return;
     }
 
@@ -421,36 +422,125 @@ ${messageIcon} Stato: ${messageType}
   }
 }
 
+// FUNZIONE CAMBIO SETTIMANA - Domenica 23:59
 async function sundayEndTask(timestamp) {
-  console.log('📊 Task fine domenica (23:59)');
-  await sendTelegramMessage(TEST_CHAT_ID, '📊 Report settimanale - Domenica 23:59.');
+  console.log('📊 Task fine domenica (23:59) - Cambio settimana');
+  
+  try {
+    if (!db) {
+      await sendTelegramMessage(TEST_CHAT_ID, '⚠️ Database non disponibile per cambio settimana');
+      return;
+    }
+
+    // Calcola le date della settimana che sta finendo (lunedì-domenica)
+    const endingWeekDates = getCurrentWeekDates();
+    const startDate = endingWeekDates[0]; // Lunedì
+    const endDate = endingWeekDates[6];   // Domenica
+
+    console.log(`🗓️ Pulizia settimana ${startDate} - ${endDate}`);
+
+    // STEP 1: Cancella turni della settimana che sta finendo
+    const deleteTurniResult = await db.execute({
+      sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
+      args: [startDate, endDate]
+    });
+
+    console.log(`🗑️ Eliminati ${deleteTurniResult.rowsAffected} turni della settimana`);
+
+    // STEP 2: Cancella orari della settimana corrente
+    const deleteFasceResult = await db.execute({
+      sql: `DELETE FROM fasce_orarie`,
+      args: []
+    });
+
+    console.log(`🗑️ Eliminati ${deleteFasceResult.rowsAffected} orari settimana corrente`);
+
+    // STEP 3: Sposta orari dalla "prossima settimana" alla "settimana corrente"
+    const prossimiOrari = await db.execute({
+      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima`,
+      args: []
+    });
+
+    let orariSpostati = 0;
+    for (const orario of prossimiOrari.rows) {
+      try {
+        await db.execute({
+          sql: `INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
+          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note]
+        });
+        orariSpostati++;
+      } catch (error) {
+        console.error(`Errore nello spostamento orario:`, error);
+      }
+    }
+
+    console.log(`📋 Spostati ${orariSpostati} orari da prossima a corrente`);
+
+    // STEP 4: Cancella orari "prossima settimana" (ora diventati correnti)
+    const deleteProssimaResult = await db.execute({
+      sql: `DELETE FROM fasce_orarie_prossima`,
+      args: []
+    });
+
+    console.log(`🗑️ Eliminati ${deleteProssimaResult.rowsAffected} orari prossima settimana`);
+
+    // STEP 5: Genera report del cambio settimana
+    const summary = `🔄 <b>Cambio Settimana Completato</b>
+
+📅 Settimana terminata: ${formatDate(startDate)} - ${formatDate(endDate)}
+⏰ Eseguito alle: ${timestamp.toLocaleTimeString('it-IT')}
+
+📊 <b>Operazioni eseguite:</b>
+🗑️ Turni eliminati: <b>${deleteTurniResult.rowsAffected}</b>
+🗑️ Orari correnti eliminati: <b>${deleteFasceResult.rowsAffected}</b>
+📋 Orari spostati: <b>${orariSpostati}</b>
+🗑️ Orari prossimi eliminati: <b>${deleteProssimaResult.rowsAffected}</b>
+
+✅ Il sistema è pronto per la nuova settimana!
+🗓️ Nuova settimana inizia: ${formatDate(getNextWeekDates()[0])}`;
+
+    await sendTelegramMessage(TEST_CHAT_ID, summary);
+
+    // Log anche nel database se possibile
+    await db.execute({
+      sql: `INSERT INTO cron_logs (task_type, executed_at, status, error_message) VALUES (?, ?, ?, ?)`,
+      args: ['week_change', timestamp.toISOString(), 'success', 
+        `Turni: ${deleteTurniResult.rowsAffected}, Orari: ${orariSpostati} spostati`]
+    }).catch(error => {
+      console.error('Errore nel log cambio settimana:', error);
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nel cambio settimana:', error);
+    
+    // Invia notifica di errore
+    await sendTelegramMessage(TEST_CHAT_ID, 
+      `❌ <b>Errore Cambio Settimana</b>
+      
+⏰ Domenica 23:59
+🚨 Errore: ${error.message}
+
+⚠️ Il cambio settimana potrebbe non essere stato completato correttamente!`);
+    
+    throw error;
+  }
+}
+
+// Task generale per test e chiamate non programmate
+async function generalTask(timestamp) {
+  console.log('🔧 Task generale eseguito');
+  
+  const message = `🔧 Task Generale Eseguito
+⏰ Orario: ${timestamp.getHours()}:${timestamp.getMinutes().toString().padStart(2, '0')}
+📅 Data: ${timestamp.toLocaleDateString('it-IT')}
+🚀 Il sistema funziona!
+
+Chiamata ricevuta correttamente.`;
+
+  await sendTelegramMessage(TEST_CHAT_ID, message);
 }
 
 // Funzioni di supporto
-async function sendEmail({ subject, content, to = process.env.DEFAULT_EMAIL }) {
-  if (!resend || !to) {
-    console.log('📧 Email non inviata: configurazione mancante');
-    return;
-  }
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
-      to: [to],
-      subject: subject,
-      text: content,
-    });
-
-    if (error) {
-      console.error('❌ Errore invio email:', error);
-    } else {
-      console.log('✅ Email inviata con successo:', data.id);
-    }
-  } catch (error) {
-    console.error('❌ Errore invio email:', error);
-  }
-}
-
 async function logExecution(taskType, timestamp, status, errorMessage = null) {
   try {
     if (db) {
