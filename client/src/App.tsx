@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Header from './components/Header';
@@ -79,7 +80,16 @@ function App() {
     if (shouldShowEventi) return true;
     
     // Se la sezione è nascosta, solo gli admin la vedono
-    return currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
+    const canSee = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
+    
+    // Debug log
+    console.log('canSeeEventi check:', {
+      shouldShowEventi,
+      currentUser,
+      canSee: canSee || false
+    });
+    
+    return canSee || false;
   };
 
   // Controlla lo stato di login all'avvio e imposta la rotta iniziale
@@ -161,6 +171,8 @@ function App() {
   const handleLoginSuccess = () => {
     navigateTo({ page: 'dashboard' });
     setForceNavbarUpdate(prev => !prev);
+    // Ricontrolla i permessi utente dopo il login
+    checkUserPermissions();
   };
 
   const handleLogout = () => {
