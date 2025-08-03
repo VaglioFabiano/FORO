@@ -317,16 +317,8 @@ Buon lavoro! 💪`;
       }
     }
 
-    // Invia riepilogo al chat di test
-    const summary = `📊 <b>Riepilogo Promemoria ${turnoInizio}-${turnoFine}</b>
-
-✅ Messaggi inviati: ${messagesSent}
-❌ Messaggi falliti: ${messagesFailed}
-📋 Totale turni: ${turni.length}
-
-Data: ${formatDate(today)}`;
-
-    await sendTelegramMessage(TEST_CHAT_ID, summary);
+    // Log di riepilogo senza inviare messaggio
+    console.log(`📊 Riepilogo Promemoria ${turnoInizio}-${turnoFine}: ${messagesSent} inviati, ${messagesFailed} falliti, ${turni.length} totali`);
 
   } catch (error) {
     console.error('❌ Errore generale invio promemoria:', error);
@@ -425,18 +417,8 @@ ${isAlreadyFilled ?
       }
     }
 
-    // Invia riepilogo al chat di test
-    const summary = `📊 <b>Riepilogo Promemoria Presenze ${fasciaOraria}</b>
-
-${messageIcon} Stato: ${messageType}
-✅ Messaggi inviati: ${messagesSent}
-❌ Messaggi falliti: ${messagesFailed}
-👥 Utenti notificati: ${users.length}
-
-📅 Data: ${formatDate(today)}
-⏰ Invio alle: ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)`;
-
-    await sendTelegramMessage(TEST_CHAT_ID, summary);
+    // Log di riepilogo senza inviare messaggio
+    console.log(`📊 Riepilogo Promemoria Presenze ${fasciaOraria}: ${messagesSent} inviati, ${messagesFailed} falliti, ${users.length} utenti`);
 
   } catch (error) {
     console.error('❌ Errore generale invio promemoria presenze:', error);
