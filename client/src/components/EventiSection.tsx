@@ -73,19 +73,8 @@ const EventiSection: React.FC = () => {
   };
 
   const loadVisibilityData = async () => {
-    try {
-      const response = await fetch('/api/homepage?section=eventi_section');
-      const data = await response.json();
-      
-      if (data.success && data.eventi_section) {
-        const visibilityData = data.eventi_section[0];
-        setIsVisible(visibilityData?.visible !== false); // Default true se non specificato
-      }
-    } catch (error) {
-      console.error('Errore nel caricamento visibilità eventi:', error);
-      // In caso di errore, mantieni la sezione visibile
-      setIsVisible(true);
-    }
+    // Non serve più caricare da API, usiamo lo stato locale
+    setIsVisible(true); // Default: visibile
   };
 
   const fetchEventi = async () => {
@@ -153,34 +142,19 @@ const EventiSection: React.FC = () => {
     try {
       setIsToggling(true);
       
-      const response = await fetch('/api/homepage', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'eventi_section',
-          data: { visible: !isVisible },
-          user_id: currentUser.id
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setIsVisible(!isVisible);
-        setMessage({ 
-          type: 'success', 
-          text: `Sezione eventi ${!isVisible ? 'mostrata' : 'nascosta'} con successo!` 
-        });
-        
-        // Notifica l'App component del cambio di visibilità
-        if ((window as any).refreshEventiVisibility) {
-          (window as any).refreshEventiVisibility();
-        }
-      } else {
-        throw new Error(data.error || 'Errore nel salvataggio');
+      // Cambia lo stato locale
+      setIsVisible(!isVisible);
+      
+      // Notifica l'App component del cambio di visibilità
+      if ((window as any).toggleEventiVisibility) {
+        (window as any).toggleEventiVisibility();
       }
+      
+      setMessage({ 
+        type: 'success', 
+        text: `Sezione eventi ${!isVisible ? 'mostrata' : 'nascosta'} con successo!` 
+      });
+      
     } catch (error) {
       console.error('Errore nel toggle visibilità:', error);
       setMessage({ type: 'error', text: 'Errore durante la modifica della visibilità' });
@@ -226,10 +200,8 @@ const EventiSection: React.FC = () => {
 
   const canManageVisibility = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
 
-  // Se la sezione non è visibile e l'utente non può gestire la visibilità, non renderizzare nulla
-  if (!isVisible && !canManageVisibility) {
-    return null;
-  }
+  // Il componente EventiSection viene sempre renderizzato se mostrato dall'App
+  // La logica di visibilità è gestita nell'App component
 
   if (loading) {
     return (

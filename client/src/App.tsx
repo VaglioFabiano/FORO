@@ -25,7 +25,7 @@ function App() {
   const [currentRoute, setCurrentRoute] = useState<RouteState>({ page: 'home' });
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
   const [shouldShowEventi, setShouldShowEventi] = useState(true);
-  const [isCheckingEventiVisibility, setIsCheckingEventiVisibility] = useState(true);
+  const [currentUser, setCurrentUser] = useState<{id: number, level: number} | null>(null);
 
   // Funzione per parsare l'URL e determinare la pagina corrente
   const parseUrl = (): RouteState => {
@@ -57,27 +57,29 @@ function App() {
     return { page: 'home' };
   };
 
-  // Controlla la visibilità della sezione eventi
-  const checkEventiVisibility = async () => {
-    try {
-      setIsCheckingEventiVisibility(true);
-      const response = await fetch('/api/homepage?section=eventi_section');
-      const data = await response.json();
-      
-      if (data.success && data.eventi_section) {
-        const visibilityData = data.eventi_section[0];
-        setShouldShowEventi(visibilityData?.visible !== false); // Default true se non specificato
-      } else {
-        // In caso di errore o dati mancanti, mantieni la sezione visibile
-        setShouldShowEventi(true);
+  // Controlla i permessi utente
+  const checkUserPermissions = () => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Errore nel parsing user data:', error);
+        setCurrentUser(null);
       }
-    } catch (error) {
-      console.error('Errore nel caricamento visibilità eventi:', error);
-      // In caso di errore, mantieni la sezione visibile
-      setShouldShowEventi(true);
-    } finally {
-      setIsCheckingEventiVisibility(false);
+    } else {
+      setCurrentUser(null);
     }
+  };
+
+  // Controlla se l'utente può vedere la sezione eventi
+  const canSeeEventi = () => {
+    // Se la sezione è visibile, tutti la vedono
+    if (shouldShowEventi) return true;
+    
+    // Se la sezione è nascosta, solo gli admin la vedono
+    return currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
   };
 
   // Controlla lo stato di login all'avvio e imposta la rotta iniziale
@@ -106,8 +108,8 @@ function App() {
     // Imposta la rotta basata sull'URL corrente
     setCurrentRoute(parseUrl());
     
-    // Controlla la visibilità degli eventi
-    checkEventiVisibility();
+    // Controlla i permessi utente
+    checkUserPermissions();
   }, []);
 
   // Gestisci il pulsante indietro del browser
@@ -152,8 +154,8 @@ function App() {
 
   const handleBackToHome = () => {
     navigateTo({ page: 'home' });
-    // Ricontrolla la visibilità degli eventi quando si torna alla home
-    checkEventiVisibility();
+    // Ricontrolla i permessi utente quando si torna alla home
+    checkUserPermissions();
   };
 
   const handleLoginSuccess = () => {
@@ -165,8 +167,8 @@ function App() {
     localStorage.clear();
     navigateTo({ page: 'home' });
     setForceNavbarUpdate(prev => !prev);
-    // Ricontrolla la visibilità degli eventi dopo il logout
-    checkEventiVisibility();
+    // Ricontrolla i permessi utente dopo il logout
+    checkUserPermissions();
   };
 
   const handleGoToDashboard = () => {
@@ -182,12 +184,12 @@ function App() {
   useEffect(() => {
     (window as any).navigateToPrenotaEvento = handlePrenotaEvento;
     (window as any).navigateToHome = () => navigateTo({ page: 'home' });
-    (window as any).refreshEventiVisibility = checkEventiVisibility;
+    (window as any).toggleEventiVisibility = () => setShouldShowEventi(prev => !prev);
     
     return () => {
       delete (window as any).navigateToPrenotaEvento;
       delete (window as any).navigateToHome;
-      delete (window as any).refreshEventiVisibility;
+      delete (window as any).toggleEventiVisibility;
     };
   }, []);
 
@@ -217,7 +219,7 @@ function App() {
           <div id="orari">
             <OrariSection />
           </div>
-          {!isCheckingEventiVisibility && shouldShowEventi && (
+          {canSeeEventi() && (
             <div id="eventi">
               <EventiSection />
             </div>
