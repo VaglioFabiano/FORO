@@ -173,6 +173,11 @@ const EventiSection: React.FC = () => {
           type: 'success', 
           text: `Sezione eventi ${!isVisible ? 'mostrata' : 'nascosta'} con successo!` 
         });
+        
+        // Notifica l'App component del cambio di visibilità
+        if ((window as any).refreshEventiVisibility) {
+          (window as any).refreshEventiVisibility();
+        }
       } else {
         throw new Error(data.error || 'Errore nel salvataggio');
       }

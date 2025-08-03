@@ -24,6 +24,8 @@ interface RouteState {
 function App() {
   const [currentRoute, setCurrentRoute] = useState<RouteState>({ page: 'home' });
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
+  const [shouldShowEventi, setShouldShowEventi] = useState(true);
+  const [isCheckingEventiVisibility, setIsCheckingEventiVisibility] = useState(true);
 
   // Funzione per parsare l'URL e determinare la pagina corrente
   const parseUrl = (): RouteState => {
@@ -55,6 +57,29 @@ function App() {
     return { page: 'home' };
   };
 
+  // Controlla la visibilità della sezione eventi
+  const checkEventiVisibility = async () => {
+    try {
+      setIsCheckingEventiVisibility(true);
+      const response = await fetch('/api/homepage?section=eventi_visibility');
+      const data = await response.json();
+      
+      if (data.success && data.eventi_visibility) {
+        const visibilityData = data.eventi_visibility[0];
+        setShouldShowEventi(visibilityData?.visible !== false); // Default true se non specificato
+      } else {
+        // In caso di errore o dati mancanti, mantieni la sezione visibile
+        setShouldShowEventi(true);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento visibilità eventi:', error);
+      // In caso di errore, mantieni la sezione visibile
+      setShouldShowEventi(true);
+    } finally {
+      setIsCheckingEventiVisibility(false);
+    }
+  };
+
   // Controlla lo stato di login all'avvio e imposta la rotta iniziale
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -80,6 +105,19 @@ function App() {
     
     // Imposta la rotta basata sull'URL corrente
     setCurrentRoute(parseUrl());
+    
+    // Controlla la visibilità degli eventi
+    checkEventiVisibility();
+  }, []);
+
+  // Gestisci il pulsante indietro del browser
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentRoute(parseUrl());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Funzione per navigare alle diverse pagine
@@ -108,22 +146,14 @@ function App() {
     window.history.pushState(null, '', newUrl);
   };
 
-  // Gestisci il pulsante indietro del browser
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentRoute(parseUrl());
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
   const handleShowLogin = () => {
     navigateTo({ page: 'login' });
   };
 
   const handleBackToHome = () => {
     navigateTo({ page: 'home' });
+    // Ricontrolla la visibilità degli eventi quando si torna alla home
+    checkEventiVisibility();
   };
 
   const handleLoginSuccess = () => {
@@ -135,6 +165,8 @@ function App() {
     localStorage.clear();
     navigateTo({ page: 'home' });
     setForceNavbarUpdate(prev => !prev);
+    // Ricontrolla la visibilità degli eventi dopo il logout
+    checkEventiVisibility();
   };
 
   const handleGoToDashboard = () => {
@@ -146,14 +178,16 @@ function App() {
     navigateTo({ page: 'prenota-evento', eventoId });
   };
 
-  // Rendi la funzione di navigazione disponibile globalmente per i componenti
+  // Rendi le funzioni di navigazione disponibili globalmente per i componenti
   useEffect(() => {
     (window as any).navigateToPrenotaEvento = handlePrenotaEvento;
     (window as any).navigateToHome = () => navigateTo({ page: 'home' });
+    (window as any).refreshEventiVisibility = checkEventiVisibility;
     
     return () => {
       delete (window as any).navigateToPrenotaEvento;
       delete (window as any).navigateToHome;
+      delete (window as any).refreshEventiVisibility;
     };
   }, []);
 
@@ -183,9 +217,11 @@ function App() {
           <div id="orari">
             <OrariSection />
           </div>
-          <div id="eventi">
-            <EventiSection />
-          </div>
+          {!isCheckingEventiVisibility && shouldShowEventi && (
+            <div id="eventi">
+              <EventiSection />
+            </div>
+          )}
           <div id="social">
             <SocialSection />
           </div>
