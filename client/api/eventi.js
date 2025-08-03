@@ -1,6 +1,5 @@
 import { createClient } from '@libsql/client/web';
 import { Resend } from 'resend';
-import nodemailer from 'nodemailer';
 
 // Configurazione database
 const config = {
@@ -25,16 +24,29 @@ console.log('🔧 Configurazione Resend:', {
 
 const resend = new Resend(resendApiKey);
 
-// Configurazione Gmail SMTP come fallback
-const gmailTransporter = nodemailer.createTransporter({
-  service: 'gmail',
-  auth: {
-    user: 'associazioneforopiossasco@gmail.com',
-    pass: 'Spatriarcare2!'
-  }
-});
+// Configurazione Gmail SMTP come fallback - caricamento dinamico
+let gmailTransporter = null;
 
-console.log('📧 Configurazione Gmail SMTP completata come fallback');
+async function initializeGmailTransporter() {
+  try {
+    // Import dinamico di nodemailer solo quando serve
+    const nodemailer = await import('nodemailer');
+    
+    gmailTransporter = nodemailer.default.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: 'associazioneforopiossasco@gmail.com',
+        pass: 'Spatriarcare2!'
+      }
+    });
+    
+    console.log('📧 Gmail SMTP configurato con successo');
+    return true;
+  } catch (error) {
+    console.error('❌ Impossibile configurare Gmail SMTP:', error.message);
+    return false;
+  }
+}
 
 // Funzione helper per convertire BigInt in numeri normali
 function convertBigIntToNumber(obj) {
@@ -369,7 +381,20 @@ async function sendEmailWithGmail(prenotazione, evento) {
   const startTime = Date.now();
   
   try {
-    console.log('📧 Invio email con Gmail SMTP...');
+    console.log('📧 Tentativo invio email con Gmail SMTP...');
+    
+    // Inizializza Gmail se non è già configurato
+    if (!gmailTransporter) {
+      const gmailReady = await initializeGmailTransporter();
+      if (!gmailReady) {
+        return {
+          success: false,
+          error: 'Gmail SMTP non disponibile',
+          response_time: Date.now() - startTime,
+          service: 'gmail-smtp'
+        };
+      }
+    }
     
     const htmlContent = createEmailTemplate(prenotazione, evento);
     
@@ -709,7 +734,7 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
     `.trim();
 
     console.log('📤 Invio email tramite Resend API...', {
-      from: 'noreply@aulastudioforo.com',
+      from: 'onboarding@resend.dev',
       to: prenotazione.email,
       subject: `✅ Conferma prenotazione: ${evento.titolo}`,
       html_length: htmlContent.length,
@@ -717,7 +742,7 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
     });
 
     const emailPayload = {
-      from: 'Aula Studio Foro <noreply@aulastudioforo.com>',
+      from: 'Aula Studio Foro <onboarding@resend.dev>',
       to: [prenotazione.email],
       subject: `✅ Conferma prenotazione: ${evento.titolo}`,
       html: htmlContent,
@@ -855,7 +880,7 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
         `.trim();
 
         const { data, error } = await resend.emails.send({
-          from: 'Aula Studio Foro <noreply@aulastudioforo.com>',
+          from: 'Aula Studio Foro <onboarding@resend.dev>',
           to: [prenotazione.email],
           subject: emailData.subject,
           html: htmlContent,
