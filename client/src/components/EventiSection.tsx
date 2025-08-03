@@ -74,11 +74,11 @@ const EventiSection: React.FC = () => {
 
   const loadVisibilityData = async () => {
     try {
-      const response = await fetch('/api/homepage?section=eventi_visibility');
+      const response = await fetch('/api/homepage?section=eventi_section');
       const data = await response.json();
       
-      if (data.success && data.eventi_visibility) {
-        const visibilityData = data.eventi_visibility[0];
+      if (data.success && data.eventi_section) {
+        const visibilityData = data.eventi_section[0];
         setIsVisible(visibilityData?.visible !== false); // Default true se non specificato
       }
     } catch (error) {
@@ -159,7 +159,7 @@ const EventiSection: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: 'eventi_visibility',
+          type: 'eventi_section',
           data: { visible: !isVisible },
           user_id: currentUser.id
         }),
