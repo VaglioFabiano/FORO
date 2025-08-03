@@ -127,7 +127,7 @@ function validateEmail(email) {
   return emailRegex.test(email);
 }
 
-// ========== SISTEMA EMAIL CON RESEND ==========
+// ========== SISTEMA EMAIL ==========
 
 // Funzione per creare un log strutturato
 function logEmail(level, message, data = {}) {
@@ -376,101 +376,7 @@ function createEmailTemplate(prenotazione, evento) {
   `;
 }
 
-// Funzione per inviare email con Gmail SMTP
-async function sendEmailWithGmail(prenotazione, evento) {
-  const startTime = Date.now();
-  
-  try {
-    console.log('📧 Tentativo invio email con Gmail SMTP...');
-    
-    // Inizializza Gmail se non è già configurato
-    if (!gmailTransporter) {
-      const gmailReady = await initializeGmailTransporter();
-      if (!gmailReady) {
-        return {
-          success: false,
-          error: 'Gmail SMTP non disponibile',
-          response_time: Date.now() - startTime,
-          service: 'gmail-smtp'
-        };
-      }
-    }
-    
-    const htmlContent = createEmailTemplate(prenotazione, evento);
-    
-    const textContent = `
-Conferma Prenotazione - ${evento.titolo}
-
-Ciao ${prenotazione.nome} ${prenotazione.cognome},
-
-La tua prenotazione per l'evento "${evento.titolo}" è stata confermata!
-
-Dettagli evento:
-- Data: ${new Date(evento.data_evento).toLocaleDateString('it-IT')}
-- Luogo: Aula Studio Foro - Via Alfieri, 4 - 10045 Piossasco (TO)
-- Partecipanti: ${prenotazione.num_partecipanti}
-
-I tuoi dati:
-- Nome: ${prenotazione.nome} ${prenotazione.cognome}
-- Email: ${prenotazione.email}
-- Prenotazione effettuata: ${new Date(prenotazione.data_prenotazione).toLocaleDateString('it-IT')}
-${prenotazione.note ? `- Note: ${prenotazione.note}` : ''}
-
-Per informazioni: associazioneforopiossasco@gmail.com
-
-Associazione Foro - Aula Studio
-Via Alfieri, 4 - 10045 Piossasco (TO)
-    `.trim();
-
-    const mailOptions = {
-      from: 'Aula Studio Foro <associazioneforopiossasco@gmail.com>',
-      to: prenotazione.email,
-      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
-      text: textContent,
-      html: htmlContent,
-      replyTo: 'associazioneforopiossasco@gmail.com'
-    };
-
-    console.log('📤 Invio tramite Gmail per:', prenotazione.email);
-    
-    const info = await gmailTransporter.sendMail(mailOptions);
-    const responseTime = Date.now() - startTime;
-
-    console.log('✅ EMAIL GMAIL INVIATA CON SUCCESSO!:', {
-      messageId: info.messageId,
-      response: info.response,
-      destinatario: prenotazione.email,
-      response_time_ms: responseTime
-    });
-
-    return {
-      success: true,
-      message_id: info.messageId,
-      response: info.response,
-      response_time: responseTime,
-      service: 'gmail-smtp'
-    };
-
-  } catch (error) {
-    const responseTime = Date.now() - startTime;
-    
-    console.error('❌ ERRORE Gmail SMTP:', {
-      error_message: error.message,
-      error_code: error.code,
-      error_response: error.response,
-      response_time_ms: responseTime
-    });
-
-    return {
-      success: false,
-      error: error.message,
-      error_code: error.code,
-      details: error,
-      response_time: responseTime,
-      service: 'gmail-smtp'
-    };
-  }
-}
+// Funzione per creare il template email broadcast
 function createBroadcastEmailTemplate(prenotazione, evento, emailData) {
   return `
     <!DOCTYPE html>
@@ -641,50 +547,103 @@ function createBroadcastEmailTemplate(prenotazione, evento, emailData) {
     </html>
   `;
 }
+// Funzione per inviare email con Gmail SMTP
+async function sendEmailWithGmail(prenotazione, evento) {
+  const startTime = Date.now();
+  
+  try {
+    console.log('📧 Tentativo invio email con Gmail SMTP...');
+    
+    // Inizializza Gmail se non è già configurato
+    if (!gmailTransporter) {
+      const gmailReady = await initializeGmailTransporter();
+      if (!gmailReady) {
+        return {
+          success: false,
+          error: 'Gmail SMTP non disponibile',
+          response_time: Date.now() - startTime,
+          service: 'gmail-smtp'
+        };
+      }
+    }
+    
+    const htmlContent = createEmailTemplate(prenotazione, evento);
+    
+    const textContent = `
+Conferma Prenotazione - ${evento.titolo}
 
-// Funzione per inviare email con fallback Resend + Gmail
-async function sendConfirmationEmail(prenotazione, evento) {
-  console.log('🚀 Inizio invio email con sistema fallback...');
-  
-  // Prima prova con Resend
-  console.log('1️⃣ Tentativo 1: Resend API');
-  const resendResult = await sendConfirmationEmailWithResend(prenotazione, evento);
-  
-  if (resendResult.success) {
-    console.log('✅ Email inviata con successo tramite Resend');
-    return resendResult;
-  }
-  
-  console.log('❌ Resend fallito, provo con Gmail SMTP...');
-  console.log('2️⃣ Tentativo 2: Gmail SMTP');
-  
-  // Se Resend fallisce, prova con Gmail
-  const gmailResult = await sendEmailWithGmail(prenotazione, evento);
-  
-  if (gmailResult.success) {
-    console.log('✅ Email inviata con successo tramite Gmail SMTP');
+Ciao ${prenotazione.nome} ${prenotazione.cognome},
+
+La tua prenotazione per l'evento "${evento.titolo}" è stata confermata!
+
+Dettagli evento:
+- Data: ${new Date(evento.data_evento).toLocaleDateString('it-IT')}
+- Luogo: Aula Studio Foro - Via Alfieri, 4 - 10045 Piossasco (TO)
+- Partecipanti: ${prenotazione.num_partecipanti}
+
+I tuoi dati:
+- Nome: ${prenotazione.nome} ${prenotazione.cognome}
+- Email: ${prenotazione.email}
+- Prenotazione effettuata: ${new Date(prenotazione.data_prenotazione).toLocaleDateString('it-IT')}
+${prenotazione.note ? `- Note: ${prenotazione.note}` : ''}
+
+Per informazioni: associazioneforopiossasco@gmail.com
+
+Associazione Foro - Aula Studio
+Via Alfieri, 4 - 10045 Piossasco (TO)
+    `.trim();
+
+    const mailOptions = {
+      from: 'Aula Studio Foro <associazioneforopiossasco@gmail.com>',
+      to: prenotazione.email,
+      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
+      text: textContent,
+      html: htmlContent,
+      replyTo: 'associazioneforopiossasco@gmail.com'
+    };
+
+    console.log('📤 Invio tramite Gmail per:', prenotazione.email);
+    
+    const info = await gmailTransporter.sendMail(mailOptions);
+    const responseTime = Date.now() - startTime;
+
+    console.log('✅ EMAIL GMAIL INVIATA CON SUCCESSO!:', {
+      messageId: info.messageId,
+      response: info.response,
+      destinatario: prenotazione.email,
+      response_time_ms: responseTime
+    });
+
     return {
-      ...gmailResult,
-      fallback_used: true,
-      primary_error: resendResult.error
+      success: true,
+      message_id: info.messageId,
+      response: info.response,
+      response_time: responseTime,
+      service: 'gmail-smtp'
+    };
+
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    
+    console.error('❌ ERRORE Gmail SMTP:', {
+      error_message: error.message,
+      error_code: error.code,
+      error_response: error.response,
+      response_time_ms: responseTime
+    });
+
+    return {
+      success: false,
+      error: error.message,
+      error_code: error.code,
+      details: error,
+      response_time: responseTime,
+      service: 'gmail-smtp'
     };
   }
-  
-  console.log('❌ Entrambi i metodi di invio email hanno fallito');
-  
-  // Se entrambi falliscono
-  return {
-    success: false,
-    error: 'Tutti i servizi email non disponibili',
-    details: {
-      resend_error: resendResult.error,
-      gmail_error: gmailResult.error
-    },
-    service: 'both-failed'
-  };
 }
 
-// Funzione per creare il template email broadcast
+// Funzione per inviare email con Resend
 async function sendConfirmationEmailWithResend(prenotazione, evento) {
   const startTime = Date.now();
   
@@ -817,7 +776,7 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
       prenotazione_email: prenotazione.email,
       evento_titolo: evento.titolo
     });
-    
+
     logEmail('error', 'Errore durante invio email con Resend', {
       error_name: error.name,
       error_message: error.message,
@@ -837,6 +796,48 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
       service: 'resend'
     };
   }
+}
+
+// Funzione per inviare email con fallback Resend + Gmail
+async function sendConfirmationEmail(prenotazione, evento) {
+  console.log('🚀 Inizio invio email con sistema fallback...');
+  
+  // Prima prova con Resend
+  console.log('1️⃣ Tentativo 1: Resend API');
+  const resendResult = await sendConfirmationEmailWithResend(prenotazione, evento);
+  
+  if (resendResult.success) {
+    console.log('✅ Email inviata con successo tramite Resend');
+    return resendResult;
+  }
+  
+  console.log('❌ Resend fallito, provo con Gmail SMTP...');
+  console.log('2️⃣ Tentativo 2: Gmail SMTP');
+  
+  // Se Resend fallisce, prova con Gmail
+  const gmailResult = await sendEmailWithGmail(prenotazione, evento);
+  
+  if (gmailResult.success) {
+    console.log('✅ Email inviata con successo tramite Gmail SMTP');
+    return {
+      ...gmailResult,
+      fallback_used: true,
+      primary_error: resendResult.error
+    };
+  }
+  
+  console.log('❌ Entrambi i metodi di invio email hanno fallito');
+  
+  // Se entrambi falliscono
+  return {
+    success: false,
+    error: 'Tutti i servizi email non disponibili',
+    details: {
+      resend_error: resendResult.error,
+      gmail_error: gmailResult.error
+    },
+    service: 'both-failed'
+  };
 }
 
 // Funzione per inviare email broadcast
