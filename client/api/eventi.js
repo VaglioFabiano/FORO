@@ -62,9 +62,37 @@ function blobToBase64(blob) {
   return null;
 }
 
-// Funzione per validare email
+// Funzione per validare email - MIGLIORATA
 function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || typeof email !== 'string') return false;
+  
+  // Rimuovi spazi bianchi
+  email = email.trim();
+  
+  // Controlli di base
+  if (email.length === 0 || email.length > 320) return false;
+  if (email.indexOf('@') === -1) return false;
+  if (email.indexOf('@') !== email.lastIndexOf('@')) return false;
+  
+  const parts = email.split('@');
+  if (parts.length !== 2) return false;
+  
+  const [localPart, domainPart] = parts;
+  
+  // Controlli sulla parte locale (prima di @)
+  if (localPart.length === 0 || localPart.length > 64) return false;
+  if (localPart.startsWith('.') || localPart.endsWith('.')) return false;
+  if (localPart.includes('..')) return false;
+  
+  // Controlli sul dominio
+  if (domainPart.length === 0 || domainPart.length > 255) return false;
+  if (domainPart.startsWith('.') || domainPart.endsWith('.')) return false;
+  if (domainPart.startsWith('-') || domainPart.endsWith('-')) return false;
+  if (!domainPart.includes('.')) return false;
+  
+  // Regex più permissiva per caratteri validi
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  
   return emailRegex.test(email);
 }
 
@@ -910,34 +938,66 @@ export default async function handler(req, res) {
           data_prenotazione 
         } = req.body;
         
-        console.log('Creating prenotazione:', { 
+        console.log('🎫 NUOVA PRENOTAZIONE - Dati ricevuti:', { 
           evento_id, 
-          nome, 
-          cognome, 
-          email, 
+          nome: nome ? 'presente' : 'mancante', 
+          cognome: cognome ? 'presente' : 'mancante', 
+          email: email ? email : 'mancante', 
           num_biglietti, 
-          note: note ? 'present' : 'empty'
+          note: note ? 'presente' : 'vuoto'
         });
 
         // Validazione campi obbligatori
         if (!evento_id || !nome || !cognome || !email) {
+          console.log('❌ Validazione fallita - campi mancanti');
           return res.status(400).json({
             success: false,
             error: 'Evento ID, nome, cognome e email sono richiesti'
           });
         }
 
-        // Validazione email
-        if (!validateEmail(email)) {
+        // Log dettagliato dell'email prima della validazione
+        const emailOriginal = email;
+        const emailProcessed = email.toLowerCase().trim();
+        
+        console.log('📧 VALIDAZIONE EMAIL:', {
+          email_originale: emailOriginal,
+          email_processata: emailProcessed,
+          lunghezza: emailProcessed.length,
+          contiene_at: emailProcessed.includes('@'),
+          numero_at: (emailProcessed.match(/@/g) || []).length
+        });
+
+        // Validazione email con logging dettagliato
+        if (!validateEmail(emailProcessed)) {
+          console.log('❌ VALIDAZIONE EMAIL FALLITA per:', emailProcessed);
+          
+          // Debug aggiuntivo per capire perché fallisce
+          const parts = emailProcessed.split('@');
+          if (parts.length === 2) {
+            const [localPart, domainPart] = parts;
+            console.log('📧 Debug email parts:', {
+              local_part: localPart,
+              local_length: localPart.length,
+              domain_part: domainPart,
+              domain_length: domainPart.length,
+              domain_has_dot: domainPart.includes('.'),
+              domain_parts: domainPart.split('.')
+            });
+          }
+          
           return res.status(400).json({
             success: false,
             error: 'Formato email non valido'
           });
         }
 
+        console.log('✅ Email validata correttamente:', emailProcessed);
+
         // Validazione numero biglietti
         const numPartecipanti = num_biglietti || 1;
         if (numPartecipanti < 1 || numPartecipanti > 10) {
+          console.log('❌ Numero partecipanti non valido:', numPartecipanti);
           return res.status(400).json({
             success: false,
             error: 'Il numero di partecipanti deve essere tra 1 e 10'
@@ -945,12 +1005,14 @@ export default async function handler(req, res) {
         }
 
         // Verifica che l'evento esista
+        console.log('🔍 Verifico esistenza evento:', evento_id);
         const eventoResult = await client.execute({
           sql: 'SELECT * FROM eventi WHERE id = ?',
           args: [evento_id]
         });
 
         if (!eventoResult.rows.length) {
+          console.log('❌ Evento non trovato:', evento_id);
           return res.status(404).json({
             success: false,
             error: 'Evento non trovato'
@@ -959,68 +1021,111 @@ export default async function handler(req, res) {
 
         const evento = convertBigIntToNumber(eventoResult.rows[0]);
         evento.immagine_blob = blobToBase64(evento.immagine_blob);
+        
+        console.log('✅ Evento trovato:', evento.titolo);
 
         // Verifica che l'evento non sia già passato
         const eventoDate = new Date(evento.data_evento);
         const now = new Date();
         if (eventoDate < now) {
+          console.log('❌ Evento già passato:', eventoDate, 'vs', now);
           return res.status(400).json({
             success: false,
             error: 'Non è possibile prenotarsi per eventi già passati'
           });
         }
 
+        // Controllo se esiste già una prenotazione con la stessa email per lo stesso evento
+        console.log('🔍 Controllo duplicati per email:', emailProcessed);
+        const duplicateCheck = await client.execute({
+          sql: 'SELECT id FROM prenotazioni_eventi WHERE evento_id = ? AND email = ?',
+          args: [evento_id, emailProcessed]
+        });
+
+        if (duplicateCheck.rows.length > 0) {
+          console.log('⚠️ Prenotazione duplicata trovata per:', emailProcessed);
+          return res.status(409).json({
+            success: false,
+            error: 'Esiste già una prenotazione con questa email per questo evento'
+          });
+        }
+
         // Crea la prenotazione
         const dataPrenotazione = data_prenotazione || new Date().toISOString();
         
-        const result = await client.execute({
-          sql: `INSERT INTO prenotazioni_eventi 
-                (evento_id, nome, cognome, email, num_partecipanti, note, data_prenotazione) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          args: [
-            evento_id,
-            nome.trim(),
-            cognome.trim(),
-            email.toLowerCase().trim(),
-            numPartecipanti,
-            note?.trim() || '',
-            dataPrenotazione
-          ]
-        });
-
-        if (result.rowsAffected > 0) {
-          const prenotazioneId = convertBigIntToNumber(result.lastInsertRowid);
-          
-          // Prepara i dati della prenotazione per l'email
-          const prenotazioneData = {
-            id: prenotazioneId,
-            evento_id,
-            nome: nome.trim(),
-            cognome: cognome.trim(),
-            email: email.toLowerCase().trim(),
-            num_partecipanti: numPartecipanti,
-            note: note?.trim() || '',
-            data_prenotazione: dataPrenotazione
-          };
-
-          // Invia email di conferma con Resend
-          console.log('🚀 Invio email di conferma con Resend...');
-          const emailResult = await sendConfirmationEmailWithResend(prenotazioneData, evento);
-          
-          console.log('📧 Risultato invio email:', emailResult);
-
-          return res.status(201).json({
-            success: true,
-            message: 'Prenotazione creata con successo',
-            prenotazione_id: prenotazioneId,
-            email_sent: emailResult.success,
-            email_details: emailResult,
-            created_at: dataPrenotazione
+        console.log('💾 Inserimento prenotazione nel database...');
+        
+        try {
+          const result = await client.execute({
+            sql: `INSERT INTO prenotazioni_eventi 
+                  (evento_id, nome, cognome, email, num_partecipanti, note, data_prenotazione) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+              evento_id,
+              nome.trim(),
+              cognome.trim(),
+              emailProcessed,
+              numPartecipanti,
+              note?.trim() || '',
+              dataPrenotazione
+            ]
           });
-        } else {
-          return res.status(400).json({
+
+          console.log('📊 Risultato inserimento database:', {
+            rows_affected: result.rowsAffected,
+            last_insert_id: result.lastInsertRowid
+          });
+
+          if (result.rowsAffected > 0) {
+            const prenotazioneId = convertBigIntToNumber(result.lastInsertRowid);
+            
+            // Prepara i dati della prenotazione per l'email
+            const prenotazioneData = {
+              id: prenotazioneId,
+              evento_id,
+              nome: nome.trim(),
+              cognome: cognome.trim(),
+              email: emailProcessed,
+              num_partecipanti: numPartecipanti,
+              note: note?.trim() || '',
+              data_prenotazione: dataPrenotazione
+            };
+
+            // Invia email di conferma con Resend
+            console.log('🚀 Invio email di conferma con Resend...');
+            const emailResult = await sendConfirmationEmailWithResend(prenotazioneData, evento);
+            
+            console.log('📧 Risultato invio email:', emailResult);
+
+            return res.status(201).json({
+              success: true,
+              message: 'Prenotazione creata con successo',
+              prenotazione_id: prenotazioneId,
+              email_sent: emailResult.success,
+              email_details: emailResult,
+              created_at: dataPrenotazione
+            });
+          } else {
+            console.log('❌ Nessuna riga inserita nel database');
+            return res.status(400).json({
+              success: false,
+              error: 'Errore nella creazione della prenotazione'
+            });
+          }
+        } catch (dbError) {
+          console.error('💥 Errore database durante inserimento:', dbError);
+          
+          // Analizza il tipo di errore
+          if (dbError.message && dbError.message.includes('UNIQUE')) {
+            return res.status(409).json({
+              success: false,
+              error: 'Esiste già una prenotazione con questi dati'
+            });
+          }
+          
+          return res.status(500).json({
             success: false,
-            error: 'Errore nella creazione della prenotazione'
+            error: 'Errore database: ' + dbError.message
           });
         }
       }
@@ -1336,10 +1441,11 @@ export default async function handler(req, res) {
     });
     
   } catch (error) {
-    console.error('Errore API eventi:', error);
+    console.error('💥 ERRORE GENERALE API eventi:', error);
     return res.status(500).json({ 
       success: false,
-      error: 'Errore interno del server: ' + error.message
+      error: 'Errore interno del server: ' + error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
