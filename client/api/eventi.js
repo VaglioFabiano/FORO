@@ -15,7 +15,14 @@ if (!config.url || !config.authToken) {
 const client = createClient(config);
 
 // Configurazione Resend
-const resend = new Resend('re_WmxYBNKM_LPaMSt1JEMMLY5Ci7QPFx7Xp');
+const resendApiKey = 're_WmxYBNKM_LPaMSt1JEMMLY5Ci7QPFx7Xp';
+console.log('🔧 Configurazione Resend:', {
+  api_key_presente: !!resendApiKey,
+  api_key_length: resendApiKey ? resendApiKey.length : 0,
+  api_key_prefix: resendApiKey ? resendApiKey.substring(0, 10) + '...' : 'mancante'
+});
+
+const resend = new Resend(resendApiKey);
 
 // Funzione helper per convertire BigInt in numeri normali
 function convertBigIntToNumber(obj) {
@@ -528,6 +535,18 @@ async function sendConfirmationEmailWithResend(prenotazione, evento) {
       destinatario: prenotazione.email
     });
 
+    // Verifica che Resend sia configurato
+    if (!resend) {
+      console.error('❌ Resend non configurato correttamente');
+      return {
+        success: false,
+        error: 'Servizio email non configurato',
+        response_time: Date.now() - startTime,
+        service: 'resend'
+      };
+    }
+
+    console.log('📧 Preparazione contenuto email...');
     const htmlContent = createEmailTemplate(prenotazione, evento);
     
     const textContent = `
@@ -554,8 +573,16 @@ Associazione Foro - Aula Studio
 Via Alfieri, 4 - 10045 Piossasco (TO)
     `.trim();
 
-    const { data, error } = await resend.emails.send({
-      from: 'Aula Studio Foro <onboarding@resend.dev>',
+    console.log('📤 Invio email tramite Resend API...', {
+      from: 'noreply@aulastudioforo.com',
+      to: prenotazione.email,
+      subject: `✅ Conferma prenotazione: ${evento.titolo}`,
+      html_length: htmlContent.length,
+      text_length: textContent.length
+    });
+
+    const emailPayload = {
+      from: 'Aula Studio Foro <noreply@aulastudioforo.com>',
       to: [prenotazione.email],
       subject: `✅ Conferma prenotazione: ${evento.titolo}`,
       html: htmlContent,
@@ -564,25 +591,46 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
       headers: {
         'X-Entity-Ref-ID': `prenotazione-${prenotazione.id}`,
       },
-    });
+    };
+
+    console.log('🔄 Chiamata API Resend in corso...');
+    const { data, error } = await resend.emails.send(emailPayload);
 
     const responseTime = Date.now() - startTime;
 
     if (error) {
+      console.error('❌ ERRORE RESEND API:', {
+        error_name: error.name,
+        error_message: error.message,
+        error_code: error.code,
+        full_error: error,
+        response_time_ms: responseTime
+      });
+      
       logEmail('error', 'Errore Resend API', {
         error_name: error.name,
         error_message: error.message,
-        response_time_ms: responseTime
+        error_code: error.code,
+        response_time_ms: responseTime,
+        destinatario: prenotazione.email
       });
       
       return {
         success: false,
         error: error.message,
+        error_code: error.code,
         details: error,
         response_time: responseTime,
         service: 'resend'
       };
     }
+
+    console.log('✅ EMAIL INVIATA CON SUCCESSO!', {
+      message_id: data.id,
+      response_time_ms: responseTime,
+      destinatario: prenotazione.email,
+      resend_data: data
+    });
 
     logEmail('success', 'Email inviata con successo tramite Resend', {
       message_id: data.id,
@@ -600,6 +648,15 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
 
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    
+    console.error('💥 ECCEZIONE durante invio email:', {
+      error_name: error.name,
+      error_message: error.message,
+      error_stack: error.stack,
+      response_time_ms: responseTime,
+      prenotazione_email: prenotazione.email,
+      evento_titolo: evento.titolo
+    });
     
     logEmail('error', 'Errore durante invio email con Resend', {
       error_name: error.name,
@@ -663,7 +720,7 @@ Via Alfieri, 4 - 10045 Piossasco (TO)
         `.trim();
 
         const { data, error } = await resend.emails.send({
-          from: 'Aula Studio Foro <onboarding@resend.dev>',
+          from: 'Aula Studio Foro <noreply@aulastudioforo.com>',
           to: [prenotazione.email],
           subject: emailData.subject,
           html: htmlContent,
@@ -1035,20 +1092,8 @@ export default async function handler(req, res) {
           });
         }
 
-        // Controllo se esiste già una prenotazione con la stessa email per lo stesso evento
-        console.log('🔍 Controllo duplicati per email:', emailProcessed);
-        const duplicateCheck = await client.execute({
-          sql: 'SELECT id FROM prenotazioni_eventi WHERE evento_id = ? AND email = ?',
-          args: [evento_id, emailProcessed]
-        });
-
-        if (duplicateCheck.rows.length > 0) {
-          console.log('⚠️ Prenotazione duplicata trovata per:', emailProcessed);
-          return res.status(409).json({
-            success: false,
-            error: 'Esiste già una prenotazione con questa email per questo evento'
-          });
-        }
+        // RIMOSSO: Controllo duplicati - ora è possibile prenotare più volte con la stessa email
+        console.log('✅ Controllo duplicati rimosso - email multipla permessa:', emailProcessed);
 
         // Crea la prenotazione
         const dataPrenotazione = data_prenotazione || new Date().toISOString();
@@ -1092,18 +1137,37 @@ export default async function handler(req, res) {
             };
 
             // Invia email di conferma con Resend
-            console.log('🚀 Invio email di conferma con Resend...');
+            console.log('🚀 Invio email di conferma con Resend per:', emailProcessed);
             const emailResult = await sendConfirmationEmailWithResend(prenotazioneData, evento);
             
-            console.log('📧 Risultato invio email:', emailResult);
+            console.log('📧 RISULTATO FINALE EMAIL:', {
+              success: emailResult.success,
+              message_id: emailResult.message_id,
+              error: emailResult.error,
+              error_code: emailResult.error_code,
+              service: emailResult.service,
+              response_time: emailResult.response_time
+            });
 
             return res.status(201).json({
               success: true,
               message: 'Prenotazione creata con successo',
               prenotazione_id: prenotazioneId,
               email_sent: emailResult.success,
-              email_details: emailResult,
-              created_at: dataPrenotazione
+              email_details: {
+                success: emailResult.success,
+                message_id: emailResult.message_id,
+                error: emailResult.error,
+                error_code: emailResult.error_code,
+                service: emailResult.service,
+                response_time: emailResult.response_time
+              },
+              created_at: dataPrenotazione,
+              debug_info: {
+                email_destinatario: emailProcessed,
+                evento_titolo: evento.titolo,
+                timestamp: new Date().toISOString()
+              }
             });
           } else {
             console.log('❌ Nessuna riga inserita nel database');
