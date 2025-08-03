@@ -13,6 +13,7 @@
     "@libsql/client": "^0.4.3",
     "@types/react-router-dom": "^5.3.3",
     "lucide-react": "^0.522.0",
+    "nodemailer": "^7.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.7.0",
