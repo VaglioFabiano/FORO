@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Users, ExternalLink } from 'lucide-react';
+import { Calendar, Users, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import '../style/componentiEventi.css';
 
 interface Evento {
@@ -30,15 +30,63 @@ interface ApiResponse {
   error?: string;
 }
 
+
+
+interface User {
+  id: number;
+  level: number;
+}
+
 const EventiSection: React.FC = () => {
   const [eventi, setEventi] = useState<Evento[]>([]);
   const [prenotazioni, setPrenotazioni] = useState<Record<number, Prenotazione[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isToggling, setIsToggling] = useState(false);
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
     fetchEventi();
+    checkUserPermissions();
+    loadVisibilityData();
   }, []);
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  const checkUserPermissions = () => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Errore nel parsing user data:', error);
+      }
+    }
+  };
+
+  const loadVisibilityData = async () => {
+    try {
+      const response = await fetch('/api/homepage?section=eventi_visibility');
+      const data = await response.json();
+      
+      if (data.success && data.eventi_visibility) {
+        const visibilityData = data.eventi_visibility[0];
+        setIsVisible(visibilityData?.visible !== false); // Default true se non specificato
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento visibilità eventi:', error);
+      // In caso di errore, mantieni la sezione visibile
+      setIsVisible(true);
+    }
+  };
 
   const fetchEventi = async () => {
     try {
@@ -96,6 +144,46 @@ const EventiSection: React.FC = () => {
     }
   };
 
+  const handleToggleVisibility = async () => {
+    if (!currentUser) {
+      setMessage({ type: 'error', text: 'Devi essere loggato per modificare la visibilità' });
+      return;
+    }
+
+    try {
+      setIsToggling(true);
+      
+      const response = await fetch('/api/homepage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'eventi_visibility',
+          data: { visible: !isVisible },
+          user_id: currentUser.id
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setIsVisible(!isVisible);
+        setMessage({ 
+          type: 'success', 
+          text: `Sezione eventi ${!isVisible ? 'mostrata' : 'nascosta'} con successo!` 
+        });
+      } else {
+        throw new Error(data.error || 'Errore nel salvataggio');
+      }
+    } catch (error) {
+      console.error('Errore nel toggle visibilità:', error);
+      setMessage({ type: 'error', text: 'Errore durante la modifica della visibilità' });
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -131,14 +219,21 @@ const EventiSection: React.FC = () => {
     }
   };
 
+  const canManageVisibility = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
+
+  // Se la sezione non è visibile e l'utente non può gestire la visibilità, non renderizzare nulla
+  if (!isVisible && !canManageVisibility) {
+    return null;
+  }
+
   if (loading) {
     return (
-      <section className="eventi-section">
+      <section className="eventi-section" style={{ background: 'rgb(12, 73, 91)' }}>
         <div className="eventi-container">
-          <h2 className="eventi-title">🎭 Eventi in Programma</h2>
+          <h2 className="eventi-title" style={{ color: 'white' }}>🎭 Eventi in Programma</h2>
           <div className="eventi-loading">
             <div className="loading-spinner"></div>
-            <p>Caricamento eventi...</p>
+            <p style={{ color: 'white' }}>Caricamento eventi...</p>
           </div>
         </div>
       </section>
@@ -147,11 +242,11 @@ const EventiSection: React.FC = () => {
 
   if (error) {
     return (
-      <section className="eventi-section">
+      <section className="eventi-section" style={{ background: 'rgb(12, 73, 91)' }}>
         <div className="eventi-container">
-          <h2 className="eventi-title">🎭 Eventi in Programma</h2>
+          <h2 className="eventi-title" style={{ color: 'white' }}>🎭 Eventi in Programma</h2>
           <div className="eventi-error">
-            <p>⚠️ {error}</p>
+            <p style={{ color: 'white' }}>⚠️ {error}</p>
             <button onClick={fetchEventi} className="retry-button">
               Riprova
             </button>
@@ -162,14 +257,45 @@ const EventiSection: React.FC = () => {
   }
 
   return (
-    <section className="eventi-section">
+    <section className="eventi-section" style={{ background: 'rgb(12, 73, 91)' }}>
       <div className="eventi-container">
         <div className="eventi-header">
-          <h2 className="eventi-title">🎭 Eventi in Programma</h2>
-          <p className="eventi-subtitle">
+          <div className="eventi-title-container">
+            <h2 className="eventi-title" style={{ color: 'white' }}>
+              🎭 Eventi in Programma
+              {!isVisible && canManageVisibility && (
+                <span className="visibility-indicator"> (Nascosta dal pubblico)</span>
+              )}
+            </h2>
+            {canManageVisibility && (
+              <button 
+                className="visibility-toggle-button" 
+                onClick={handleToggleVisibility}
+                disabled={isToggling}
+                title={isVisible ? 'Nascondi sezione dal pubblico' : 'Mostra sezione al pubblico'}
+              >
+                {isToggling ? (
+                  <div className="button-spinner"></div>
+                ) : isVisible ? (
+                  <EyeOff size={16} />
+                ) : (
+                  <Eye size={16} />
+                )}
+                {isToggling ? 'Salvando...' : (isVisible ? 'Nascondi' : 'Mostra')}
+              </button>
+            )}
+          </div>
+          <p className="eventi-subtitle" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
             Scopri i nostri prossimi eventi e prenota il tuo posto
           </p>
         </div>
+
+        {message && (
+          <div className={`eventi-message ${message.type}`}>
+            <span>{message.text}</span>
+            <button onClick={() => setMessage(null)}>×</button>
+          </div>
+        )}
 
         {eventi.length > 0 ? (
           <div className="eventi-grid">
@@ -206,8 +332,6 @@ const EventiSection: React.FC = () => {
                     <p className="evento-descrizione">
                       {evento.descrizione || 'Nessuna descrizione disponibile'}
                     </p>
-
-                    
                   </div>
 
                   <div className="evento-actions">
@@ -226,9 +350,9 @@ const EventiSection: React.FC = () => {
         ) : (
           <div className="no-eventi">
             <div className="no-eventi-icon">🎭</div>
-            <h3>Nessun evento in programma</h3>
-            <p>Al momento non ci sono eventi futuri disponibili per la prenotazione.</p>
-            <p>Torna a trovarci presto per scoprire i prossimi eventi!</p>
+            <h3 style={{ color: 'white' }}>Nessun evento in programma</h3>
+            <p style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Al momento non ci sono eventi futuri disponibili per la prenotazione.</p>
+            <p style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Torna a trovarci presto per scoprire i prossimi eventi!</p>
           </div>
         )}
       </div>
