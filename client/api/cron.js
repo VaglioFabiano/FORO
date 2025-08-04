@@ -317,8 +317,16 @@ Buon lavoro! 💪`;
       }
     }
 
-    // Log di riepilogo senza inviare messaggio
-    console.log(`📊 Riepilogo Promemoria ${turnoInizio}-${turnoFine}: ${messagesSent} inviati, ${messagesFailed} falliti, ${turni.length} totali`);
+    // Invia riepilogo al chat di test
+    const summary = `📊 <b>Riepilogo Promemoria ${turnoInizio}-${turnoFine}</b>
+
+✅ Messaggi inviati: ${messagesSent}
+❌ Messaggi falliti: ${messagesFailed}
+📋 Totale turni: ${turni.length}
+
+Data: ${formatDate(today)}`;
+
+    await sendTelegramMessage(TEST_CHAT_ID, summary);
 
   } catch (error) {
     console.error('❌ Errore generale invio promemoria:', error);
@@ -417,8 +425,18 @@ ${isAlreadyFilled ?
       }
     }
 
-    // Log di riepilogo senza inviare messaggio
-    console.log(`📊 Riepilogo Promemoria Presenze ${fasciaOraria}: ${messagesSent} inviati, ${messagesFailed} falliti, ${users.length} utenti`);
+    // Invia riepilogo al chat di test
+    const summary = `📊 <b>Riepilogo Promemoria Presenze ${fasciaOraria}</b>
+
+${messageIcon} Stato: ${messageType}
+✅ Messaggi inviati: ${messagesSent}
+❌ Messaggi falliti: ${messagesFailed}
+👥 Utenti notificati: ${users.length}
+
+📅 Data: ${formatDate(today)}
+⏰ Invio alle: ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)`;
+
+    await sendTelegramMessage(TEST_CHAT_ID, summary);
 
   } catch (error) {
     console.error('❌ Errore generale invio promemoria presenze:', error);
@@ -429,10 +447,27 @@ ${isAlreadyFilled ?
   }
 }
 
+// Funzione per ottenere le date di una settimana specifica
+function getWeekDatesForOffset(weekOffset = 0) {
+  const italianTime = getItalianTime();
+  const now = italianTime.date;
+  const currentDay = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + (weekOffset * 7));
+  
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + i);
+    weekDates.push(date.toISOString().split('T')[0]);
+  }
+  return weekDates;
+}
+
 // FUNZIONE CAMBIO SETTIMANA - Domenica 23:59 (orario italiano)
 async function sundayEndTask(timestamp) {
   const italianTime = getItalianTime();
-  console.log(`📊 Task fine domenica (23:59 orario italiano) - Cambio settimana`);
+  console.log(`📊 Task fine domenica (23:59 orario italiano) - Cambio settimana con 4 settimane di turni`);
   
   try {
     if (!db) {
@@ -440,22 +475,26 @@ async function sundayEndTask(timestamp) {
       return;
     }
 
-    // Calcola le date della settimana che sta finendo (lunedì-domenica)
-    const endingWeekDates = getCurrentWeekDates();
-    const startDate = endingWeekDates[0]; // Lunedì
-    const endDate = endingWeekDates[6];   // Domenica
+    // STEP 1: Calcola le date delle 4 settimane da gestire
+    const settimanaCorrente = getWeekDatesForOffset(0);    // Settimana che sta finendo
+    const settimana1 = getWeekDatesForOffset(1);           // Diventa la nuova "corrente" 
+    const settimana2 = getWeekDatesForOffset(2);           // Diventa la nuova "prossima"
+    const settimana3 = getWeekDatesForOffset(3);           // Diventa la nuova "plus2"
+    const settimana4 = getWeekDatesForOffset(4);           // Diventa la nuova "plus3"
 
-    console.log(`🗓️ Pulizia settimana ${startDate} - ${endDate}`);
+    console.log(`🗓️ Cambio settimana - eliminando: ${settimanaCorrente[0]} - ${settimanaCorrente[6]}`);
+    console.log(`🗓️ Settimane future: ${settimana1[0]} → ${settimana2[0]} → ${settimana3[0]} → ${settimana4[0]}`);
 
-    // STEP 1: Cancella turni della settimana che sta finendo
+    // STEP 2: Cancella turni della settimana che sta finendo
     const deleteTurniResult = await db.execute({
       sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
-      args: [startDate, endDate]
+      args: [settimanaCorrente[0], settimanaCorrente[6]]
     });
 
-    console.log(`🗑️ Eliminati ${deleteTurniResult.rowsAffected} turni della settimana`);
+    console.log(`🗑️ Eliminati ${deleteTurniResult.rowsAffected} turni della settimana terminata`);
 
-    // STEP 2: Cancella orari della settimana corrente
+    // STEP 3: Gestione orari (solo 2 settimane: corrente e prossima)
+    // Cancella orari della settimana corrente
     const deleteFasceResult = await db.execute({
       sql: `DELETE FROM fasce_orarie`,
       args: []
@@ -463,7 +502,7 @@ async function sundayEndTask(timestamp) {
 
     console.log(`🗑️ Eliminati ${deleteFasceResult.rowsAffected} orari settimana corrente`);
 
-    // STEP 3: Sposta orari dalla "prossima settimana" alla "settimana corrente"
+    // Sposta orari dalla "prossima settimana" alla "settimana corrente"
     const prossimiOrari = await db.execute({
       sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima`,
       args: []
@@ -484,7 +523,7 @@ async function sundayEndTask(timestamp) {
 
     console.log(`📋 Spostati ${orariSpostati} orari da prossima a corrente`);
 
-    // STEP 4: Cancella orari "prossima settimana" (ora diventati correnti)
+    // Cancella orari "prossima settimana" (ora diventati correnti)
     const deleteProssimaResult = await db.execute({
       sql: `DELETE FROM fasce_orarie_prossima`,
       args: []
@@ -492,10 +531,41 @@ async function sundayEndTask(timestamp) {
 
     console.log(`🗑️ Eliminati ${deleteProssimaResult.rowsAffected} orari prossima settimana`);
 
-    // STEP 5: Genera report del cambio settimana
+    // STEP 4: Conta i turni esistenti per le settimane future per il report
+    const turniSettimana1 = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
+      args: [settimana1[0], settimana1[6]]
+    });
+
+    const turniSettimana2 = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
+      args: [settimana2[0], settimana2[6]]
+    });
+
+    const turniSettimana3 = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
+      args: [settimana3[0], settimana3[6]]
+    });
+
+    const turniSettimana4 = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
+      args: [settimana4[0], settimana4[6]]
+    });
+
+    // STEP 5: Ottieni solo gli admin (level = 0) per notificarli del cambio settimana
+    const adminResult = await db.execute({
+      sql: `SELECT id, name, surname, telegram_chat_id, level
+            FROM users 
+            WHERE telegram_chat_id IS NOT NULL AND level = 0`,
+      args: []
+    });
+
+    const admins = adminResult.rows;
+
+    // STEP 6: Genera report del cambio settimana
     const summary = `🔄 <b>Cambio Settimana Completato</b>
 
-📅 Settimana terminata: ${formatDate(startDate)} - ${formatDate(endDate)}
+📅 Settimana terminata: ${formatDate(settimanaCorrente[0])} - ${formatDate(settimanaCorrente[6])}
 ⏰ Eseguito alle: ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)
 
 📊 <b>Operazioni eseguite:</b>
@@ -504,16 +574,35 @@ async function sundayEndTask(timestamp) {
 📋 Orari spostati: <b>${orariSpostati}</b>
 🗑️ Orari prossimi eliminati: <b>${deleteProssimaResult.rowsAffected}</b>
 
-✅ Il sistema è pronto per la nuova settimana!
-🗓️ Nuova settimana inizia: ${formatDate(getNextWeekDates()[0])}`;
+📅 <b>Turni esistenti nelle settimane future:</b>
+• Settimana 1 (${formatDate(settimana1[0])} - ${formatDate(settimana1[6])}): <b>${turniSettimana1.rows[0].count}</b> turni
+• Settimana 2 (${formatDate(settimana2[0])} - ${formatDate(settimana2[6])}): <b>${turniSettimana2.rows[0].count}</b> turni  
+• Settimana 3 (${formatDate(settimana3[0])} - ${formatDate(settimana3[6])}): <b>${turniSettimana3.rows[0].count}</b> turni
+• Settimana 4 (${formatDate(settimana4[0])} - ${formatDate(settimana4[6])}): <b>${turniSettimana4.rows[0].count}</b> turni
 
-    await sendTelegramMessage(TEST_CHAT_ID, summary);
+✅ Sistema pronto per la nuova settimana!
+🎯 Tutte le 4 settimane di turni mantenute`;
+
+    // Invia notifica a tutti gli admin (level = 0)
+    let notificheInviate = 0;
+    for (const admin of admins) {
+      try {
+        await sendTelegramMessage(admin.telegram_chat_id, summary);
+        notificheInviate++;
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.error(`❌ Errore invio notifica cambio settimana a ${admin.name} ${admin.surname}:`, error);
+      }
+    }
+
+    // Invia anche al chat di test per debug
+    await sendTelegramMessage(TEST_CHAT_ID, summary + `\n\n📨 Notifiche inviate a ${notificheInviate} admin (level=0)`);
 
     // Log anche nel database se possibile
     await db.execute({
       sql: `INSERT INTO cron_logs (task_type, executed_at, status, error_message) VALUES (?, ?, ?, ?)`,
       args: ['week_change', timestamp.toISOString(), 'success', 
-        `Turni: ${deleteTurniResult.rowsAffected}, Orari: ${orariSpostati} spostati`]
+        `Turni eliminati: ${deleteTurniResult.rowsAffected}, Orari spostati: ${orariSpostati}, Notifiche admin: ${notificheInviate}`]
     }).catch(error => {
       console.error('Errore nel log cambio settimana:', error);
     });
@@ -521,14 +610,38 @@ async function sundayEndTask(timestamp) {
   } catch (error) {
     console.error('❌ Errore nel cambio settimana:', error);
     
-    // Invia notifica di errore
-    await sendTelegramMessage(TEST_CHAT_ID, 
-      `❌ <b>Errore Cambio Settimana</b>
+    // Invia notifica di errore a tutti gli admin (level = 0)
+    const errorMessage = `❌ <b>Errore Cambio Settimana</b>
       
 ⏰ Domenica 23:59 (orario italiano)
 🚨 Errore: ${error.message}
 
-⚠️ Il cambio settimana potrebbe non essere stato completato correttamente!`);
+⚠️ Il cambio settimana potrebbe non essere stato completato correttamente!
+🔧 Verificare manualmente il sistema turni.`;
+
+    // Ottieni admin per notifica errore
+    if (db) {
+      try {
+        const adminResult = await db.execute({
+          sql: `SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL AND level = 0`,
+          args: []
+        });
+
+        for (const admin of adminResult.rows) {
+          try {
+            await sendTelegramMessage(admin.telegram_chat_id, errorMessage);
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch (err) {
+            console.error('Errore invio notifica errore:', err);
+          }
+        }
+      } catch (dbError) {
+        console.error('Errore accesso DB per notifica errore:', dbError);
+      }
+    }
+
+    // Invia sempre al chat di test
+    await sendTelegramMessage(TEST_CHAT_ID, errorMessage);
     
     throw error;
   }
