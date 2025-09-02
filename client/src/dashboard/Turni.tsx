@@ -124,17 +124,16 @@ const Turni: React.FC = () => {
     }
   };
 
-  const isTurnoClosed = (turno: Turno | null): boolean => {
-    if (!turno) return true;
-    
-    // Per settimane +2 e +3, controlla se è un turno che dovrebbe essere chiuso
-    if (turno.is_default) {
+  // Verifica se un turno DOVREBBE essere chiuso secondo le regole di default
+  const isSlotNaturallyClosed = (dayIndex: number, turnoIndex: number, weekType: WeekType): boolean => {
+    // Per settimane +2 e +3, alcuni slot sono chiusi di default
+    if (weekType === 'plus2' || weekType === 'plus3') {
       // Turno 21:00-24:00 è chiuso di default
-      if (turno.turno_inizio === '21:00' && turno.turno_fine === '24:00') {
+      if (turnoIndex === 3) { // 21:00-24:00
         return true;
       }
       // Weekend è chiuso di default
-      if (turno.day_index === 5 || turno.day_index === 6) {
+      if (dayIndex === 5 || dayIndex === 6) { // Sabato e Domenica
         return true;
       }
     }
@@ -149,13 +148,9 @@ const Turni: React.FC = () => {
     // Se ha il flag esplicito di override
     if (turno.is_closed_override === true) return true;
     
-    // Se è un turno che dovrebbe essere normalmente chiuso
-    if (isTurnoClosed(turno)) return true;
-    
-    // Se è weekend o turno serale su settimane future
-    if ((selectedWeek === 'plus2' || selectedWeek === 'plus3')) {
-      if (turno.day_index === 5 || turno.day_index === 6) return true; // Weekend
-      if (turno.turno_inizio === '21:00' && turno.turno_fine === '24:00') return true; // Serale
+    // Se è un turno su uno slot che dovrebbe essere normalmente chiuso
+    if (isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) {
+      return true;
     }
     
     return false;
@@ -206,8 +201,8 @@ const Turni: React.FC = () => {
     setSelectedUserId(turno.user_id || currentUser?.id || null);
     setNote(turno.note || '');
     
-    // Se è una cella completamente chiusa o un turno chiuso, imposta automaticamente il flag
-    if (isCompletelyClosedCell || isTurnoClosed(turno)) {
+    // Se è una cella completamente chiusa o un turno su slot naturalmente chiuso, imposta automaticamente il flag
+    if (isCompletelyClosedCell || isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) {
       setIsClosedOverride(false); // L'utente dovrà comunque checkare
     } else {
       setIsClosedOverride(false);
@@ -290,7 +285,7 @@ const Turni: React.FC = () => {
         fetchAllTurni();
         
         // TODO: Handler per ripercussioni turno straordinario
-        if (isClosedOverride || isTurnoClosed(selectedTurno)) {
+        if (isClosedOverride || isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek)) {
           console.log('TODO: Gestire ripercussioni turno straordinario/chiuso', {
             turno: selectedTurno,
             user_id: selectedUserId,
@@ -431,7 +426,7 @@ const Turni: React.FC = () => {
               {giorni.map((_, dayIndex) => {
                 const turnoKey = `${dayIndex}-${turnoIndex}`;
                 const turno = turniPerGiorno[turnoKey];
-                const isClosedTurno = isTurnoClosed(turno ?? null);
+                const isSlotClosed = isSlotNaturallyClosed(dayIndex, turnoIndex, selectedWeek);
                 const isStraordinario = turno ? isTurnoStraordinario(turno) : false;
                 
                 return (
@@ -440,7 +435,7 @@ const Turni: React.FC = () => {
                     className={`turni-cell ${
                       turno?.assegnato ? 
                         (isStraordinario ? 'assigned-extraordinary' : 'assigned') : 
-                      turno && !isClosedTurno ? 'available' : 
+                      turno && !isSlotClosed ? 'available' : 
                       'closed'
                     }`}
                     onClick={() => {
@@ -470,7 +465,7 @@ const Turni: React.FC = () => {
                           <div className="turno-note">{turno.note}</div>
                         )}
                       </div>
-                    ) : turno && !isClosedTurno ? (
+                    ) : turno && !isSlotClosed ? (
                       // TURNO DISPONIBILE
                       <div className="turno-available">
                         <div>Disponibile</div>
@@ -478,8 +473,8 @@ const Turni: React.FC = () => {
                           <div className="turno-nota-automatica">{turno.nota_automatica}</div>
                         )}
                       </div>
-                    ) : turno && isClosedTurno ? (
-                      // TURNO CHIUSO (ma presente nel database)
+                    ) : turno && isSlotClosed ? (
+                      // TURNO CHIUSO (ma presente nel database) - questo caso non dovrebbe più esistere
                       <div className="turno-closed">
                         <div>Chiuso</div>
                         {turno.nota_automatica && (
@@ -576,11 +571,12 @@ const Turni: React.FC = () => {
           <div className="turno-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="turno-modal-header">
               <h3>
-                {(isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
-                  t.data === selectedTurno.data && 
-                  t.turno_inizio === selectedTurno.turno_inizio && 
-                  t.turno_fine === selectedTurno.turno_fine
-                )) && !selectedTurno.assegnato ? 
+                {(isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
+                  !getCurrentTurni().find(t => 
+                    t.data === selectedTurno.data && 
+                    t.turno_inizio === selectedTurno.turno_inizio && 
+                    t.turno_fine === selectedTurno.turno_fine
+                  )) && !selectedTurno.assegnato ? 
                   '⚠️ Richiesta Turno Straordinario' : 
                   'Gestisci Turno'
                 }
@@ -592,11 +588,12 @@ const Turni: React.FC = () => {
               <div className="turno-info">
                 <p><strong>Data:</strong> {formatDate(selectedTurno.data)}</p>
                 <p><strong>Orario:</strong> {selectedTurno.turno_inizio} - {selectedTurno.turno_fine}</p>
-                {(isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
-                  t.data === selectedTurno.data && 
-                  t.turno_inizio === selectedTurno.turno_inizio && 
-                  t.turno_fine === selectedTurno.turno_fine
-                )) && (
+                {(isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
+                  !getCurrentTurni().find(t => 
+                    t.data === selectedTurno.data && 
+                    t.turno_inizio === selectedTurno.turno_inizio && 
+                    t.turno_fine === selectedTurno.turno_fine
+                  )) && (
                   <p style={{color: '#ff9800', fontWeight: 'bold'}}>
                     ⚠️ Questo è normalmente un turno chiuso
                   </p>
@@ -632,22 +629,24 @@ const Turni: React.FC = () => {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={
-                    (isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
-                      t.data === selectedTurno.data && 
-                      t.turno_inizio === selectedTurno.turno_inizio && 
-                      t.turno_fine === selectedTurno.turno_fine
-                    )) ? 
+                    (isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
+                     !getCurrentTurni().find(t => 
+                       t.data === selectedTurno.data && 
+                       t.turno_inizio === selectedTurno.turno_inizio && 
+                       t.turno_fine === selectedTurno.turno_fine
+                     )) ? 
                     "Motivo della richiesta..." : 
                     "Aggiungi una nota..."
                   }
                 />
               </div>
 
-              {(isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
-                t.data === selectedTurno.data && 
-                t.turno_inizio === selectedTurno.turno_inizio && 
-                t.turno_fine === selectedTurno.turno_fine
-              )) && !selectedTurno.assegnato && (
+              {(isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
+                !getCurrentTurni().find(t => 
+                  t.data === selectedTurno.data && 
+                  t.turno_inizio === selectedTurno.turno_inizio && 
+                  t.turno_fine === selectedTurno.turno_fine
+                )) && !selectedTurno.assegnato && (
                 <div className="form-group">
                   <label>
                     <input
@@ -677,19 +676,21 @@ const Turni: React.FC = () => {
                 disabled={
                   selectedUserId === null || 
                   selectedUserId === undefined || 
-                  ((isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
-                    t.data === selectedTurno.data && 
-                    t.turno_inizio === selectedTurno.turno_inizio && 
-                    t.turno_fine === selectedTurno.turno_fine
-                  )) && !selectedTurno.assegnato && !isClosedOverride)
+                  ((isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
+                    !getCurrentTurni().find(t => 
+                      t.data === selectedTurno.data && 
+                      t.turno_inizio === selectedTurno.turno_inizio && 
+                      t.turno_fine === selectedTurno.turno_fine
+                    )) && !selectedTurno.assegnato && !isClosedOverride)
                 }
               >
                 {selectedTurno.assegnato ? 'Modifica' : 
-                 (isTurnoClosed(selectedTurno) || !getCurrentTurni().find(t => 
-                   t.data === selectedTurno.data && 
-                   t.turno_inizio === selectedTurno.turno_inizio && 
-                   t.turno_fine === selectedTurno.turno_fine
-                 )) ? 'Richiedi' : 'Assegna'} Turno
+                 (isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
+                  !getCurrentTurni().find(t => 
+                    t.data === selectedTurno.data && 
+                    t.turno_inizio === selectedTurno.turno_inizio && 
+                    t.turno_fine === selectedTurno.turno_fine
+                  )) ? 'Richiedi' : 'Assegna'} Turno
               </button>
             </div>
           </div>
