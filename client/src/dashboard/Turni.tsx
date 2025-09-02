@@ -221,8 +221,52 @@ const Turni: React.FC = () => {
 
       if (data.success) {
         setMessage({ type: 'success', text: 'Turno assegnato con successo!' });
-        fetchAllTurni();
+        
+        // Aggiornamento immediato dello stato locale invece di aspettare il re-fetch
+        const newTurno: Turno = {
+          ...selectedTurno,
+          id: data.turno_id || Date.now(), // Usa l'ID dal server o un temporaneo
+          user_id: selectedUserId,
+          note: note,
+          assegnato: true,
+          user_name: users.find(u => u.id === selectedUserId)?.name || '',
+          user_surname: users.find(u => u.id === selectedUserId)?.surname || '',
+          user_username: users.find(u => u.id === selectedUserId)?.username || ''
+        };
+
+        // Aggiorna lo stato della settimana corretta
+        const updateWeekState = (setter: React.Dispatch<React.SetStateAction<Turno[]>>) => {
+          setter(prev => {
+            // Rimuovi il turno se esiste già (per aggiornamenti)
+            const filtered = prev.filter(t => 
+              !(t.data === newTurno.data && 
+                t.turno_inizio === newTurno.turno_inizio && 
+                t.turno_fine === newTurno.turno_fine)
+            );
+            return [...filtered, newTurno];
+          });
+        };
+
+        // Determina quale settimana aggiornare
+        switch (selectedWeek) {
+          case 'corrente':
+            updateWeekState(setTurniCorrente);
+            break;
+          case 'prossima':
+            updateWeekState(setTurniProssima);
+            break;
+          case 'plus2':
+            updateWeekState(setTurniPlus2);
+            break;
+          case 'plus3':
+            updateWeekState(setTurniPlus3);
+            break;
+        }
+
         closeModal();
+        
+        // Richiedi comunque un aggiornamento completo in background
+        fetchAllTurni();
         
         // TODO: Handler per ripercussioni turno straordinario
         if (isClosedOverride || isTurnoClosed(selectedTurno)) {
