@@ -387,13 +387,11 @@ const Turni: React.FC = () => {
   };
 
   const renderTurniGrid = (turni: Turno[]) => {
-    // Organizza turni per giorno
-    const turniPerGiorno: { [key: number]: Turno[] } = {};
+    // Organizza turni per giorno e orario
+    const turniPerGiorno: { [key: string]: Turno } = {};
     turni.forEach(turno => {
-      if (!turniPerGiorno[turno.day_index]) {
-        turniPerGiorno[turno.day_index] = [];
-      }
-      turniPerGiorno[turno.day_index].push(turno);
+      const key = `${turno.day_index}-${turno.turno_index}`;
+      turniPerGiorno[key] = turno;
     });
 
     return (
@@ -404,7 +402,9 @@ const Turni: React.FC = () => {
             <div key={index} className="turni-day-header">
               <div className="day-name">{giorno}</div>
               <div className="day-date">
-                {turniPerGiorno[index]?.[0] ? formatDate(turniPerGiorno[index][0].data) : ''}
+                {/* Trova qualsiasi turno per questo giorno per mostrare la data */}
+                {turni.find(t => t.day_index === index) ? 
+                  formatDate(turni.find(t => t.day_index === index)!.data) : ''}
               </div>
             </div>
           ))}
@@ -415,7 +415,8 @@ const Turni: React.FC = () => {
             <div key={turnoIndex} className="turni-row">
               <div className="turni-time-cell">{orario}</div>
               {giorni.map((_, dayIndex) => {
-                const turno = turniPerGiorno[dayIndex]?.find(t => t.turno_index === turnoIndex);
+                const turnoKey = `${dayIndex}-${turnoIndex}`;
+                const turno = turniPerGiorno[turnoKey];
                 const isClosedTurno = isTurnoClosed(turno ?? null);
                 const isStraordinario = turno ? isTurnoStraordinario(turno) : false;
                 
@@ -438,37 +439,44 @@ const Turni: React.FC = () => {
                       }
                     }}
                   >
-                    {turno ? (
-                      turno.assegnato ? (
-                        <div className={`turno-assigned ${isStraordinario ? 'straordinario' : ''}`}>
-                          <div className="user-name">{turno.user_name} {turno.user_surname}</div>
-                          {isStraordinario && (
-                            <div className="turno-straordinario-badge">⚡ Straordinario</div>
-                          )}
-                          {turno.nota_automatica && (
-                            <div className="turno-nota-automatica">{turno.nota_automatica}</div>
-                          )}
-                          {turno.note && !turno.nota_automatica && (
-                            <div className="turno-note">{turno.note}</div>
-                          )}
-                          {turno.note && turno.nota_automatica && (
-                            <div className="turno-note">{turno.note}</div>
-                          )}
+                    {turno?.assegnato ? (
+                      // TURNO ASSEGNATO (normale o straordinario)
+                      <div className={`turno-assigned ${isStraordinario ? 'straordinario' : ''}`}>
+                        <div className="user-name">{turno.user_name} {turno.user_surname}</div>
+                        {isStraordinario && (
+                          <div className="turno-straordinario-badge">⚡ Straordinario</div>
+                        )}
+                        {turno.nota_automatica && (
+                          <div className="turno-nota-automatica">{turno.nota_automatica}</div>
+                        )}
+                        {turno.note && !turno.nota_automatica && (
+                          <div className="turno-note">{turno.note}</div>
+                        )}
+                        {turno.note && turno.nota_automatica && (
+                          <div className="turno-note">{turno.note}</div>
+                        )}
+                      </div>
+                    ) : turno && !isClosedTurno ? (
+                      // TURNO DISPONIBILE
+                      <div className="turno-available">
+                        <div>Disponibile</div>
+                        {turno.nota_automatica && (
+                          <div className="turno-nota-automatica">{turno.nota_automatica}</div>
+                        )}
+                      </div>
+                    ) : turno && isClosedTurno ? (
+                      // TURNO CHIUSO (ma presente nel database)
+                      <div className="turno-closed">
+                        <div>Chiuso</div>
+                        {turno.nota_automatica && (
+                          <div className="turno-nota-automatica">{turno.nota_automatica}</div>
+                        )}
+                        <div className="turno-nota-automatica" style={{fontSize: '9px', marginTop: '2px'}}>
+                          (Clicca per richiedere)
                         </div>
-                      ) : (
-                        <div className={isClosedTurno ? "turno-closed" : "turno-available"}>
-                          <div>{isClosedTurno ? "Chiuso" : "Disponibile"}</div>
-                          {turno.nota_automatica && (
-                            <div className="turno-nota-automatica">{turno.nota_automatica}</div>
-                          )}
-                          {isClosedTurno && (
-                            <div className="turno-nota-automatica" style={{fontSize: '9px', marginTop: '2px'}}>
-                              (Clicca per richiedere)
-                            </div>
-                          )}
-                        </div>
-                      )
+                      </div>
                     ) : (
+                      // NESSUN TURNO NEL DATABASE (slot completamente chiuso)
                       <div className="turno-closed">
                         <div>Chiuso</div>
                         <div className="turno-nota-automatica" style={{fontSize: '9px', marginTop: '2px'}}>
