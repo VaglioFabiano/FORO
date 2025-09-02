@@ -144,7 +144,21 @@ const Turni: React.FC = () => {
 
   // Verifica se un turno è straordinario (assegnato su slot normalmente chiuso)
   const isTurnoStraordinario = (turno: Turno): boolean => {
-    return turno.assegnato && (turno.is_closed_override === true || isTurnoClosed(turno));
+    if (!turno.assegnato) return false;
+    
+    // Se ha il flag esplicito di override
+    if (turno.is_closed_override === true) return true;
+    
+    // Se è un turno che dovrebbe essere normalmente chiuso
+    if (isTurnoClosed(turno)) return true;
+    
+    // Se è weekend o turno serale su settimane future
+    if ((selectedWeek === 'plus2' || selectedWeek === 'plus3')) {
+      if (turno.day_index === 5 || turno.day_index === 6) return true; // Weekend
+      if (turno.turno_inizio === '21:00' && turno.turno_fine === '24:00') return true; // Serale
+    }
+    
+    return false;
   };
 
   // Funzione per creare un "pseudo-turno" per celle completamente chiuse
