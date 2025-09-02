@@ -702,3 +702,27 @@
     font-size: 12px;
   }
 }
+
+/* Stili per turni straordinari */
+.turni-cell.assigned-extraordinary {
+  background-color: #fff3cd !important;
+  border: 2px solid #ffc107 !important;
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.3) !important;
+}
+
+.turno-assigned.straordinario {
+  background-color: #fff3cd;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.turno-straordinario-badge {
+  background-color: #ffc107;
+  color: #212529;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  text-align: center;
+}

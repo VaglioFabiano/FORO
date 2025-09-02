@@ -17,6 +17,7 @@ interface Turno {
   turno_index: number;
   nota_automatica?: string;
   is_default?: boolean;
+  is_closed_override?: boolean; // Aggiungi questo campo per identificare turni straordinari
 }
 
 interface User {
@@ -141,6 +142,11 @@ const Turni: React.FC = () => {
     return false;
   };
 
+  // Verifica se un turno è straordinario (assegnato su slot normalmente chiuso)
+  const isTurnoStraordinario = (turno: Turno): boolean => {
+    return turno.assegnato && (turno.is_closed_override === true || isTurnoClosed(turno));
+  };
+
   // Funzione per creare un "pseudo-turno" per celle completamente chiuse
   const createClosedTurno = (dayIndex: number, turnoIndex: number): Turno => {
     const orari = [
@@ -231,7 +237,8 @@ const Turni: React.FC = () => {
           assegnato: true,
           user_name: users.find(u => u.id === selectedUserId)?.name || '',
           user_surname: users.find(u => u.id === selectedUserId)?.surname || '',
-          user_username: users.find(u => u.id === selectedUserId)?.username || ''
+          user_username: users.find(u => u.id === selectedUserId)?.username || '',
+          is_closed_override: isClosedOverride // Mantieni il flag per identificare turni straordinari
         };
 
         // Aggiorna lo stato della settimana corretta
@@ -410,12 +417,14 @@ const Turni: React.FC = () => {
               {giorni.map((_, dayIndex) => {
                 const turno = turniPerGiorno[dayIndex]?.find(t => t.turno_index === turnoIndex);
                 const isClosedTurno = isTurnoClosed(turno ?? null);
+                const isStraordinario = turno ? isTurnoStraordinario(turno) : false;
                 
                 return (
                   <div
                     key={`${dayIndex}-${turnoIndex}`}
                     className={`turni-cell ${
-                      turno?.assegnato ? 'assigned' : 
+                      turno?.assegnato ? 
+                        (isStraordinario ? 'assigned-extraordinary' : 'assigned') : 
                       turno && !isClosedTurno ? 'available' : 
                       'closed'
                     }`}
@@ -431,8 +440,11 @@ const Turni: React.FC = () => {
                   >
                     {turno ? (
                       turno.assegnato ? (
-                        <div className="turno-assigned">
+                        <div className={`turno-assigned ${isStraordinario ? 'straordinario' : ''}`}>
                           <div className="user-name">{turno.user_name} {turno.user_surname}</div>
+                          {isStraordinario && (
+                            <div className="turno-straordinario-badge">⚡ Straordinario</div>
+                          )}
                           {turno.nota_automatica && (
                             <div className="turno-nota-automatica">{turno.nota_automatica}</div>
                           )}
@@ -441,9 +453,6 @@ const Turni: React.FC = () => {
                           )}
                           {turno.note && turno.nota_automatica && (
                             <div className="turno-note">{turno.note}</div>
-                          )}
-                          {isClosedTurno && (
-                            <div className="turno-nota-automatica">⚠️ Turno Straordinario</div>
                           )}
                         </div>
                       ) : (
