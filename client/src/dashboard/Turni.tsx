@@ -145,7 +145,7 @@ const Turni: React.FC = () => {
   const isTurnoStraordinario = (turno: Turno): boolean => {
     if (!turno.assegnato) return false;
     
-    // Se ha il flag esplicito di override
+    // Se ha il flag esplicito di override dal database
     if (turno.is_closed_override === true) return true;
     
     // Se è un turno su uno slot che dovrebbe essere normalmente chiuso
