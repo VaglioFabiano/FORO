@@ -95,25 +95,26 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-header">
+    <div className="auth-login-page">
+      <div className="auth-login-container">
+        <div className="auth-login-header">
           <img 
             src="/assets/logo.png"
             alt="Logo Aula Studio" 
-            className="logo"
+            className="auth-login-logo"
           />
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+        <form onSubmit={handleSubmit} className="auth-login-form">
+          {error && <div className="auth-login-error-message">{error}</div>}
+          {success && <div className="auth-login-success-message">{success}</div>}
 
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
+          <div className="auth-login-form-group">
+            <label htmlFor="auth-login-username" className="auth-login-label">Username</label>
             <input
               type="text"
-              id="username"
+              id="auth-login-username"
+              className="auth-login-input"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Inserisci il tuo username"
@@ -122,11 +123,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div className="auth-login-form-group">
+            <label htmlFor="auth-login-password" className="auth-login-label">Password</label>
             <input
               type="password"
-              id="password"
+              id="auth-login-password"
+              className="auth-login-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Inserisci la password"
@@ -137,7 +139,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
           <button 
             type="submit" 
-            className="login-button"
+            className="auth-login-button"
             disabled={isLoading}
           >
             {isLoading ? 'Accesso in corso...' : 'Login'}

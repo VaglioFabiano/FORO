@@ -5,7 +5,7 @@
   overflow: hidden;
 } */
 
-.login-page {
+.auth-login-page {
   min-height: 100vh;
   background-color: #f5f5f5;
   display: flex;
@@ -16,7 +16,7 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.login-container {
+.auth-login-container {
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -26,37 +26,37 @@
   position: relative;
 }
 
-.login-header {
+.auth-login-header {
   text-align: center;
   margin-bottom: 30px;
 }
 
-.logo {
+.auth-login-logo {
   width: 80px;
   height: 80px;
   margin-bottom: 0;
   object-fit: contain;
 }
 
-.login-form {
+.auth-login-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.form-group {
+.auth-login-form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group label {
+.auth-login-label {
   color: #333;
   font-size: 14px;
   font-weight: 500;
 }
 
-.form-group input {
+.auth-login-input {
   padding: 12px 16px;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
@@ -65,35 +65,41 @@
   background-color: white;
 }
 
-.form-group input:focus {
+.auth-login-input:focus {
   outline: none;
   border-color: hsl(194, 77%, 20%);
 }
 
-.form-group input::placeholder {
+.auth-login-input::placeholder {
   color: #999;
 }
 
-.form-options {
-  display: flex;
-  align-items: center;
-  margin: 10px 0;
+.auth-login-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.checkbox-container {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
+.auth-login-error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #fcc;
   font-size: 14px;
-  color: #666;
+  text-align: center;
 }
 
-.checkbox-container input[type="checkbox"] {
-  margin-right: 8px;
-  transform: scale(1.1);
+.auth-login-success-message {
+  background-color: #efe;
+  color: #393;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #cfc;
+  font-size: 14px;
+  text-align: center;
 }
 
-.login-button {
+.auth-login-button {
   background-color: hsl(194, 77%, 20%);
   color: white;
   border: none;
@@ -106,52 +112,59 @@
   margin-top: 10px;
 }
 
-.login-button:hover {
+.auth-login-button:hover:not(:disabled) {
   background-color: hsl(194, 77%, 15%);
   transform: translateY(-1px);
 }
 
-.login-button:active {
+.auth-login-button:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.login-footer {
+.auth-login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Stili per footer del login se dovessi aggiungerli in futuro */
+.auth-login-footer {
   text-align: center;
   margin-top: 25px;
   padding-top: 20px;
   border-top: 1px solid #eee;
 }
 
-.login-footer p {
+.auth-login-footer p {
   color: #666;
   font-size: 14px;
   margin: 0 0 5px 0;
 }
 
-.forgot-link {
+.auth-login-forgot-link {
   color: hsl(194, 77%, 20%);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
 }
 
-.forgot-link:hover {
+.auth-login-forgot-link:hover {
   text-decoration: underline;
 }
 
 /* Responsive */
 @media (max-width: 480px) {
-  .login-page {
+  .auth-login-page {
     padding: 100px 10px 20px; /* padding-top ridotto per mobile */
     min-height: calc(100vh - 60px); /* Compensa l'altezza della navbar mobile */
   }
   
-  .login-container {
+  .auth-login-container {
     padding: 30px 20px;
     margin: 0;
   }
 
-  .logo {
+  .auth-login-logo {
     width: 60px;
     height: 60px;
   }
