@@ -237,33 +237,42 @@ const Turni: React.FC = () => {
       if (data.success) {
         setMessage({ type: 'success', text: 'Turno assegnato con successo!' });
         
-        // Aggiornamento immediato dello stato locale invece di aspettare il re-fetch
+        // Aggiornamento immediato dello stato locale
         const newTurno: Turno = {
           ...selectedTurno,
-          id: data.turno_id || Date.now(), // Usa l'ID dal server o un temporaneo
+          id: data.turno_id || data.turno?.id || Date.now(),
           user_id: selectedUserId,
           note: note,
           assegnato: true,
           user_name: users.find(u => u.id === selectedUserId)?.name || '',
           user_surname: users.find(u => u.id === selectedUserId)?.surname || '',
           user_username: users.find(u => u.id === selectedUserId)?.username || '',
-          is_closed_override: isClosedOverride // Mantieni il flag per identificare turni straordinari
+          is_closed_override: isClosedOverride || isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek)
         };
 
-        // Aggiorna lo stato della settimana corretta
+        // Funzione per aggiornare lo stato corretto
         const updateWeekState = (setter: React.Dispatch<React.SetStateAction<Turno[]>>) => {
           setter(prev => {
-            // Rimuovi il turno se esiste già (per aggiornamenti)
+            // Rimuovi il turno se esiste già
             const filtered = prev.filter(t => 
               !(t.data === newTurno.data && 
                 t.turno_inizio === newTurno.turno_inizio && 
                 t.turno_fine === newTurno.turno_fine)
             );
-            return [...filtered, newTurno];
+            
+            // Aggiungi il nuovo turno
+            return [...filtered, newTurno].sort((a, b) => {
+              // Prima ordina per data
+              if (a.data !== b.data) return a.data.localeCompare(b.data);
+              // Poi per day_index
+              if (a.day_index !== b.day_index) return a.day_index - b.day_index;
+              // Infine per turno_index
+              return a.turno_index - b.turno_index;
+            });
           });
         };
 
-        // Determina quale settimana aggiornare
+        // Aggiorna la settimana corretta
         switch (selectedWeek) {
           case 'corrente':
             updateWeekState(setTurniCorrente);
@@ -281,7 +290,7 @@ const Turni: React.FC = () => {
 
         closeModal();
         
-        // Richiedi comunque un aggiornamento completo in background
+        // Richiedi un aggiornamento completo in background per sicurezza
         fetchAllTurni();
         
         // TODO: Handler per ripercussioni turno straordinario

@@ -433,6 +433,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
 }
 
 // GET - Ottieni turni della settimana
+// GET - Ottieni turni della settimana - VERSIONE CORRETTA
 async function getTurni(req, res) {
   try {
     const { settimana } = req.query; // 'corrente', 'prossima', 'plus2', 'plus3'
@@ -474,9 +475,9 @@ async function getTurni(req, res) {
       turniPossibili = generateTurniFromFasce(fasce, weekDates);
     }
 
-    // Ottieni turni già assegnati
+    // Ottieni TUTTI i turni già assegnati (inclusi quelli straordinari)
     const turniAssegnati = await client.execute({
-      sql: `SELECT t.id, t.data, t.turno_inizio, t.turno_fine, t.fascia_id, t.user_id, t.note,
+      sql: `SELECT t.id, t.data, t.turno_inizio, t.turno_fine, t.fascia_id, t.user_id, t.note, t.is_closed_override,
                    u.name, u.surname, u.username
             FROM turni t
             LEFT JOIN users u ON t.user_id = u.id
@@ -485,15 +486,27 @@ async function getTurni(req, res) {
       args: [weekDates[0], weekDates[6]]
     });
 
-    // Combina turni possibili con quelli assegnati
-    const turniCompleti = turniPossibili.map(turno => {
+    // Crea una mappa dei turni possibili per accesso rapido
+    const turniPossibiliMap = new Map();
+    turniPossibili.forEach(turno => {
+      const key = `${turno.data}_${turno.turno_inizio}_${turno.turno_fine}`;
+      turniPossibiliMap.set(key, turno);
+    });
+
+    // Crea set per tracciare i turni già processati
+    const turniProcessati = new Set();
+    const turniCompleti = [];
+
+    // Prima, processa tutti i turni possibili (normali)
+    turniPossibili.forEach(turno => {
+      const key = `${turno.data}_${turno.turno_inizio}_${turno.turno_fine}`;
       const assegnato = turniAssegnati.rows.find(a => 
         a.data === turno.data && 
         a.turno_inizio === turno.turno_inizio && 
         a.turno_fine === turno.turno_fine
       );
 
-      return {
+      turniCompleti.push({
         ...turno,
         id: assegnato?.id || null,
         user_id: assegnato?.user_id !== undefined ? assegnato.user_id : null,
@@ -503,8 +516,66 @@ async function getTurni(req, res) {
         user_username: assegnato?.username || '',
         assegnato: !!assegnato,
         nota_automatica: turno.nota_automatica || '',
-        is_default: turno.is_default || false
-      };
+        is_default: turno.is_default || false,
+        is_closed_override: assegnato?.is_closed_override || false
+      });
+
+      turniProcessati.add(key);
+    });
+
+    // Poi, aggiungi tutti i turni straordinari che non sono stati già processati
+    turniAssegnati.rows.forEach(assegnato => {
+      const key = `${assegnato.data}_${assegnato.turno_inizio}_${assegnato.turno_fine}`;
+      
+      if (!turniProcessati.has(key)) {
+        // Questo è un turno straordinario (non presente nei turni possibili)
+        
+        // Calcola day_index e turno_index
+        const date = new Date(assegnato.data);
+        const dayOfWeek = date.getDay();
+        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Converte domenica (0) in 6, lunedì (1) in 0, etc.
+        
+        // Determina turno_index basandosi sull'orario
+        let turnoIndex = 0;
+        const orari = [
+          { inizio: '09:00', fine: '13:00' },
+          { inizio: '13:00', fine: '16:00' },
+          { inizio: '16:00', fine: '19:30' },
+          { inizio: '21:00', fine: '24:00' }
+        ];
+        
+        orari.forEach((orario, index) => {
+          if (assegnato.turno_inizio === orario.inizio && assegnato.turno_fine === orario.fine) {
+            turnoIndex = index;
+          }
+        });
+
+        turniCompleti.push({
+          id: assegnato.id,
+          data: assegnato.data,
+          turno_inizio: assegnato.turno_inizio,
+          turno_fine: assegnato.turno_fine,
+          fascia_id: assegnato.fascia_id,
+          user_id: assegnato.user_id,
+          note: assegnato.note || '',
+          user_name: assegnato.name || '',
+          user_surname: assegnato.surname || '',
+          user_username: assegnato.username || '',
+          assegnato: true,
+          day_index: dayIndex,
+          turno_index: turnoIndex,
+          nota_automatica: '',
+          is_default: false,
+          is_closed_override: assegnato.is_closed_override || true // Se non è nei turni possibili, è straordinario
+        });
+      }
+    });
+
+    // Ordina i turni per data e orario
+    turniCompleti.sort((a, b) => {
+      if (a.data !== b.data) return a.data.localeCompare(b.data);
+      if (a.day_index !== b.day_index) return a.day_index - b.day_index;
+      return a.turno_index - b.turno_index;
     });
 
     return res.status(200).json({
@@ -566,11 +637,12 @@ async function assegnaTurno(req, res) {
         action = 'assigned'; // Admin riassegna turno
       }
 
-      // Aggiorna il turno esistente
+      // Aggiorna il turno esistente - AGGIORNATO per includere is_closed_override
       const result = await client.execute({
-        sql: `UPDATE turni SET user_id = ?, note = ?, fascia_id = ? WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
-              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note`,
-        args: [user_id, note || '', fascia_id || 1, data, turno_inizio, turno_fine]
+        sql: `UPDATE turni SET user_id = ?, note = ?, fascia_id = ?, is_closed_override = ? 
+              WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
+              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
+        args: [user_id, note || '', fascia_id || 1, is_closed_override || false, data, turno_inizio, turno_fine]
       });
 
       turnoResult = result.rows[0];
@@ -583,6 +655,7 @@ async function assegnaTurno(req, res) {
       return res.status(200).json({
         success: true,
         turno: turnoResult,
+        turno_id: turnoResult.id,
         action: 'updated'
       });
     } else {
@@ -593,12 +666,12 @@ async function assegnaTurno(req, res) {
         action = 'assigned';
       }
 
-      // Crea nuovo turno
+      // Crea nuovo turno - AGGIORNATO per includere is_closed_override
       const result = await client.execute({
-        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note)
-              VALUES (?, ?, ?, ?, ?, ?)
-              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note`,
-        args: [data, turno_inizio, turno_fine, fascia_id || 1, user_id, note || '']
+        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
+        args: [data, turno_inizio, turno_fine, fascia_id || 1, user_id, note || '', is_closed_override || false]
       });
 
       turnoResult = result.rows[0];
@@ -609,6 +682,7 @@ async function assegnaTurno(req, res) {
       return res.status(201).json({
         success: true,
         turno: turnoResult,
+        turno_id: turnoResult.id,
         action: 'created'
       });
     }
