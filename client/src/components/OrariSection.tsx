@@ -12,7 +12,6 @@ interface FasciaOraria {
 interface OrarioGiorno {
   giorno: string;
   fasce: FasciaOraria[];
-  icona: string;
   note?: string;
 }
 
@@ -27,17 +26,6 @@ const OrariSection: React.FC = () => {
   const [orari, setOrari] = useState<OrarioGiorno[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Mappa delle icone per ogni giorno
-  const iconeGiorni: { [key: string]: string } = {
-    'lunedì': '📚',
-    'martedì': '📚',
-    'mercoledì': '📚',
-    'giovedì': '📚',
-    'venerdì': '📚',
-    'sabato': '📅',
-    'domenica': '📅'
-  };
 
   // Lista completa dei giorni della settimana
   const tuttiGiorni = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
@@ -61,7 +49,6 @@ const OrariSection: React.FC = () => {
     return tuttiGiorni.map(giorno => ({
       giorno: giorno.charAt(0).toUpperCase() + giorno.slice(1),
       fasce: gruppi[giorno],
-      icona: iconeGiorni[giorno] || '📅',
       note: determineNota(gruppi[giorno])
     }));
   };
@@ -165,12 +152,11 @@ const OrariSection: React.FC = () => {
         {loading && orari.length === 0 ? (
           <div className="loading">Caricamento orari...</div>
         ) : error && orari.length === 0 ? (
-          <div className="error">❌ {error}</div>
+          <div className="error">{error}</div>
         ) : (
           <div className="orari-list">
             {orari.map((item, index) => (
               <div key={index} className="orario-item">
-                <span className="icona">{item.icona}</span>
                 <div className="testo">
                   <strong>{item.giorno}:</strong> 
                   {item.fasce.length === 0 ? (
@@ -193,9 +179,9 @@ const OrariSection: React.FC = () => {
         )}
         
         <div className="avviso">
-          Disponibili le pagode per studiare all'aperto :) 
+          Disponibili le pagode per studiare all'aperto 
           <br />
-          Rimanete collegatə per tutti gli aggiornamenti 😘
+          Rimanete collegatə per tutti gli aggiornamenti
         </div>
       </div>
     </section>

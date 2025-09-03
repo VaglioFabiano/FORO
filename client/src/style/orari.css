@@ -1,23 +1,30 @@
 /* Stili principali per la sezione orari */
 .orari-full-width {
-  background-color: rgb(248, 233, 205);
+  background-image: url('../assets/sfondo_orari.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   width: 100%;
-  padding: 2rem 0;
+  padding: 5% 0;
 }
 
 .orari-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 2rem;
-  font-family: 'Arial', sans-serif;
-  color: #333;
+  padding: 2rem;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  color: #000;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .orari-container h2 {
   text-align: center;
   margin-bottom: 1.5rem;
   font-size: 1.6rem;
-  color: #2c3e50;
+  color: #000;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
 }
 
 .orari-list {
@@ -32,91 +39,101 @@
   gap: 1rem;
   padding: 0.8rem 1.2rem;
   border-radius: 8px;
-  background: rgba(12, 73, 91, 0.08);
-  box-shadow: 3px 3px 6px rgba(210, 190, 160, 0.3), -3px -3px 6px rgba(255, 255, 255, 0.8);
+  background: transparent;
   transition: all 0.2s ease;
-  border: 1px solid rgba(12, 73, 91, 0.1);
   min-height: 50px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.orario-item:last-child {
+  border-bottom: none;
 }
 
 .orario-item:hover {
-  transform: translateY(-2px);
-  background: rgba(12, 73, 91, 0.12);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .icona {
-  font-size: 1.3rem;
-  min-width: 28px;
-  text-align: center;
-  color: rgba(12, 73, 91, 0.8);
+  display: none; /* Nasconde le emoji */
 }
 
 .testo {
   font-size: 0.95rem;
   line-height: 1.4;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  color: #000;
+  width: 100%;
+}
+
+.testo strong {
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  color: #000;
 }
 
 .nota {
-  color: rgba(231, 76, 60, 0.9);
+  color: #000;
   font-style: italic;
   font-size: 0.85rem;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
 }
 
 .avviso {
   margin-top: 1.5rem;
   padding: 0.8rem 1.2rem;
   border-radius: 8px;
-  background: rgba(12, 73, 91, 0.08);
-  box-shadow: 3px 3px 6px rgba(210, 190, 160, 0.3), -3px -3px 6px rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(12, 73, 91, 0.1);
+  background: transparent;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   text-align: center;
   font-size: 0.95rem;
   line-height: 1.5;
-  color: #2c3e50;
+  color: #000;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 .avviso:hover {
-  background: rgba(12, 73, 91, 0.12);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 /* Stili specifici per gli orari */
 .orario-principale {
-  color: #2c3e50;
+  color: #000;
   font-weight: 500;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
 }
 
 .orario-serale {
-  color: #8e44ad;
+  color: #000;
   font-weight: 500;
-  background: rgba(142, 68, 173, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
   margin-left: 4px;
 }
 
 .chiuso {
-  color: #e74c3c;
+  color: #000;
   font-weight: 500;
   font-style: italic;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
 }
 
 .loading {
   text-align: center;
   padding: 2rem;
-  color: #7f8c8d;
+  color: #000;
   font-style: italic;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
 }
 
 .error {
   text-align: center;
   padding: 1rem;
-  color: #e74c3c;
-  background: rgba(231, 76, 60, 0.1);
+  color: #000;
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   margin: 1rem 0;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
 }
 
 /* Media queries per responsività */
@@ -130,8 +147,7 @@
     padding: 0.7rem 1rem;
   }
   
-  .icona {
-    font-size: 1.2rem;
-    min-width: 24px;
+  .orari-container {
+    padding: 1.5rem;
   }
 }
