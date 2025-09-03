@@ -1,6 +1,9 @@
 /* Social Section Main Container */
 .social-section {
-  background: rgb(12, 73, 91);
+  background-image: url('../assets/sfondo_scuro.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: white;
   padding: 2rem 0;
   width: 100%;
