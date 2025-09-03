@@ -1,13 +1,19 @@
 /* Container principale - esteso a tutta la larghezza */
 .statuto-container {
   width: 100%;
-  background-color: rgb(254, 231, 203);
+  background-image: url('../assets/sfondo_chiaro.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
 }
 
 /* Banner - molto più alto */
 .statuto-banner {
-  background-color: rgb(254, 231, 203);
+  background-image: url('../assets/sfondo_chiaro.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: 120px 0;
   color: rgb(12, 73, 91);
   position: relative;

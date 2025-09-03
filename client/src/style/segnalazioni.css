@@ -1,6 +1,11 @@
 .segnalazioni-section {
   padding: 4rem 0;
   position: relative;
+  background-image: url('../assets/sfondo_chiaro.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100%;
 }
 
 .segnalazioni-header {

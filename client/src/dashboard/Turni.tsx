@@ -17,7 +17,7 @@ interface Turno {
   turno_index: number;
   nota_automatica?: string;
   is_default?: boolean;
-  is_closed_override?: boolean; // Aggiungi questo campo per identificare turni straordinari
+  is_closed_override?: boolean;
 }
 
 interface User {
@@ -52,6 +52,7 @@ const Turni: React.FC = () => {
   const [isClosedOverride, setIsClosedOverride] = useState(false);
 
   const giorni = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+  const orariTemplate = ['09:00-13:00', '13:00-16:00', '16:00-19:30', '21:00-24:00'];
 
   useEffect(() => {
     fetchAllTurni();
@@ -87,7 +88,6 @@ const Turni: React.FC = () => {
   const fetchAllTurni = async () => {
     setLoading(true);
     try {
-      // Carica tutte le 4 settimane
       const settimane: WeekType[] = ['corrente', 'prossima', 'plus2', 'plus3'];
       const promises = settimane.map(settimana => 
         fetch(`/api/turni?settimana=${settimana}`)
@@ -126,46 +126,23 @@ const Turni: React.FC = () => {
 
   // Verifica se un turno DOVREBBE essere chiuso secondo le regole di default
   const isSlotNaturallyClosed = (dayIndex: number, turnoIndex: number, weekType: WeekType): boolean => {
-    // Per settimane +2 e +3, alcuni slot sono chiusi di default
     if (weekType === 'plus2' || weekType === 'plus3') {
-      // Turno 21:00-24:00 è chiuso di default
-      if (turnoIndex === 3) { // 21:00-24:00
-        return true;
-      }
-      // Weekend è chiuso di default
-      if (dayIndex === 5 || dayIndex === 6) { // Sabato e Domenica
-        return true;
-      }
+      if (turnoIndex === 3) return true; // 21:00-24:00
+      if (dayIndex === 5 || dayIndex === 6) return true; // Weekend
     }
-    
     return false;
   };
 
-  // Verifica se un turno è straordinario (assegnato su slot normalmente chiuso)
+  // Verifica se un turno è straordinario
   const isTurnoStraordinario = (turno: Turno): boolean => {
     if (!turno.assegnato) return false;
-    
-    // Se ha il flag esplicito di override dal database
     if (turno.is_closed_override === true) return true;
-    
-    // Se è un turno su uno slot che dovrebbe essere normalmente chiuso
-    if (isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) {
-      return true;
-    }
-    
+    if (isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) return true;
     return false;
   };
 
-  // Funzione per creare un "pseudo-turno" per celle completamente chiuse
+  // Crea pseudo-turno per celle vuote
   const createClosedTurno = (dayIndex: number, turnoIndex: number): Turno => {
-    const orari = [
-      { inizio: '09:00', fine: '13:00' },
-      { inizio: '13:00', fine: '16:00' },
-      { inizio: '16:00', fine: '19:30' },
-      { inizio: '21:00', fine: '24:00' }
-    ];
-    
-    // Calcola la data per questo giorno
     const weekOffset = selectedWeek === 'corrente' ? 0 : 
                      selectedWeek === 'prossima' ? 1 : 
                      selectedWeek === 'plus2' ? 2 : 3;
@@ -176,6 +153,13 @@ const Turni: React.FC = () => {
     monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + (weekOffset * 7));
     const targetDate = new Date(monday);
     targetDate.setDate(monday.getDate() + dayIndex);
+    
+    const orari = [
+      { inizio: '09:00', fine: '13:00' },
+      { inizio: '13:00', fine: '16:00' },
+      { inizio: '16:00', fine: '19:30' },
+      { inizio: '21:00', fine: '24:00' }
+    ];
     
     return {
       id: null,
@@ -201,9 +185,8 @@ const Turni: React.FC = () => {
     setSelectedUserId(turno.user_id || currentUser?.id || null);
     setNote(turno.note || '');
     
-    // Se è una cella completamente chiusa o un turno su slot naturalmente chiuso, imposta automaticamente il flag
     if (isCompletelyClosedCell || isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) {
-      setIsClosedOverride(false); // L'utente dovrà comunque checkare
+      setIsClosedOverride(false);
     } else {
       setIsClosedOverride(false);
     }
@@ -237,7 +220,6 @@ const Turni: React.FC = () => {
       if (data.success) {
         setMessage({ type: 'success', text: 'Turno assegnato con successo!' });
         
-        // Aggiornamento immediato dello stato locale
         const newTurno: Turno = {
           ...selectedTurno,
           id: data.turno_id || data.turno?.id || Date.now(),
@@ -250,29 +232,22 @@ const Turni: React.FC = () => {
           is_closed_override: isClosedOverride || isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek)
         };
 
-        // Funzione per aggiornare lo stato corretto
         const updateWeekState = (setter: React.Dispatch<React.SetStateAction<Turno[]>>) => {
           setter(prev => {
-            // Rimuovi il turno se esiste già
             const filtered = prev.filter(t => 
               !(t.data === newTurno.data && 
                 t.turno_inizio === newTurno.turno_inizio && 
                 t.turno_fine === newTurno.turno_fine)
             );
             
-            // Aggiungi il nuovo turno
             return [...filtered, newTurno].sort((a, b) => {
-              // Prima ordina per data
               if (a.data !== b.data) return a.data.localeCompare(b.data);
-              // Poi per day_index
               if (a.day_index !== b.day_index) return a.day_index - b.day_index;
-              // Infine per turno_index
               return a.turno_index - b.turno_index;
             });
           });
         };
 
-        // Aggiorna la settimana corretta
         switch (selectedWeek) {
           case 'corrente':
             updateWeekState(setTurniCorrente);
@@ -289,28 +264,7 @@ const Turni: React.FC = () => {
         }
 
         closeModal();
-        
-        // Richiedi un aggiornamento completo in background per sicurezza
         fetchAllTurni();
-        
-        // TODO: Handler per ripercussioni turno straordinario
-        if (isClosedOverride || isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek)) {
-          console.log('TODO: Gestire ripercussioni turno straordinario/chiuso', {
-            turno: selectedTurno,
-            user_id: selectedUserId,
-            current_user: currentUser,
-            note: note,
-            action: 'assigned_to_closed_slot'
-          });
-        }
-        
-        // TODO: Handler notifica assegnazione
-        console.log('TODO: Notifica assegnazione turno', {
-          turno: selectedTurno,
-          user_id: selectedUserId,
-          current_user: currentUser,
-          is_closed_override: isClosedOverride
-        });
       } else {
         setMessage({ type: 'error', text: data.error || 'Errore nell\'assegnazione' });
       }
@@ -343,13 +297,6 @@ const Turni: React.FC = () => {
         setMessage({ type: 'success', text: 'Turno rimosso con successo!' });
         fetchAllTurni();
         closeModal();
-        
-        // TODO: Handler notifica rimozione
-        console.log('TODO: Notifica rimozione turno', {
-          turno: selectedTurno,
-          current_user: currentUser,
-          removed_user_id: selectedTurno.user_id
-        });
       } else {
         setMessage({ type: 'error', text: data.error || 'Errore nella rimozione' });
       }
@@ -404,14 +351,53 @@ const Turni: React.FC = () => {
     }
   };
 
-  const renderTurniGrid = (turni: Turno[]) => {
-    // Organizza turni per giorno e orario
-    const turniPerGiorno: { [key: string]: Turno } = {};
+  // Organizza turni per rendering dinamico della griglia
+  const organizeRenderingData = (turni: Turno[]) => {
+    const turniPerGiorno: { [dayIndex: number]: { [key: string]: Turno } } = {};
+    
+    // Inizializza struttura per ogni giorno
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      turniPerGiorno[dayIndex] = {};
+    }
+    
+    // Organizza turni esistenti
     turni.forEach(turno => {
-      const key = `${turno.day_index}-${turno.turno_index}`;
-      turniPerGiorno[key] = turno;
+      const key = `${turno.turno_inizio}-${turno.turno_fine}`;
+      if (!turniPerGiorno[turno.day_index]) {
+        turniPerGiorno[turno.day_index] = {};
+      }
+      turniPerGiorno[turno.day_index][key] = turno;
     });
+    
+    return turniPerGiorno;
+  };
 
+  // Ottieni tutti gli orari unici per una settimana
+  const getUniqueTimeSlots = (turni: Turno[]) => {
+    const slotsSet = new Set<string>();
+    
+    // Aggiungi slot standard come fallback
+    orariTemplate.forEach(slot => slotsSet.add(slot));
+    
+    // Aggiungi slot dai turni reali
+    turni.forEach(turno => {
+      const slot = `${turno.turno_inizio}-${turno.turno_fine}`;
+      slotsSet.add(slot);
+    });
+    
+    const slots = Array.from(slotsSet).sort((a, b) => {
+      const [aStart] = a.split('-');
+      const [bStart] = b.split('-');
+      return aStart.localeCompare(bStart);
+    });
+    
+    return slots;
+  };
+
+  const renderTurniGrid = (turni: Turno[]) => {
+    const turniPerGiorno = organizeRenderingData(turni);
+    const timeSlots = getUniqueTimeSlots(turni);
+    
     return (
       <div className="turni-grid">
         <div className="turni-header">
@@ -420,7 +406,6 @@ const Turni: React.FC = () => {
             <div key={index} className="turni-day-header">
               <div className="day-name">{giorno}</div>
               <div className="day-date">
-                {/* Trova qualsiasi turno per questo giorno per mostrare la data */}
                 {turni.find(t => t.day_index === index) ? 
                   formatDate(turni.find(t => t.day_index === index)!.data) : ''}
               </div>
@@ -429,18 +414,23 @@ const Turni: React.FC = () => {
         </div>
 
         <div className="turni-body">
-          {['09:00-13:00', '13:00-16:00', '16:00-19:30', '21:00-24:00'].map((orario, turnoIndex) => (
-            <div key={turnoIndex} className="turni-row">
-              <div className="turni-time-cell">{orario}</div>
+          {timeSlots.map((timeSlot, slotIndex) => (
+            <div key={slotIndex} className="turni-row">
+              <div className="turni-time-cell">{timeSlot}</div>
               {giorni.map((_, dayIndex) => {
-                const turnoKey = `${dayIndex}-${turnoIndex}`;
-                const turno = turniPerGiorno[turnoKey];
+                const turno = turniPerGiorno[dayIndex][timeSlot];
+                const [slotStart, slotEnd] = timeSlot.split('-');
+                
+                // Trova turno_index per il mapping alla griglia standard
+                const standardSlotIndex = orariTemplate.findIndex(slot => slot === timeSlot);
+                const turnoIndex = standardSlotIndex !== -1 ? standardSlotIndex : slotIndex;
+                
                 const isSlotClosed = isSlotNaturallyClosed(dayIndex, turnoIndex, selectedWeek);
                 const isStraordinario = turno ? isTurnoStraordinario(turno) : false;
                 
                 return (
                   <div
-                    key={`${dayIndex}-${turnoIndex}`}
+                    key={`${dayIndex}-${slotIndex}`}
                     className={`turni-cell ${
                       turno?.assegnato ? 
                         (isStraordinario ? 'assigned-extraordinary' : 'assigned') : 
@@ -451,14 +441,14 @@ const Turni: React.FC = () => {
                       if (turno) {
                         handleTurnoClick(turno);
                       } else {
-                        // Crea un pseudo-turno per celle completamente chiuse
                         const pseudoTurno = createClosedTurno(dayIndex, turnoIndex);
+                        pseudoTurno.turno_inizio = slotStart;
+                        pseudoTurno.turno_fine = slotEnd;
                         handleTurnoClick(pseudoTurno, true);
                       }
                     }}
                   >
                     {turno?.assegnato ? (
-                      // TURNO ASSEGNATO (normale o straordinario)
                       <div className={`turno-assigned ${isStraordinario ? 'straordinario' : ''}`}>
                         <div className="user-name">{turno.user_name} {turno.user_surname}</div>
                         {isStraordinario && (
@@ -467,15 +457,11 @@ const Turni: React.FC = () => {
                         {turno.nota_automatica && (
                           <div className="turno-nota-automatica">{turno.nota_automatica}</div>
                         )}
-                        {turno.note && !turno.nota_automatica && (
-                          <div className="turno-note">{turno.note}</div>
-                        )}
-                        {turno.note && turno.nota_automatica && (
+                        {turno.note && (
                           <div className="turno-note">{turno.note}</div>
                         )}
                       </div>
                     ) : turno && !isSlotClosed ? (
-                      // TURNO DISPONIBILE
                       <div className="turno-available">
                         <div>Disponibile</div>
                         {turno.nota_automatica && (
@@ -483,7 +469,6 @@ const Turni: React.FC = () => {
                         )}
                       </div>
                     ) : turno && isSlotClosed ? (
-                      // TURNO CHIUSO (ma presente nel database) - questo caso non dovrebbe più esistere
                       <div className="turno-closed">
                         <div>Chiuso</div>
                         {turno.nota_automatica && (
@@ -494,7 +479,6 @@ const Turni: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      // NESSUN TURNO NEL DATABASE (slot completamente chiuso)
                       <div className="turno-closed">
                         <div>Chiuso</div>
                         <div className="turno-nota-automatica" style={{fontSize: '9px', marginTop: '2px'}}>
@@ -574,7 +558,6 @@ const Turni: React.FC = () => {
         {renderTurniGrid(getCurrentTurni())}
       </div>
 
-      {/* Modal per assegnazione turno */}
       {isModalOpen && selectedTurno && (
         <div className="turno-modal-overlay" onClick={closeModal}>
           <div className="turno-modal-content" onClick={(e) => e.stopPropagation()}>
