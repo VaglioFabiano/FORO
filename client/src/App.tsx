@@ -25,7 +25,7 @@ function App() {
   const [currentRoute, setCurrentRoute] = useState<RouteState>({ page: 'home' });
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
   // const [shouldShowEventi, setShouldShowEventi] = useState(true);
-  const [currentUser, setCurrentUser] = useState<{id: number, level: number} | null>(null);
+  const [/*currentUser,*/, setCurrentUser] = useState<{id: number, level: number} | null>(null);
 
   // Funzione per parsare l'URL e determinare la pagina corrente
   const parseUrl = (): RouteState => {
