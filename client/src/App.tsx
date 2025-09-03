@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Header from './components/Header';
 import OrariSection from './components/OrariSection';
-import EventiSection from './components/EventiSection';
+// import EventiSection from './components/EventiSection';
 import SocialSection from './components/SocialSection';
 import StatutoSection from './components/StatutoSection';
 import Footer from './components/Footer';
@@ -11,21 +10,21 @@ import Login from './components/Login';
 import SegnalazioniSection from './components/Segnalazioni';
 import AssociatiSection from './components/Associati';
 import HomeDash from './dashboard/homedash';
-import PrenotaEventoPage from './components/PrenotaEventoPage';
+// import PrenotaEventoPage from './components/PrenotaEventoPage';
 
 // Tipo per le pagine dell'applicazione
-type PageType = 'home' | 'login' | 'dashboard' | 'prenota-evento';
+type PageType = 'home' | 'login' | 'dashboard'; // | 'prenota-evento';
 
 // Interfaccia per lo stato del routing
 interface RouteState {
   page: PageType;
-  eventoId?: number;
+  // eventoId?: number;
 }
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState<RouteState>({ page: 'home' });
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
-  const [shouldShowEventi, setShouldShowEventi] = useState(true);
+  // const [shouldShowEventi, setShouldShowEventi] = useState(true);
   const [currentUser, setCurrentUser] = useState<{id: number, level: number} | null>(null);
 
   // Funzione per parsare l'URL e determinare la pagina corrente
@@ -39,11 +38,11 @@ function App() {
     }
     
     // Controlla se è una pagina di prenotazione evento
-    const prenotaEventoMatch = path.match(/^\/prenota-evento\/(\d+)$/);
-    if (prenotaEventoMatch) {
-      const eventoId = parseInt(prenotaEventoMatch[1], 10);
-      return { page: 'prenota-evento', eventoId };
-    }
+    // const prenotaEventoMatch = path.match(/^\/prenota-evento\/(\d+)$/);
+    // if (prenotaEventoMatch) {
+    //   const eventoId = parseInt(prenotaEventoMatch[1], 10);
+    //   return { page: 'prenota-evento', eventoId };
+    // }
     
     // Controlla altre pagine
     if (path === '/login') {
@@ -75,22 +74,22 @@ function App() {
   };
 
   // Controlla se l'utente può vedere la sezione eventi
-  const canSeeEventi = () => {
-    // Se la sezione è visibile, tutti la vedono
-    if (shouldShowEventi) return true;
-    
-    // Se la sezione è nascosta, solo gli admin la vedono
-    const canSee = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
-    
-    // Debug log
-    console.log('canSeeEventi check:', {
-      shouldShowEventi,
-      currentUser,
-      canSee: canSee || false
-    });
-    
-    return canSee || false;
-  };
+  // const canSeeEventi = () => {
+  //   // Se la sezione è visibile, tutti la vedono
+  //   if (shouldShowEventi) return true;
+  //   
+  //   // Se la sezione è nascosta, solo gli admin la vedono
+  //   const canSee = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
+  //   
+  //   // Debug log
+  //   console.log('canSeeEventi check:', {
+  //     shouldShowEventi,
+  //     currentUser,
+  //     canSee: canSee || false
+  //   });
+  //   
+  //   return canSee || false;
+  // };
 
   // Controlla lo stato di login all'avvio e imposta la rotta iniziale
   useEffect(() => {
@@ -145,9 +144,9 @@ function App() {
       case 'dashboard':
         newUrl = '/dashboard';
         break;
-      case 'prenota-evento':
-        newUrl = `/prenota-evento/${route.eventoId}`;
-        break;
+      // case 'prenota-evento':
+      //   newUrl = `/prenota-evento/${route.eventoId}`;
+      //   break;
       case 'home':
       default:
         newUrl = '/';
@@ -188,20 +187,20 @@ function App() {
   };
 
   // Funzione per navigare alla pagina di prenotazione (da usare nei componenti)
-  const handlePrenotaEvento = (eventoId: number) => {
-    navigateTo({ page: 'prenota-evento', eventoId });
-  };
+  // const handlePrenotaEvento = (eventoId: number) => {
+  //   navigateTo({ page: 'prenota-evento', eventoId });
+  // };
 
   // Rendi le funzioni di navigazione disponibili globalmente per i componenti
   useEffect(() => {
-    (window as any).navigateToPrenotaEvento = handlePrenotaEvento;
+    // (window as any).navigateToPrenotaEvento = handlePrenotaEvento;
     (window as any).navigateToHome = () => navigateTo({ page: 'home' });
-    (window as any).toggleEventiVisibility = () => setShouldShowEventi(prev => !prev);
+    // (window as any).toggleEventiVisibility = () => setShouldShowEventi(prev => !prev);
     
     return () => {
-      delete (window as any).navigateToPrenotaEvento;
+      // delete (window as any).navigateToPrenotaEvento;
       delete (window as any).navigateToHome;
-      delete (window as any).toggleEventiVisibility;
+      // delete (window as any).toggleEventiVisibility;
     };
   }, []);
 
@@ -221,8 +220,8 @@ function App() {
         <HomeDash onLogout={handleLogout} onBackToHome={handleBackToHome} />
       ) : currentRoute.page === 'login' ? (
         <Login onLoginSuccess={handleLoginSuccess} />
-      ) : currentRoute.page === 'prenota-evento' ? (
-        <PrenotaEventoPage eventoId={currentRoute.eventoId} />
+      // ) : currentRoute.page === 'prenota-evento' ? (
+      //   <PrenotaEventoPage eventoId={currentRoute.eventoId} />
       ) : (
         <>
           <div id="header">
@@ -231,11 +230,11 @@ function App() {
           <div id="orari">
             <OrariSection />
           </div>
-          {canSeeEventi() && (
+          {/* {canSeeEventi() && (
             <div id="eventi">
               <EventiSection />
             </div>
-          )}
+          )} */}
           <div id="social">
             <SocialSection />
           </div>
