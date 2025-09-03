@@ -304,7 +304,7 @@ function generateDefaultTurni(weekDates) {
   return turni;
 }
 
-// Funzione per generare turni in base alle fasce orarie
+// Funzione per generare turni in base alle fasce orarie - VERSIONE MIGLIORATA
 function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
   // Se è una settimana di default (settimana +2 o +3), usa turni di default
   if (isDefaultWeek) {
@@ -325,7 +325,26 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
     
     if (fascheGiorno.length === 0) return;
 
-    turniTemplate.forEach((turno, turnoIndex) => {
+    // Trova gli orari effettivi di apertura per questo giorno
+    let orarioAperturaMinimo = 24 * 60; // Inizia con il massimo possibile
+    let orarioChiusuraMassimo = 0; // Inizia con il minimo possibile
+    
+    fascheGiorno.forEach(fascia => {
+      const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
+      const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine.split(':').map(Number);
+      const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
+      let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
+      
+      if (fasciaFineOre === 24 || (fasciaFineOre === 0 && fasciaFineMin === 0)) {
+        fasciaFineMinuti = 24 * 60;
+      }
+      
+      orarioAperturaMinimo = Math.min(orarioAperturaMinimo, fasciaInizioMinuti);
+      orarioChiusuraMassimo = Math.max(orarioChiusuraMassimo, fasciaFineMinuti);
+    });
+
+    // Filtra i turni template per includere solo quelli che rientrano negli orari di apertura
+    const turniCompatibili = turniTemplate.filter(turno => {
       const [oreInizio, minutiInizio] = turno.inizio.split(':').map(Number);
       const [oreFine, minutiFine] = turno.fine.split(':').map(Number);
       const inizioMinuti = oreInizio * 60 + minutiInizio;
@@ -335,7 +354,22 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
         fineMinuti = 24 * 60;
       }
 
-      const fasciaCompatibile = fasce.find(fascia => {
+      // Il turno è compatibile se inizia dopo l'apertura E finisce prima della chiusura
+      return inizioMinuti >= orarioAperturaMinimo && fineMinuti <= orarioChiusuraMassimo;
+    });
+
+    turniCompatibili.forEach((turno, turnoIndex) => {
+      const [oreInizio, minutiInizio] = turno.inizio.split(':').map(Number);
+      const [oreFine, minutiFine] = turno.fine.split(':').map(Number);
+      const inizioMinuti = oreInizio * 60 + minutiInizio;
+      let fineMinuti = oreFine * 60 + minutiFine;
+      
+      if (oreFine === 24) {
+        fineMinuti = 24 * 60;
+      }
+
+      // Trova la fascia più appropriata per questo turno
+      const fasciaCompatibile = fascheGiorno.find(fascia => {
         const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
         const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine.split(':').map(Number);
         const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
@@ -345,9 +379,11 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
           fasciaFineMinuti = 24 * 60;
         }
 
+        // La fascia è compatibile se contiene completamente il turno
         return fasciaInizioMinuti <= inizioMinuti && fasciaFineMinuti >= fineMinuti;
       });
 
+      // Se non c'è una fascia che contiene completamente il turno, cerca sovrapposizioni
       if (!fasciaCompatibile) {
         const fasciaConSovrapposizione = fascheGiorno.find(fascia => {
           const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
@@ -372,6 +408,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
             fasciaFineMinuti = 24 * 60;
           }
 
+          // Calcola l'intersezione tra turno e fascia
           const nuovoInizio = Math.max(inizioMinuti, fasciaInizioMinuti);
           const nuovaFine = Math.min(fineMinuti, fasciaFineMinuti);
 
@@ -388,7 +425,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
               turnoFine = '24:00';
             }
 
-            // Crea nota con orari specifici
+            // Crea nota con orari modificati
             let nota = '';
             if (nuovoInizio > inizioMinuti) {
               nota = `(apertura posticipata alle ${turnoInizio})`;
@@ -398,24 +435,35 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
               nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
             }
 
+            // Trova l'indice del turno originale nel template per mantenere la coerenza
+            const originalTurnoIndex = turniTemplate.findIndex(t => 
+              t.inizio === turno.inizio && t.fine === turno.fine
+            );
+
             turni.push({
               data,
               turno_inizio: turnoInizio,
               turno_fine: turnoFine,
               fascia_id: fasciaConSovrapposizione.id,
               day_index: dayIndex,
-              turno_index: turnoIndex,
+              turno_index: originalTurnoIndex !== -1 ? originalTurnoIndex : turnoIndex,
               nota_automatica: nota
             });
           }
         }
-        return;
+        return; // Salta questo turno se non ha sovrapposizioni
       }
 
+      // Turno completamente compatibile con una fascia
       let turnoFine = turno.fine;
       if (turno.fine === '24:00') {
         turnoFine = '24:00';
       }
+
+      // Trova l'indice del turno originale nel template per mantenere la coerenza
+      const originalTurnoIndex = turniTemplate.findIndex(t => 
+        t.inizio === turno.inizio && t.fine === turno.fine
+      );
 
       turni.push({
         data,
@@ -423,7 +471,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
         turno_fine: turnoFine,
         fascia_id: fasciaCompatibile.id,
         day_index: dayIndex,
-        turno_index: turnoIndex,
+        turno_index: originalTurnoIndex !== -1 ? originalTurnoIndex : turnoIndex,
         nota_automatica: ''
       });
     });
