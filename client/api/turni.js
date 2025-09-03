@@ -304,7 +304,7 @@ function generateDefaultTurni(weekDates) {
   return turni;
 }
 
-// Funzione per generare turni in base alle fasce orarie - VERSIONE MIGLIORATA
+// Funzione per generare turni in base alle fasce orarie
 function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
   // Se è una settimana di default (settimana +2 o +3), usa turni di default
   if (isDefaultWeek) {
@@ -425,14 +425,22 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
               turnoFine = '24:00';
             }
 
-            // Crea nota con orari modificati
+            // MODIFICA: Per il turno 16-19:30, se finisce parzialmente, non chiudere
             let nota = '';
-            if (nuovoInizio > inizioMinuti) {
-              nota = `(apertura posticipata alle ${turnoInizio})`;
-            }
-            if (nuovaFine < fineMinuti) {
-              const chiusuraText = `(chiusura anticipata alle ${turnoFine})`;
-              nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
+            if (turno.inizio === '16:00' && turno.fine === '19:30') {
+              // Se il turno 16-19:30 è parziale, mantieni l'orario originale
+              turnoInizio = '16:00';
+              turnoFine = '19:30';
+              nota = '(orario ridotto per chiusura anticipata)';
+            } else {
+              // Per gli altri turni, applica le modifiche normali
+              if (nuovoInizio > inizioMinuti) {
+                nota = `(apertura posticipata alle ${turnoInizio})`;
+              }
+              if (nuovaFine < fineMinuti) {
+                const chiusuraText = `(chiusura anticipata alle ${turnoFine})`;
+                nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
+              }
             }
 
             // Trova l'indice del turno originale nel template per mantenere la coerenza
