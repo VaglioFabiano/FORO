@@ -44,7 +44,8 @@ const AssociatiSection: React.FC = () => {
     <section className="sezione-associazione">
       <div className="testo-associazione">
         <h2>Chi siamo</h2>
-        <p>Siamo un'associazione culturale attiva sul territorio, impegnata nell'organizzazione di iniziative e attività per la comunità. Dal 2022, grazie a diversi bandi comunali, gestiamo il servizio di aula studio, ma le nostre attività non si fermano lì.</p>
+        <p>Siamo un'associazione culturale attiva sul territorio di Piossasco, impegnata nell'organizzazione di iniziative e attività per la comunità.
+           Dal 2022, grazie alla vincita di bandi comunali, gestiamo il servizio di aula studio, ma le nostre attività non si fermano lì.</p>
         <p>Vuoi far parte del progetto? Ti aspettiamo! Passa a trovarci in aula oppure scrivici a <a href="mailto:associazioneforopiossasco@gmail.com">associazioneforopiossasco@gmail.com</a> per diventare socio.</p>
       </div>
       
