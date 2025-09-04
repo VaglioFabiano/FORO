@@ -426,27 +426,23 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
         // Controlla se la fascia contiene completamente il turno
         const turnoCompletoInFascia = fasciaInizioMinuti <= inizioMinuti && fasciaFineMinuti >= fineMinuti;
         
-        if (turnoCompletoInFascia) {
-          // Turno completamente compatibile - mantieni orari originali
-          turnoInizio = turno.inizio;
-          turnoFine = turno.fine;
-        } else {
-          // Turno parzialmente compatibile
-          // MODIFICA: Per il turno 16-19:30, se finisce parzialmente, non chiudere
-          if (turno.inizio === '16:00' && turno.fine === '19:30') {
-            // Se il turno 16-19:30 è parziale, mantieni l'orario originale
-            turnoInizio = '16:00';
-            turnoFine = '19:30';
-            nota = '(orario ridotto per chiusura anticipata)';
-          } else {
-            // Per gli altri turni, applica le modifiche normali
-            if (nuovoInizio > inizioMinuti) {
-              nota = `(apertura posticipata alle ${turnoInizio})`;
+        // SEMPRE mantieni gli orari originali del turno
+        turnoInizio = turno.inizio;
+        turnoFine = turno.fine;
+        
+        if (!turnoCompletoInFascia) {
+          // Turno parzialmente compatibile - genera note informative
+          if (nuovoInizio > inizioMinuti) {
+            const orarioAperturaEffettivo = `${Math.floor(nuovoInizio / 60).toString().padStart(2, '0')}:${(nuovoInizio % 60).toString().padStart(2, '0')}`;
+            nota = `(apertura posticipata alle ${orarioAperturaEffettivo})`;
+          }
+          if (nuovaFine < fineMinuti) {
+            const orarioChiusuraEffettivo = `${Math.floor(nuovaFine / 60).toString().padStart(2, '0')}:${(nuovaFine % 60).toString().padStart(2, '0')}`;
+            if (nuovaFine === 24 * 60) {
+              orarioChiusuraEffettivo = '24:00';
             }
-            if (nuovaFine < fineMinuti) {
-              const chiusuraText = `(chiusura anticipata alle ${turnoFine})`;
-              nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
-            }
+            const chiusuraText = `(chiusura anticipata alle ${orarioChiusuraEffettivo})`;
+            nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
           }
         }
 
