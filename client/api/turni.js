@@ -343,7 +343,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
       orarioChiusuraMassimo = Math.max(orarioChiusuraMassimo, fasciaFineMinuti);
     });
 
-    // Filtra i turni template per includere solo quelli che rientrano negli orari di apertura
+    // Filtra i turni template per includere solo quelli che hanno almeno 30 minuti di sovrapposizione
     const turniCompatibili = turniTemplate.filter(turno => {
       const [oreInizio, minutiInizio] = turno.inizio.split(':').map(Number);
       const [oreFine, minutiFine] = turno.fine.split(':').map(Number);
@@ -354,8 +354,13 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
         fineMinuti = 24 * 60;
       }
 
-      // Il turno è compatibile se inizia dopo l'apertura E finisce prima della chiusura
-      return inizioMinuti >= orarioAperturaMinimo && fineMinuti <= orarioChiusuraMassimo;
+      // Calcola la sovrapposizione con gli orari di apertura
+      const sovrapposizioneInizio = Math.max(inizioMinuti, orarioAperturaMinimo);
+      const sovrapposizioneFine = Math.min(fineMinuti, orarioChiusuraMassimo);
+      const durataSovrapposizione = Math.max(0, sovrapposizioneFine - sovrapposizioneInizio);
+
+      // Il turno è compatibile se ha almeno 30 minuti di sovrapposizione
+      return durataSovrapposizione >= 30;
     });
 
     turniCompatibili.forEach((turno, turnoIndex) => {
@@ -369,6 +374,7 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
       }
 
       // Trova la fascia più appropriata per questo turno
+      // Una fascia è compatibile se ha almeno 30 minuti di sovrapposizione con il turno
       const fasciaCompatibile = fascheGiorno.find(fascia => {
         const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
         const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine.split(':').map(Number);
@@ -379,109 +385,86 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
           fasciaFineMinuti = 24 * 60;
         }
 
-        // La fascia è compatibile se contiene completamente il turno
-        return fasciaInizioMinuti <= inizioMinuti && fasciaFineMinuti >= fineMinuti;
+        // Calcola la sovrapposizione tra turno e fascia
+        const sovrapposizioneInizio = Math.max(inizioMinuti, fasciaInizioMinuti);
+        const sovrapposizioneFine = Math.min(fineMinuti, fasciaFineMinuti);
+        const durataSovrapposizione = Math.max(0, sovrapposizioneFine - sovrapposizioneInizio);
+
+        // La fascia è compatibile se ha almeno 30 minuti di sovrapposizione
+        return durataSovrapposizione >= 30;
       });
 
-      // Se non c'è una fascia che contiene completamente il turno, cerca sovrapposizioni
-      if (!fasciaCompatibile) {
-        const fasciaConSovrapposizione = fascheGiorno.find(fascia => {
-          const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio.split(':').map(Number);
-          const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine.split(':').map(Number);
-          const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
-          let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
-          
-          if (fasciaFineOre === 24 || (fasciaFineOre === 0 && fasciaFineMin === 0)) {
-            fasciaFineMinuti = 24 * 60;
-          }
+      if (fasciaCompatibile) {
+        const [fasciaInizioOre, fasciaInizioMin] = fasciaCompatibile.ora_inizio.split(':').map(Number);
+        const [fasciaFineOre, fasciaFineMin] = fasciaCompatibile.ora_fine.split(':').map(Number);
+        const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
+        let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
+        
+        if (fasciaFineOre === 24 || (fasciaFineOre === 0 && fasciaFineMin === 0)) {
+          fasciaFineMinuti = 24 * 60;
+        }
 
-          return fasciaInizioMinuti < fineMinuti && fasciaFineMinuti > inizioMinuti;
-        });
+        // Calcola l'intersezione tra turno e fascia
+        const nuovoInizio = Math.max(inizioMinuti, fasciaInizioMinuti);
+        const nuovaFine = Math.min(fineMinuti, fasciaFineMinuti);
 
-        if (fasciaConSovrapposizione) {
-          const [fasciaInizioOre, fasciaInizioMin] = fasciaConSovrapposizione.ora_inizio.split(':').map(Number);
-          const [fasciaFineOre, fasciaFineMin] = fasciaConSovrapposizione.ora_fine.split(':').map(Number);
-          const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
-          let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
-          
-          if (fasciaFineOre === 24 || (fasciaFineOre === 0 && fasciaFineMin === 0)) {
-            fasciaFineMinuti = 24 * 60;
-          }
+        const nuovoInizioOre = Math.floor(nuovoInizio / 60);
+        const nuovoInizioMin = nuovoInizio % 60;
+        const nuovaFineOre = Math.floor(nuovaFine / 60);
+        const nuovaFineMin = nuovaFine % 60;
 
-          // Calcola l'intersezione tra turno e fascia
-          const nuovoInizio = Math.max(inizioMinuti, fasciaInizioMinuti);
-          const nuovaFine = Math.min(fineMinuti, fasciaFineMinuti);
+        let turnoInizio = `${nuovoInizioOre.toString().padStart(2, '0')}:${nuovoInizioMin.toString().padStart(2, '0')}`;
+        let turnoFine = `${nuovaFineOre.toString().padStart(2, '0')}:${nuovaFineMin.toString().padStart(2, '0')}`;
+        
+        if (nuovaFineOre === 24) {
+          turnoFine = '24:00';
+        }
 
-          if (nuovaFine > nuovoInizio) {
-            const nuovoInizioOre = Math.floor(nuovoInizio / 60);
-            const nuovoInizioMin = nuovoInizio % 60;
-            const nuovaFineOre = Math.floor(nuovaFine / 60);
-            const nuovaFineMin = nuovaFine % 60;
-
-            let turnoInizio = `${nuovoInizioOre.toString().padStart(2, '0')}:${nuovoInizioMin.toString().padStart(2, '0')}`;
-            let turnoFine = `${nuovaFineOre.toString().padStart(2, '0')}:${nuovaFineMin.toString().padStart(2, '0')}`;
-            
-            if (nuovaFineOre === 24) {
-              turnoFine = '24:00';
+        // Genera note automatiche per modifiche agli orari
+        let nota = '';
+        
+        // Controlla se la fascia contiene completamente il turno
+        const turnoCompletoInFascia = fasciaInizioMinuti <= inizioMinuti && fasciaFineMinuti >= fineMinuti;
+        
+        if (turnoCompletoInFascia) {
+          // Turno completamente compatibile - mantieni orari originali
+          turnoInizio = turno.inizio;
+          turnoFine = turno.fine;
+        } else {
+          // Turno parzialmente compatibile
+          // MODIFICA: Per il turno 16-19:30, se finisce parzialmente, non chiudere
+          if (turno.inizio === '16:00' && turno.fine === '19:30') {
+            // Se il turno 16-19:30 è parziale, mantieni l'orario originale
+            turnoInizio = '16:00';
+            turnoFine = '19:30';
+            nota = '(orario ridotto per chiusura anticipata)';
+          } else {
+            // Per gli altri turni, applica le modifiche normali
+            if (nuovoInizio > inizioMinuti) {
+              nota = `(apertura posticipata alle ${turnoInizio})`;
             }
-
-            // MODIFICA: Per il turno 16-19:30, se finisce parzialmente, non chiudere
-            let nota = '';
-            if (turno.inizio === '16:00' && turno.fine === '19:30') {
-              // Se il turno 16-19:30 è parziale, mantieni l'orario originale
-              turnoInizio = '16:00';
-              turnoFine = '19:30';
-              nota = '(orario ridotto per chiusura anticipata)';
-            } else {
-              // Per gli altri turni, applica le modifiche normali
-              if (nuovoInizio > inizioMinuti) {
-                nota = `(apertura posticipata alle ${turnoInizio})`;
-              }
-              if (nuovaFine < fineMinuti) {
-                const chiusuraText = `(chiusura anticipata alle ${turnoFine})`;
-                nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
-              }
+            if (nuovaFine < fineMinuti) {
+              const chiusuraText = `(chiusura anticipata alle ${turnoFine})`;
+              nota = nota ? nota + ' ' + chiusuraText : chiusuraText;
             }
-
-            // Trova l'indice del turno originale nel template per mantenere la coerenza
-            const originalTurnoIndex = turniTemplate.findIndex(t => 
-              t.inizio === turno.inizio && t.fine === turno.fine
-            );
-
-            turni.push({
-              data,
-              turno_inizio: turnoInizio,
-              turno_fine: turnoFine,
-              fascia_id: fasciaConSovrapposizione.id,
-              day_index: dayIndex,
-              turno_index: originalTurnoIndex !== -1 ? originalTurnoIndex : turnoIndex,
-              nota_automatica: nota
-            });
           }
         }
-        return; // Salta questo turno se non ha sovrapposizioni
+
+        // Trova l'indice del turno originale nel template per mantenere la coerenza
+        const originalTurnoIndex = turniTemplate.findIndex(t => 
+          t.inizio === turno.inizio && t.fine === turno.fine
+        );
+
+        turni.push({
+          data,
+          turno_inizio: turnoInizio,
+          turno_fine: turnoFine,
+          fascia_id: fasciaCompatibile.id,
+          day_index: dayIndex,
+          turno_index: originalTurnoIndex !== -1 ? originalTurnoIndex : turnoIndex,
+          nota_automatica: nota
+        });
       }
-
-      // Turno completamente compatibile con una fascia
-      let turnoFine = turno.fine;
-      if (turno.fine === '24:00') {
-        turnoFine = '24:00';
-      }
-
-      // Trova l'indice del turno originale nel template per mantenere la coerenza
-      const originalTurnoIndex = turniTemplate.findIndex(t => 
-        t.inizio === turno.inizio && t.fine === turno.fine
-      );
-
-      turni.push({
-        data,
-        turno_inizio: turno.inizio,
-        turno_fine: turnoFine,
-        fascia_id: fasciaCompatibile.id,
-        day_index: dayIndex,
-        turno_index: originalTurnoIndex !== -1 ? originalTurnoIndex : turnoIndex,
-        nota_automatica: ''
-      });
     });
   });
 
@@ -489,7 +472,6 @@ function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
 }
 
 // GET - Ottieni turni della settimana
-// GET - Ottieni turni della settimana - VERSIONE CORRETTA
 async function getTurni(req, res) {
   try {
     const { settimana } = req.query; // 'corrente', 'prossima', 'plus2', 'plus3'

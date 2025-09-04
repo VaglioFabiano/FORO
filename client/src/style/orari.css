@@ -45,6 +45,16 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+/* Stile per orari straordinari */
+.orario-item.orario-straordinario {
+  background: rgba(255, 255, 0, 0.2);
+  border: 1px solid rgba(255, 204, 0, 0.4);
+}
+
+.orario-item.orario-straordinario:hover {
+  background: rgba(255, 255, 0, 0.3);
+}
+
 .orario-item:last-child {
   border-bottom: none;
 }

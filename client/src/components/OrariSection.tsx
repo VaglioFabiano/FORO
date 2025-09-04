@@ -30,6 +30,26 @@ const OrariSection: React.FC = () => {
   // Lista completa dei giorni della settimana
   const tuttiGiorni = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
+  // Funzione per verificare se un orario è straordinario
+  const isOrarioStraordinario = (fasce: FasciaOraria[]): boolean => {
+    // Se non ci sono fasce (chiuso), non è straordinario
+    if (fasce.length === 0) {
+      return false;
+    }
+
+    // Se ci sono più fasce, è straordinario
+    if (fasce.length > 1) {
+      return true;
+    }
+
+    // Se c'è una sola fascia, controlla se è diversa dall'orario ordinario 9:00-19:30
+    const fascia = fasce[0];
+    const oraInizio = fascia.ora_inizio.slice(0, 5);
+    const oraFine = fascia.ora_fine.slice(0, 5);
+    
+    return !(oraInizio === '09:00' && oraFine === '19:30');
+  };
+
   // Funzione per raggruppare le fasce orarie per giorno
   const raggruppaOrariPerGiorno = (fasceOrarie: FasciaOraria[]): OrarioGiorno[] => {
     const gruppi: { [key: string]: FasciaOraria[] } = {};
@@ -156,11 +176,14 @@ const OrariSection: React.FC = () => {
         ) : (
           <div className="orari-list">
             {orari.map((item, index) => (
-              <div key={index} className="orario-item">
+              <div 
+                key={index} 
+                className={`orario-item ${isOrarioStraordinario(item.fasce) ? 'orario-straordinario' : ''}`}
+              >
                 <div className="testo">
-                  <strong>{item.giorno}:</strong> 
+                  <strong>{item.giorno}:</strong>{' '}
                   {item.fasce.length === 0 ? (
-                    <span className="chiuso"> Chiuso</span>
+                    <span className="chiuso">Chiuso</span>
                   ) : (
                     <>
                       {item.fasce.map((fascia, fasciaIndex) => (
