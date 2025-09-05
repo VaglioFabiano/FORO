@@ -628,7 +628,7 @@ async function getTurni(req, res) {
   }
 }
 
-// Modifica nella funzione assegnaTurno - aggiungi dopo le validazioni iniziali:
+// Modifica nella funzione assegnaTurno - aggiungi questa logica prima dell'INSERT/UPDATE:
 
 async function assegnaTurno(req, res) {
   try {
@@ -641,58 +641,126 @@ async function assegnaTurno(req, res) {
       });
     }
 
-    // AGGIUNTA: Determina quale settimana è questa data per usare la fascia corretta
-    let fasciaIdCorretta = fascia_id || 1;
-    
-    // Ottieni le date delle settimane per determinare quale tabella fasce usare
+    // DETERMINA SE È SETTIMANA CORRENTE O PROSSIMA
     const currentWeekDates = getCurrentWeekDates();
     const nextWeekDates = getNextWeekDates();
-    const weekPlus2Dates = getWeekPlus2Dates();
-    const weekPlus3Dates = getWeekPlus3Dates();
     
-    let settimanaTarget = 'corrente';
-    if (nextWeekDates.includes(data)) {
-      settimanaTarget = 'prossima';
-    } else if (weekPlus2Dates.includes(data)) {
-      settimanaTarget = 'plus2';
-    } else if (weekPlus3Dates.includes(data)) {
-      settimanaTarget = 'plus3';
+    const isCurrentWeek = currentWeekDates.includes(data);
+    const isNextWeek = nextWeekDates.includes(data);
+    
+    console.log(`DEBUG - Data ${data} - Settimana corrente: ${isCurrentWeek}, Prossima: ${isNextWeek}`);
+
+    // GESTIONE FASCIA_ID CORRETTA BASATA SUL VINCOLO ESISTENTE
+    let fasciaIdFinale = 1; // Default fallback
+
+    if (fascia_id) {
+      // Il vincolo punta sempre a fasce_orarie_prossima, quindi:
+      
+      if (isCurrentWeek) {
+        // Per settimana corrente: cerca prima in fasce_orarie_prossima
+        try {
+          const fasciaCheck = await client.execute({
+            sql: 'SELECT id FROM fasce_orarie_prossima WHERE id = ?',
+            args: [fascia_id]
+          });
+
+          if (fasciaCheck.rows.length > 0) {
+            fasciaIdFinale = fascia_id;
+            console.log(`DEBUG - Settimana corrente: fascia ${fascia_id} trovata in fasce_orarie_prossima`);
+          } else {
+            // Se non esiste in fasce_orarie_prossima, cerca una fascia equivalente
+            // basandoti sui dati di fasce_orarie
+            const fasciaOriginale = await client.execute({
+              sql: 'SELECT giorno, ora_inizio, ora_fine FROM fasce_orarie WHERE id = ?',
+              args: [fascia_id]
+            });
+
+            if (fasciaOriginale.rows.length > 0) {
+              const fascia = fasciaOriginale.rows[0];
+              
+              // Cerca una fascia equivalente in fasce_orarie_prossima
+              const fasciaEquivalente = await client.execute({
+                sql: 'SELECT id FROM fasce_orarie_prossima WHERE giorno = ? AND ora_inizio = ? AND ora_fine = ?',
+                args: [fascia.giorno, fascia.ora_inizio, fascia.ora_fine]
+              });
+
+              if (fasciaEquivalente.rows.length > 0) {
+                fasciaIdFinale = fasciaEquivalente.rows[0].id;
+                console.log(`DEBUG - Trovata fascia equivalente ${fasciaIdFinale} per fascia originale ${fascia_id}`);
+              } else {
+                // Come ultimo resort, usa la prima fascia disponibile
+                const anyFascia = await client.execute({
+                  sql: 'SELECT id FROM fasce_orarie_prossima ORDER BY id LIMIT 1'
+                });
+                
+                if (anyFascia.rows.length > 0) {
+                  fasciaIdFinale = anyFascia.rows[0].id;
+                  console.log(`DEBUG - Nessuna fascia equivalente, usando prima disponibile: ${fasciaIdFinale}`);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Errore nel controllo fascia settimana corrente:', error);
+          fasciaIdFinale = 1;
+        }
+      } else if (isNextWeek) {
+        // Per settimana prossima: controllo standard
+        try {
+          const fasciaCheck = await client.execute({
+            sql: 'SELECT id FROM fasce_orarie_prossima WHERE id = ?',
+            args: [fascia_id]
+          });
+
+          if (fasciaCheck.rows.length > 0) {
+            fasciaIdFinale = fascia_id;
+            console.log(`DEBUG - Settimana prossima: fascia ${fascia_id} trovata`);
+          }
+        } catch (error) {
+          console.error('Errore nel controllo fascia settimana prossima:', error);
+          fasciaIdFinale = 1;
+        }
+      } else {
+        // Per altre settimane (plus2, plus3) usa sempre fascia default
+        fasciaIdFinale = 1;
+        console.log(`DEBUG - Settimana futura: usando fascia default ${fasciaIdFinale}`);
+      }
     }
 
-    // Se la fascia_id è stata fornita, verifica che esista nella tabella corretta
-    if (fascia_id && settimanaTarget !== 'plus2' && settimanaTarget !== 'plus3') {
-      let fascheQuery = 'SELECT id FROM fasce_orarie WHERE id = ?';
-      if (settimanaTarget === 'prossima') {
-        fascheQuery = 'SELECT id FROM fasce_orarie_prossima WHERE id = ?';
-      }
-      
-      const fasciaCheck = await client.execute({
-        sql: fascheQuery,
-        args: [fascia_id]
+    // Verifica finale che la fascia_id esista in fasce_orarie_prossima
+    try {
+      const finalCheck = await client.execute({
+        sql: 'SELECT id FROM fasce_orarie_prossima WHERE id = ?',
+        args: [fasciaIdFinale]
       });
-      
-      if (fasciaCheck.rows.length === 0) {
-        // Se la fascia non esiste nella tabella corretta, usa fascia_id = 1 (default)
-        console.warn(`Fascia ID ${fascia_id} non trovata per settimana ${settimanaTarget}, usando fascia default`);
-        fasciaIdCorretta = 1;
-        
-        // Verifica che almeno la fascia 1 esista nella tabella corretta
-        const defaultCheck = await client.execute({
-          sql: fascheQuery,
-          args: [1]
+
+      if (finalCheck.rows.length === 0) {
+        // Se non esiste, prendi la prima fascia disponibile
+        const anyFascia = await client.execute({
+          sql: 'SELECT id FROM fasce_orarie_prossima ORDER BY id LIMIT 1'
         });
         
-        if (defaultCheck.rows.length === 0) {
-          return res.status(400).json({
+        if (anyFascia.rows.length > 0) {
+          fasciaIdFinale = anyFascia.rows[0].id;
+          console.log(`DEBUG - Fascia ${fasciaIdFinale} non valida, usando ${fasciaIdFinale}`);
+        } else {
+          return res.status(500).json({
             success: false,
-            error: `Nessuna fascia valida disponibile per la settimana ${settimanaTarget}`
+            error: 'Nessuna fascia oraria disponibile nel sistema'
           });
         }
       }
+    } catch (error) {
+      console.error('Errore nel controllo finale fascia:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Errore nella validazione fascia oraria'
+      });
     }
 
-    // Resto del codice rimane uguale, ma usa fasciaIdCorretta invece di fascia_id
-    
+    console.log(`DEBUG - fascia_id finale da usare: ${fasciaIdFinale}`);
+
+    // RESTO DEL CODICE ORIGINALE...
     // Gestione ripercussioni turno chiuso
     if (is_closed_override) {
       await handleClosedTurnoRepercussions({
@@ -715,26 +783,23 @@ async function assegnaTurno(req, res) {
     if (esistente.rows.length > 0) {
       const oldUserId = esistente.rows[0].user_id;
       
-      // Determina il tipo di azione per le notifiche
       if (current_user_id === user_id && current_user_id === oldUserId) {
-        action = 'self_modified'; // Utente modifica le proprie note - nessuna notifica
+        action = 'self_modified';
       } else if (current_user_id === user_id) {
         action = is_closed_override ? 'closed_assigned' : 'self_assigned';
       } else if (oldUserId !== user_id) {
-        action = 'assigned'; // Admin riassegna turno
+        action = 'assigned';
       }
 
-      // Aggiorna il turno esistente - USA fasciaIdCorretta
       const result = await client.execute({
         sql: `UPDATE turni SET user_id = ?, note = ?, fascia_id = ?, is_closed_override = ? 
               WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
               RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
-        args: [user_id, note || '', fasciaIdCorretta, is_closed_override || false, data, turno_inizio, turno_fine]
+        args: [user_id, note || '', fasciaIdFinale, is_closed_override || false, data, turno_inizio, turno_fine]
       });
 
       turnoResult = result.rows[0];
 
-      // Invia notifica solo se non è una modifica delle proprie note
       if (action !== 'self_modified') {
         await sendTurnoNotification(action, turnoResult, current_user_id, targetUserId);
       }
@@ -746,24 +811,21 @@ async function assegnaTurno(req, res) {
         action: 'updated'
       });
     } else {
-      // Determina il tipo di azione per nuovo turno
       if (current_user_id === user_id) {
         action = is_closed_override ? 'closed_assigned' : 'self_assigned';
       } else {
         action = 'assigned';
       }
 
-      // Crea nuovo turno - USA fasciaIdCorretta
       const result = await client.execute({
         sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override)
               VALUES (?, ?, ?, ?, ?, ?, ?)
               RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
-        args: [data, turno_inizio, turno_fine, fasciaIdCorretta, user_id, note || '', is_closed_override || false]
+        args: [data, turno_inizio, turno_fine, fasciaIdFinale, user_id, note || '', is_closed_override || false]
       });
 
       turnoResult = result.rows[0];
 
-      // Invia notifica
       await sendTurnoNotification(action, turnoResult, current_user_id, targetUserId);
 
       return res.status(201).json({
