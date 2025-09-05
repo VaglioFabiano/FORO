@@ -628,7 +628,7 @@ async function getTurni(req, res) {
   }
 }
 
-// Aggiungi questo controllo nella funzione assegnaTurno() prima dell'INSERT/UPDATE
+// Modifica nella funzione assegnaTurno - aggiungi dopo le validazioni iniziali:
 
 async function assegnaTurno(req, res) {
   try {
@@ -641,52 +641,58 @@ async function assegnaTurno(req, res) {
       });
     }
 
-    // *** NUOVO: Controllo validità Foreign Keys ***
-    console.log('Debug FK - fascia_id ricevuto:', fascia_id);
-    console.log('Debug FK - user_id ricevuto:', user_id);
+    // AGGIUNTA: Determina quale settimana è questa data per usare la fascia corretta
+    let fasciaIdCorretta = fascia_id || 1;
     
-    // Verifica che user_id esista
-    const userExists = await client.execute({
-      sql: 'SELECT id FROM users WHERE id = ?',
-      args: [user_id]
-    });
+    // Ottieni le date delle settimane per determinare quale tabella fasce usare
+    const currentWeekDates = getCurrentWeekDates();
+    const nextWeekDates = getNextWeekDates();
+    const weekPlus2Dates = getWeekPlus2Dates();
+    const weekPlus3Dates = getWeekPlus3Dates();
     
-    if (userExists.rows.length === 0) {
-      console.error('User ID non trovato:', user_id);
-      return res.status(400).json({
-        success: false,
-        error: 'Utente non trovato'
-      });
+    let settimanaTarget = 'corrente';
+    if (nextWeekDates.includes(data)) {
+      settimanaTarget = 'prossima';
+    } else if (weekPlus2Dates.includes(data)) {
+      settimanaTarget = 'plus2';
+    } else if (weekPlus3Dates.includes(data)) {
+      settimanaTarget = 'plus3';
     }
-    
-    // Verifica che fascia_id esista (se fornito)
-    let validFasciaId = 1; // Default fallback
-    
-    if (fascia_id) {
-      const fasciaExists = await client.execute({
-        sql: 'SELECT id FROM fasce_orarie WHERE id = ?',
+
+    // Se la fascia_id è stata fornita, verifica che esista nella tabella corretta
+    if (fascia_id && settimanaTarget !== 'plus2' && settimanaTarget !== 'plus3') {
+      let fascheQuery = 'SELECT id FROM fasce_orarie WHERE id = ?';
+      if (settimanaTarget === 'prossima') {
+        fascheQuery = 'SELECT id FROM fasce_orarie_prossima WHERE id = ?';
+      }
+      
+      const fasciaCheck = await client.execute({
+        sql: fascheQuery,
         args: [fascia_id]
       });
       
-      if (fasciaExists.rows.length > 0) {
-        validFasciaId = fascia_id;
-      } else {
-        console.warn('Fascia ID non trovata:', fascia_id, 'uso default 1');
-        // Verifica che almeno il default esista
-        const defaultExists = await client.execute({
-          sql: 'SELECT id FROM fasce_orarie WHERE id = 1'
+      if (fasciaCheck.rows.length === 0) {
+        // Se la fascia non esiste nella tabella corretta, usa fascia_id = 1 (default)
+        console.warn(`Fascia ID ${fascia_id} non trovata per settimana ${settimanaTarget}, usando fascia default`);
+        fasciaIdCorretta = 1;
+        
+        // Verifica che almeno la fascia 1 esista nella tabella corretta
+        const defaultCheck = await client.execute({
+          sql: fascheQuery,
+          args: [1]
         });
         
-        if (defaultExists.rows.length === 0) {
-          console.error('Nemmeno fascia_id=1 esiste, uso NULL');
-          validFasciaId = null;
+        if (defaultCheck.rows.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: `Nessuna fascia valida disponibile per la settimana ${settimanaTarget}`
+          });
         }
       }
     }
-    
-    console.log('Debug FK - validFasciaId finale:', validFasciaId);
-    // *** FINE NUOVO CONTROLLO ***
 
+    // Resto del codice rimane uguale, ma usa fasciaIdCorretta invece di fascia_id
+    
     // Gestione ripercussioni turno chiuso
     if (is_closed_override) {
       await handleClosedTurnoRepercussions({
@@ -711,29 +717,19 @@ async function assegnaTurno(req, res) {
       
       // Determina il tipo di azione per le notifiche
       if (current_user_id === user_id && current_user_id === oldUserId) {
-        action = 'self_modified';
+        action = 'self_modified'; // Utente modifica le proprie note - nessuna notifica
       } else if (current_user_id === user_id) {
         action = is_closed_override ? 'closed_assigned' : 'self_assigned';
       } else if (oldUserId !== user_id) {
-        action = 'assigned';
+        action = 'assigned'; // Admin riassegna turno
       }
 
-      // Aggiorna il turno esistente - USA validFasciaId
-      const updateSql = validFasciaId ? 
-        `UPDATE turni SET user_id = ?, note = ?, fascia_id = ?, is_closed_override = ? 
-         WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
-         RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override` :
-        `UPDATE turni SET user_id = ?, note = ?, is_closed_override = ? 
-         WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
-         RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`;
-         
-      const updateArgs = validFasciaId ? 
-        [user_id, note || '', validFasciaId, is_closed_override || false, data, turno_inizio, turno_fine] :
-        [user_id, note || '', is_closed_override || false, data, turno_inizio, turno_fine];
-
+      // Aggiorna il turno esistente - USA fasciaIdCorretta
       const result = await client.execute({
-        sql: updateSql,
-        args: updateArgs
+        sql: `UPDATE turni SET user_id = ?, note = ?, fascia_id = ?, is_closed_override = ? 
+              WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
+              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
+        args: [user_id, note || '', fasciaIdCorretta, is_closed_override || false, data, turno_inizio, turno_fine]
       });
 
       turnoResult = result.rows[0];
@@ -757,22 +753,12 @@ async function assegnaTurno(req, res) {
         action = 'assigned';
       }
 
-      // Crea nuovo turno - USA validFasciaId
-      const insertSql = validFasciaId ?
-        `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-         RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override` :
-        `INSERT INTO turni (data, turno_inizio, turno_fine, user_id, note, is_closed_override)
-         VALUES (?, ?, ?, ?, ?, ?)
-         RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`;
-         
-      const insertArgs = validFasciaId ?
-        [data, turno_inizio, turno_fine, validFasciaId, user_id, note || '', is_closed_override || false] :
-        [data, turno_inizio, turno_fine, user_id, note || '', is_closed_override || false];
-
+      // Crea nuovo turno - USA fasciaIdCorretta
       const result = await client.execute({
-        sql: insertSql,
-        args: insertArgs
+        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
+        args: [data, turno_inizio, turno_fine, fasciaIdCorretta, user_id, note || '', is_closed_override || false]
       });
 
       turnoResult = result.rows[0];
