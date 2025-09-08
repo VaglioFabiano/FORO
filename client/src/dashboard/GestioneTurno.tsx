@@ -259,7 +259,7 @@ const GestioneTurno: React.FC = () => {
                   <h4>🚨 Questioni Straordinarie</h4>
                   <p><strong>Direttivo (SMS/WhatsApp/Tel):</strong></p>
                   <div className="directors-list">
-                    <span>Presidentə:<br></br>Francesco Rucco 331 222 5176</span>
+                    <span>Presidentə:<br></br>Francesco Ruocco 331 222 5176</span>
                     <span>Vice-Presidentə:<br></br> Michela Goss 377 545 2977</span>
                     <span>Vice-Presidentə:<br></br> Fabiano Vaglio 345 088 1086</span>
                     <span>Segretariə:<br></br> Alessia D'Agostini 334 324 5369</span>
