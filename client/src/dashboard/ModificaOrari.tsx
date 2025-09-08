@@ -407,30 +407,30 @@ const ModificaOrari: React.FC = () => {
 
   // Funzioni per la gestione del modale di Telegram
   const handleSendTelegram = async () => {
-    const chatId = '-1002271075098';
-    try {
-      const response = await fetch('/api/send-telegram-hours', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chatId,
-          message: telegramMessage,
-        }),
-      });
-  
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Errore nell\'invio del messaggio');
-      }
-      alert('Messaggio inviato con successo!');
-    } catch (err) {
-      console.error('Errore invio Telegram:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
-    } finally {
-      setShowTelegramModal(false);
-      fetchOrari(); // Ricarica dopo aver inviato o scartato
+  const chatId = '-1002271075098'; // ID del gruppo
+  try {
+    const response = await fetch('/api/send-telegram-group', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatId,
+        message: telegramMessage,
+      }),
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Errore nell\'invio del messaggio');
     }
-  };
+    alert('Messaggio inviato con successo al gruppo!');
+  } catch (err) {
+    console.error('Errore invio Telegram:', err);
+    setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+  } finally {
+    setShowTelegramModal(false);
+    fetchOrari();
+  }
+};
   
   const handleDismissTelegram = () => {
     setShowTelegramModal(false);

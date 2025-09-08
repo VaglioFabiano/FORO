@@ -296,3 +296,69 @@ Il numero deve corrispondere esattamente a quello registrato nel sistema (${phon
     });
   }
 }
+// /api/send-telegram-group.js
+async function sendTelegramGroupMessage(chatId, message) {
+  try {
+    const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!data.ok) {
+      throw new Error(data.description || 'Errore nell\'invio del messaggio');
+    }
+    
+    return data.result;
+  } catch (error) {
+    console.error('Errore invio messaggio Telegram:', error);
+    throw error;
+  }
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { chatId, message } = req.body;
+
+    // Validazione input
+    if (!chatId || !message?.trim()) {
+      return res.status(400).json({ error: 'Chat ID e messaggio sono obbligatori' });
+    }
+
+    // Invia il messaggio al gruppo
+    const result = await sendTelegramGroupMessage(chatId, message.trim());
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Messaggio inviato con successo al gruppo',
+      messageId: result.message_id,
+      chatId: chatId
+    });
+      
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({
+      error: 'Errore nell\'invio del messaggio al gruppo: ' + error.message
+    });
+  }
+}
