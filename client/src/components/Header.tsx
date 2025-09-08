@@ -179,7 +179,7 @@ const Header: React.FC = () => {
         </div>
         
         <div className="title-section">
-          <h1 className="main-title">Aula Studio</h1>
+          <h1 className="main-title">Associazione FORO</h1>
           {isLoading ? (
             <div className="description-loading">
               <div className="loading-dots">
