@@ -237,6 +237,9 @@ const GestioneTurno: React.FC = () => {
                 <div className="contact-card ordinary">
                   <h4>💬 Questioni Ordinarie</h4>
                   <p><strong>WhatsApp:</strong> Gatti Custodi</p>
+                  <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
+                        Gruppo WhatsApp
+                  </a>
                   <ul>
                     <li>Cambio turno → tag Alessia D'Agostini, Sofia Zoppetto, Silvia Zoppetto</li>
                     <li>Apertura aggiuntiva → tag Alessandro Passarella, Federico Moscato, Irene D'Agostini</li>
@@ -246,6 +249,9 @@ const GestioneTurno: React.FC = () => {
                 <div className="contact-card main">
                   <h4>📱 Gruppo Principale</h4>
                   <p><strong>Telegram:</strong> Cadetti Felini</p>
+                  <a href="https://t.me/+6l5hLFdqOm4zZTBk" target="_blank" rel="noopener noreferrer">
+                        Gruppo Telegram
+                  </a>
                   <p>Convocazioni assemblee, novità importanti</p>
                 </div>
 
@@ -253,14 +259,14 @@ const GestioneTurno: React.FC = () => {
                   <h4>🚨 Questioni Straordinarie</h4>
                   <p><strong>Direttivo (SMS/WhatsApp/Tel):</strong></p>
                   <div className="directors-list">
-                    <span>Presidentə:Francesco Rucco 331 222 5176</span>
-                    <span>Vice-Presidentə: Michela Goss 377 545 2977</span>
-                    <span>Vice-Presidentə: Fabiano Vaglio 345 088 1086</span>
-                    <span>Segretariə: Alessia D'Agostini 334 324 5369</span>
-                    <span>Membrə direttivo: Virginia Brocchini 392 349 8900</span>
-                    <span>Membrə direttivo: Federico Moscato 345 926 3569</span>
-                    <span>Membrə direttivo: Irene D'Agostini 331 765 7509</span>
-                    <span>Membrə direttivo: Francesco Rosso 346 491 6937</span>
+                    <span>Presidentə:<br></br>Francesco Rucco 331 222 5176</span>
+                    <span>Vice-Presidentə:<br></br> Michela Goss 377 545 2977</span>
+                    <span>Vice-Presidentə:<br></br> Fabiano Vaglio 345 088 1086</span>
+                    <span>Segretariə:<br></br> Alessia D'Agostini 334 324 5369</span>
+                    <span>Membrə direttivo:<br></br> Virginia Brocchini 392 349 8900</span>
+                    <span>Membrə direttivo:<br></br> Federico Moscato 345 926 3569</span>
+                    <span>Membrə direttivo:<br></br> Irene D'Agostini 331 765 7509</span>
+                    <span>Membrə direttivo:<br></br> Francesco Rosso 346 491 6937</span>
                   </div>
                 </div>
 
