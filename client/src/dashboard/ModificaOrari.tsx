@@ -407,7 +407,7 @@ const ModificaOrari: React.FC = () => {
 
   // Funzioni per la gestione del modale di Telegram
   const handleSendTelegram = async () => {
-    const chatId = '-4899283799';
+    const chatId = '-1002271075098';
     try {
       const response = await fetch('/api/send-telegram-hours', {
         method: 'POST',
@@ -655,7 +655,7 @@ const ModificaOrari: React.FC = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Vuoi inviare questo messaggio Telegram?</h2>
-            <p>Il messaggio verrà inviato al gruppo con ID -4899283799.</p>
+            <p>Il messaggio verrà inviato al gruppo con ID -1002271075098.</p>
             <textarea
               value={telegramMessage}
               onChange={(e) => setTelegramMessage(e.target.value)}
