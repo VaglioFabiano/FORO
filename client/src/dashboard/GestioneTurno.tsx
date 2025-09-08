@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../style/gestioneturno.css';
+import '../style/gestioneTurno.css';
 
 const GestioneTurno: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'apertura' | 'chiusura' | 'regole' | 'eventi' | 'contatti'>('apertura');
