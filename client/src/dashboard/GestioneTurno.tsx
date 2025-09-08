@@ -80,9 +80,7 @@ const GestioneTurno: React.FC = () => {
               <div className="procedure-section">
                 <h4>💻 Info Point e gestione digitale</h4>
                 <p className="procedure-text">
-                  L'ultimo passaggio dell'apertura riguarda la <span className="procedure-highlight">gestione dell'Info Point</span>. 
-                  Dovrai accendere il computer fisso che viene utilizzato per accedere al drive FORO e gestire le prenotazioni su Eventbrite. 
-                  Questo strumento è essenziale per fornire informazioni agli utenti e gestire gli eventi del centro.
+                 Null
                 </p>
               </div>
             </div>
@@ -193,7 +191,7 @@ const GestioneTurno: React.FC = () => {
                 <h4>🏛️ Chiusura per Consiglio Comunale</h4>
                 <p>Vedi file </p>
                 <a href="https://docs.google.com/document/d/17eKmt33uPob5juVa0zIdS0tZjRy2wqU7ixtLrhVj31I/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
-                        004 Sistemazione per Consigli Comunali"
+                        "004 Sistemazione per Consigli Comunali"
                 </a>
                
               </div>
@@ -212,6 +210,9 @@ const GestioneTurno: React.FC = () => {
                   <div className="delivery-item">
                     <strong>☕ Consegna Caffè:</strong>
                     <p>Ritirare e mettere nell'armadio bianco. Avvisare su WhatsApp "Gatti Custodi".</p>
+                    <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
+                        Gruppo WhatsApp
+                  </a>
                   </div>
                   
                   <div className="delivery-item">
