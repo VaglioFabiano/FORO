@@ -620,7 +620,7 @@ const Turni: React.FC = () => {
                   id="user-select"
                   value={selectedUserId || ''}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                  size={Math.min(filteredUsers.length, 10)} // Adjust size to show more options
+                  size={Math.min(Math.max(filteredUsers.length, 2), 10)} // Corrected line
                 >
                   <option value="">Seleziona un utente</option>
                   {filteredUsers.map(user => (
@@ -629,7 +629,7 @@ const Turni: React.FC = () => {
                     </option>
                   ))}
                   {filteredUsers.length === 0 && (
-                      <option disabled>Nessun utente trovato</option>
+                    <option disabled>Nessun utente trovato</option>
                   )}
                 </select>
               </div>
