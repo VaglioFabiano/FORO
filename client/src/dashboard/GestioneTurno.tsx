@@ -46,35 +46,44 @@ const GestioneTurno: React.FC = () => {
           {activeTab === 'apertura' && (
             <div className="content-panel">
               <h3>🔓 Procedura di Apertura</h3>
-              <div className="checklist">
-                <div className="checklist-item">
-                  <span className="icon">🚪</span>
-                  <span>Aprire cancelletto esterno su via Alfieri</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🗑️</span>
-                  <span><strong>Se giovedì:</strong> portare dentro i bidoni dell'immondizia</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">💡</span>
-                  <span>Accensione luci → interruttore zona ristoro a sinistra dell'ingresso; interruttori aula nel piccolo atrio</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🌙</span>
-                  <span>Accensione luci esterne → gestite da timer automatico</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🧹</span>
-                  <span>Controllare ordine generale aula e zona macchinetta del caffè</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🔥</span>
-                  <span>Regolare calore tramite termovalvole alla base dei termosifoni</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">💻</span>
-                  <span>Gestione Info Point → Computer fisso per drive FORO e Eventbrite</span>
-                </div>
+              
+              <div className="procedure-section">
+                <h4>🚪 Accesso alla struttura</h4>
+                <p className="procedure-text">
+                  Il primo passo per l'apertura del centro è <span className="procedure-highlight">aprire il cancelletto esterno su via Alfieri</span>. 
+                  Questo permetterà l'accesso agli utenti che arriveranno durante il turno. Una volta aperto il cancelletto, 
+                  ricordati di controllare se è giovedì: in questo caso dovrai <span className="procedure-highlight">portare dentro i bidoni dell'immondizia</span> 
+                  che sono stati messi fuori per la raccolta.
+                </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>💡 Sistema di illuminazione</h4>
+                <p className="procedure-text">
+                  L'illuminazione del centro richiede alcuni passaggi specifici. Per le <span className="procedure-highlight">luci interne</span>, 
+                  dovrai utilizzare l'interruttore che si trova nella zona ristoro, situato a sinistra dell'ingresso principale. 
+                  Gli interruttori per l'aula si trovano invece nel piccolo atrio. Le <span className="procedure-highlight">luci esterne</span> 
+                  sono gestite da un sistema automatico con timer, quindi non richiedono alcun intervento manuale da parte tua.
+                </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>🧹 Controlli e sistemazione ambientale</h4>
+                <p className="procedure-text">
+                  Prima dell'arrivo degli utenti, è importante fare un <span className="procedure-highlight">controllo dell'ordine generale</span> 
+                  sia nell'aula principale che nella zona della macchinetta del caffè. Assicurati che tutto sia pulito e in ordine. 
+                  Per il comfort degli utenti, regola il <span className="procedure-highlight">riscaldamento tramite le termovalvole</span> 
+                  che si trovano alla base dei termosifoni. La temperatura ottimale contribuirà a creare un ambiente accogliente per lo studio.
+                </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>💻 Info Point e gestione digitale</h4>
+                <p className="procedure-text">
+                  L'ultimo passaggio dell'apertura riguarda la <span className="procedure-highlight">gestione dell'Info Point</span>. 
+                  Dovrai accendere il computer fisso che viene utilizzato per accedere al drive FORO e gestire le prenotazioni su Eventbrite. 
+                  Questo strumento è essenziale per fornire informazioni agli utenti e gestire gli eventi del centro.
+                </p>
               </div>
             </div>
           )}
@@ -82,45 +91,55 @@ const GestioneTurno: React.FC = () => {
           {activeTab === 'chiusura' && (
             <div className="content-panel">
               <h3>🔒 Procedura di Chiusura</h3>
-              <div className="checklist">
-                <div className="checklist-item">
-                  <span className="icon">🧽</span>
-                  <span>Pulizia tavoli → spruzzino e rotoli di carta</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">💻</span>
-                  <span>Spegnere computer Info Point lasciando Chrome e Memo aperti</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🔌</span>
-                  <span>Spegnere tutte le ciabatte sotto i tavoli</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">💡</span>
-                  <span>Spegnere luci interne, bagni e foyer → alcune luci foyer gestite dalla biblioteca</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🔑</span>
-                  <span>Chiudere porte e finestre:</span>
-                  <ul className="sub-list">
-                    <li>Aula studio (chiave laccetto nero)</li>
-                    <li>Aula Agorà (chiave grande/rossa)</li>
-                    <li>Vetrata ingresso (chiave quadrata)</li>
-                    <li>Controllare antincendio interna</li>
-                  </ul>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🗑️</span>
-                  <span><strong>Se mercoledì:</strong> portare bidoni pieni davanti al cancello grande</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🚪</span>
-                  <span>Chiudere cancelletti (non serve chiave)</span>
-                </div>
-                <div className="checklist-item">
-                  <span className="icon">🔑</span>
-                  <span>Consegnare chiavi al turno successivo</span>
-                </div>
+              
+              <div className="procedure-section">
+                <h4>🧽 Pulizia e sistemazione degli spazi</h4>
+                <p className="procedure-text">
+                  La chiusura inizia con la <span className="procedure-highlight">pulizia accurata dei tavoli</span> utilizzando 
+                  lo spruzzino e i rotoli di carta che trovi nella zona ristoro. È importante lasciare gli spazi puliti e in ordine 
+                  per chi utilizzerà il centro il giorno successivo. Dedica qualche minuto extra a controllare che non ci siano 
+                  oggetti dimenticati o rifiuti sparsi nelle diverse aree.
+                </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>💻 Spegnimento delle apparecchiature</h4>
+                <p className="procedure-text">
+                  Per quanto riguarda il <span className="procedure-highlight">computer dell'Info Point</span>, dovrai spegnerlo 
+                  ma lasciare aperti Chrome e l'applicazione Memo per facilitare l'apertura del turno successivo. 
+                  Successivamente, <span className="procedure-highlight">spegni tutte le ciabatte elettriche</span> che si trovano 
+                  sotto i tavoli per garantire la sicurezza e il risparmio energetico durante la notte.
+                </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>💡 Sistema di illuminazione e sicurezza</h4>
+                <p className="procedure-text">
+                  Lo spegnimento delle luci richiede attenzione: dovrai spegnere le <span className="procedure-highlight">luci interne, 
+                  dei bagni e del foyer</span>. Tieni presente che alcune luci del foyer sono gestite direttamente dalla biblioteca, 
+                  quindi non preoccuparti se alcune restano accese. L'importante è spegnere quelle sotto il tuo controllo.
+                </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>🔑 Chiusura degli accessi</h4>
+                <p className="procedure-text">
+                  La fase di chiusura degli accessi è cruciale per la sicurezza. Dovrai chiudere sistematicamente tutti gli ingressi: 
+                  l'<span className="procedure-highlight">aula studio con la chiave del laccetto nero</span>, 
+                  l'<span className="procedure-highlight">aula Agorà con la chiave grande rossa</span>, e la 
+                  <span className="procedure-highlight">vetrata d'ingresso con la chiave quadrata</span>. 
+                  Non dimenticare di controllare che la porta antincendio interna sia ben chiusa.
+                </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>🗑️ Gestione rifiuti e consegne</h4>
+                <p className="procedure-text">
+                  Se è mercoledì, dovrai <span className="procedure-highlight">portare i bidoni pieni davanti al cancello grande</span> 
+                  per la raccolta del giorno successivo. Infine, chiudi i cancelletti esterni (che non richiedono chiavi) e 
+                  <span className="procedure-highlight">consegna le chiavi al turno successivo</span> o riponile nel luogo designato 
+                  se non c'è nessuno in attesa.
+                </p>
               </div>
             </div>
           )}
