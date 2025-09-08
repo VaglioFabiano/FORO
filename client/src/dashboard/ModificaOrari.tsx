@@ -24,7 +24,7 @@ interface ApiResponse {
 type WeekType = 'current' | 'next';
 
 const GIORNI_SETTIMANA = [
-  'lunedì', 'martedì', 'mercoledì', 'giovedì', 
+  'lunedì', 'martedì', 'mercoledì', 'giovedì',
   'venerdì', 'sabato', 'domenica'
 ];
 
@@ -75,6 +75,10 @@ const ModificaOrari: React.FC = () => {
   const [editingId, setEditingId] = useState<{id: number, week: WeekType} | null>(null);
   const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
+  // Stato per il popup di Telegram
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
+  const [telegramMessage, setTelegramMessage] = useState('');
+
   useEffect(() => {
     const initialExpanded = GIORNI_SETTIMANA.reduce((acc, giorno) => {
       acc[giorno] = true;
@@ -92,7 +96,6 @@ const ModificaOrari: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Carica la settimana corrente
       const currentRes = await fetch('/api/orari_settimana');
       
       if (!currentRes.ok) {
@@ -107,7 +110,6 @@ const ModificaOrari: React.FC = () => {
       
       setOrariCorrente(currentData.data || []);
       
-      // Carica la prossima settimana con il parametro settimana=next
       const nextRes = await fetch('/api/orari_settimana?settimana=next');
       
       if (!nextRes.ok) {
@@ -247,8 +249,17 @@ const ModificaOrari: React.FC = () => {
     }
 
     if (tutteOk) {
+      const allOrari = [...orariCorrente];
+      for (const giorno in nuoveFasce) {
+        if (nuoveFasce[giorno].current) {
+          allOrari.push(...nuoveFasce[giorno].current.map(f => ({ ...f, id: 0, giorno } as FasciaOraria)));
+        }
+      }
+
+      const message = generateTelegramMessage(allOrari);
+      setTelegramMessage(message);
       setNuoveFasce({});
-      await fetchOrari();
+      setShowTelegramModal(true);
     }
 
     setLoading(false);
@@ -365,6 +376,65 @@ const ModificaOrari: React.FC = () => {
       (dayFasce.current?.length || 0) > 0 || 
       (dayFasce.next?.length || 0) > 0
     );
+  };
+
+  // Funzione per generare il messaggio Telegram
+  const generateTelegramMessage = (orari: FasciaOraria[]): string => {
+    const groupedOrari = groupByDay(orari);
+    const weekRange = getCurrentWeek();
+  
+    let message = `<b>ECCO GLI ORARI DELL’AULA STUDIO E DELL’AULA AGORÀ DELLA SETTIMANA:</b>\n`;
+    message += `${weekRange}\n\n`;
+  
+    GIORNI_SETTIMANA.forEach(giorno => {
+      const dayOrari = groupedOrari[giorno];
+      if (dayOrari && dayOrari.length > 0) {
+        const orariString = dayOrari.map(o => {
+          const timeRange = `${formatTime(o.ora_inizio)}-${formatTime(o.ora_fine)}`;
+          const note = o.note ? `*${o.note}` : '';
+          return `${timeRange}${note}`;
+        }).join(', ');
+        
+        message += `${giorno.charAt(0).toUpperCase() + giorno.slice(1)}. ${orariString}\n`;
+      }
+    });
+  
+    message += `\nDisponibili le pagode per studiare all’aperto :)\n\n`;
+    message += `Rimanete collegatə per tutti gli aggiornamenti`;
+  
+    return message;
+  };
+
+  // Funzioni per la gestione del modale di Telegram
+  const handleSendTelegram = async () => {
+    const chatId = '-4899283799';
+    try {
+      const response = await fetch('/api/send-telegram-hours', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId,
+          message: telegramMessage,
+        }),
+      });
+  
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Errore nell\'invio del messaggio');
+      }
+      alert('Messaggio inviato con successo!');
+    } catch (err) {
+      console.error('Errore invio Telegram:', err);
+      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+    } finally {
+      setShowTelegramModal(false);
+      fetchOrari(); // Ricarica dopo aver inviato o scartato
+    }
+  };
+  
+  const handleDismissTelegram = () => {
+    setShowTelegramModal(false);
+    fetchOrari(); // Ricarica anche se l'utente non vuole inviare il messaggio
   };
 
   const renderWeekSection = (title: string, orari: FasciaOraria[], week: WeekType, className: string) => {
@@ -577,6 +647,30 @@ const ModificaOrari: React.FC = () => {
           >
             💾 Salva Tutti gli Orari
           </button>
+        </div>
+      )}
+
+      {/* Popup di conferma Telegram */}
+      {showTelegramModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Vuoi inviare questo messaggio Telegram?</h2>
+            <p>Il messaggio verrà inviato al gruppo con ID -4899283799.</p>
+            <textarea
+              value={telegramMessage}
+              onChange={(e) => setTelegramMessage(e.target.value)}
+              rows={10}
+              cols={50}
+            />
+            <div className="modal-actions">
+              <button onClick={handleSendTelegram} className="btn btn-success">
+                Invia
+              </button>
+              <button onClick={handleDismissTelegram} className="btn btn-secondary">
+                Salva e non inviare
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
