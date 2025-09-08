@@ -63,6 +63,8 @@ const Turni: React.FC = () => {
     getCurrentUser();
   }, []);
 
+  
+
   const getCurrentUser = () => {
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -506,6 +508,17 @@ const Turni: React.FC = () => {
     user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
   );
 
+  useEffect(() => {
+  // Auto-seleziona l'utente quando c'è un solo risultato filtrato
+  if (filteredUsers.length === 1 && userSearchTerm !== '' && !selectedUserId) {
+    setSelectedUserId(filteredUsers[0].id);
+  }
+  // Deseleziona se l'utente selezionato non è più nei risultati filtrati
+  if (selectedUserId && filteredUsers.length > 0 && !filteredUsers.some(user => user.id === selectedUserId)) {
+    setSelectedUserId(null);
+  }
+}, [filteredUsers, userSearchTerm, selectedUserId]);
+
   if (loading) {
     return (
       <div className="turni-container">
@@ -607,6 +620,7 @@ const Turni: React.FC = () => {
                 )}
               </div>
 
+              
               <div className="form-group">
                 <label htmlFor="user-select">Seleziona Utente:</label>
                 <input
@@ -620,19 +634,26 @@ const Turni: React.FC = () => {
                   id="user-select"
                   value={selectedUserId || ''}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                  size={Math.min(Math.max(filteredUsers.length, 2), 10)} // Corrected line
+                  size={Math.min(Math.max(filteredUsers.length + 1, 3), 10)} // +1 per l'opzione "Seleziona un utente"
                 >
-                  <option value="">Seleziona un utente</option>
+                  {/* Mostra l'opzione "Seleziona un utente" solo se non c'è ricerca attiva o ci sono più risultati */}
+                  {(userSearchTerm === '' || filteredUsers.length !== 1) && (
+                    <option value="">Seleziona un utente</option>
+                  )}
+                  
                   {filteredUsers.map(user => (
                     <option key={user.id} value={user.id}>
                       {user.name} {user.surname} ({user.username})
                     </option>
                   ))}
-                  {filteredUsers.length === 0 && (
+                  
+                  {filteredUsers.length === 0 && userSearchTerm !== '' && (
                     <option disabled>Nessun utente trovato</option>
                   )}
                 </select>
               </div>
+
+
 
               <div className="form-group">
                 <label htmlFor="note-input">Note (opzionale):</label>
