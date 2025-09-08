@@ -92,14 +92,25 @@ export default async function handler(req, res) {
   }
 }
 
-// Funzione per determinare il tipo di task in base all'orario ITALIANO
+// FUNZIONE CORRETTA - Sostituire nel file api/cron.js
+
 function determineTaskType(hour, minute, day) {
+  console.log(`🔍 CRON DEBUG: hour=${hour}, minute=${minute}, day=${day} (${getDayName(day)})`);
+  
   // PROMEMORIA TURNI
   if (hour === 8 && minute === 0) {
     return 'reminder_morning'; // Promemoria turni 9:00-13:00
   }
   
+  // PRIORITÀ AL REPORT SETTIMANALE - Sabato 12:00 
+  if (hour === 12 && minute === 0 && day === 6) {
+    console.log('📋 Sabato 12:00 - Eseguendo weekly_empty_shifts_report');
+    return 'weekly_empty_shifts_report';
+  }
+  
+  // PROMEMORIA TURNI 
   if (hour === 12 && minute === 0) {
+    console.log('🔔 Altri giorni 12:00 - Eseguendo reminder_early_afternoon');
     return 'reminder_early_afternoon'; // Promemoria turni 13:00-16:00
   }
   
@@ -111,7 +122,7 @@ function determineTaskType(hour, minute, day) {
     return 'reminder_evening'; // Promemoria turni 21:00-24:00
   }
   
-  // PROMEMORIA PRESENZE - solo a chi è di turno in quell'orario
+  // PROMEMORIA PRESENZE
   if (hour === 12 && minute === 30) {
     return 'reminder_presenze_9_13'; // Promemoria riempire presenze 9-13
   }
@@ -126,11 +137,6 @@ function determineTaskType(hour, minute, day) {
   
   if (hour === 23 && minute === 30) {
     return 'reminder_presenze_21_24'; // Promemoria riempire presenze 21-24
-  }
-  
-  // REPORT SETTIMANALE TURNI VUOTI - Sabato 12:00
-  if (hour === 12 && minute === 0 && day === 6) {
-    return 'weekly_empty_shifts_report';
   }
   
   // CAMBIO SETTIMANA - Domenica 23:59 (orario italiano)
@@ -545,7 +551,7 @@ async function weeklyEmptyShiftsReport(timestamp) {
   }
 }
 
-// FUNZIONE CAMBIO SETTIMANA MODIFICATA - Domenica 23:59 (orario italiano)
+// FUNZIONE CAMBIO SETTIMANA CORRETTA - Domenica 23:59 (orario italiano)
 async function sundayEndTask(timestamp) {
   const italianTime = getItalianTime();
   console.log(`📊 Task fine domenica (23:59 orario italiano) - Cambio settimana con gestione 4 settimane di orari`);
@@ -574,96 +580,119 @@ async function sundayEndTask(timestamp) {
 
     console.log(`🗑️ Eliminati ${deleteTurniResult.rowsAffected} turni della settimana terminata`);
 
-    // STEP 3: Gestione orari - Rotazione completa delle 4 settimane
+    // STEP 3: ROTAZIONE ORARI CORRETTA - Salva TUTTI i dati prima di iniziare le cancellazioni
+    console.log(`🔄 Inizio rotazione orari...`);
     
-    // 3.1 Salva temporaneamente gli orari delle settimane 2, 3, 4 (se esistono)
-    const orariSettimana2 = await db.execute({
-      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_plus2`,
+    // 3.1 SALVA tutti gli orari esistenti PRIMA di fare qualsiasi cancellazione
+    const orariCorrente = await db.execute({
+      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie ORDER BY giorno, ora_inizio`,
       args: []
     });
+    console.log(`📋 Orari settimana corrente salvati: ${orariCorrente.rows.length}`);
+
+    const orariProssima = await db.execute({
+      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima ORDER BY giorno, ora_inizio`,
+      args: []
+    });
+    console.log(`📋 Orari settimana prossima salvati: ${orariProssima.rows.length}`);
     
-    const orariSettimana3 = await db.execute({
-      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_plus3`,
+    const orariPlus2 = await db.execute({
+      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_plus2 ORDER BY giorno, ora_inizio`,
       args: []
     });
-
-    // 3.2 Cancella orari della settimana corrente
-    const deleteFasceResult = await db.execute({
-      sql: `DELETE FROM fasce_orarie`,
+    console.log(`📋 Orari settimana plus2 salvati: ${orariPlus2.rows.length}`);
+    
+    const orariPlus3 = await db.execute({
+      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_plus3 ORDER BY giorno, ora_inizio`,
       args: []
     });
+    console.log(`📋 Orari settimana plus3 salvati: ${orariPlus3.rows.length}`);
 
-    console.log(`🗑️ Eliminati ${deleteFasceResult.rowsAffected} orari settimana corrente`);
+    // 3.2 CANCELLA tutte le tabelle orari
+    console.log(`🗑️ Cancellazione tabelle orari...`);
+    
+    await db.execute({ sql: `DELETE FROM fasce_orarie`, args: [] });
+    console.log(`✅ Tabella fasce_orarie cancellata`);
+    
+    await db.execute({ sql: `DELETE FROM fasce_orarie_prossima`, args: [] });
+    console.log(`✅ Tabella fasce_orarie_prossima cancellata`);
+    
+    await db.execute({ sql: `DELETE FROM fasce_orarie_plus2`, args: [] });
+    console.log(`✅ Tabella fasce_orarie_plus2 cancellata`);
+    
+    await db.execute({ sql: `DELETE FROM fasce_orarie_plus3`, args: [] });
+    console.log(`✅ Tabella fasce_orarie_plus3 cancellata`);
 
-    // 3.3 Sposta orari dalla "prossima settimana" alla "settimana corrente"
-    const prossimiOrari = await db.execute({
-      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima`,
-      args: []
-    });
-
-    let orariSpostati = 0;
-    for (const orario of prossimiOrari.rows) {
+    // 3.3 RICOSTRUISCI la rotazione degli orari
+    console.log(`🔄 Ricostruzione rotazione orari...`);
+    
+    // PROSSIMA → CORRENTE (orariProssima va in fasce_orarie)
+    let orariSpostatiProssimaCorrente = 0;
+    for (const orario of orariProssima.rows) {
       try {
         await db.execute({
           sql: `INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
-          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note]
+          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note || null]
         });
-        orariSpostati++;
+        orariSpostatiProssimaCorrente++;
+        console.log(`  ✅ Spostato orario: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine} → corrente`);
       } catch (error) {
-        console.error(`Errore nello spostamento orario prossima->corrente:`, error);
+        console.error(`❌ Errore spostamento prossima→corrente:`, error);
+        throw new Error(`Errore rotazione prossima→corrente: ${error.message}`);
       }
     }
+    console.log(`📊 Orari spostati prossima→corrente: ${orariSpostatiProssimaCorrente}`);
 
-    // 3.4 Cancella orari "prossima settimana"
-    const deleteProssimaResult = await db.execute({
-      sql: `DELETE FROM fasce_orarie_prossima`,
-      args: []
-    });
-
-    // 3.5 Sposta orari da "plus2" a "prossima"
-    let orariSpostatiPlus2 = 0;
-    for (const orario of orariSettimana2.rows) {
+    // PLUS2 → PROSSIMA (orariPlus2 va in fasce_orarie_prossima)
+    let orariSpostatiPlus2Prossima = 0;
+    for (const orario of orariPlus2.rows) {
       try {
         await db.execute({
           sql: `INSERT INTO fasce_orarie_prossima (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
-          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note]
+          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note || null]
         });
-        orariSpostatiPlus2++;
+        orariSpostatiPlus2Prossima++;
+        console.log(`  ✅ Spostato orario: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine} → prossima`);
       } catch (error) {
-        console.error(`Errore nello spostamento orario plus2->prossima:`, error);
+        console.error(`❌ Errore spostamento plus2→prossima:`, error);
+        throw new Error(`Errore rotazione plus2→prossima: ${error.message}`);
       }
     }
+    console.log(`📊 Orari spostati plus2→prossima: ${orariSpostatiPlus2Prossima}`);
 
-    // 3.6 Cancella orari "plus2"
-    const deletePlus2Result = await db.execute({
-      sql: `DELETE FROM fasce_orarie_plus2`,
-      args: []
-    });
-
-    // 3.7 Sposta orari da "plus3" a "plus2"
-    let orariSpostatiPlus3 = 0;
-    for (const orario of orariSettimana3.rows) {
+    // PLUS3 → PLUS2 (orariPlus3 va in fasce_orarie_plus2)
+    let orariSpostatiPlus3Plus2 = 0;
+    for (const orario of orariPlus3.rows) {
       try {
         await db.execute({
           sql: `INSERT INTO fasce_orarie_plus2 (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
-          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note]
+          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note || null]
         });
-        orariSpostatiPlus3++;
+        orariSpostatiPlus3Plus2++;
+        console.log(`  ✅ Spostato orario: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine} → plus2`);
       } catch (error) {
-        console.error(`Errore nello spostamento orario plus3->plus2:`, error);
+        console.error(`❌ Errore spostamento plus3→plus2:`, error);
+        throw new Error(`Errore rotazione plus3→plus2: ${error.message}`);
       }
     }
+    console.log(`📊 Orari spostati plus3→plus2: ${orariSpostatiPlus3Plus2}`);
 
-    // 3.8 Cancella orari "plus3" (sarà vuoto per la nuova settimana 4)
-    const deletePlus3Result = await db.execute({
-      sql: `DELETE FROM fasce_orarie_plus3`,
-      args: []
-    });
+    // PLUS3 rimane vuoto per la nuova settimana 4
+    console.log(`📋 Tabella fasce_orarie_plus3 lasciata vuota per la nuova settimana 4`);
 
-    console.log(`📋 Rotazione orari completata:`);
-    console.log(`  - Orari spostati prossima->corrente: ${orariSpostati}`);
-    console.log(`  - Orari spostati plus2->prossima: ${orariSpostatiPlus2}`);
-    console.log(`  - Orari spostati plus3->plus2: ${orariSpostatiPlus3}`);
+    // 3.4 VERIFICA la rotazione
+    console.log(`🔍 Verifica rotazione completata...`);
+    
+    const verificaCorrente = await db.execute({ sql: `SELECT COUNT(*) as count FROM fasce_orarie`, args: [] });
+    const verificaProssima = await db.execute({ sql: `SELECT COUNT(*) as count FROM fasce_orarie_prossima`, args: [] });
+    const verificaPlus2 = await db.execute({ sql: `SELECT COUNT(*) as count FROM fasce_orarie_plus2`, args: [] });
+    const verificaPlus3 = await db.execute({ sql: `SELECT COUNT(*) as count FROM fasce_orarie_plus3`, args: [] });
+
+    console.log(`📊 Verifica post-rotazione:`);
+    console.log(`  - fasce_orarie: ${verificaCorrente.rows[0].count} orari`);
+    console.log(`  - fasce_orarie_prossima: ${verificaProssima.rows[0].count} orari`);
+    console.log(`  - fasce_orarie_plus2: ${verificaPlus2.rows[0].count} orari`);
+    console.log(`  - fasce_orarie_plus3: ${verificaPlus3.rows[0].count} orari`);
 
     // STEP 4: Conta i turni esistenti per le settimane future per il report
     const turniSettimana1 = await db.execute({
@@ -704,11 +733,18 @@ async function sundayEndTask(timestamp) {
 
 📊 <b>Operazioni eseguite:</b>
 🗑️ Turni eliminati: <b>${deleteTurniResult.rowsAffected}</b>
-🗑️ Orari correnti eliminati: <b>${deleteFasceResult.rowsAffected}</b>
-📋 Orari spostati (prossima→corrente): <b>${orariSpostati}</b>
-📋 Orari spostati (plus2→prossima): <b>${orariSpostatiPlus2}</b>
-📋 Orari spostati (plus3→plus2): <b>${orariSpostatiPlus3}</b>
-🗑️ Orari plus3 eliminati: <b>${deletePlus3Result.rowsAffected}</b>
+
+🔄 <b>Rotazione orari completata:</b>
+📋 Prossima → Corrente: <b>${orariSpostatiProssimaCorrente}</b> orari
+📋 Plus2 → Prossima: <b>${orariSpostatiPlus2Prossima}</b> orari  
+📋 Plus3 → Plus2: <b>${orariSpostatiPlus3Plus2}</b> orari
+🆕 Plus3: <b>vuoto</b> (pronto per nuovi orari)
+
+🔍 <b>Verifica tabelle orari:</b>
+• Corrente: <b>${verificaCorrente.rows[0].count}</b> orari
+• Prossima: <b>${verificaProssima.rows[0].count}</b> orari
+• Plus2: <b>${verificaPlus2.rows[0].count}</b> orari
+• Plus3: <b>${verificaPlus3.rows[0].count}</b> orari
 
 📅 <b>Turni esistenti nelle settimane future:</b>
 • Settimana 1 (${formatDate(settimana1[0])} - ${formatDate(settimana1[6])}): <b>${turniSettimana1.rows[0].count}</b> turni
@@ -717,7 +753,7 @@ async function sundayEndTask(timestamp) {
 • Settimana 4 (${formatDate(settimana4[0])} - ${formatDate(settimana4[6])}): <b>${turniSettimana4.rows[0].count}</b> turni
 
 ✅ Sistema pronto per la nuova settimana!
-🎯 Rotazione completa delle 4 settimane di orari completata`;
+🎯 Rotazione completa delle 4 settimane di orari completata con successo`;
 
     // Invia notifica a tutti gli admin (level = 0)
     let notificheInviate = 0;
@@ -737,7 +773,7 @@ async function sundayEndTask(timestamp) {
     await db.execute({
       sql: `INSERT INTO cron_logs (task_type, executed_at, status, error_message) VALUES (?, ?, ?, ?)`,
       args: ['week_change', timestamp.toISOString(), 'success', 
-        `Turni eliminati: ${deleteTurniResult.rowsAffected}, Rotazione orari completata, Notifiche admin: ${notificheInviate}`]
+        `Turni eliminati: ${deleteTurniResult.rowsAffected}, Rotazione orari: ${orariSpostatiProssimaCorrente}+${orariSpostatiPlus2Prossima}+${orariSpostatiPlus3Plus2}, Notifiche admin: ${notificheInviate}`]
     }).catch(error => {
       console.error('Errore nel log cambio settimana:', error);
     });
@@ -752,7 +788,12 @@ async function sundayEndTask(timestamp) {
 🚨 Errore: ${error.message}
 
 ⚠️ Il cambio settimana potrebbe non essere stato completato correttamente!
-🔧 Verificare manualmente il sistema turni.`;
+🔧 Verificare manualmente il sistema turni e orari.
+
+📋 <b>Possibili problemi:</b>
+• Rotazione orari non completata
+• Tabelle orari in stato inconsistente
+• Verificare manualmente le tabelle fasce_orarie*`;
 
     // Ottieni admin per notifica errore
     if (db) {
