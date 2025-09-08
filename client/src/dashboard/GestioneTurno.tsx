@@ -152,16 +152,22 @@ const GestioneTurno: React.FC = () => {
                   <h4>👥 1. Supervisione Sala Studio</h4>
                   <p>Imporre il rispetto del regolamento dell'aula studio.</p>
                   <p><strong>💡 Tip:</strong> Se c'è confusione nell'area ristoro, chiudere entrambe le porte dell'aula studio.</p>
+                  <a href="https://drive.google.com/file/d/1VxcPxOHpDyBKgKV6XkK2btnhYmlh24RV/view" target="_blank" rel="noopener noreferrer">
+                        Regolamento
+                  </a>
                 </div>
                 
                 <div className="rule-card">
                   <h4>📊 2. Conteggio Presenze</h4>
-                  <p>Annotare il numero di persone presenti durante il turno nel file Excel "Numero_presenze_giornaliere".</p>
+                  <p>Annotare il numero di persone presenti durante il turno nella sezione presenze della dashboard</p>
                 </div>
                 
                 <div className="rule-card">
                   <h4>📝 3. Note e Proposte</h4>
                   <p>Annotare dubbi, necessità e proposte sul bloc-notes del desktop e/o gruppo WhatsApp.</p>
+                  <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
+                        Gruppo WhatsApp
+                  </a>
                 </div>
                 
                 <div className="rule-card">
@@ -185,12 +191,19 @@ const GestioneTurno: React.FC = () => {
               
               <div className="event-section">
                 <h4>🏛️ Chiusura per Consiglio Comunale</h4>
-                <p>Vedi file "004 Sistemazione per Consigli Comunali"</p>
+                <p>Vedi file </p>
+                <a href="https://docs.google.com/document/d/17eKmt33uPob5juVa0zIdS0tZjRy2wqU7ixtLrhVj31I/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
+                        004 Sistemazione per Consigli Comunali"
+                </a>
+               
               </div>
 
               <div className="event-section">
                 <h4>⚖️ Sanzioni Utenti</h4>
-                <p>Vedi file "Verbale sanzioni 2023"</p>
+                <p>Vedi file </p>
+                <a href="https://docs.google.com/document/d/1Uh2Fyq25f1I04rlaYIv9u9YpL-XR27eTGvpekRuNDyo/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
+                        "Verbale sanzioni 2023"
+                </a>
               </div>
 
               <div className="event-section">
@@ -239,14 +252,14 @@ const GestioneTurno: React.FC = () => {
                   <h4>🚨 Questioni Straordinarie</h4>
                   <p><strong>Direttivo (SMS/WhatsApp/Tel):</strong></p>
                   <div className="directors-list">
-                    <span>Francesco Rucco</span>
-                    <span>Michela Goss</span>
-                    <span>Fabiano Vaglio</span>
-                    <span>Alessia D'Agostini</span>
-                    <span>Virginia Brocchini</span>
-                    <span>Federico Moscato</span>
-                    <span>Irene D'Agostini</span>
-                    <span>Francesco Rosso</span>
+                    <span>Presidentə:Francesco Rucco 331 222 5176</span>
+                    <span>Vice-Presidentə: Michela Goss 377 545 2977</span>
+                    <span>Vice-Presidentə: Fabiano Vaglio 345 088 1086</span>
+                    <span>Segretariə: Alessia D'Agostini 334 324 5369</span>
+                    <span>Membrə direttivo: Virginia Brocchini 392 349 8900</span>
+                    <span>Membrə direttivo: Federico Moscato 345 926 3569</span>
+                    <span>Membrə direttivo: Irene D'Agostini 331 765 7509</span>
+                    <span>Membrə direttivo: Francesco Rosso 346 491 6937</span>
                   </div>
                 </div>
 
