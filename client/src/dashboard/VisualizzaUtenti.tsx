@@ -29,7 +29,7 @@ const VisualizzaUtenti: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [message, setMessage] = useState<Message | null>(null);
   const [filterLevel, setFilterLevel] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('id'); // 'id', 'name', 'surname'
+  const [sortBy, setSortBy] = useState<string>('id'); // 'id', 'name', 'surname', 'level'
   const [sortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingUser, setEditingUser] = useState<EditingUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -123,6 +123,10 @@ const VisualizzaUtenti: React.FC = () => {
         case 'surname':
           valueA = a.surname.toLowerCase();
           valueB = b.surname.toLowerCase();
+          break;
+        case 'level':
+          valueA = a.level;
+          valueB = b.level;
           break;
         case 'id':
         default:
@@ -359,9 +363,9 @@ const VisualizzaUtenti: React.FC = () => {
             onChange={(e) => setSortBy(e.target.value)}
             className="visualizzautenti-sort-select"
           >
-            
             <option value="name">Nome</option>
             <option value="surname">Cognome</option>
+            <option value="level">Livello</option>
           </select>
         </div>
       </div>
