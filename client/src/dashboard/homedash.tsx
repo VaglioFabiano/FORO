@@ -7,6 +7,7 @@ import ProfiloUtente from './ProfiloUtente';
 import Turni from './Turni';
 import Presenze from './presenze'; 
 import GestisciEventi from './GestisciEventi';
+import GestioneTurno from './GestioneTurno';
 import '../style/homeDash.css';
 
 interface HomeDashProps {
@@ -95,6 +96,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       icon: '✏️🏠📄',
       minLevel: 2,
       isHomepageLink: true
+    },
+     {
+      id: 'gestione-turno',
+      title: 'Gestione Turno',
+      description: 'Gestisci i turni degli utenti',
+      icon: '🆘',
+      component: GestioneTurno,
+      minLevel: 4
     },
     {
       id: 'profilo-utente',
