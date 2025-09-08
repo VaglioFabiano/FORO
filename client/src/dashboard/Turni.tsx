@@ -50,6 +50,9 @@ const Turni: React.FC = () => {
   const [note, setNote] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isClosedOverride, setIsClosedOverride] = useState(false);
+  
+  // State for search bar
+  const [userSearchTerm, setUserSearchTerm] = useState('');
 
   const giorni = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
   const orariTemplate = ['09:00-13:00', '13:00-16:00', '16:00-19:30', '21:00-24:00'];
@@ -184,6 +187,7 @@ const Turni: React.FC = () => {
     setSelectedTurno(turno);
     setSelectedUserId(turno.user_id || currentUser?.id || null);
     setNote(turno.note || '');
+    setUserSearchTerm(''); // Reset search term when opening modal
     
     if (isCompletelyClosedCell || isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) {
       setIsClosedOverride(false);
@@ -312,6 +316,7 @@ const Turni: React.FC = () => {
     setSelectedUserId(null);
     setNote('');
     setIsClosedOverride(false);
+    setUserSearchTerm(''); // Reset search term when closing modal
   };
 
   const formatDate = (dateString: string) => {
@@ -496,6 +501,11 @@ const Turni: React.FC = () => {
     );
   };
 
+  const filteredUsers = users.filter(user => 
+    `${user.name} ${user.surname}`.toLowerCase().includes(userSearchTerm.toLowerCase()) || 
+    user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="turni-container">
@@ -599,17 +609,28 @@ const Turni: React.FC = () => {
 
               <div className="form-group">
                 <label htmlFor="user-select">Seleziona Utente:</label>
+                <input
+                  type="text"
+                  placeholder="Cerca per nome o cognome..."
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                  className="user-search-input"
+                />
                 <select
                   id="user-select"
                   value={selectedUserId || ''}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
+                  size={Math.min(filteredUsers.length, 10)} // Adjust size to show more options
                 >
                   <option value="">Seleziona un utente</option>
-                  {users.map(user => (
+                  {filteredUsers.map(user => (
                     <option key={user.id} value={user.id}>
                       {user.name} {user.surname} ({user.username})
                     </option>
                   ))}
+                  {filteredUsers.length === 0 && (
+                      <option disabled>Nessun utente trovato</option>
+                  )}
                 </select>
               </div>
 
