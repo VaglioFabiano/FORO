@@ -78,6 +78,16 @@ const ModificaOrari: React.FC = () => {
   // Stato per il popup di Telegram
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [telegramMessage, setTelegramMessage] = useState('');
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [telegramDebugLog, setTelegramDebugLog] = useState<string[]>([]);
+
+  // Funzione di debug logging
+  const addDebugLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logMessage = `[${timestamp}] ${message}`;
+    console.log('🔍 DEBUG:', logMessage);
+    setTelegramDebugLog(prev => [...prev, logMessage]);
+  };
 
   useEffect(() => {
     const initialExpanded = GIORNI_SETTIMANA.reduce((acc, giorno) => {
@@ -259,6 +269,8 @@ const ModificaOrari: React.FC = () => {
       const message = generateTelegramMessage(allOrari);
       setTelegramMessage(message);
       setNuoveFasce({});
+      setTelegramDebugLog([]); // Reset debug log
+      addDebugLog('Orari salvati con successo, mostrando modal Telegram');
       setShowTelegramModal(true);
     }
 
@@ -383,7 +395,7 @@ const ModificaOrari: React.FC = () => {
     const groupedOrari = groupByDay(orari);
     const weekRange = getCurrentWeek();
   
-    let message = `<b>ECCO GLI ORARI DELL’AULA STUDIO E DELL’AULA AGORÀ DELLA SETTIMANA:</b>\n`;
+    let message = `<b>ECCO GLI ORARI DELL'AULA STUDIO E DELL'AULA AGORÀ DELLA SETTIMANA:</b>\n`;
     message += `${weekRange}\n\n`;
   
     GIORNI_SETTIMANA.forEach(giorno => {
@@ -399,40 +411,95 @@ const ModificaOrari: React.FC = () => {
       }
     });
   
-    message += `\nDisponibili le pagode per studiare all’aperto :)\n\n`;
+    message += `\nDisponibili le pagode per studiare all'aperto :)\n\n`;
     message += `Rimanete collegatə per tutti gli aggiornamenti`;
   
     return message;
   };
 
-  // Funzioni per la gestione del modale di Telegram
+  // Funzioni per la gestione del modale di Telegram con log dettagliati
   const handleSendTelegram = async () => {
-  const chatId = '-1002271075098'; // ID del gruppo
-  try {
-    const response = await fetch('/api/send-telegram-group', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const chatId = '-1002271075098'; // ID del gruppo
+    
+    addDebugLog('Iniziando invio messaggio Telegram');
+    addDebugLog(`Chat ID: ${chatId}`);
+    addDebugLog(`Messaggio lunghezza: ${telegramMessage.length} caratteri`);
+    
+    setTelegramLoading(true);
+    
+    try {
+      addDebugLog('Preparando payload per API...');
+      
+      const payload = {
         chatId,
         message: telegramMessage,
-      }),
-    });
+      };
+      
+      addDebugLog(`Payload preparato: ${JSON.stringify(payload, null, 2)}`);
+      addDebugLog('Effettuando richiesta a /api/send-telegram-group');
+      
+      const response = await fetch('/api/send-telegram-group', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || 'Errore nell\'invio del messaggio');
+      addDebugLog(`Response status: ${response.status} ${response.statusText}`);
+      addDebugLog(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+
+      let responseText = '';
+      try {
+        responseText = await response.text();
+        addDebugLog(`Response text: ${responseText}`);
+      } catch (textError) {
+        addDebugLog(`Errore nel leggere response text: ${textError}`);
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        addDebugLog(`Response JSON parsed: ${JSON.stringify(data, null, 2)}`);
+      } catch (parseError) {
+        addDebugLog(`Errore nel parsare JSON: ${parseError}`);
+        throw new Error(`Risposta non valida dal server: ${responseText}`);
+      }
+
+      if (!response.ok) {
+        addDebugLog(`❌ Response non OK: ${response.status}`);
+        throw new Error(`HTTP ${response.status}: ${data.error || data.details || 'Errore sconosciuto'}`);
+      }
+
+      if (!data.success) {
+        addDebugLog(`❌ API ha ritornato success: false`);
+        throw new Error(data.error || data.details || 'Errore nell\'invio del messaggio');
+      }
+      
+      addDebugLog('✅ Messaggio inviato con successo!');
+      addDebugLog(`Message ID: ${data.messageId}`);
+      
+      alert('Messaggio inviato con successo al gruppo!');
+      
+    } catch (err) {
+      addDebugLog(`💥 ERRORE: ${err}`);
+      console.error('Errore invio Telegram:', err);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Errore sconosciuto';
+      setError(`Errore invio Telegram: ${errorMessage}`);
+      
+      // Mostra un alert con più dettagli
+      alert(`Errore nell'invio del messaggio:\n${errorMessage}\n\nControlla la console per i dettagli completi.`);
+      
+    } finally {
+      setTelegramLoading(false);
+      setShowTelegramModal(false);
+      fetchOrari();
     }
-    alert('Messaggio inviato con successo al gruppo!');
-  } catch (err) {
-    console.error('Errore invio Telegram:', err);
-    setError(err instanceof Error ? err.message : 'Errore di connessione al server');
-  } finally {
-    setShowTelegramModal(false);
-    fetchOrari();
-  }
-};
+  };
   
   const handleDismissTelegram = () => {
+    addDebugLog('Utente ha chiuso il modal senza inviare');
     setShowTelegramModal(false);
     fetchOrari(); // Ricarica anche se l'utente non vuole inviare il messaggio
   };
@@ -650,26 +717,62 @@ const ModificaOrari: React.FC = () => {
         </div>
       )}
 
-      {/* Popup di conferma Telegram */}
+      {/* Popup di conferma Telegram con log dettagliati */}
       {showTelegramModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content" style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}>
             <h2>Vuoi inviare questo messaggio Telegram?</h2>
-            <p>Il messaggio verrà inviato al gruppo con ID -1002271075098.</p>
-            <textarea
-              value={telegramMessage}
-              onChange={(e) => setTelegramMessage(e.target.value)}
-              rows={10}
-              cols={50}
-            />
+            <p>Il messaggio verrà inviato al gruppo con ID: <code>-1002271075098</code></p>
+            
+            {/* Anteprima del messaggio */}
+            <div style={{ marginBottom: '20px' }}>
+              <h3>Anteprima messaggio:</h3>
+              <textarea
+                value={telegramMessage}
+                onChange={(e) => setTelegramMessage(e.target.value)}
+                rows={8}
+                cols={50}
+                style={{ width: '100%', fontFamily: 'monospace', fontSize: '12px' }}
+              />
+            </div>
+
+            {/* Debug log */}
+            {telegramDebugLog.length > 0 && (
+              <div style={{ marginBottom: '20px', maxHeight: '200px', overflow: 'auto', backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '4px' }}>
+                <h4>Debug Log:</h4>
+                <div style={{ fontFamily: 'monospace', fontSize: '11px', whiteSpace: 'pre-wrap' }}>
+                  {telegramDebugLog.map((log, index) => (
+                    <div key={index} style={{ marginBottom: '2px' }}>
+                      {log}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="modal-actions">
-              <button onClick={handleSendTelegram} className="btn btn-success">
-                Invia
+              <button 
+                onClick={handleSendTelegram} 
+                className="btn btn-success"
+                disabled={telegramLoading}
+              >
+                {telegramLoading ? '📤 Invio in corso...' : '📤 Invia'}
               </button>
-              <button onClick={handleDismissTelegram} className="btn btn-secondary">
-                Salva e non inviare
+              <button 
+                onClick={handleDismissTelegram} 
+                className="btn btn-secondary"
+                disabled={telegramLoading}
+              >
+                ✅ Salva e non inviare
               </button>
             </div>
+
+            {telegramLoading && (
+              <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                <div className="loading-spinner" style={{ display: 'inline-block' }}></div>
+                <span style={{ marginLeft: '10px' }}>Invio in corso...</span>
+              </div>
+            )}
           </div>
         </div>
       )}
