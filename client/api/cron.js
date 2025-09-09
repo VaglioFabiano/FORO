@@ -22,6 +22,9 @@ const TELEGRAM_BOT_TOKEN = '7608037480:AAGkJbIf02G98dTEnREBhfjI2yna5-Y1pzc';
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 const TEST_CHAT_ID = '1129901266'; // Chat ID per i test
 
+// Link Google Sheets per le presenze
+const GOOGLE_SHEETS_LINK = 'https://docs.google.com/spreadsheets/d/1JO-0aETjC09KJk-RptMsdc1CXnilvP6z/edit?gid=887368033#gid=887368033';
+
 // FUNZIONE PER OTTENERE L'ORARIO ITALIANO
 function getItalianTime() {
   const now = new Date();
@@ -313,14 +316,14 @@ Buono Studio! 💪`;
   }
 }
 
-// FUNZIONE PER PROMEMORIA PRESENZE - Solo a chi è di turno
+// FUNZIONE PER PROMEMORIA PRESENZE - Solo a chi è di turno (CON LINK SHEETS)
 async function sendPresenzeReminderToShifts(fasciaOraria, turnoInizio, turnoFine, timestamp) {
   try {
     if (!db) {
       const italianTime = getItalianTime();
       console.log('⚠️ Database non disponibile, invio messaggio di test');
       await sendTelegramMessage(TEST_CHAT_ID, 
-        `📊 Test Promemoria Presenze ${fasciaOraria}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)`);
+        `📊 Test Promemoria Presenze ${fasciaOraria}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, '0')} (orario italiano)\n\n📋 Accedi al Google Sheets: ${GOOGLE_SHEETS_LINK}`);
       return;
     }
 
@@ -386,7 +389,9 @@ ${isAlreadyFilled ?
   '⚠️ Ricordati di inserire le presenze per questa fascia oraria nel sistema.'
 }
 
-🔗 Accedi al sistema per gestire le presenze.`;
+🔗 Accedi al sistema per gestire le presenze.
+
+📋 Accedi al Google Sheets: ${GOOGLE_SHEETS_LINK}`;
 
         await sendTelegramMessage(utente.telegram_chat_id, message);
         

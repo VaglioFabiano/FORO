@@ -221,7 +221,7 @@ const Navbar: React.FC<NavbarProps> = ({
             <div className="navbar-logo-fallback">
               <span className="navbar-logo-text">AS</span>
             </div>
-            <span className="navbar-brand">Aula Studio</span>
+            <span className="navbar-brand">Associazione FORO</span>
           </div>
 
           <div className="navbar-nav">
