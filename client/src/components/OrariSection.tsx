@@ -264,18 +264,19 @@ const OrariSection: React.FC = () => {
                 </div>
 
                 <div className="map-buttons">
-                  <div 
-                      className="orario-item"
-                      onClick={handleGetDirections}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="testo">
-                        <svg className="map-icon" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-                        </svg>
-                        <strong>Ottieni Indicazioni</strong>
-                      </div>
+                 <div 
+                    className="orario-item"
+                    onClick={handleGetDirections}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="testo">
+                      <svg className="map-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M13.5 3.5L13.5 13.5L20 7L21.5 8.5L14.5 15.5L12.5 15.5L12.5 3.5L13.5 3.5Z" />
+                        <path d="M4 12.5L7.5 12.5L7.5 19.5L10.5 19.5L10.5 12.5L14 12.5L9 7L4 12.5Z" />
+                      </svg>
+                      <strong>Ottieni Indicazioni</strong>
                     </div>
+                  </div>
                   
                   <div 
                     className="orario-item"
