@@ -257,7 +257,7 @@ const OrariSection: React.FC = () => {
               </div>
 
               <div className="address-info">
-                <div className="orario-item-2">
+                <div className="orario-item-address">
                   <div className="testo">
                     <strong>{address}</strong>
                   </div>

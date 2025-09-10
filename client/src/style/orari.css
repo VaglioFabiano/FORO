@@ -250,56 +250,62 @@
   transform: translateY(0);
 }
 
-/* Informazioni indirizzo */
+/* Riquadro per l'indirizzo */
 .address-info {
   display: flex;
   flex-direction: column;
-  gap: 2rem; /* Aumentato gap per distanziare meglio */
+  gap: 1.5rem;
+  padding: 1rem;
+  background: rgba(240, 240, 240, 0.9); /* sfondo leggermente grigio */
+  border: 2px solid #ccc; /* bordo chiaro */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .address-card {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.8rem 1.2rem;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
   border-radius: 8px;
-  background: transparent;
+  background: #fff; /* sfondo bianco per contrasto */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
-  min-height: 50px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: default;
 }
 
 .address-card:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.address-icon {
-  display: none; /* Nasconde l'icona come per gli orari */
+  background: #f9f9f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .address-details {
-  font-size: 0.95rem;
-  line-height: 1.4;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
   color: #000;
-  width: 100%;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
 }
 
 .address-details strong {
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
-  color: #000;
-  display: inline;
-  margin-bottom: 0;
-  margin-right: 0.5rem;
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #333;
 }
 
-.address-details p {
-  font-size: 0.95rem;
-  color: #000;
-  margin: 0;
-  line-height: 1.4;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
-  display: inline;
+.map-buttons .orario-item {
+  background: #e0e0e0;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0.8rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.map-buttons .orario-item:hover {
+  background: #dcdcdc;
+  border-color: #999;
+  transform: translateY(-1px);
 }
 
 /* Pulsanti mappa - stile bottone più evidente */
@@ -310,21 +316,6 @@
   margin-top: 1rem;
 }
 
-.map-buttons .orario-item {
-  background: rgba(0, 0, 0, 0.05);
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.map-buttons .orario-item:hover {
-  background: rgba(0, 0, 0, 0.1);
-  border-color: rgba(0, 0, 0, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
-}
 
 .map-buttons .orario-item .testo {
   display: flex;
@@ -342,37 +333,7 @@
   color: #000;
 }
 
-.map-buttons .orario-item-2{
-  background: rgba(128, 128, 128, 0.1); /* Grigio invece di azzurrino */
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
 
-.map-buttons .orario-item-2:hover {
-  background: rgba(128, 128, 128, 0.15); /* Grigio più scuro al passaggio del mouse */
-  border-color: rgba(0, 0, 0, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
-}
-
-.map-buttons .orario-item-2 .testo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  text-align: center;
-  font-weight: 600;
-}
-
-.map-buttons .orario-item-2 .map-icon {
-  display: inline-flex;
-  width: 20px;
-  height: 20px;
-  color: #000;
-}
 
 /* Media queries per responsività */
 @media (max-width: 968px) {
