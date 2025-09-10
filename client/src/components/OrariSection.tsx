@@ -31,8 +31,8 @@ const OrariSection: React.FC = () => {
   const tuttiGiorni = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
   // Coordinate e indirizzo per Via Alfieri 4, Piossasco
-  const latitude = 44.9899;
-  const longitude = 7.4614;
+  const latitude = 44.9876736673456;
+  const longitude = 7.465713905723435;
   const address = "Via Alfieri 4, Piossasco (TO)";
 
   const handleMapClick = () => {

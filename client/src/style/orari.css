@@ -258,87 +258,88 @@
 }
 
 .address-card {
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  padding: 1.2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  transition: all 0.3s ease;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.2s ease;
+  min-height: 50px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .address-card:hover {
-  background: rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .address-icon {
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 8px;
-  padding: 8px;
-  color: white;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: none; /* Nasconde l'icona come per gli orari */
+}
+
+.address-details {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  color: #000;
+  width: 100%;
 }
 
 .address-details strong {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 4px;
-  display: block;
   font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  color: #000;
+  display: inline;
+  margin-bottom: 0;
+  margin-right: 0.5rem;
 }
 
 .address-details p {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #000;
   margin: 0;
   line-height: 1.4;
   font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  display: inline;
 }
 
-/* Pulsanti mappa */
+/* Pulsanti mappa - stile unificato con orari */
 .map-buttons {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .btn-directions, .btn-maps {
-  flex: 1;
-  padding: 10px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.85rem;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
-  cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 1rem;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.2s ease;
+  min-height: 50px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+  font-size: 0.95rem;
+  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  cursor: pointer;
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.8);
   color: #000;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.btn-directions:last-child, .btn-maps:last-child {
+  border-bottom: none;
 }
 
 .btn-directions:hover, .btn-maps:hover {
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border-color: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .btn-directions svg, .btn-maps svg {
-  width: 16px;
-  height: 16px;
+  display: none; /* Nasconde le icone come per gli orari */
 }
 
 /* Media queries per responsività */
@@ -376,14 +377,17 @@
   }
   
   .address-card {
-    flex-direction: column;
-    text-align: center;
-    padding: 1rem;
+    padding: 0.7rem 1rem;
+    min-height: 45px;
+  }
+  
+  .btn-directions, .btn-maps {
+    padding: 0.7rem 1rem;
+    min-height: 45px;
   }
   
   .map-buttons {
-    flex-direction: column;
-    gap: 8px;
+    gap: 1rem;
   }
   
   .interactive-map iframe {
@@ -418,8 +422,8 @@
   }
   
   .btn-directions, .btn-maps {
-    padding: 8px 12px;
-    font-size: 0.8rem;
+    padding: 0.8rem;
+    font-size: 0.9rem;
   }
 }
 
@@ -444,11 +448,10 @@
   }
   
   .address-card {
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
   }
   
   .btn-directions, .btn-maps {
-    border: 2px solid #000;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
   }
 }
