@@ -182,107 +182,104 @@ const OrariSection: React.FC = () => {
   };
 
   return (
-    <section className="orari-full-width">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=directions" />
+  <section className="orari-full-width">
+    {/* IMPORTA IL FONT NEL HEAD O IN INDEX.HTML/ DOCUMENT */}
+    <div className="orari-container">
+      <div className="orari-header">
+        <h2>Orari di Apertura {getCurrentWeek()}</h2>
+      </div>
 
-      <div className="orari-container">
-        <div className="orari-header">
-          <h2>Orari di Apertura {getCurrentWeek()}</h2>
+      <div className="orari-content">
+        <div className="orari-left">
+          {loading && orari.length === 0 ? (
+            <div className="loading">Caricamento orari...</div>
+          ) : error && orari.length === 0 ? (
+            <div className="error">{error}</div>
+          ) : (
+            <div className="orari-list">
+              {orari.map((item, index) => (
+                <div 
+                  key={index} 
+                  className={`orario-item ${isOrarioStraordinario(item.fasce) ? 'orario-straordinario' : ''}`}
+                >
+                  <div className="testo">
+                    <strong>{item.giorno}:</strong>{' '}
+                    {item.fasce.length === 0 ? (
+                      <span className="chiuso">Chiuso</span>
+                    ) : (
+                      <>
+                        {item.fasce.map((fascia, fasciaIndex) => (
+                          <span key={fasciaIndex} className={fasciaIndex === 0 ? "orario-principale" : "orario-serale"}>
+                            {fasciaIndex > 0 && " + "}
+                            {fascia.ora_inizio.slice(0, 5)} - {fascia.ora_fine.slice(0, 5)}
+                          </span>
+                        ))}
+                      </>
+                    )}
+                    {item.note && <span className="nota"> ({item.note})</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="avviso">
+            Disponibili le pagode per studiare all'aperto 
+            <br />
+            Rimanete collegatə per tutti gli aggiornamenti
+          </div>
         </div>
 
-        <div className="orari-content">
-          <div className="orari-left">
-            {loading && orari.length === 0 ? (
-              <div className="loading">Caricamento orari...</div>
-            ) : error && orari.length === 0 ? (
-              <div className="error">{error}</div>
-            ) : (
-              <div className="orari-list">
-                {orari.map((item, index) => (
-                  <div 
-                    key={index} 
-                    className={`orario-item ${isOrarioStraordinario(item.fasce) ? 'orario-straordinario' : ''}`}
-                  >
-                    <div className="testo">
-                      <strong>{item.giorno}:</strong>{' '}
-                      {item.fasce.length === 0 ? (
-                        <span className="chiuso">Chiuso</span>
-                      ) : (
-                        <>
-                          {item.fasce.map((fascia, fasciaIndex) => (
-                            <span key={fasciaIndex} className={fasciaIndex === 0 ? "orario-principale" : "orario-serale"}>
-                              {fasciaIndex > 0 && " + "}
-                              {fascia.ora_inizio.slice(0, 5)} - {fascia.ora_fine.slice(0, 5)}
-                            </span>
-                          ))}
-                        </>
-                      )}
-                      {item.note && <span className="nota"> ({item.note})</span>}
-                    </div>
-                  </div>
-                ))}
+        <div className="orari-right">
+          <div className="mappa-container">
+            <h3>Come Raggiungerci</h3>
+
+            <div className="map-wrapper">
+              <div className="interactive-map" onClick={handleMapClick}>
+                <iframe
+                  src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2822.5!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z${latitude}%C2%B0N%20${longitude}%C2%B0E!5e0!3m2!1sit!2sit!4v1620000000000!5m2!1sit!2sit`}
+                  width="100%"
+                  height="250"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Mappa della nostra sede"
+                ></iframe>
               </div>
-            )}
-            
-            <div className="avviso">
-              Disponibili le pagode per studiare all'aperto 
-              <br />
-              Rimanete collegatə per tutti gli aggiornamenti
             </div>
-          </div>
 
-          <div className="orari-right">
-            <div className="mappa-container">
-              <h3>Come Raggiungerci</h3>
-              
-              <div className="map-wrapper">
-                <div className="interactive-map" onClick={handleMapClick}>
-                  <iframe
-                    src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2822.5!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z${latitude}%C2%B0N%20${longitude}%C2%B0E!5e0!3m2!1sit!2sit!4v1620000000000!5m2!1sit!2sit`}
-                    width="100%"
-                    height="250"
-                    style={{ border: 0 }}
-                    allowFullScreen={true}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Mappa della nostra sede"
-                  ></iframe>
-                  
+            <div className="address-info">
+              <div className="orario-item">
+                <div className="testo">
+                  <strong>La Nostra Sede:</strong> {address}
                 </div>
               </div>
 
-              <div className="address-info">
-                <div className="orario-item">
+              <div className="map-buttons">
+                <div 
+                  className="orario-item"
+                  onClick={handleGetDirections}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="testo">
-                    <strong>La Nostra Sede:</strong> {address}
+                    <span className="material-symbols-outlined map-icon">
+                      directions
+                    </span>
+                    <strong>Ottieni Indicazioni</strong>
                   </div>
                 </div>
-
-                <div className="map-buttons">
-                  <div 
-                    className="orario-item"
-                    onClick={handleGetDirections}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="testo">
-                      <span className="material-symbols-outlined map-icon">
-                        
-                      </span>
-                      <strong>Ottieni Indicazioni</strong>
-                    </div>
-                  </div>
-                  
-                  <div 
-                    className="orario-item"
-                    onClick={handleMapClick}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="testo">
-                      <svg className="map-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z"/>
-                      </svg>
-                      <strong>Apri Google Maps</strong>
-                    </div>
+                
+                <div 
+                  className="orario-item"
+                  onClick={handleMapClick}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="testo">
+                    <svg className="map-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z"/>
+                    </svg>
+                    <strong>Apri Google Maps</strong>
                   </div>
                 </div>
               </div>
@@ -290,8 +287,10 @@ const OrariSection: React.FC = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </div>
+  </section>
+);
+
 };
 
 export default OrariSection;
