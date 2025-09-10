@@ -447,11 +447,9 @@
     border-bottom: 2px solid rgba(0, 0, 0, 0.3);
   }
   
-  .address-card {
-    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
-  }
-  
-  .btn-directions, .btn-maps {
+  .address-card,
+  .btn-directions,
+  .btn-maps {
     border-bottom: 2px solid rgba(0, 0, 0, 0.3);
   }
 }
