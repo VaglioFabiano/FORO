@@ -270,10 +270,9 @@ const OrariSection: React.FC = () => {
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="testo">
-                      <svg className="map-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M13.5 3.5L13.5 13.5L20 7L21.5 8.5L14.5 15.5L12.5 15.5L12.5 3.5L13.5 3.5Z" />
-                        <path d="M4 12.5L7.5 12.5L7.5 19.5L10.5 19.5L10.5 12.5L14 12.5L9 7L4 12.5Z" />
-                      </svg>
+                      <span className="material-symbols-outlined">
+                        directions
+                      </span>
                       <strong>Ottieni Indicazioni</strong>
                     </div>
                   </div>
