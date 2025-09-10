@@ -10,7 +10,7 @@ import Login from './components/Login';
 import SegnalazioniSection from './components/Segnalazioni';
 import AssociatiSection from './components/Associati';
 import HomeDash from './dashboard/homedash';
-import MappeSection from './components/mappe';
+// import MappeSection from './components/mappe';
 // import PrenotaEventoPage from './components/PrenotaEventoPage';
 
 // Tipo per le pagine dell'applicazione
@@ -251,9 +251,10 @@ function App() {
           <div id="footer">
             <Footer />
           </div>
+          {/*
           <div id="mappe">
             <MappeSection />
-          </div>
+          </div>*/}
         </>
       )}
     </div>

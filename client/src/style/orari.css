@@ -254,7 +254,7 @@
 .address-info {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 2rem; /* Aumentato gap per distanziare meglio */
 }
 
 .address-card {
@@ -302,44 +302,44 @@
   display: inline;
 }
 
-/* Pulsanti mappa - stile unificato con orari */
+/* Pulsanti mappa - stile bottone più evidente */
 .map-buttons {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-top: 1rem;
 }
 
-.btn-directions, .btn-maps {
+.map-buttons .orario-item {
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.map-buttons .orario-item:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.map-buttons .orario-item .testo {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.8rem 1.2rem;
-  border-radius: 8px;
-  background: transparent;
-  transition: all 0.2s ease;
-  min-height: 50px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  font-weight: 500;
-  font-size: 0.95rem;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
-  cursor: pointer;
-  text-decoration: none;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.map-buttons .orario-item .map-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
   color: #000;
-  border: none;
-  width: 100%;
-  text-align: left;
-}
-
-.btn-directions:last-child, .btn-maps:last-child {
-  border-bottom: none;
-}
-
-.btn-directions:hover, .btn-maps:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.btn-directions svg, .btn-maps svg {
-  display: none; /* Nasconde le icone come per gli orari */
 }
 
 /* Media queries per responsività */
@@ -381,7 +381,7 @@
     min-height: 45px;
   }
   
-  .btn-directions, .btn-maps {
+  .map-buttons .orario-item {
     padding: 0.7rem 1rem;
     min-height: 45px;
   }
@@ -421,7 +421,7 @@
     padding: 0.8rem;
   }
   
-  .btn-directions, .btn-maps {
+  .map-buttons .orario-item {
     padding: 0.8rem;
     font-size: 0.9rem;
   }
