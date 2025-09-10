@@ -94,9 +94,6 @@
   font-family: 'Cocomat Pro', 'Arial', sans-serif;
   color: #000;
 }
-.center-testo{
-  text-align: center;
-}
 
 .nota {
   color: #000;
@@ -339,6 +336,38 @@
 }
 
 .map-buttons .orario-item .map-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  color: #000;
+}
+
+.map-buttons .orario-item-2{
+  background: rgba(128, 128, 128, 0.1); /* Grigio invece di azzurrino */
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.map-buttons .orario-item-2:hover {
+  background: rgba(128, 128, 128, 0.15); /* Grigio più scuro al passaggio del mouse */
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.map-buttons .orario-item-2 .testo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.map-buttons .orario-item-2 .map-icon {
   display: inline-flex;
   width: 20px;
   height: 20px;
