@@ -257,8 +257,8 @@ const OrariSection: React.FC = () => {
               </div>
 
               <div className="address-info">
-                <div className="orario-item-address">
-                  <div className="testo">
+                <div className="address-card">
+                  <div className="address-text">
                     <strong>{address}</strong>
                   </div>
                 </div>
