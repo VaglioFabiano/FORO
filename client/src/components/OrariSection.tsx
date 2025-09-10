@@ -183,6 +183,8 @@ const OrariSection: React.FC = () => {
 
   return (
     <section className="orari-full-width">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=directions" />
+
       <div className="orari-container">
         <div className="orari-header">
           <h2>Orari di Apertura {getCurrentWeek()}</h2>
@@ -264,9 +266,9 @@ const OrariSection: React.FC = () => {
                   >
                     <div className="testo">
                       <span className="material-symbols-outlined map-icon">
-                        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=directions" />
-                        <strong>Ottieni Indicazioni</strong>
+                        
                       </span>
+                      <strong>Ottieni Indicazioni</strong>
                     </div>
                   </div>
                   
