@@ -245,14 +245,7 @@ const OrariSection: React.FC = () => {
                     referrerPolicy="no-referrer-when-downgrade"
                     title="Mappa della nostra sede"
                   ></iframe>
-                  <div className="map-overlay">
-                    <div className="map-click-hint">
-                      <svg viewBox="0 0 24 24" width="20" height="20">
-                        <path fill="currentColor" d="M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z" />
-                      </svg>
-                      Clicca per aprire Google Maps
-                    </div>
-                  </div>
+                  
                 </div>
               </div>
 
