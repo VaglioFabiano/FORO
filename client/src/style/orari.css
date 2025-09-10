@@ -446,10 +446,4 @@
   .orario-item {
     border-bottom: 2px solid rgba(0, 0, 0, 0.3);
   }
-  
-  .address-card,
-  .btn-directions,
-  .btn-maps {
-    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
-  }
 }

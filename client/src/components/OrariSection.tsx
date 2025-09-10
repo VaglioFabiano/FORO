@@ -257,38 +257,32 @@ const OrariSection: React.FC = () => {
               </div>
 
               <div className="address-info">
-                <div className="address-card">
-                  <div className="address-icon">
-                    <svg viewBox="0 0 24 24" width="24" height="24">
-                      <path fill="currentColor" d="M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z" />
-                    </svg>
-                  </div>
-                  <div className="address-details">
-                    <strong>La Nostra Sede</strong>
-                    <p>{address}</p>
+                <div className="orario-item">
+                  <div className="testo">
+                    <strong>La Nostra Sede:</strong> {address}
                   </div>
                 </div>
 
                 <div className="map-buttons">
-                  <button 
-                    className="btn-directions"
+                  <div 
+                    className="orario-item"
                     onClick={handleGetDirections}
+                    style={{ cursor: 'pointer' }}
                   >
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                      <path fill="currentColor" d="M21.71,11.29L12.71,2.29C12.32,1.9 11.69,1.9 11.3,2.29L2.29,11.29C1.9,11.68 1.9,12.31 2.29,12.7L11.3,21.71C11.69,22.1 12.32,22.1 12.71,21.71L21.71,12.7C22.1,12.31 22.1,11.68 21.71,11.29M13,17.5V14.5C9,14.5 6.5,16 5.5,19.5C5.5,15.5 7,12 13,12V9L18.5,12L13,17.5Z" />
-                    </svg>
-                    Ottieni Indicazioni
-                  </button>
+                    <div className="testo">
+                      <strong>Ottieni Indicazioni</strong>
+                    </div>
+                  </div>
                   
-                  <button 
-                    className="btn-maps"
+                  <div 
+                    className="orario-item"
                     onClick={handleMapClick}
+                    style={{ cursor: 'pointer' }}
                   >
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                      <path fill="currentColor" d="M12,2L13.09,8.26L22,9L13.09,9.74L12,16L10.91,9.74L2,9L10.91,8.26L12,2M6.5,12.5L7.5,16.5L9.5,15.5L8.5,11.5L6.5,12.5M17.5,11.5L16.5,15.5L18.5,16.5L19.5,12.5L17.5,11.5Z" />
-                    </svg>
-                    Apri Google Maps
-                  </button>
+                    <div className="testo">
+                      <strong>Apri Google Maps</strong>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
