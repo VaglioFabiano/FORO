@@ -94,6 +94,9 @@
   font-family: 'Cocomat Pro', 'Arial', sans-serif;
   color: #000;
 }
+.center-testo{
+  text-align: center;
+}
 
 .nota {
   color: #000;

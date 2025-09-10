@@ -257,10 +257,8 @@ const OrariSection: React.FC = () => {
               </div>
 
               <div className="address-info">
-                <div className="orario-item">
-                  <div className="testo">
-                    <strong>La Nostra Sede:</strong> {address}
-                  </div>
+                <div className="center-testo">
+                   <strong>{address}</strong>
                 </div>
 
                 <div className="map-buttons">
