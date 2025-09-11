@@ -28,6 +28,7 @@ const VisualizzaUtenti: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [message, setMessage] = useState<Message | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>(''); // Nuovo stato per la ricerca
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('id'); // 'id', 'name', 'surname', 'level'
   const [sortOrder] = useState<'asc' | 'desc'>('asc');
@@ -49,7 +50,7 @@ const VisualizzaUtenti: React.FC = () => {
 
   useEffect(() => {
     filterAndSortUsers();
-  }, [users, filterLevel, sortBy, sortOrder]);
+  }, [users, filterLevel, sortBy, sortOrder, searchQuery]); // Aggiunto searchQuery alle dipendenze
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -96,7 +97,20 @@ const VisualizzaUtenti: React.FC = () => {
 
   const filterAndSortUsers = () => {
     let filtered = users.filter(user => {
-      // Solo filtro per livello, nessuna ricerca testuale
+      // Filtro per ricerca testuale
+      let matchesSearch = false;
+      if (searchQuery.trim() === '') {
+        matchesSearch = true;
+      } else {
+        const query = searchQuery.toLowerCase().trim();
+        matchesSearch = 
+          user.name.toLowerCase().includes(query) ||
+          user.surname.toLowerCase().includes(query) ||
+          user.username.toLowerCase().includes(query) ||
+          user.tel.includes(query);
+      }
+
+      // Filtro per livello
       let matchesLevel = false;
       if (filterLevel === 'all') {
         matchesLevel = true;
@@ -107,7 +121,7 @@ const VisualizzaUtenti: React.FC = () => {
         matchesLevel = user.level === parseInt(filterLevel);
       }
 
-      return matchesLevel;
+      return matchesSearch && matchesLevel;
     });
 
     // Ordina i risultati
@@ -145,7 +159,11 @@ const VisualizzaUtenti: React.FC = () => {
     setFilteredUsers(filtered);
   };
 
-  
+  // Funzione per pulire la ricerca
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+
   const openEditModal = (user: User) => {
     setEditingUser({
       ...user,
@@ -343,6 +361,39 @@ const VisualizzaUtenti: React.FC = () => {
 
       <div className="visualizzautenti-filters">
         <div className="visualizzautenti-filter-group">
+          <label>Cerca Utenti</label>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="Cerca per nome, cognome, username o telefono..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="visualizzautenti-search-input"
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                style={{
+                  position: 'absolute',
+                  right: '15px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#999',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  padding: '0',
+                  lineHeight: '1'
+                }}
+                title="Cancella ricerca"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="visualizzautenti-filter-group">
           <label>Filtra per Livello</label>
           <select
             value={filterLevel}
@@ -371,7 +422,10 @@ const VisualizzaUtenti: React.FC = () => {
       </div>
 
       <div className="visualizzautenti-stats">
-        <span>Trovati {filteredUsers.length} utenti di {users.length} totali</span>
+        <span>
+          Trovati {filteredUsers.length} utenti di {users.length} totali
+          {searchQuery && ` (ricerca: "${searchQuery}")`}
+        </span>
       </div>
 
       <div className="visualizzautenti-table-container">
@@ -429,7 +483,12 @@ const VisualizzaUtenti: React.FC = () => {
 
         {filteredUsers.length === 0 && (
           <div className="visualizzautenti-no-users">
-            <p>Nessun utente trovato con i filtri selezionati</p>
+            <p>
+              {searchQuery 
+                ? `Nessun utente trovato per "${searchQuery}"` 
+                : 'Nessun utente trovato con i filtri selezionati'
+              }
+            </p>
           </div>
         )}
       </div>
