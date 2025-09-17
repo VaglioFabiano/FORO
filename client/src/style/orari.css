@@ -327,8 +327,7 @@
 }
 
 .map-buttons .orario-item {
-  background: rgba(12, 73, 91, 0.9);
-  opacity: 0.50;
+  background: rgba(12, 73, 91, 0.4);
   border: 2px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
