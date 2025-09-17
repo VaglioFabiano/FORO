@@ -271,7 +271,7 @@ const Segnalazioni: React.FC = () => {
         )}
 
         <div className="segnalazioni-content">
-          <p style={{ color: 'rgb(12, 73, 91)', textAlign: 'center', marginBottom: '2rem', maxWidth: '800px', marginLeft: 'auto', marginRight: 'auto' }}>
+          <p style={{ color: 'rgb(12, 73, 91)', fontFamily: 'Trebuchet MS, sans-serif', fontSize: '1.2rem', textAlign: 'center', marginBottom: '2rem', maxWidth: '800px', marginLeft: 'auto', marginRight: 'auto' }}>
             Hai riscontrato problemi in aula o vuoi condividere un suggerimento per migliorare il nostro servizio? 
             Questo spazio è dedicato a te: segnalaci tutto ciò che ritieni importante!
           </p>
