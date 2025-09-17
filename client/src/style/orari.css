@@ -12,7 +12,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   color: #000;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 12px;
@@ -24,7 +24,7 @@
   margin-bottom: 2rem;
   font-size: 1.6rem;
   color: #000;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Layout principale per orari e mappa */
@@ -85,13 +85,13 @@
 .testo {
   font-size: 0.95rem;
   line-height: 1.4;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   color: #000;
   width: 100%;
 }
 
 .testo strong {
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   color: #000;
 }
 
@@ -99,7 +99,7 @@
   color: #000;
   font-style: italic;
   font-size: 0.85rem;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .avviso {
@@ -112,7 +112,7 @@
   font-size: 0.95rem;
   line-height: 1.5;
   color: #000;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -126,13 +126,13 @@
 .orario-principale {
   color: #000;
   font-weight: 500;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .orario-serale {
   color: #000;
   font-weight: 500;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   margin-left: 4px;
 }
 
@@ -140,7 +140,7 @@
   color: #000;
   font-weight: 500;
   font-style: italic;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .loading {
@@ -148,7 +148,7 @@
   padding: 2rem;
   color: #000;
   font-style: italic;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .error {
@@ -158,7 +158,7 @@
   background: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   margin: 1rem 0;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Sezione destra - Mappa */
@@ -171,7 +171,7 @@
 .mappa-container h3 {
   font-size: 1.3rem;
   color: #000;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   margin-bottom: 1rem;
   text-align: center;
 }
@@ -235,7 +235,7 @@
   color: #000;
   font-weight: 500;
   font-size: 0.85rem;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -257,8 +257,6 @@
   gap: 2rem; /* Aumentato gap per distanziare meglio */
 }
 
-
-
 .address-icon {
   display: none; /* Nasconde l'icona come per gli orari */
 }
@@ -266,13 +264,13 @@
 .address-details {
   font-size: 0.95rem;
   line-height: 1.4;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   color: #000;
   width: 100%;
 }
 
 .address-details strong {
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   color: #000;
   display: inline;
   margin-bottom: 0;
@@ -284,11 +282,10 @@
   color: #000;
   margin: 0;
   line-height: 1.4;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   display: inline;
 }
 
-/* Pulsanti mappa - stile bottone più evidente */
 /* Stile per la card dell'indirizzo */
 .address-card {
   display: flex;
@@ -311,26 +308,26 @@
 .address-text {
   font-size: 0.95rem;
   line-height: 1.4;
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   color: #000;
   text-align: center;
 }
 
 .address-text strong {
-  font-family: 'Cocomat Pro', 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
   color: #000;
 }
 
-/* Modifica anche i pulsanti per renderli più consistenti */
+/* Stile per i pulsanti della mappa */
 .map-buttons {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 0; /* Rimuovi il margin-top precedente */
+  margin-top: 0;
 }
 
 .map-buttons .orario-item {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(12, 73, 91, 0.9);
   border: 2px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -340,7 +337,7 @@
 }
 
 .map-buttons .orario-item:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(12, 73, 91, 0.95);
   border-color: rgba(0, 0, 0, 0.2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
@@ -352,18 +349,15 @@
   justify-content: center;
   gap: 0.5rem;
   font-weight: 600;
+  color: #fff;
 }
-
-
 
 .map-buttons .orario-item .map-icon {
   display: inline-flex;
   width: 20px;
   height: 20px;
-  color: #000;
+  color: #fff;
 }
-
-
 
 /* Media queries per responsività */
 @media (max-width: 968px) {
