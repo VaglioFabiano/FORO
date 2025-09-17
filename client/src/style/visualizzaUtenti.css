@@ -146,7 +146,7 @@
   background: rgba(255, 255, 255, 0.8);
   color: #333;
   outline: none;
-  cursor: pointer;
+  
   
   /* Rimozione completa dell'aspetto nativo per tutti i browser */
   appearance: none;
