@@ -2,7 +2,7 @@
   background-color: #1a3a4a;
   color: white;
   padding: 2rem 0;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .footer-content {
@@ -12,6 +12,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .footer-header {
@@ -21,27 +22,30 @@
   gap: 1rem;
   width: 100%;
   margin-bottom: 1.5rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .footer-content h3 {
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   margin: 0;
   color: #ffffff;
   text-align: center;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .edit-footer-button {
   background: rgba(255, 255, 255, 0.1);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.4rem 0.8rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 0.4rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.8rem;
+  font-size: 1.2rem;
   transition: all 0.3s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .edit-footer-button:hover {
@@ -59,6 +63,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 1.2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .footer-message.success {
@@ -78,27 +84,31 @@
   border: none;
   color: inherit;
   cursor: pointer;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   padding: 0;
   margin-left: 1rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .contact-info {
   margin-bottom: 1.5rem;
   width: 100%;
   text-align: center;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .contact-info p {
   margin: 0.5rem 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   display: inline-block;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .contact-info a {
   color: white;
   text-decoration: none;
   transition: color 0.3s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .contact-info a:hover {
@@ -112,12 +122,13 @@
   margin-bottom: 2rem;
   flex-wrap: wrap;
   width: 100%;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .social-links a {
   color: white;
   text-decoration: none;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -131,6 +142,7 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .social-links a::before {
@@ -162,15 +174,16 @@
 }
 
 .social-icon {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
 }
 
 .copyright {
   margin-top: 2rem;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.7);
   text-align: center;
   width: 100%;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Loading State */
@@ -180,6 +193,8 @@
   align-items: center;
   padding: 2rem;
   color: rgba(255, 255, 255, 0.7);
+  font-size: 1.2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Modal Edit Footer */
@@ -195,6 +210,7 @@
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .footer-edit-modal {
@@ -205,6 +221,7 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .modal-header {
@@ -213,24 +230,27 @@
   align-items: center;
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.8rem;
   font-weight: 600;
   color: #111827;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .close-button {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   color: #6b7280;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
   transition: background-color 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .close-button:hover {
@@ -239,10 +259,12 @@
 
 .modal-body {
   padding: 1.5rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group {
   margin-bottom: 1.5rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group label {
@@ -250,6 +272,8 @@
   font-weight: 500;
   color: #374151;
   margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input {
@@ -257,8 +281,9 @@
   padding: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   transition: border-color 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input:focus {
@@ -279,17 +304,19 @@
   gap: 0.75rem;
   padding: 1.5rem;
   border-top: 1px solid #e5e7eb;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .cancel-button {
   background: #f3f4f6;
   color: #374151;
   border: 1px solid #d1d5db;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   transition: all 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .cancel-button:hover:not(:disabled) {
@@ -300,11 +327,12 @@
   background: #1a3a4a;
   color: white;
   border: 1px solid #1a3a4a;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   transition: all 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .save-button:hover:not(:disabled) {
@@ -328,6 +356,15 @@
     gap: 0.8rem;
   }
   
+  .footer-content h3 {
+    font-size: 2rem;
+  }
+  
+  .edit-footer-button {
+    font-size: 1.1rem;
+    padding: 0.5rem 1rem;
+  }
+  
   .social-links {
     flex-direction: row;
     gap: 1.2rem;
@@ -337,10 +374,14 @@
   
   .social-links a {
     padding: 0.6rem 1.2rem;
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
   
   .contact-info p {
+    font-size: 1.1rem;
+  }
+  
+  .copyright {
     font-size: 1rem;
   }
   
@@ -355,6 +396,10 @@
     padding: 1rem;
   }
   
+  .modal-header h3 {
+    font-size: 1.5rem;
+  }
+  
   .modal-actions {
     flex-direction: column;
   }
@@ -363,12 +408,27 @@
   .save-button {
     width: 100%;
     padding: 0.75rem;
+    font-size: 1.1rem;
+  }
+  
+  .form-group label,
+  .form-group input {
+    font-size: 1.1rem;
   }
 }
 
 @media (max-width: 480px) {
   .footer-container {
     padding: 1.5rem 0;
+  }
+  
+  .footer-content h3 {
+    font-size: 1.8rem;
+  }
+  
+  .edit-footer-button {
+    font-size: 1rem;
+    padding: 0.4rem 0.8rem;
   }
   
   .social-links {
@@ -381,20 +441,30 @@
     width: 200px;
     justify-content: center;
     padding: 0.8rem 1rem;
+    font-size: 1rem;
   }
   
-  .footer-content h3 {
-    font-size: 1.3rem;
+  .contact-info p {
+    font-size: 1rem;
   }
   
   .copyright {
     margin-top: 1.5rem;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     padding: 0 1rem;
   }
   
-  .edit-footer-button {
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
+  .modal-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .cancel-button,
+  .save-button {
+    font-size: 1rem;
+  }
+  
+  .form-group label,
+  .form-group input {
+    font-size: 1rem;
   }
 }

@@ -8,6 +8,7 @@
   padding: 2rem 0;
   width: 100%;
   margin: 0 auto;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .social-header {
@@ -19,14 +20,16 @@
   margin: 0 auto;
   padding: 0 2rem;
   margin-bottom: 1.5rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .social-title {
   color: white;
-  font-size: 1.875rem;
+  font-size: 2rem;
   font-weight: bold;
   margin: 0;
   text-align: center;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .edit-social-button {
@@ -41,6 +44,7 @@
   gap: 0.5rem;
   font-size: 0.875rem;
   transition: all 0.3s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .edit-social-button:hover {
@@ -59,6 +63,7 @@
   align-items: center;
   margin-left: 2rem;
   margin-right: 2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .social-message.success {
@@ -108,6 +113,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .social-card:hover {
@@ -154,12 +160,14 @@
   font-weight: 600;
   color: #111827;
   margin: 0;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .platform-username {
   font-size: 0.875rem;
   color: #6b7280;
   margin: 0;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .external-link-btn {
@@ -225,6 +233,7 @@
   right: 0;
   bottom: 0;
   background: rgba(255, 255, 255, 0.8);
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .loading-state p {
@@ -250,6 +259,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Telegram Bar */
@@ -261,6 +271,7 @@
   border-radius: 0.75rem;
   margin-top: 1.5rem;
   color: white;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .telegram-content {
@@ -289,12 +300,14 @@
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .telegram-username {
   font-size: 0.875rem;
   opacity: 0.9;
   margin: 0;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .telegram-description {
@@ -302,6 +315,7 @@
   opacity: 0.8;
   display: block;
   margin-top: 0.25rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .telegram-status {
@@ -318,6 +332,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.875rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .status-indicator {
@@ -358,6 +373,7 @@
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .social-edit-modal {
@@ -368,6 +384,7 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .modal-header {
@@ -383,6 +400,7 @@
   font-size: 1.25rem;
   font-weight: 600;
   color: #111827;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .close-button {
@@ -413,6 +431,7 @@
   font-weight: 500;
   color: #374151;
   margin-bottom: 0.5rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input {
@@ -422,6 +441,7 @@
   border-radius: 0.5rem;
   font-size: 0.875rem;
   transition: border-color 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input:focus {
@@ -441,6 +461,7 @@
   margin-top: 0.25rem;
   color: #6b7280;
   font-size: 0.75rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .modal-actions {
@@ -460,6 +481,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .cancel-button:hover:not(:disabled) {
@@ -475,6 +497,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .save-button:hover:not(:disabled) {

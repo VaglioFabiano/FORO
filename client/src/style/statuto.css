@@ -1,434 +1,450 @@
 /* Container principale - esteso a tutta la larghezza */
 .statuto-container {
-  width: 100%;
-  background-image: url('../assets/sfondo_chiaro.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
+width: 100%;
+background-image: url('../assets/sfondo_chiaro.png');
+background-size: cover;
+background-position: center;
+background-repeat: no-repeat;
+position: relative;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Banner - molto più alto */
 .statuto-banner {
-  background-image: url('../assets/sfondo_chiaro.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  padding: 120px 0;
-  color: rgb(12, 73, 91);
-  position: relative;
+background-image: url('../assets/sfondo_chiaro.png');
+background-size: cover;
+background-position: center;
+background-repeat: no-repeat;
+padding: 120px 0;
+color: rgb(12, 73, 91);
+position: relative;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Pulsante di modifica */
 .edit-statuto-button {
-  position: absolute;
-  top: 20px;
-  right: 40px;
-  background: rgba(12, 73, 91, 0.1);
-  color: rgb(12, 73, 91);
-  border: 1px solid rgba(12, 73, 91, 0.3);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-  z-index: 10;
+position: absolute;
+top: 20px;
+right: 40px;
+background: rgba(12, 73, 91, 0.1);
+color: rgb(12, 73, 91);
+border: 1px solid rgba(12, 73, 91, 0.3);
+padding: 0.5rem 1rem;
+border-radius: 0.5rem;
+cursor: pointer;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+font-size: 0.875rem;
+transition: all 0.3s ease;
+z-index: 10;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .edit-statuto-button:hover {
-  background: rgba(12, 73, 91, 0.2);
-  border-color: rgba(12, 73, 91, 0.5);
+background: rgba(12, 73, 91, 0.2);
+border-color: rgba(12, 73, 91, 0.5);
 }
 
 /* Message */
 .statuto-message {
-  position: absolute;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-width: 300px;
-  z-index: 10;
+position: absolute;
+top: 70px;
+left: 50%;
+transform: translateX(-50%);
+padding: 0.75rem 1rem;
+border-radius: 0.5rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+min-width: 300px;
+z-index: 10;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .statuto-message.success {
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.5);
-  color: #10b981;
+background: rgba(16, 185, 129, 0.2);
+border: 1px solid rgba(16, 185, 129, 0.5);
+color: #10b981;
 }
 
 .statuto-message.error {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  color: #ef4444;
+background: rgba(239, 68, 68, 0.2);
+border: 1px solid rgba(239, 68, 68, 0.5);
+color: #ef4444;
 }
 
 .statuto-message button {
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  font-size: 1.25rem;
-  padding: 0;
-  margin-left: 1rem;
+background: none;
+border: none;
+color: inherit;
+cursor: pointer;
+font-size: 1.25rem;
+padding: 0;
+margin-left: 1rem;
 }
 
 /* Loading state */
 .statuto-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-  color: rgb(12, 73, 91);
-  font-size: 1.2rem;
+display: flex;
+justify-content: center;
+align-items: center;
+height: 200px;
+color: rgb(12, 73, 91);
+font-size: 1.2rem;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Contenuto centrato */
 .statuto-banner-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 80px;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 40px;
-  position: relative;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 80px;
+max-width: 1400px;
+margin: 0 auto;
+padding: 0 40px;
+position: relative;
 }
 
 /* Contenitore immagine più grande */
 .statuto-image-wrapper {
-  flex: 0 0 auto;
-  width: 450px;
+flex: 0 0 auto;
+width: 450px;
 }
 
 /* Immagine molto più grande */
 .statuto-image {
-  width: 100%;
-  height: 350px;
-  object-fit: cover;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  border: 2px solid rgba(12, 73, 91, 0.1);
-  border-radius: 8px;
+width: 100%;
+height: 350px;
+object-fit: cover;
+transition: all 0.3s ease;
+cursor: pointer;
+box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+border: 2px solid rgba(12, 73, 91, 0.1);
+border-radius: 8px;
 }
 
 .statuto-image:hover {
-  transform: scale(1.03);
-  border-color: rgba(12, 73, 91, 0.3);
+transform: scale(1.03);
+border-color: rgba(12, 73, 91, 0.3);
 }
 
 /* Sezione testo */
 .statuto-text-wrapper {
-  flex: 1;
-  max-width: 600px;
+flex: 1;
+max-width: 600px;
 }
 
 .statuto-text-wrapper h2 {
-  font-size: 2.5rem;
-  margin-bottom: 1.8rem;
-  font-weight: 700;
-  line-height: 1.2;
+font-size: 2.5rem; /* Titolo a 2.5rem come richiesto */
+margin-bottom: 1.8rem;
+font-weight: 700;
+line-height: 1.2;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .statuto-text-wrapper p {
-  font-size: 1.2rem;
-  line-height: 1.8;
-  margin-bottom: 2.5rem;
+font-size: 1.2rem; /* Dimensione del testo del contenuto: 1.2rem */
+line-height: 1.8;
+margin-bottom: 2.5rem;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Pulsante più grande */
 .statuto-download-btn {
-  display: inline-block;
-  background-color: rgb(12, 73, 91);
-  color: white;
-  padding: 1rem 2.5rem;
-  font-size: 1.2rem;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(12, 73, 91, 0.2);
+display: inline-block;
+background-color: rgb(12, 73, 91);
+color: white;
+padding: 1rem 2.5rem;
+font-size: 1.2rem;
+font-weight: 600;
+text-decoration: none;
+border-radius: 6px;
+transition: all 0.3s ease;
+box-shadow: 0 2px 8px rgba(12, 73, 91, 0.2);
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .statuto-download-btn:hover {
-  background-color: rgb(8, 55, 68);
-  transform: translateY(-3px);
-  box-shadow: 0 4px 15px rgba(12, 73, 91, 0.3);
+background-color: rgb(8, 55, 68);
+transform: translateY(-3px);
+box-shadow: 0 4px 15px rgba(12, 73, 91, 0.3);
 }
 
 /* Modal Edit Statuto */
 .statuto-edit-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background: rgba(0, 0, 0, 0.5);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+padding: 1rem;
 }
 
 .statuto-edit-modal {
-  background: white;
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+background: white;
+border-radius: 0.75rem;
+width: 100%;
+max-width: 600px;
+max-height: 90vh;
+overflow-y: auto;
+box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 1.5rem;
+border-bottom: 1px solid #e5e7eb;
 }
 
 .modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
+margin: 0;
+font-size: 1.25rem;
+font-weight: 600;
+color: #111827;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s ease;
+background: none;
+border: none;
+font-size: 1.5rem;
+color: #6b7280;
+cursor: pointer;
+padding: 0.25rem;
+border-radius: 0.25rem;
+transition: background-color 0.2s ease;
 }
 
 .close-button:hover {
-  background: #f3f4f6;
+background: #f3f4f6;
 }
 
 .modal-body {
-  padding: 1.5rem;
+padding: 1.5rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+margin-bottom: 1.5rem;
 }
 
 .form-group label {
-  display: block;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.5rem;
+display: block;
+font-weight: 500;
+color: #374151;
+margin-bottom: 0.5rem;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  transition: border-color 0.2s ease;
+width: 100%;
+padding: 0.75rem;
+border: 1px solid #d1d5db;
+border-radius: 0.5rem;
+font-size: 0.875rem;
+transition: border-color 0.2s ease;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input:focus {
-  outline: none;
-  border-color: rgb(12, 73, 91);
-  box-shadow: 0 0 0 3px rgba(12, 73, 91, 0.1);
+outline: none;
+border-color: rgb(12, 73, 91);
+box-shadow: 0 0 0 3px rgba(12, 73, 91, 0.1);
 }
 
 .form-group input:disabled {
-  background: #f9fafb;
-  opacity: 0.6;
-  cursor: not-allowed;
+background: #f9fafb;
+opacity: 0.6;
+cursor: not-allowed;
 }
 
 .form-group small {
-  display: block;
-  margin-top: 0.5rem;
-  color: #6b7280;
-  font-size: 0.75rem;
-  line-height: 1.4;
+display: block;
+margin-top: 0.5rem;
+color: #6b7280;
+font-size: 0.75rem;
+line-height: 1.4;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .link-preview {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border-radius: 0.5rem;
-  border: 1px solid #e5e7eb;
+margin-top: 1rem;
+padding: 1rem;
+background: #f9fafb;
+border-radius: 0.5rem;
+border: 1px solid #e5e7eb;
 }
 
 .link-preview p {
-  margin: 0;
-  font-size: 0.875rem;
+margin: 0;
+font-size: 0.875rem;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .preview-url {
-  color: rgb(12, 73, 91);
-  font-family: monospace;
-  word-break: break-all;
-  background: white;
-  padding: 0.5rem;
-  border-radius: 0.25rem;
-  margin-top: 0.5rem !important;
+color: rgb(12, 73, 91);
+font-family: monospace;
+word-break: break-all;
+background: white;
+padding: 0.5rem;
+border-radius: 0.25rem;
+margin-top: 0.5rem !important;
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+display: flex;
+justify-content: flex-end;
+gap: 0.75rem;
+padding: 1.5rem;
+border-top: 1px solid #e5e7eb;
 }
 
 .cancel-button {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
+background: #f3f4f6;
+color: #374151;
+border: 1px solid #d1d5db;
+padding: 0.5rem 1rem;
+border-radius: 0.5rem;
+cursor: pointer;
+font-size: 0.875rem;
+transition: all 0.2s ease;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .cancel-button:hover:not(:disabled) {
-  background: #e5e7eb;
+background: #e5e7eb;
 }
 
 .save-button {
-  background: rgb(12, 73, 91);
-  color: white;
-  border: 1px solid rgb(12, 73, 91);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
+background: rgb(12, 73, 91);
+color: white;
+border: 1px solid rgb(12, 73, 91);
+padding: 0.5rem 1rem;
+border-radius: 0.5rem;
+cursor: pointer;
+font-size: 0.875rem;
+transition: all 0.2s ease;
+font-family: 'Trebuchet MS', sans-serif;
 }
 
 .save-button:hover:not(:disabled) {
-  background: rgb(10, 60, 75);
+background: rgb(10, 60, 75);
 }
 
 .cancel-button:disabled,
 .save-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+opacity: 0.5;
+cursor: not-allowed;
 }
 
 /* Responsive */
 @media (max-width: 1100px) {
-  .statuto-banner-content {
-    gap: 50px;
-  }
-  
-  .statuto-image-wrapper {
-    width: 380px;
-  }
-  
-  .statuto-image {
-    height: 300px;
-  }
+.statuto-banner-content {
+gap: 50px;
+}
+
+.statuto-image-wrapper {
+width: 380px;
+}
+
+.statuto-image {
+height: 300px;
+}
 }
 
 @media (max-width: 900px) {
-  .statuto-banner {
-    padding: 90px 0;
-  }
-  
-  .statuto-banner-content {
-    flex-direction: column;
-    gap: 50px;
-    text-align: center;
-  }
-  
-  .statuto-image-wrapper {
-    width: 100%;
-    max-width: 450px;
-  }
-  
-  .statuto-text-wrapper {
-    max-width: 100%;
-  }
-  
-  .edit-statuto-button {
-    top: 15px;
-    right: 20px;
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
-  }
-  
-  .statuto-message {
-    top: 60px;
-    left: 20px;
-    right: 20px;
-    transform: none;
-    min-width: auto;
-  }
-  
-  .statuto-edit-modal {
-    margin: 1rem;
-    max-width: calc(100vw - 2rem);
-  }
-  
-  .modal-header,
-  .modal-body,
-  .modal-actions {
-    padding: 1rem;
-  }
-  
-  .modal-actions {
-    flex-direction: column;
-  }
-  
-  .cancel-button,
-  .save-button {
-    width: 100%;
-    padding: 0.75rem;
-  }
+.statuto-banner {
+padding: 90px 0;
+}
+
+.statuto-banner-content {
+flex-direction: column;
+gap: 50px;
+text-align: center;
+}
+
+.statuto-image-wrapper {
+width: 100%;
+max-width: 450px;
+}
+
+.statuto-text-wrapper {
+max-width: 100%;
+}
+
+.edit-statuto-button {
+top: 15px;
+right: 20px;
+font-size: 0.8rem;
+padding: 0.4rem 0.8rem;
+}
+
+.statuto-message {
+top: 60px;
+left: 20px;
+right: 20px;
+transform: none;
+min-width: auto;
+}
+
+.statuto-edit-modal {
+margin: 1rem;
+max-width: calc(100vw - 2rem);
+}
+
+.modal-header,
+.modal-body,
+.modal-actions {
+padding: 1rem;
+}
+
+.modal-actions {
+flex-direction: column;
+}
+
+.cancel-button,
+.save-button {
+width: 100%;
+padding: 0.75rem;
+}
 }
 
 @media (max-width: 500px) {
-  .statuto-banner {
-    padding: 70px 0;
-  }
-  
-  .statuto-image {
-    height: 250px;
-  }
-  
-  .statuto-text-wrapper h2 {
-    font-size: 2rem;
-  }
-  
-  .statuto-download-btn {
-    padding: 0.8rem 2rem;
-    font-size: 1.1rem;
-  }
-  
-  .edit-statuto-button {
-    top: 10px;
-    right: 15px;
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
-  }
-  
-  .statuto-message {
-    top: 50px;
-    font-size: 0.85rem;
-  }
+.statuto-banner {
+padding: 70px 0;
+}
+
+.statuto-image {
+height: 250px;
+}
+
+.statuto-text-wrapper h2 {
+font-size: 2rem;
+}
+
+.statuto-download-btn {
+padding: 0.8rem 2rem;
+font-size: 1.1rem;
+}
+
+.edit-statuto-button {
+top: 10px;
+right: 15px;
+font-size: 0.75rem;
+padding: 0.3rem 0.6rem;
+}
+
+.statuto-message {
+top: 50px;
+font-size: 0.85rem;
+}
 }

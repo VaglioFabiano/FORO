@@ -6,6 +6,7 @@
   background-position: center;
   background-repeat: no-repeat;
   width: 100%;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .segnalazioni-header {
@@ -19,6 +20,7 @@
 .segnalazioni-section h2 {
   text-align: center;
   margin: 0;
+  font-size: 2.5rem;
 }
 
 .edit-segnalazioni-button {
@@ -31,8 +33,9 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   transition: all 0.3s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .edit-segnalazioni-button:hover {
@@ -49,6 +52,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 1.2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .segnalazioni-message.success {
@@ -68,9 +73,10 @@
   border: none;
   color: inherit;
   cursor: pointer;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   padding: 0;
   margin-left: 1rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Loading State */
@@ -81,12 +87,14 @@
   height: 200px;
   color: rgb(12, 73, 91);
   font-size: 1.2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .segnalazioni-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 /* Desktop layout */
@@ -97,6 +105,7 @@
   justify-content: center;
   max-width: 1200px;
   margin: 0 auto;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .qr-code-container {
@@ -109,6 +118,7 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .qr-code-image {
@@ -120,6 +130,7 @@
 .iframe-container {
   width: 600px;
   height: 600px;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .iframe-container iframe {
@@ -132,6 +143,7 @@
 /* Mobile layout */
 .mobile-form-container {
   width: 100%;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .mobile-form-container iframe {
@@ -152,6 +164,7 @@
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .segnalazioni-edit-modal {
@@ -162,6 +175,7 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .modal-header {
@@ -170,24 +184,27 @@
   align-items: center;
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #111827;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .close-button {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   color: #6b7280;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 0.25rem;
   transition: background-color 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .close-button:hover {
@@ -196,10 +213,12 @@
 
 .modal-body {
   padding: 1.5rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group {
   margin-bottom: 1.5rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group label {
@@ -207,6 +226,8 @@
   font-weight: 500;
   color: #374151;
   margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input {
@@ -214,8 +235,9 @@
   padding: 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   transition: border-color 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .form-group input:focus {
@@ -234,8 +256,9 @@
   display: block;
   margin-top: 0.5rem;
   color: #6b7280;
-  font-size: 0.75rem;
+  font-size: 1rem;
   line-height: 1.4;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .link-preview {
@@ -244,11 +267,13 @@
   background: #f9fafb;
   border-radius: 0.5rem;
   border: 1px solid #e5e7eb;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .link-preview p {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .preview-url {
@@ -259,6 +284,7 @@
   padding: 0.5rem;
   border-radius: 0.25rem;
   margin-top: 0.5rem !important;
+  font-size: 1.1rem;
 }
 
 .modal-actions {
@@ -267,17 +293,19 @@
   gap: 0.75rem;
   padding: 1.5rem;
   border-top: 1px solid #e5e7eb;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .cancel-button {
   background: #f3f4f6;
   color: #374151;
   border: 1px solid #d1d5db;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   transition: all 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .cancel-button:hover:not(:disabled) {
@@ -288,11 +316,12 @@
   background: rgb(12, 73, 91);
   color: white;
   border: 1px solid rgb(12, 73, 91);
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 1.2rem;
   transition: all 0.2s ease;
+  font-family: 'Trebuchet MS', sans-serif;
 }
 
 .save-button:hover:not(:disabled) {
@@ -315,8 +344,12 @@
     gap: 0.8rem;
   }
   
+  .segnalazioni-section h2 {
+    font-size: 2rem;
+  }
+  
   .edit-segnalazioni-button {
-    font-size: 0.8rem;
+    font-size: 1.1rem;
     padding: 0.4rem 0.8rem;
   }
   
@@ -348,6 +381,10 @@
     padding: 1rem;
   }
   
+  .modal-header h3 {
+    font-size: 1.3rem;
+  }
+  
   .modal-actions {
     flex-direction: column;
   }
@@ -356,12 +393,46 @@
   .save-button {
     width: 100%;
     padding: 0.75rem;
+    font-size: 1.1rem;
+  }
+  
+  .form-group label,
+  .form-group input,
+  .link-preview p {
+    font-size: 1.1rem;
+  }
+  
+  .form-group small {
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
+  .segnalazioni-section h2 {
+    font-size: 1.8rem;
+  }
+  
   .edit-segnalazioni-button {
-    font-size: 0.75rem;
+    font-size: 1rem;
     padding: 0.3rem 0.6rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.2rem;
+  }
+  
+  .cancel-button,
+  .save-button {
+    font-size: 1rem;
+  }
+  
+  .form-group label,
+  .form-group input,
+  .link-preview p {
+    font-size: 1rem;
+  }
+  
+  .form-group small {
+    font-size: 0.8rem;
   }
 }
