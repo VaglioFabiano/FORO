@@ -327,7 +327,7 @@
 }
 
 .map-buttons .orario-item {
-  background: rgba(12, 73, 91, 0.4);
+  background: rgba(12, 73, 91, 0.2);
   border: 2px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -337,8 +337,7 @@
 }
 
 .map-buttons .orario-item:hover {
-  background: rgba(12, 73, 91, 0.95);
-  opacity: 0.90;
+  background: rgba(12, 73, 91, 0.2);
   border-color: rgba(0, 0, 0, 0.2);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
@@ -350,14 +349,14 @@
   justify-content: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #fff;
+  color: #000000;
 }
 
 .map-buttons .orario-item .map-icon {
   display: inline-flex;
   width: 20px;
   height: 20px;
-  color: #fff;
+  color: #000000;
 }
 
 /* Media queries per responsività */
