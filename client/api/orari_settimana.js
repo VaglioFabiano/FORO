@@ -152,11 +152,15 @@ export default async function handler(req, res) {
             error: 'ID è richiesto' 
           });
         }
+
+        console.log(`Attempting to delete from table: ${tableName}, ID: ${deleteId}`);
         
         const deleteResult = await client.execute({
           sql: `DELETE FROM ${tableName} WHERE id = ?`,
           args: [deleteId]
         });
+        
+        console.log(`Delete result:`, deleteResult);
         
         if (deleteResult.rowsAffected === 0) {
           return res.status(404).json({ 
@@ -176,6 +180,13 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('Database error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      method: req.method,
+      body: req.body,
+      query: req.query
+    });
     return res.status(500).json({ 
       error: 'Operazione sul database fallita',
       details: process.env.NODE_ENV === 'development' ? error.message : 'Errore interno'

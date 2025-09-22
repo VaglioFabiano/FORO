@@ -265,41 +265,50 @@ const ModificaOrari: React.FC = () => {
     setLoading(false);
   };
 
-  const eliminaFascia = async (id: number, week: WeekType) => {
-    if (!confirm('Sei sicuro di voler eliminare questa fascia oraria?')) {
-      return;
+const eliminaFascia = async (id: number, week: WeekType) => {
+  if (!confirm('Sei sicuro di voler eliminare questa fascia oraria?')) {
+    return;
+  }
+
+  try {
+    console.log(`Eliminating fascia: ID=${id}, week=${week}`);
+    
+    const body = { 
+      id,
+      settimana: week === 'next' ? 'next' : 'current' // Cambiato da undefined a 'current'
+    };
+
+    console.log('Request body:', body);
+
+    const response = await fetch('/api/orari_settimana', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    console.log('Response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Error response:', errorData);
+      throw new Error(`HTTP error! status: ${response.status}, details: ${JSON.stringify(errorData)}`);
     }
 
-    try {
-      const body = { 
-        id,
-        settimana: week === 'next' ? 'next' : undefined
-      };
-
-      const response = await fetch('/api/orari_settimana', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.success) {
-        await fetchOrari();
-      } else {
-        throw new Error(data.error || 'Errore nell\'eliminazione');
-      }
-    } catch (err) {
-      console.error('Delete error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+    const data = await response.json();
+    console.log('Success response:', data);
+    
+    if (data.success) {
+      await fetchOrari();
+    } else {
+      throw new Error(data.error || 'Errore nell\'eliminazione');
     }
-  };
+  } catch (err) {
+    console.error('Delete error:', err);
+    setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+  }
+};
 
   const iniziaModifica = (fascia: FasciaOraria, week: WeekType) => {
     setEditingId({ id: fascia.id, week });
