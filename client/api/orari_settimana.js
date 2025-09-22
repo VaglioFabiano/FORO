@@ -235,72 +235,97 @@ export default async function handler(req, res) {
           });
         }
 
-      case 'DELETE':
-        try {
-          const { id: deleteId } = req.body;
-          
-          if (!deleteId) {
-            return res.status(400).json({ error: 'ID è richiesto' });
-          }
-
-          const numericId = parseInt(deleteId, 10);
-          if (isNaN(numericId)) {
-            return res.status(400).json({ error: 'ID deve essere un numero valido' });
-          }
-
-          console.log(`Attempting to delete ID ${numericId} from ${tableName}`);
-          
-          // Verifica che l'elemento esista
-          let selectQuery = tableName === 'fasce_orarie_prossima' 
-            ? 'SELECT id, giorno FROM fasce_orarie_prossima WHERE id = ?' 
-            : 'SELECT id, giorno FROM fasce_orarie WHERE id = ?';
-          
-          const existingItem = await client.execute({
-            sql: selectQuery,
-            args: [numericId]
-          });
-          
-          if (existingItem.rows.length === 0) {
-            return res.status(404).json({ error: 'Fascia oraria non trovata' });
-          }
-
-          console.log('Item to delete:', existingItem.rows[0]);
-
-          // Usa una transazione per sicurezza
-          await client.execute("BEGIN TRANSACTION");
-          
-          try {
-            // Elimina SOLO la fascia oraria specifica
-            let deleteQuery = tableName === 'fasce_orarie_prossima'
-              ? 'DELETE FROM fasce_orarie_prossima WHERE id = ?'
-              : 'DELETE FROM fasce_orarie WHERE id = ?';
-            
-            const deleteResult = await client.execute({
-              sql: deleteQuery,
-              args: [numericId]
-            });
-            
-            console.log('Delete result:', deleteResult);
-            
-            await client.execute("COMMIT");
-            
-            return res.status(200).json({ 
-              success: true, 
-              message: 'Fascia oraria eliminata',
-              deletedId: numericId
-            });
-          } catch (deleteError) {
-            await client.execute("ROLLBACK");
-            throw deleteError;
-          }
-        } catch (error) {
-          console.error('DELETE error:', error);
-          return res.status(500).json({
-            error: 'Errore nell\'eliminazione dell\'orario',
-            details: error.message
+     case 'DELETE':
+      try {
+        const { id: deleteId } = req.body;
+        
+        console.log(`DELETE request - ID: ${deleteId}, table: ${tableName}`);
+        
+        if (!deleteId) {
+          return res.status(400).json({ 
+            error: 'ID è richiesto' 
           });
         }
 
+        const numericId = parseInt(deleteId, 10);
+        if (isNaN(numericId)) {
+          return res.status(400).json({ 
+            error: 'ID deve essere un numero valido' 
+          });
+        }
+
+        console.log(`Attempting to delete ID ${numericId} from ${tableName}`);
+        
+        // Prima verifichiamo se l'elemento esiste
+        let selectQuery;
+        if (tableName === 'fasce_orarie_prossima') {
+          selectQuery = 'SELECT id, giorno FROM fasce_orarie_prossima WHERE id = ?';
+        } else {
+          selectQuery = 'SELECT id, giorno FROM fasce_orarie WHERE id = ?';
+        }
+        
+        const existingItem = await client.execute({
+          sql: selectQuery,
+          args: [numericId]
+        });
+        
+        console.log(`Existing item check result: ${existingItem.rows.length} rows found`);
+        
+        if (existingItem.rows.length === 0) {
+          return res.status(404).json({ 
+            error: 'Fascia oraria non trovata' 
+          });
+        }
+
+        console.log('Item found:', existingItem.rows[0]);
+        
+        // Disabilita temporaneamente le foreign key constraints
+        await client.execute("PRAGMA foreign_keys = OFF");
+        
+        try {
+          // Procediamo con l'eliminazione
+          let deleteQuery;
+          if (tableName === 'fasce_orarie_prossima') {
+            deleteQuery = 'DELETE FROM fasce_orarie_prossima WHERE id = ?';
+          } else {
+            deleteQuery = 'DELETE FROM fasce_orarie WHERE id = ?';
+          }
+          
+          const deleteResult = await client.execute({
+            sql: deleteQuery,
+            args: [numericId]
+          });
+          
+          console.log(`Delete result:`, deleteResult);
+          
+          // Riabilita le foreign key constraints
+          await client.execute("PRAGMA foreign_keys = ON");
+          
+          return res.status(200).json({ 
+            success: true, 
+            message: 'Fascia oraria eliminata',
+            deletedId: numericId
+          });
+          
+        } catch (deleteError) {
+          console.error('Delete operation failed:', deleteError);
+          // Riabilita le foreign keys anche in caso di errore
+          try {
+            await client.execute("PRAGMA foreign_keys = ON");
+          } catch (fkError) {
+            console.error('Error re-enabling foreign keys:', fkError);
+          }
+          throw deleteError;
+        }
+        
+      } catch (error) {
+        console.error('DELETE error:', error);
+        return res.status(500).json({
+          error: 'Errore nell\'eliminazione dell\'orario',
+          details: error.message,
+          stack: error.stack
+        });
+      }
       default:
         return res.status(405).json({ 
           error: 'Metodo non consentito' 
