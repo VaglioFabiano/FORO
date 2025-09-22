@@ -147,30 +147,51 @@ export default async function handler(req, res) {
         // Elimina fascia oraria
         const { id: deleteId } = req.body;
         
+        console.log(`DELETE request body:`, req.body);
+        console.log(`DELETE ID type: ${typeof deleteId}, value: ${deleteId}`);
+        console.log(`DELETE table: ${tableName}`);
+        
         if (!deleteId) {
           return res.status(400).json({ 
             error: 'ID è richiesto' 
           });
         }
 
-        console.log(`Attempting to delete from table: ${tableName}, ID: ${deleteId}`);
+        // Converti l'ID in numero per sicurezza
+        const numericId = parseInt(deleteId, 10);
+        if (isNaN(numericId)) {
+          return res.status(400).json({ 
+            error: 'ID deve essere un numero valido' 
+          });
+        }
+
+        console.log(`Attempting to delete from table: ${tableName}, ID: ${numericId}`);
         
-        const deleteResult = await client.execute({
-          sql: `DELETE FROM ${tableName} WHERE id = ?`,
-          args: [deleteId]
+        // Prima verifichiamo se l'elemento esiste
+        const existingItem = await client.execute({
+          sql: `SELECT id FROM ${tableName} WHERE id = ?`,
+          args: [numericId]
         });
         
-        console.log(`Delete result:`, deleteResult);
+        console.log(`Existing item check:`, existingItem);
         
-        if (deleteResult.rowsAffected === 0) {
+        if (existingItem.rows.length === 0) {
           return res.status(404).json({ 
             error: 'Fascia oraria non trovata' 
           });
         }
         
+        const deleteResult = await client.execute({
+          sql: `DELETE FROM ${tableName} WHERE id = ?`,
+          args: [numericId]
+        });
+        
+        console.log(`Delete result:`, deleteResult);
+        
         return res.status(200).json({ 
           success: true, 
-          message: 'Fascia oraria eliminata' 
+          message: 'Fascia oraria eliminata',
+          deletedId: numericId
         });
 
       default:
@@ -189,7 +210,10 @@ export default async function handler(req, res) {
     });
     return res.status(500).json({ 
       error: 'Operazione sul database fallita',
-      details: process.env.NODE_ENV === 'development' ? error.message : 'Errore interno'
+      details: error.message, // Mostra sempre l'errore per debugging
+      stack: error.stack,
+      method: req.method,
+      tableName: settimana === 'next' ? 'fasce_orarie_prossima' : 'fasce_orarie'
     });
   }
 }
