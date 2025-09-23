@@ -183,6 +183,13 @@
   font-size: 1.1rem;
 }
 
+.rule-card h5 {
+  color: rgb(12, 73, 91);
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
 .rule-card p {
   color: #1f2937;
   line-height: 1.6;
@@ -196,6 +203,49 @@
 
 .rule-card ul li {
   margin-bottom: 0.25rem;
+}
+
+/* Roles Grid - Nuovo per la sezione Sito */
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+/* Contribute Grid - Nuovo per la sezione Sito */
+.contribute-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.contribute-card {
+  background: rgba(12, 73, 91, 0.05);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  border: 2px solid rgba(12, 73, 91, 0.2);
+  transition: all 0.3s ease;
+}
+
+.contribute-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(12, 73, 91, 0.1);
+  border-color: rgb(12, 73, 91);
+}
+
+.contribute-card h5 {
+  color: rgb(12, 73, 91);
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.contribute-card p {
+  color: #1f2937;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
 }
 
 /* Event Sections */
@@ -351,6 +401,18 @@
   border-left: 3px solid #e74c3c;
 }
 
+/* Links styling */
+.tab-content a {
+  color: rgb(12, 73, 91);
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.tab-content a:hover {
+  color: rgba(12, 73, 91, 0.8);
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .gestione-turno-section .container {
@@ -358,7 +420,9 @@
   }
   
   .rules-grid,
-  .contacts-grid {
+  .contacts-grid,
+  .roles-grid,
+  .contribute-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -388,7 +452,9 @@
   }
   
   .rules-grid,
-  .contacts-grid {
+  .contacts-grid,
+  .roles-grid,
+  .contribute-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
@@ -424,7 +490,8 @@
   }
   
   .rule-card,
-  .contact-card {
+  .contact-card,
+  .contribute-card {
     padding: 1rem;
   }
 }
