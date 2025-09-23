@@ -27,7 +27,6 @@ const GestioneTurno: React.FC = () => {
             onClick={() => setActiveTab('regole')}
           >
             Regole & Annotazioni
-            
           </button>
           <button 
             className={`tab-btn ${activeTab === 'eventi' ? 'active' : ''}`}
@@ -87,7 +86,7 @@ const GestioneTurno: React.FC = () => {
               <div className="procedure-section">
                 <h4>💻 Info Point e gestione digitale</h4>
                 <p className="procedure-text">
-                  Accendi il computer dell'Info Point e verifica che tutti i sistemi siano funzionanti per la gestione digitale del centro.
+                 Null
                 </p>
               </div>
             </div>
@@ -289,57 +288,58 @@ const GestioneTurno: React.FC = () => {
           )}
 
           {activeTab === 'sito' && (
-            <div className="content-panel">
-              <h3>⚙️ Funzionamento del Sito</h3>
+            <div className="content-panel" style={{ color: '#000000' }}>
+              <h3 style={{ color: '#000000' }}>⚙️ Funzionamento del Sito</h3>
               
-              <div className="procedure-section">
-                <h4>🖥️ Dashboard e Strumenti</h4>
-                <p className="procedure-text">
+              <div className="function-section">
+                <h4 style={{ color: '#000000' }}>🖥️ Dashboard e Strumenti</h4>
+                <p className="function-text" style={{ color: '#000000' }}>
                   Nella dashboard abbiamo tutti gli strumenti più importanti che riguardano la <span className="procedure-highlight">gestione dei turni e la segnalazione delle presenze</span>. 
                   Le notifiche per la gestione dei turni sono gestite da <strong>UFORObot</strong>, il nostro bot di Telegram.
                 </p>
               </div>
 
-              <div className="procedure-section">
-                <h4>👥 Permessi e Ruoli</h4>
+              <div className="function-section">
+                <h4 style={{ color: '#000000' }}>👥 Permessi e Ruoli</h4>
+                
                 <div className="roles-grid">
-                  <div className="role-card">
-                    <h5>🎯 Direttivo</h5>
-                    <p><strong>Ruoli:</strong> Gestione strategica dell'associazione, decisioni amministrative, coordinamento generale delle attività</p>
-                    <p><strong>Descrizione:</strong> I membri del direttivo hanno accesso completo alla piattaforma e sono responsabili delle decisioni principali riguardanti l'organizzazione e la gestione del centro studio.</p>
+                  <div className="role-card direttivo" style={{ color: '#000000' }}>
+                    <h5 style={{ color: '#000000' }}>🎯 Direttivo</h5>
+                    <p style={{ color: '#000000' }}><strong>Ruoli:</strong> Gestione strategica dell'associazione, decisioni amministrative, coordinamento generale delle attività</p>
+                    <p style={{ color: '#000000' }}><strong>Descrizione:</strong> I membri del direttivo hanno accesso completo alla piattaforma e sono responsabili delle decisioni principali riguardanti l'organizzazione e la gestione del centro studio.</p>
                   </div>
 
-                  <div className="role-card">
-                    <h5>📋 Soci Organizzatori</h5>
-                    <p><strong>Ruoli:</strong> Coordinamento turni, gestione eventi, supervisione attività quotidiane</p>
-                    <p><strong>Descrizione:</strong> I soci organizzatori supportano il direttivo nella gestione operativa, hanno permessi avanzati per modificare turni e coordinare le attività del centro.</p>
+                  <div className="role-card organizzatori" style={{ color: '#000000' }}>
+                    <h5 style={{ color: '#000000' }}>📋 Soci Organizzatori</h5>
+                    <p style={{ color: '#000000' }}><strong>Ruoli:</strong> Coordinamento turni, gestione eventi, supervisione attività quotidiane</p>
+                    <p style={{ color: '#000000' }}><strong>Descrizione:</strong> I soci organizzatori supportano il direttivo nella gestione operativa, hanno permessi avanzati per modificare turni e coordinare le attività del centro.</p>
                   </div>
 
-                  <div className="role-card">
-                    <h5>🔧 Soci Operativi</h5>
-                    <p><strong>Ruoli:</strong> Gestione turni assegnati, segnalazione presenze, manutenzione ordinaria</p>
-                    <p><strong>Descrizione:</strong> I soci operativi gestiscono i turni quotidiani, hanno accesso alle funzioni base della dashboard per segnalare presenze e annotazioni.</p>
+                  <div className="role-card operativi" style={{ color: '#000000' }}>
+                    <h5 style={{ color: '#000000' }}>🔧 Soci Operativi</h5>
+                    <p style={{ color: '#000000' }}><strong>Ruoli:</strong> Gestione turni assegnati, segnalazione presenze, manutenzione ordinaria</p>
+                    <p style={{ color: '#000000' }}><strong>Descrizione:</strong> I soci operativi gestiscono i turni quotidiani, hanno accesso alle funzioni base della dashboard per segnalare presenze e annotazioni.</p>
                   </div>
 
-                  <div className="role-card">
-                    <h5>🙋‍♀️ Volontari</h5>
-                    <p><strong>Ruoli:</strong> Supporto durante i turni, assistenza agli utenti, attività di base</p>
-                    <p><strong>Descrizione:</strong> I volontari supportano le attività del centro con permessi limitati, possono visualizzare informazioni base e contribuire alle attività sotto supervisione.</p>
+                  <div className="role-card volontari" style={{ color: '#000000' }}>
+                    <h5 style={{ color: '#000000' }}>🙋‍♀️ Volontari</h5>
+                    <p style={{ color: '#000000' }}><strong>Ruoli:</strong> Supporto durante i turni, assistenza agli utenti, attività di base</p>
+                    <p style={{ color: '#000000' }}><strong>Descrizione:</strong> I volontari supportano le attività del centro con permessi limitati, possono visualizzare informazioni base e contribuire alle attività sotto supervisione.</p>
                   </div>
                 </div>
               </div>
 
-              <div className="procedure-section">
-                <h4>🤝 Come Contribuire</h4>
-                <div className="contribute-grid">
-                  <div className="contribute-card">
-                    <h5>🖥️ Gestione e Manutenzione del Sito</h5>
-                    <p>Se vuoi aiutare nella gestione e manutenzione del sito, chiedi a un qualsiasi <span className="procedure-highlight">membro del direttivo</span>.</p>
+              <div className="function-section">
+                <h4 style={{ color: '#000000' }}>🤝 Come Contribuire</h4>
+                <div className="contribute-info">
+                  <div className="contribute-item">
+                    <strong style={{ color: '#000000' }}>🖥️ Gestione e Manutenzione del Sito:</strong>
+                    <p style={{ color: '#000000' }}>Se vuoi aiutare nella gestione e manutenzione del sito, chiedi a un qualsiasi <span className="procedure-highlight">membro del direttivo</span>.</p>
                   </div>
                   
-                  <div className="contribute-card">
-                    <h5>💻 Programmazione e Sviluppo</h5>
-                    <p>Se vuoi partecipare alla programmazione e manutenzione della piattaforma, chiedi a <span className="procedure-highlight">Fabiano Vaglio</span>.</p>
+                  <div className="contribute-item">
+                    <strong style={{ color: '#000000' }}>💻 Programmazione e Sviluppo:</strong>
+                    <p style={{ color: '#000000' }}>Se vuoi partecipare alla programmazione e manutenzione della piattaforma, chiedi a <span className="procedure-highlight">Fabiano Vaglio</span>.</p>
                   </div>
                 </div>
               </div>
