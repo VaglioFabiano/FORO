@@ -27,6 +27,7 @@ const GestioneTurno: React.FC = () => {
             onClick={() => setActiveTab('regole')}
           >
             Regole & Annotazioni
+            
           </button>
           <button 
             className={`tab-btn ${activeTab === 'eventi' ? 'active' : ''}`}
