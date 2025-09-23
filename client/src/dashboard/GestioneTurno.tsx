@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import '../style/gestioneTurno.css';
 
 const GestioneTurno: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'apertura' | 'chiusura' | 'regole' | 'eventi' | 'contatti'>('apertura');
+  const [activeTab, setActiveTab] = useState<'apertura' | 'chiusura' | 'sito' | 'contatti'>('apertura');
 
   return (
     <section className="gestione-turno-section">
@@ -23,16 +23,10 @@ const GestioneTurno: React.FC = () => {
             Chiusura
           </button>
           <button 
-            className={`tab-btn ${activeTab === 'regole' ? 'active' : ''}`}
-            onClick={() => setActiveTab('regole')}
+            className={`tab-btn ${activeTab === 'sito' ? 'active' : ''}`}
+            onClick={() => setActiveTab('sito')}
           >
-            Regole & Annotazioni
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'eventi' ? 'active' : ''}`}
-            onClick={() => setActiveTab('eventi')}
-          >
-            Eventi Straordinari
+            Sito
           </button>
           <button 
             className={`tab-btn ${activeTab === 'contatti' ? 'active' : ''}`}
@@ -80,8 +74,90 @@ const GestioneTurno: React.FC = () => {
               <div className="procedure-section">
                 <h4>💻 Info Point e gestione digitale</h4>
                 <p className="procedure-text">
-                 Null
+                  Null
                 </p>
+              </div>
+
+              <div className="procedure-section">
+                <h4>📋 Regole e Annotazioni</h4>
+                <div className="rules-grid">
+                  <div className="rule-card">
+                    <h5>👥 1. Supervisione Sala Studio</h5>
+                    <p>Imporre il rispetto del regolamento dell'aula studio.</p>
+                    <p><strong>💡 Tip:</strong> Se c'è confusione nell'area ristoro, chiudere entrambe le porte dell'aula studio.</p>
+                    <a href="https://drive.google.com/file/d/1VxcPxOHpDyBKgKV6XkK2btnhYmlh24RV/view" target="_blank" rel="noopener noreferrer">
+                      Regolamento
+                    </a>
+                  </div>
+                  
+                  <div className="rule-card">
+                    <h5>📊 2. Conteggio Presenze</h5>
+                    <p>Annotare il numero di persone presenti durante il turno nella sezione presenze della dashboard</p>
+                  </div>
+                  
+                  <div className="rule-card">
+                    <h5>📝 3. Note e Proposte</h5>
+                    <p>Annotare dubbi, necessità e proposte sul bloc-notes del desktop e/o gruppo WhatsApp.</p>
+                    <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
+                      Gruppo WhatsApp
+                    </a>
+                  </div>
+                  
+                  <div className="rule-card">
+                    <h5>🏪 4. Materiali Disponibili</h5>
+                    <ul>
+                      <li>Cialde caffè</li>
+                      <li>Assorbenti</li>
+                      <li>Coperte</li>
+                      <li>Tazze</li>
+                      <li>Materiali pulizia</li>
+                    </ul>
+                    <p><em>Tutto nell'armadio bianco vicino all'Info Point</em></p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="procedure-section">
+                <h4>⚡ Eventi Straordinari</h4>
+                
+                <div className="event-section">
+                  <h5>🏛️ Chiusura per Consiglio Comunale</h5>
+                  <p>Vedi file </p>
+                  <a href="https://docs.google.com/document/d/17eKmt33uPob5juVa0zIdS0tZjRy2wqU7ixtLrhVj31I/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
+                    "004 Sistemazione per Consigli Comunali"
+                  </a>
+                </div>
+
+                <div className="event-section">
+                  <h5>⚖️ Sanzioni Utenti</h5>
+                  <p>Vedi file </p>
+                  <a href="https://docs.google.com/document/d/1Uh2Fyq25f1I04rlaYIv9u9YpL-XR27eTGvpekRuNDyo/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
+                    "Verbale sanzioni 2023"
+                  </a>
+                </div>
+
+                <div className="event-section">
+                  <h5>📦 Corrieri e Addetti</h5>
+                  <div className="delivery-info">
+                    <div className="delivery-item">
+                      <strong>☕ Consegna Caffè:</strong>
+                      <p>Ritirare e mettere nell'armadio bianco. Avvisare su WhatsApp "Gatti Custodi".</p>
+                      <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
+                        Gruppo WhatsApp
+                      </a>
+                    </div>
+                    
+                    <div className="delivery-item">
+                      <strong>🥤 Macchinetta Cibo/Bevande:</strong>
+                      <p>Aprire cancello con chiavi portachiavi rosso (bacheca zona break). Richiudere lasciando aperto solo il cancelletto.</p>
+                    </div>
+                    
+                    <div className="delivery-item">
+                      <strong>💰 Macchinetta Ruba Soldi:</strong>
+                      <p>L'interessato contatta servizio clienti (numero verde o app Coffee cApp). Mettere post-it con data chiamata e somma. L'addetto lascerà i soldi al prossimo rifornimento.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -142,87 +218,59 @@ const GestioneTurno: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'regole' && (
+          {activeTab === 'sito' && (
             <div className="content-panel">
-              <h3>📋 Regole e Annotazioni</h3>
-              <div className="rules-grid">
-                <div className="rule-card">
-                  <h4>👥 1. Supervisione Sala Studio</h4>
-                  <p>Imporre il rispetto del regolamento dell'aula studio.</p>
-                  <p><strong>💡 Tip:</strong> Se c'è confusione nell'area ristoro, chiudere entrambe le porte dell'aula studio.</p>
-                  <a href="https://drive.google.com/file/d/1VxcPxOHpDyBKgKV6XkK2btnhYmlh24RV/view" target="_blank" rel="noopener noreferrer">
-                        Regolamento
-                  </a>
-                </div>
-                
-                <div className="rule-card">
-                  <h4>📊 2. Conteggio Presenze</h4>
-                  <p>Annotare il numero di persone presenti durante il turno nella sezione presenze della dashboard</p>
-                </div>
-                
-                <div className="rule-card">
-                  <h4>📝 3. Note e Proposte</h4>
-                  <p>Annotare dubbi, necessità e proposte sul bloc-notes del desktop e/o gruppo WhatsApp.</p>
-                  <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
-                        Gruppo WhatsApp
-                  </a>
-                </div>
-                
-                <div className="rule-card">
-                  <h4>🏪 4. Materiali Disponibili</h4>
-                  <ul>
-                    <li>Cialde caffè</li>
-                    <li>Assorbenti</li>
-                    <li>Coperte</li>
-                    <li>Tazze</li>
-                    <li>Materiali pulizia</li>
-                  </ul>
-                  <p><em>Tutto nell'armadio bianco vicino all'Info Point</em></p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'eventi' && (
-            <div className="content-panel">
-              <h3>⚡ Eventi Straordinari</h3>
+              <h3>⚙️ Funzionamento del Sito</h3>
               
-              <div className="event-section">
-                <h4>🏛️ Chiusura per Consiglio Comunale</h4>
-                <p>Vedi file </p>
-                <a href="https://docs.google.com/document/d/17eKmt33uPob5juVa0zIdS0tZjRy2wqU7ixtLrhVj31I/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
-                        "004 Sistemazione per Consigli Comunali"
-                </a>
-               
+              <div className="function-section">
+                <h4>🖥️ Dashboard e Strumenti</h4>
+                <p className="function-text">
+                  Nella dashboard abbiamo tutti gli strumenti più importanti che riguardano la <span className="procedure-highlight">gestione dei turni e la segnalazione delle presenze</span>. 
+                  Le notifiche per la gestione dei turni sono gestite da <strong>UFORObot</strong>, il nostro bot di Telegram.
+                </p>
               </div>
 
-              <div className="event-section">
-                <h4>⚖️ Sanzioni Utenti</h4>
-                <p>Vedi file </p>
-                <a href="https://docs.google.com/document/d/1Uh2Fyq25f1I04rlaYIv9u9YpL-XR27eTGvpekRuNDyo/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
-                        "Verbale sanzioni 2023"
-                </a>
+              <div className="function-section">
+                <h4>👥 Permessi e Ruoli</h4>
+                
+                <div className="roles-grid">
+                  <div className="role-card direttivo">
+                    <h5>🎯 Direttivo</h5>
+                    <p><strong>Ruoli:</strong> Gestione strategica dell'associazione, decisioni amministrative, coordinamento generale delle attività</p>
+                    <p><strong>Descrizione:</strong> I membri del direttivo hanno accesso completo alla piattaforma e sono responsabili delle decisioni principali riguardanti l'organizzazione e la gestione del centro studio.</p>
+                  </div>
+
+                  <div className="role-card organizzatori">
+                    <h5>📋 Soci Organizzatori</h5>
+                    <p><strong>Ruoli:</strong> Coordinamento turni, gestione eventi, supervisione attività quotidiane</p>
+                    <p><strong>Descrizione:</strong> I soci organizzatori supportano il direttivo nella gestione operativa, hanno permessi avanzati per modificare turni e coordinare le attività del centro.</p>
+                  </div>
+
+                  <div className="role-card operativi">
+                    <h5>🔧 Soci Operativi</h5>
+                    <p><strong>Ruoli:</strong> Gestione turni assegnati, segnalazione presenze, manutenzione ordinaria</p>
+                    <p><strong>Descrizione:</strong> I soci operativi gestiscono i turni quotidiani, hanno accesso alle funzioni base della dashboard per segnalare presenze e annotazioni.</p>
+                  </div>
+
+                  <div className="role-card volontari">
+                    <h5>🙋‍♀️ Volontari</h5>
+                    <p><strong>Ruoli:</strong> Supporto durante i turni, assistenza agli utenti, attività di base</p>
+                    <p><strong>Descrizione:</strong> I volontari supportano le attività del centro con permessi limitati, possono visualizzare informazioni base e contribuire alle attività sotto supervisione.</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="event-section">
-                <h4>📦 Corrieri e Addetti</h4>
-                <div className="delivery-info">
-                  <div className="delivery-item">
-                    <strong>☕ Consegna Caffè:</strong>
-                    <p>Ritirare e mettere nell'armadio bianco. Avvisare su WhatsApp "Gatti Custodi".</p>
-                    <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
-                        Gruppo WhatsApp
-                  </a>
+              <div className="function-section">
+                <h4>🤝 Come Contribuire</h4>
+                <div className="contribute-info">
+                  <div className="contribute-item">
+                    <strong>🖥️ Gestione e Manutenzione del Sito:</strong>
+                    <p>Se vuoi aiutare nella gestione e manutenzione del sito, chiedi a un qualsiasi <span className="procedure-highlight">membro del direttivo</span>.</p>
                   </div>
                   
-                  <div className="delivery-item">
-                    <strong>🥤 Macchinetta Cibo/Bevande:</strong>
-                    <p>Aprire cancello con chiavi portachiavi rosso (bacheca zona break). Richiudere lasciando aperto solo il cancelletto.</p>
-                  </div>
-                  
-                  <div className="delivery-item">
-                    <strong>💰 Macchinetta Ruba Soldi:</strong>
-                    <p>L'interessato contatta servizio clienti (numero verde o app Coffee cApp). Mettere post-it con data chiamata e somma. L'addetto lascerà i soldi al prossimo rifornimento.</p>
+                  <div className="contribute-item">
+                    <strong>💻 Programmazione e Sviluppo:</strong>
+                    <p>Se vuoi partecipare alla programmazione e manutenzione della piattaforma, chiedi a <span className="procedure-highlight">Fabiano Vaglio</span>.</p>
                   </div>
                 </div>
               </div>
@@ -238,7 +286,7 @@ const GestioneTurno: React.FC = () => {
                   <h4>💬 Questioni Ordinarie</h4>
                   <p><strong>WhatsApp:</strong> Gatti Custodi</p>
                   <a href="https://chat.whatsapp.com/EIDs7Vizwfs9uGetFRb0bH" target="_blank" rel="noopener noreferrer">
-                        Gruppo WhatsApp
+                    Gruppo WhatsApp
                   </a>
                   <ul>
                     <li>Cambio turno → tag Alessia D'Agostini, Sofia Zoppetto, Silvia Zoppetto</li>
@@ -250,7 +298,7 @@ const GestioneTurno: React.FC = () => {
                   <h4>📱 Gruppo Principale</h4>
                   <p><strong>Telegram:</strong> Cadetti Felini</p>
                   <a href="https://t.me/+6l5hLFdqOm4zZTBk" target="_blank" rel="noopener noreferrer">
-                        Gruppo Telegram
+                    Gruppo Telegram
                   </a>
                   <p>Convocazioni assemblee, novità importanti</p>
                 </div>
