@@ -693,28 +693,24 @@ async function sundayEndTask(timestamp) {
     });
     console.log(`📋 Salvati ${orariProssimaSalvati.rows.length} orari da fasce_orarie_prossima`);
 
-    // 2.2 Salva TUTTI i turni delle settimane 1 e 2
+    // 2.2 Salva TUTTI i turni delle settimane 1 e 2 (SENZA fascia_id)
     const turniSettimana1Salvati = await db.execute({
-      sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override,
-                   f.giorno, f.ora_inizio, f.ora_fine, f.note as fascia_note
-            FROM turni t
-            LEFT JOIN fasce_orarie_prossima f ON t.fascia_id = f.id
-            WHERE t.data >= ? AND t.data <= ?
-            ORDER BY t.data, t.turno_inizio`,
+      sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
+            FROM turni
+            WHERE data >= ? AND data <= ?
+            ORDER BY data, turno_inizio`,
       args: [settimana1[0], settimana1[6]]
     });
-    console.log(`📋 Salvati ${turniSettimana1Salvati.rows.length} turni della settimana 1 (con orari associati)`);
+    console.log(`📋 Salvati ${turniSettimana1Salvati.rows.length} turni della settimana 1`);
 
     const turniSettimana2Salvati = await db.execute({
-      sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override,
-                   f.giorno, f.ora_inizio, f.ora_fine, f.note as fascia_note
-            FROM turni t
-            LEFT JOIN fasce_orarie_prossima f ON t.fascia_id = f.id
-            WHERE t.data >= ? AND t.data <= ?
-            ORDER BY t.data, t.turno_inizio`,
+      sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
+            FROM turni
+            WHERE data >= ? AND data <= ?
+            ORDER BY data, turno_inizio`,
       args: [settimana2[0], settimana2[6]]
     });
-    console.log(`📋 Salvati ${turniSettimana2Salvati.rows.length} turni della settimana 2 (con orari associati)`);
+    console.log(`📋 Salvati ${turniSettimana2Salvati.rows.length} turni della settimana 2`);
 
     // ========================================
     // FASE 3: CANCELLAZIONE COMPLETA
@@ -753,22 +749,15 @@ async function sundayEndTask(timestamp) {
     // ========================================
     console.log(`\n🔄 === RICOSTRUZIONE ORARI CORRENTE ===`);
     
-    // 4.1 Ricrea fasce_orarie (ex-prossima → corrente)
-    const mappaOrariCorrente = new Map(); // chiave: "giorno|ora_inizio|ora_fine" → nuovo ID
     let orariCorrente = 0;
-    
     for (const orario of orariProssimaSalvati.rows) {
-      const insertResult = await db.execute({
+      await db.execute({
         sql: `INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
         args: [orario.giorno, orario.ora_inizio, orario.ora_fine, orario.note || null]
       });
       
-      const nuovoId = insertResult.lastInsertRowid;
-      const chiave = `${orario.giorno}|${orario.ora_inizio}|${orario.ora_fine}`;
-      mappaOrariCorrente.set(chiave, nuovoId);
-      
       orariCorrente++;
-      console.log(`  ✅ Creato orario corrente: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine} (ID: ${nuovoId})`);
+      console.log(`  ✅ Creato orario corrente: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine}`);
     }
     console.log(`📊 Totale orari corrente creati: ${orariCorrente}`);
 
@@ -779,25 +768,14 @@ async function sundayEndTask(timestamp) {
     
     let turniCorrente = 0;
     for (const turno of turniSettimana1Salvati.rows) {
-      // Trova il nuovo fascia_id dalla mappa
-      let nuovoFasciaId = null;
-      if (turno.giorno && turno.ora_inizio && turno.ora_fine) {
-        const chiave = `${turno.giorno}|${turno.ora_inizio}|${turno.ora_fine}`;
-        nuovoFasciaId = mappaOrariCorrente.get(chiave);
-      }
-      
-      if (nuovoFasciaId) {
-        await db.execute({
-          sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          args: [turno.data, turno.turno_inizio, turno.turno_fine, nuovoFasciaId, 
-                 turno.user_id, turno.note, turno.is_closed_override]
-        });
-        turniCorrente++;
-        console.log(`  ✅ Ricreato turno: ${turno.data} ${turno.turno_inizio}-${turno.turno_fine} → fascia_id: ${nuovoFasciaId}`);
-      } else {
-        console.warn(`  ⚠️ Turno senza fascia valida saltato: ${turno.data} ${turno.turno_inizio}-${turno.turno_fine}`);
-      }
+      await db.execute({
+        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
+              VALUES (?, ?, ?, NULL, ?, ?, ?)`,
+        args: [turno.data, turno.turno_inizio, turno.turno_fine, 
+               turno.user_id, turno.note, turno.is_closed_override]
+      });
+      turniCorrente++;
+      console.log(`  ✅ Ricreato turno: ${turno.data} ${turno.turno_inizio}-${turno.turno_fine}`);
     }
     console.log(`📊 Totale turni settimana corrente ricreati: ${turniCorrente}`);
 
@@ -815,21 +793,15 @@ async function sundayEndTask(timestamp) {
       // Sabato e Domenica: chiuso
     ];
 
-    const mappaOrariProssima = new Map(); // chiave: "giorno|ora_inizio|ora_fine" → nuovo ID
     let orariProssima = 0;
-    
     for (const orario of orariStandard) {
-      const insertResult = await db.execute({
+      await db.execute({
         sql: `INSERT INTO fasce_orarie_prossima (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
         args: [orario.giorno, orario.ora_inizio, orario.ora_fine, 'Orario standard inizializzato automaticamente']
       });
       
-      const nuovoId = insertResult.lastInsertRowid;
-      const chiave = `${orario.giorno}|${orario.ora_inizio}|${orario.ora_fine}`;
-      mappaOrariProssima.set(chiave, nuovoId);
-      
       orariProssima++;
-      console.log(`  ✅ Creato orario prossima: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine} (ID: ${nuovoId})`);
+      console.log(`  ✅ Creato orario prossima: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine}`);
     }
     console.log(`📊 Totale orari prossima creati: ${orariProssima}`);
 
@@ -839,34 +811,17 @@ async function sundayEndTask(timestamp) {
     console.log(`\n🔄 === RICOSTRUZIONE TURNI SETTIMANA PROSSIMA ===`);
     
     let turniProssima = 0;
-    let turniProssimaSaltati = 0;
-    
     for (const turno of turniSettimana2Salvati.rows) {
-      // Cerca il nuovo fascia_id nella mappa degli orari prossima
-      let nuovoFasciaId = null;
-      if (turno.giorno && turno.ora_inizio && turno.ora_fine) {
-        const chiave = `${turno.giorno}|${turno.ora_inizio}|${orario.ora_fine}`;
-        nuovoFasciaId = mappaOrariProssima.get(chiave);
-      }
-      
-      if (nuovoFasciaId) {
-        await db.execute({
-          sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          args: [turno.data, turno.turno_inizio, turno.turno_fine, nuovoFasciaId, 
-                 turno.user_id, turno.note, turno.is_closed_override]
-        });
-        turniProssima++;
-        console.log(`  ✅ Ricreato turno prossima: ${turno.data} ${turno.turno_inizio}-${turno.turno_fine} → fascia_id: ${nuovoFasciaId}`);
-      } else {
-        turniProssimaSaltati++;
-        console.warn(`  ⚠️ Turno prossima senza corrispondenza negli orari standard (saltato): ${turno.data} ${turno.turno_inizio}-${turno.turno_fine}`);
-      }
+      await db.execute({
+        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
+              VALUES (?, ?, ?, NULL, ?, ?, ?)`,
+        args: [turno.data, turno.turno_inizio, turno.turno_fine, 
+               turno.user_id, turno.note, turno.is_closed_override]
+      });
+      turniProssima++;
+      console.log(`  ✅ Ricreato turno prossima: ${turno.data} ${turno.turno_inizio}-${turno.turno_fine}`);
     }
     console.log(`📊 Totale turni settimana prossima ricreati: ${turniProssima}`);
-    if (turniProssimaSaltati > 0) {
-      console.log(`⚠️ Turni prossima saltati (orario non standard): ${turniProssimaSaltati}`);
-    }
 
     // ========================================
     // FASE 8: VERIFICA FINALE
@@ -920,7 +875,7 @@ async function sundayEndTask(timestamp) {
 📋 Orari corrente: <b>${orariCorrente}</b> fasce create
 🔗 Turni corrente: <b>${turniCorrente}</b> turni ricreati
 🆕 Orari prossima: <b>${orariProssima}</b> fasce standard create
-📅 Turni prossima: <b>${turniProssima}</b> turni ricreati${turniProssimaSaltati > 0 ? `\n⚠️ <b>${turniProssimaSaltati}</b> turni prossima saltati (orario non standard)` : ''}
+📅 Turni prossima: <b>${turniProssima}</b> turni ricreati
 
 🔍 <b>Verifica finale:</b>
 • Settimana Corrente: <b>${verificaTurniCorrente.rows[0].count}</b> turni
