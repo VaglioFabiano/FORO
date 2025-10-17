@@ -199,12 +199,17 @@ const GestioneTurno: React.FC = () => {
                 <a href="https://docs.google.com/document/d/17eKmt33uPob5juVa0zIdS0tZjRy2wqU7ixtLrhVj31I/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
                         "004 Sistemazione per Consigli Comunali"
                 </a>
-               
+              </div>
+
+              <div className="event-section">
+                <h4>🏛️ Chiusura per Commissioni Comunali</h4>
+                <p>Solitamente in questo caso si tratta di solo una chiusura ordinaria, solo si chiuderà prima.</p>
               </div>
 
               <div className="event-section">
                 <h4>⚖️ Sanzioni Utenti</h4>
                 <p>Vedi file </p>
+                <p>Le sanzioni utenti vanno concordate e discusse in assemblea soci o in caso di assoluta emergenza gestite dal Direttivo</p>
                 <a href="https://docs.google.com/document/d/1Uh2Fyq25f1I04rlaYIv9u9YpL-XR27eTGvpekRuNDyo/edit?tab=t.0" target="_blank" rel="noopener noreferrer">
                         "Verbale sanzioni 2023"
                 </a>
@@ -247,8 +252,8 @@ const GestioneTurno: React.FC = () => {
                         Gruppo WhatsApp
                   </a>
                   <ul>
-                    <li>Cambio turno → tag Alessia D'Agostini, Sofia Zoppetto, Silvia Zoppetto</li>
-                    <li>Apertura aggiuntiva → tag Alessandro Passarella, Federico Moscato, Irene D'Agostini</li>
+                    <li>Cambio turno → tag Alessia D'Agostini</li>
+                    <li>Apertura aggiuntiva → tag  Irene D'Agostini</li>
                   </ul>
                 </div>
 
@@ -269,10 +274,10 @@ const GestioneTurno: React.FC = () => {
                     <span>Vice-Presidentə:<br></br> Michela Goss 377 545 2977</span>
                     <span>Vice-Presidentə:<br></br> Fabiano Vaglio 345 088 1086</span>
                     <span>Segretariə:<br></br> Alessia D'Agostini 334 324 5369</span>
-                    <span>Membrə direttivo:<br></br> Virginia Brocchini 392 349 8900</span>
                     <span>Membrə direttivo:<br></br> Federico Moscato 345 926 3569</span>
-                    <span>Membrə direttivo:<br></br> Irene D'Agostini 331 765 7509</span>
                     <span>Membrə direttivo:<br></br> Francesco Rosso 346 491 6937</span>
+                    <span>Membrə direttivo:<br></br> Irene D'Agostini 331 765 7509</span>
+                    <span>Membrə direttivo:<br></br> Virginia Brocchini 392 349 8900</span>
                   </div>
                 </div>
 
@@ -304,26 +309,26 @@ const GestioneTurno: React.FC = () => {
                 <div className="rules-grid">
                   <div className="rule-card">
                     <h4>🎯 Direttivo</h4>
-                    <p><strong>Ruoli:</strong> Gestione strategica dell'associazione, decisioni amministrative, coordinamento generale delle attività</p>
-                    <p><strong>Descrizione:</strong> I membri del direttivo hanno accesso completo alla piattaforma e sono responsabili delle decisioni principali riguardanti l'organizzazione e la gestione del centro studio.</p>
+                    <p><strong>Ruoli:</strong> Gestione burocratica dell'associazione, decisioni amministrative, responsabili del coordinamento generale delle attività</p>
+                    <p><strong>Descrizione:</strong> I membri del direttivo hanno accesso completo alla piattaforma, possono creare nuovi Utenti e darne i relativi privilegi</p>
                   </div>
 
                   <div className="rule-card">
                     <h4>📋 Soci Organizzatori</h4>
-                    <p><strong>Ruoli:</strong> Coordinamento turni, gestione eventi, supervisione attività quotidiane</p>
-                    <p><strong>Descrizione:</strong> I soci organizzatori supportano il direttivo nella gestione operativa, hanno permessi avanzati per modificare turni e coordinare le attività del centro.</p>
+                    <p><strong>Ruoli:</strong> Coordinamento eventi, gestione logistica di orari e turni, supporto al direttivo</p>
+                    <p><strong>Descrizione:</strong> I soci organizzatori supportano il direttivo nella gestione operativa, hanno permessi avanzati per modificare turni e gli orari oltre che a creare gli eventi.</p>
                   </div>
 
                   <div className="rule-card">
-                    <h4>🔧 Soci Operativi</h4>
-                    <p><strong>Ruoli:</strong> Gestione turni assegnati, segnalazione presenze, manutenzione ordinaria</p>
+                    <h4>🔧 Soci </h4>
+                    <p><strong>Ruoli:</strong> Gestione turni assegnati, manutenzione ordinaria</p>
                     <p><strong>Descrizione:</strong> I soci operativi gestiscono i turni quotidiani, hanno accesso alle funzioni base della dashboard per segnalare presenze e annotazioni.</p>
                   </div>
 
                   <div className="rule-card">
                     <h4>🙋‍♀️ Volontari</h4>
-                    <p><strong>Ruoli:</strong> Supporto durante i turni, assistenza agli utenti, attività di base</p>
-                    <p><strong>Descrizione:</strong> I volontari supportano le attività del centro con permessi limitati, possono visualizzare informazioni base e contribuire alle attività sotto supervisione.</p>
+                    <p><strong>Ruoli:</strong> Supporto durante i turni e accesso alla funzionalità di gestione presenze, come per qualsiasi livello sopra</p>
+                    <p><strong>Descrizione:</strong> I volontari supportano le attività del centro con permessi limitati, possono visualizzare informazioni base e contribuire alle attività.</p>
                   </div>
                 </div>
               </div>
@@ -333,12 +338,12 @@ const GestioneTurno: React.FC = () => {
                 <div className="rules-grid">
                   <div className="rule-card">
                     <h4>🖥️ Gestione e Manutenzione del Sito</h4>
-                    <p>Se vuoi aiutare nella gestione e manutenzione del sito, chiedi a un qualsiasi <span className="procedure-highlight">membro del direttivo</span>.</p>
+                    <p>Se vuoi aiutare nella gestione e manutenzione del sitosalendo di permessi, chiedi a un qualsiasi <span className="procedure-highlight">membro del direttivo</span>.</p>
                   </div>
                   
                   <div className="rule-card">
                     <h4>💻 Programmazione e Sviluppo</h4>
-                    <p>Se vuoi partecipare alla programmazione e manutenzione della piattaforma, chiedi a <span className="procedure-highlight">Fabiano Vaglio</span>.</p>
+                    <p>Se vuoi partecipare alla programmazione, sviluppo o manutenzione della piattaforma, chiedi a <span className="procedure-highlight">Fabiano Vaglio</span>.</p>
                   </div>
                 </div>
               </div>
