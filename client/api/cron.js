@@ -797,7 +797,7 @@ async function sundayEndTask(timestamp) {
     for (const orario of orariStandard) {
       await db.execute({
         sql: `INSERT INTO fasce_orarie_prossima (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
-        args: [orario.giorno, orario.ora_inizio, orario.ora_fine, 'Orario standard inizializzato automaticamente']
+        args: [orario.giorno, orario.ora_inizio, orario.ora_fine, '']
       });
       
       orariProssima++;
