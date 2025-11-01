@@ -10,7 +10,7 @@ import Login from "./components/Login";
 import SegnalazioniSection from "./components/Segnalazioni";
 import AssociatiSection from "./components/Associati";
 import HomeDash from "./dashboard/homedash";
-import BannerCookie from "./components/banner_cookie"; // Importazione corretta
+import BannerCookie from "./components/banner_cookie";
 // import MappeSection from './components/mappe';
 // import PrenotaEventoPage from './components/PrenotaEventoPage';
 
@@ -28,39 +28,27 @@ function App() {
     page: "home",
   });
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
-  // const [shouldShowEventi, setShouldShowEventi] = useState(true);
   const [, /*currentUser,*/ setCurrentUser] = useState<{
     id: number;
     level: number;
   } | null>(null);
+
+  // ... (tutte le funzioni parseUrl, checkUserPermissions, ecc. rimangono invariate) ...
 
   // Funzione per parsare l'URL e determinare la pagina corrente
   const parseUrl = (): RouteState => {
     const path = window.location.pathname;
     const hash = window.location.hash;
 
-    // Se c'è un hash, naviga alla sezione corrispondente nella home
     if (hash && path === "/") {
       return { page: "home" };
     }
-
-    // Controlla se è una pagina di prenotazione evento
-    // const prenotaEventoMatch = path.match(/^\/prenota-evento\/(\d+)$/);
-    // if (prenotaEventoMatch) {
-    // 	const eventoId = parseInt(prenotaEventoMatch[1], 10);
-    // 	return { page: 'prenota-evento', eventoId };
-    // }
-
-    // Controlla altre pagine
     if (path === "/login") {
       return { page: "login" };
     }
-
     if (path === "/dashboard") {
       return { page: "dashboard" };
     }
-
-    // Default: home
     return { page: "home" };
   };
 
@@ -94,7 +82,6 @@ function App() {
         : 24 * 60 * 60 * 1000;
 
       if (now - loginTimestamp < expirationTime) {
-        // Se l'utente è loggato e prova ad andare alla dashboard, resta lì
         const currentUrl = parseUrl();
         if (currentUrl.page === "dashboard") {
           setCurrentRoute({ page: "dashboard" });
@@ -104,11 +91,7 @@ function App() {
         localStorage.clear();
       }
     }
-
-    // Imposta la rotta basata sull'URL corrente
     setCurrentRoute(parseUrl());
-
-    // Controlla i permessi utente
     checkUserPermissions();
   }, []);
 
@@ -117,7 +100,6 @@ function App() {
     const handlePopState = () => {
       setCurrentRoute(parseUrl());
     };
-
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
@@ -125,8 +107,6 @@ function App() {
   // Funzione per navigare alle diverse pagine
   const navigateTo = (route: RouteState) => {
     setCurrentRoute(route);
-
-    // Aggiorna l'URL del browser
     let newUrl = "/";
     switch (route.page) {
       case "login":
@@ -135,33 +115,24 @@ function App() {
       case "dashboard":
         newUrl = "/dashboard";
         break;
-      // case 'prenota-evento':
-      // 	newUrl = `/prenota-evento/${route.eventoId}`;
-      // 	break;
       case "home":
       default:
         newUrl = "/";
         break;
     }
-
-    // Aggiorna l'URL senza ricaricare la pagina
     window.history.pushState(null, "", newUrl);
   };
 
-  const handleShowLogin = () => {
-    navigateTo({ page: "login" });
-  };
+  const handleShowLogin = () => navigateTo({ page: "login" });
 
   const handleBackToHome = () => {
     navigateTo({ page: "home" });
-    // Ricontrolla i permessi utente quando si torna alla home
     checkUserPermissions();
   };
 
   const handleLoginSuccess = () => {
     navigateTo({ page: "dashboard" });
     setForceNavbarUpdate((prev) => !prev);
-    // Ricontrolla i permessi utente dopo il login
     checkUserPermissions();
   };
 
@@ -169,29 +140,21 @@ function App() {
     localStorage.clear();
     navigateTo({ page: "home" });
     setForceNavbarUpdate((prev) => !prev);
-    // Ricontrolla i permessi utente dopo il logout
     checkUserPermissions();
   };
 
-  const handleGoToDashboard = () => {
-    navigateTo({ page: "dashboard" });
-  };
+  const handleGoToDashboard = () => navigateTo({ page: "dashboard" });
 
-  // Rendi le funzioni di navigazione disponibili globalmente per i componenti
   useEffect(() => {
-    // (window as any).navigateToPrenotaEvento = handlePrenotaEvento;
     (window as any).navigateToHome = () => navigateTo({ page: "home" });
-    // (window as any).toggleEventiVisibility = () => setShouldShowEventi(prev => !prev);
-
     return () => {
-      // delete (window as any).navigateToPrenotaEvento;
       delete (window as any).navigateToHome;
-      // delete (window as any).toggleEventiVisibility;
     };
   }, []);
 
   return (
     <div className="min-h-screen">
+      {/* Navbar: è fuori dal <main> e si estende per tutta la larghezza */}
       <Navbar
         onLoginClick={handleShowLogin}
         onBackToHome={handleBackToHome}
@@ -202,45 +165,58 @@ function App() {
         onGoToDashboard={handleGoToDashboard}
       />
 
-      {currentRoute.page === "dashboard" ? (
-        <HomeDash onLogout={handleLogout} onBackToHome={handleBackToHome} />
-      ) : currentRoute.page === "login" ? (
-        <Login onLoginSuccess={handleLoginSuccess} />
-      ) : (
-        // Renderizza la Home Page
-        <>
-          <div id="header">
-            <Header />
-          </div>
-          <div id="orari">
-            <OrariSection />
-          </div>
-          {/* {canSeeEventi() && (
-						<div id="eventi">
-							<EventiSection />
-						</div>
-					)} */}
-          <div id="social">
-            <SocialSection />
-          </div>
-          <div id="statuto">
-            <StatutoSection />
-          </div>
-          <div id="associati">
-            <AssociatiSection />
-          </div>
-          <div id="segnalazioni">
-            <SegnalazioniSection />
-          </div>
-          <div id="footer">
-            <Footer />
-          </div>
-          {/*
-					<div id="mappe">
-						<MappeSection />
-					</div>*/}
+      {/* MODIFICA CHIAVE: 
+        Spostiamo la logica di 'max-width' e 'margin: auto' qui dentro.
+      */}
 
-          {/* Banner Cookie - Appare solo nella home e si sovrappone a tutto */}
+      {currentRoute.page === "dashboard" ? (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <HomeDash onLogout={handleLogout} onBackToHome={handleBackToHome} />
+        </main>
+      ) : currentRoute.page === "login" ? (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Login onLoginSuccess={handleLoginSuccess} />
+        </main>
+      ) : (
+        // Pagina Home
+        <>
+          {/* Il contenuto della home è avvolto dal main */}
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div id="header">
+              <Header />
+            </div>
+            <div id="orari">
+              <OrariSection />
+            </div>
+            {/* {canSeeEventi() && (
+              <div id="eventi">
+                <EventiSection />
+              </div>
+            )} */}
+            <div id="social">
+              <SocialSection />
+            </div>
+            <div id="statuto">
+              <StatutoSection />
+            </div>
+            <div id="associati">
+              <AssociatiSection />
+            </div>
+            <div id="segnalazioni">
+              <SegnalazioniSection />
+            </div>
+            <div id="footer">
+              <Footer />
+            </div>
+            {/*
+            <div id="mappe">
+              <MappeSection />
+            </div>*/}
+          </main>
+
+          {/* Banner Cookie: È FUORI dal <main> e si posizionerà correttamente 
+            in 'fixed' su tutta la larghezza della finestra.
+          */}
           <BannerCookie />
         </>
       )}
