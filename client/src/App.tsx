@@ -213,13 +213,10 @@ function App() {
               <MappeSection />
             </div>*/}
           </main>
-
-          {/* Banner Cookie: È FUORI dal <main> e si posizionerà correttamente 
-            in 'fixed' su tutta la larghezza della finestra.
-          */}
-          <BannerCookie />
         </>
       )}
+
+      <BannerCookie />
     </div>
   );
 }
