@@ -7,17 +7,22 @@ const BannerCookie = () => {
   useEffect(() => {
     // Controlla se l'utente ha già accettato o rifiutato i cookie
     const cookieConsent = localStorage.getItem("cookieConsent");
+    // Mostra il banner solo se il consenso NON è stato dato
     if (!cookieConsent) {
       setShowBanner(true);
     }
   }, []);
 
   const handleAccept = () => {
+    // Imposta il consenso e nasconde il banner
     localStorage.setItem("cookieConsent", "accepted");
     setShowBanner(false);
   };
 
   const handleReject = () => {
+    // Imposta il rifiuto e nasconde il banner
+    // NOTA: Se si utilizzano solo cookie tecnici, il rifiuto potrebbe non impedire
+    // l'uso di localStorage (che non è un cookie), ma è buona prassi offrirlo.
     localStorage.setItem("cookieConsent", "rejected");
     setShowBanner(false);
   };
@@ -30,9 +35,11 @@ const BannerCookie = () => {
 
   return (
     <div
+      // Fissa il banner in basso e lo mette sopra tutto (z-50)
       className="fixed bottom-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        backgroundColor: "hsla(194, 77%, 15%, 0.85)",
+        // Colore di sfondo scuro con trasparenza (0.85 alpha)
+        backgroundColor: "rgba(31, 71, 99, 0.85)", // Corrisponde a hsla(194, 77%, 15%, 0.85)
         backdropFilter: "blur(10px)",
         boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.3)",
       }}
@@ -55,10 +62,10 @@ const BannerCookie = () => {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto flex-shrink-0">
               <button
                 onClick={handleAccept}
-                className="px-6 py-2.5 bg-white text-[hsl(194,77%,15%)] rounded-lg font-semibold hover:bg-white/90 transition-colors whitespace-nowrap shadow-md"
+                className="px-6 py-2.5 bg-white text-blue-900 rounded-lg font-semibold hover:bg-white/90 transition-colors whitespace-nowrap shadow-md"
               >
                 Accetta
               </button>
@@ -88,7 +95,7 @@ const BannerCookie = () => {
                 className="text-white hover:text-white/80 text-3xl leading-none font-light"
                 aria-label="Chiudi dettagli"
               >
-                ×
+                &times;
               </button>
             </div>
 
@@ -184,7 +191,7 @@ const BannerCookie = () => {
             <div className="flex flex-col sm:flex-row gap-2 mt-6 pt-4 border-t border-white/30">
               <button
                 onClick={handleAccept}
-                className="px-6 py-2.5 bg-white text-[hsl(194,77%,15%)] rounded-lg font-semibold hover:bg-white/90 transition-colors shadow-md"
+                className="px-6 py-2.5 bg-white text-blue-900 rounded-lg font-semibold hover:bg-white/90 transition-colors shadow-md"
               >
                 Accetta
               </button>

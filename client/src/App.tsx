@@ -10,7 +10,7 @@ import Login from "./components/Login";
 import SegnalazioniSection from "./components/Segnalazioni";
 import AssociatiSection from "./components/Associati";
 import HomeDash from "./dashboard/homedash";
-import BannerCookie from "./components/banner_cookie";
+import BannerCookie from "./components/banner_cookie"; // Importazione corretta
 // import MappeSection from './components/mappe';
 // import PrenotaEventoPage from './components/PrenotaEventoPage';
 
@@ -47,8 +47,8 @@ function App() {
     // Controlla se è una pagina di prenotazione evento
     // const prenotaEventoMatch = path.match(/^\/prenota-evento\/(\d+)$/);
     // if (prenotaEventoMatch) {
-    //   const eventoId = parseInt(prenotaEventoMatch[1], 10);
-    //   return { page: 'prenota-evento', eventoId };
+    // 	const eventoId = parseInt(prenotaEventoMatch[1], 10);
+    // 	return { page: 'prenota-evento', eventoId };
     // }
 
     // Controlla altre pagine
@@ -79,24 +79,6 @@ function App() {
       setCurrentUser(null);
     }
   };
-
-  // Controlla se l'utente può vedere la sezione eventi
-  // const canSeeEventi = () => {
-  //   // Se la sezione è visibile, tutti la vedono
-  //   if (shouldShowEventi) return true;
-  //
-  //   // Se la sezione è nascosta, solo gli admin la vedono
-  //   const canSee = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
-  //
-  //   // Debug log
-  //   console.log('canSeeEventi check:', {
-  //     shouldShowEventi,
-  //     currentUser,
-  //     canSee: canSee || false
-  //   });
-  //
-  //   return canSee || false;
-  // };
 
   // Controlla lo stato di login all'avvio e imposta la rotta iniziale
   useEffect(() => {
@@ -154,8 +136,8 @@ function App() {
         newUrl = "/dashboard";
         break;
       // case 'prenota-evento':
-      //   newUrl = `/prenota-evento/${route.eventoId}`;
-      //   break;
+      // 	newUrl = `/prenota-evento/${route.eventoId}`;
+      // 	break;
       case "home":
       default:
         newUrl = "/";
@@ -195,11 +177,6 @@ function App() {
     navigateTo({ page: "dashboard" });
   };
 
-  // Funzione per navigare alla pagina di prenotazione (da usare nei componenti)
-  // const handlePrenotaEvento = (eventoId: number) => {
-  //   navigateTo({ page: 'prenota-evento', eventoId });
-  // };
-
   // Rendi le funzioni di navigazione disponibili globalmente per i componenti
   useEffect(() => {
     // (window as any).navigateToPrenotaEvento = handlePrenotaEvento;
@@ -230,8 +207,7 @@ function App() {
       ) : currentRoute.page === "login" ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        // ) : currentRoute.page === 'prenota-evento' ? (
-        //   <PrenotaEventoPage eventoId={currentRoute.eventoId} />
+        // Renderizza la Home Page
         <>
           <div id="header">
             <Header />
@@ -240,10 +216,10 @@ function App() {
             <OrariSection />
           </div>
           {/* {canSeeEventi() && (
-            <div id="eventi">
-              <EventiSection />
-            </div>
-          )} */}
+						<div id="eventi">
+							<EventiSection />
+						</div>
+					)} */}
           <div id="social">
             <SocialSection />
           </div>
@@ -260,11 +236,11 @@ function App() {
             <Footer />
           </div>
           {/*
-          <div id="mappe">
-            <MappeSection />
-          </div>*/}
+					<div id="mappe">
+						<MappeSection />
+					</div>*/}
 
-          {/* Banner Cookie - Appare solo nella home */}
+          {/* Banner Cookie - Appare solo nella home e si sovrappone a tutto */}
           <BannerCookie />
         </>
       )}
