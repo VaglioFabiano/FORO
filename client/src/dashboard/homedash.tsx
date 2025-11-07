@@ -86,7 +86,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     {
       id: "aiuto-abbinamenti",
       title: "Aiuto Heidis",
-      description: "Strumento per abbinare turni/volontari",
+      description: "Strumento per abbinare i colori per i daltonici",
       icon: "🎨",
       component: AiutoAbbinamenti,
       minLevel: 2,
