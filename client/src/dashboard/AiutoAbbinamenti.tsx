@@ -17,7 +17,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: "8px",
     marginTop: "1rem",
     border: "1px solid #ccc",
-    transform: "scaleX(-1)", // Effetto specchio per selfie-cam (rimetti "environment" se usi la posteriore)
+    // transform: "scaleX(-1)", // <-- RIMOSSO! Non serve per la camera posteriore
   },
   buttonGroup: {
     marginTop: "1rem",
@@ -33,21 +33,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     margin: "0.5rem",
   },
   clearButton: {
-    backgroundColor: "#dc3545", // Un rosso per "cancella"
+    backgroundColor: "#dc3545",
   },
   error: {
     color: "red",
     marginTop: "1rem",
   },
-  // Contenitore per la LISTA di colori
   paletteContainer: {
     marginTop: "1.5rem",
     display: "flex",
-    flexWrap: "wrap", // Va a capo se i colori sono troppi
+    flexWrap: "wrap",
     justifyContent: "center",
     gap: "1rem",
   },
-  // Contenitore per il SINGOLO colore campionato
   colorSampleItem: {
     display: "flex",
     flexDirection: "column",
@@ -85,7 +83,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 };
 
-// Interfaccia per il colore, ora con un ID unico
 interface SampledColor {
   id: string;
   r: number;
@@ -93,7 +90,6 @@ interface SampledColor {
   b: number;
 }
 
-// Funzione helper per convertire RGB in HEX
 const rgbToHex = (r: number, g: number, b: number) => {
   return (
     "#" +
@@ -104,8 +100,6 @@ const rgbToHex = (r: number, g: number, b: number) => {
 const AiutoAbbinamenti: React.FC = () => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // STATO MODIFICATO: da un singolo colore a una LISTA (array) di colori
   const [sampledColorsList, setSampledColorsList] = useState<SampledColor[]>(
     []
   );
@@ -113,12 +107,9 @@ const AiutoAbbinamenti: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  /**
-   * Chiede l'accesso alla fotocamera
-   */
   const startCamera = useCallback(async () => {
     setError(null);
-    setSampledColorsList([]); // Resetta la LISTA all'avvio
+    setSampledColorsList([]);
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error(
@@ -127,8 +118,10 @@ const AiutoAbbinamenti: React.FC = () => {
       }
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        // Rimesso "user" (selfie) per l'effetto specchio, cambia a "environment" per la posteriore
-        video: { facingMode: "user" },
+        // === MODIFICA CHIAVE ===
+        // "environment" = fotocamera posteriore (su PC fa fallback alla webcam)
+        video: { facingMode: "environment" },
+        // =======================
         audio: false,
       });
 
@@ -158,9 +151,6 @@ const AiutoAbbinamenti: React.FC = () => {
     }
   }, []);
 
-  /**
-   * Ferma lo stream video
-   */
   const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -168,14 +158,9 @@ const AiutoAbbinamenti: React.FC = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-      // Non resettiamo la lista quando si chiude la camera,
-      // l'utente potrebbe volerla tenere. Resettiamo solo all'avvio.
     }
   }, [stream]);
 
-  /**
-   * Campiona un colore e lo AGGIUNGE alla lista
-   */
   const sampleColor = () => {
     if (!videoRef.current || !canvasRef.current || !stream) {
       setError("Videocamera non attiva o elementi non pronti.");
@@ -195,28 +180,22 @@ const AiutoAbbinamenti: React.FC = () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      // Disegna il frame
-      // NB: Se usi la selfie-cam con l'effetto specchio (scaleX(-1)),
-      // devi "flippare" anche il canvas per campionare il punto giusto!
-      if (styles.videoFeed.transform === "scaleX(-1)") {
-        context.translate(canvas.width, 0);
-        context.scale(-1, 1);
-      }
+      // === MODIFICA CHIAVE ===
+      // Logica per "flippare" il canvas RIMOSSA
+      // =======================
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Campiona il pixel al centro
       const centerX = Math.floor(canvas.width / 2);
       const centerY = Math.floor(canvas.height / 2);
       const imageData = context.getImageData(centerX, centerY, 1, 1).data;
 
       const newColor: SampledColor = {
-        id: new Date().toISOString(), // Un ID unico basato sul timestamp
+        id: new Date().toISOString(),
         r: imageData[0],
         g: imageData[1],
         b: imageData[2],
       };
 
-      // Aggiunge il nuovo colore alla lista esistente
       setSampledColorsList((prevList) => [...prevList, newColor]);
       setError(null);
     } else {
@@ -226,23 +205,16 @@ const AiutoAbbinamenti: React.FC = () => {
     }
   };
 
-  /**
-   * Rimuove un colore dalla lista usando il suo ID
-   */
   const removeColor = (idToRemove: string) => {
     setSampledColorsList((prevList) =>
       prevList.filter((color) => color.id !== idToRemove)
     );
   };
 
-  /**
-   * Svuota l'intera lista di colori
-   */
   const clearAllColors = () => {
     setSampledColorsList([]);
   };
 
-  // Hook per la pulizia
   useEffect(() => {
     return () => {
       stopCamera();
@@ -281,13 +253,11 @@ const AiutoAbbinamenti: React.FC = () => {
       />
       <canvas ref={canvasRef} style={styles.canvas} />
 
-      {/* Sezione per mostrare la PALETTE di colori */}
       {sampledColorsList.length > 0 && (
         <>
           <hr style={{ margin: "2rem 0" }} />
           <h3>Palette Colori Campionati</h3>
           <div style={styles.paletteContainer}>
-            {/* Iteriamo sulla lista e mostriamo ogni colore */}
             {sampledColorsList.map((color) => (
               <div key={color.id} style={styles.colorSampleItem}>
                 <div
@@ -300,7 +270,6 @@ const AiutoAbbinamenti: React.FC = () => {
                   RGB: ({color.r}, {color.g}, {color.b})
                 </small>
                 <small>HEX: {rgbToHex(color.r, color.g, color.b)}</small>
-                {/* Bottone per rimuovere il SINGOLO colore */}
                 <button
                   style={styles.removeButton}
                   onClick={() => removeColor(color.id)}
@@ -311,7 +280,6 @@ const AiutoAbbinamenti: React.FC = () => {
               </div>
             ))}
           </div>
-          {/* Bottone per svuotare l'intera lista */}
           <button
             style={{
               ...styles.button,
