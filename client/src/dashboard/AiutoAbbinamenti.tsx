@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
-// --- STILI AGGIUNTI PER LA CHAT ---
 const styles: { [key: string]: React.CSSProperties } = {
   // Stili esistenti
   container: {
@@ -82,13 +81,31 @@ const styles: { [key: string]: React.CSSProperties } = {
   canvas: {
     display: "none",
   },
-
-  // --- NUOVI STILI PER LA CHAT ---
   chatContainer: {
     borderTop: "2px solid #ccc",
     marginTop: "2rem",
     paddingTop: "1rem",
   },
+
+  // --- NUOVI STILI QUI ---
+  chatHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "0.5rem",
+  },
+  clearChatButton: {
+    backgroundColor: "#ffc107", // Un giallo "warning"
+    color: "#212529",
+    padding: "5px 10px",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "bold",
+  },
+  // --- FINE NUOVI STILI ---
+
   chatHistory: {
     height: "300px",
     overflowY: "auto",
@@ -104,7 +121,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: "0.5rem 0.75rem",
     borderRadius: "8px",
     lineHeight: "1.5",
-    whiteSpace: "pre-wrap", // Mantiene la formattazione
+    whiteSpace: "pre-wrap",
   },
   userMessage: {
     backgroundColor: "#e1f5fe",
@@ -127,7 +144,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: "1px solid #ccc",
   },
   chatSubmit: {
-    backgroundColor: "#28a745", // Verde
+    backgroundColor: "#28a745",
     color: "white",
     padding: "12px 20px",
     border: "none",
@@ -137,7 +154,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
 };
 
-// Interfacce per i colori e i messaggi
 interface SampledColor {
   id: string;
   r: number;
@@ -150,7 +166,6 @@ interface ChatMessage {
   content: string;
 }
 
-// Funzione helper (già presente, ma la lascio per completezza)
 const rgbToHex = (r: number, g: number, b: number) => {
   return (
     "#" +
@@ -159,24 +174,21 @@ const rgbToHex = (r: number, g: number, b: number) => {
 };
 
 const AiutoAbbinamenti: React.FC = () => {
-  // Stati esistenti
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sampledColorsList, setSampledColorsList] = useState<SampledColor[]>(
     []
   );
 
-  // --- NUOVI STATI PER LA CHAT ---
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState<string>("");
   const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
-  const chatHistoryRef = useRef<HTMLDivElement>(null); // Per lo scroll automatico
+  const chatHistoryRef = useRef<HTMLDivElement>(null);
 
-  // Ref esistenti
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Funzioni esistenti (startCamera, stopCamera, sampleColor, etc...)
+  // Funzioni videocamera (invariate)
   const startCamera = useCallback(async () => {
     setError(null);
     setSampledColorsList([]);
@@ -226,6 +238,7 @@ const AiutoAbbinamenti: React.FC = () => {
     }
   }, [stream]);
 
+  // Funzioni colori (invariate)
   const sampleColor = () => {
     if (!videoRef.current || !canvasRef.current || !stream) {
       setError("Videocamera non attiva o elementi non pronti.");
@@ -270,7 +283,7 @@ const AiutoAbbinamenti: React.FC = () => {
     setSampledColorsList([]);
   };
 
-  // --- FUNZIONE DI INVIO CHAT  ---
+  // Funzione di invio chat (invariata)
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const prompt = currentMessage.trim();
@@ -285,15 +298,13 @@ const AiutoAbbinamenti: React.FC = () => {
     setChatMessages(newChatHistory);
 
     try {
-      // --- MODIFICA 1: Chiama /api/user ---
       const response = await fetch("/api/user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        // --- MODIFICA 2: Aggiungi 'action' e tutti i dati ---
         body: JSON.stringify({
-          action: "chatStilista", // Questo dice al backend cosa fare
+          action: "chatStilista",
           history: chatMessages,
           userPrompt: prompt,
           colors: sampledColorsList,
@@ -329,14 +340,19 @@ const AiutoAbbinamenti: React.FC = () => {
     }
   };
 
-  // Hook per la pulizia
+  // --- NUOVA FUNZIONE PER SVUOTARE LA CHAT ---
+  const clearChat = () => {
+    setChatMessages([]);
+  };
+
+  // Hook per la pulizia (invariato)
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, [stopCamera]);
 
-  // Hook per scrollare la chat in fondo
+  // Hook per lo scroll (invariato)
   useEffect(() => {
     if (chatHistoryRef.current) {
       chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
@@ -413,9 +429,23 @@ const AiutoAbbinamenti: React.FC = () => {
         </>
       )}
 
-      {/* --- NUOVA SEZIONE CHAT --- */}
+      {/* --- SEZIONE CHAT MODIFICATA --- */}
       <div style={styles.chatContainer}>
-        <h3>Consulente di Stile 🤖</h3>
+        {/* Header della chat con il nuovo pulsante */}
+        <div style={styles.chatHeader}>
+          <h3>Consulente di Stile 🤖</h3>
+          {/* Mostra il pulsante solo se ci sono messaggi */}
+          {chatMessages.length > 0 && (
+            <button
+              style={styles.clearChatButton}
+              onClick={clearChat}
+              title="Inizia una nuova conversazione"
+            >
+              Svuota Chat
+            </button>
+          )}
+        </div>
+
         <p>Chiedi un consiglio su come abbinare i colori che hai scelto.</p>
 
         <div ref={chatHistoryRef} style={styles.chatHistory}>

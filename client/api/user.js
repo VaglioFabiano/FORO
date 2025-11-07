@@ -79,7 +79,7 @@ async function handleChatStilista(req, res) {
 
     // 3. Costruisci i messaggi per l'IA
     const systemPrompt =
-      "Sei uno stilista professionista e il tuo compito è aiutare persone comuni ad abbinare i vestiti in modo semplice ed elegante. Rispondi in italiano.";
+      "Sei uno stilista professionista e il tuo compito è aiutare persone comuni ad abbinare i vestiti in modo semplice ed elegante. Se pensi che due colori non si abbinino, sottolinea che è un abbianamento audace e consiglia delle alternative. Rispondi in italiano.";
 
     const messages = [{ role: "system", content: systemPrompt }];
 
@@ -119,13 +119,11 @@ async function handleChatStilista(req, res) {
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Errore da OpenRouter:", errorData);
-      return res
-        .status(response.status)
-        .json({
-          success: false,
-          error: "Errore dal servizio IA",
-          details: errorData,
-        });
+      return res.status(response.status).json({
+        success: false,
+        error: "Errore dal servizio IA",
+        details: errorData,
+      });
     }
 
     // 6. Invia la risposta dell'IA al frontend
