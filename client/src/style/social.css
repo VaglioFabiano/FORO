@@ -284,6 +284,7 @@ body {
 .foro-telegram-ultrabar {
   background: linear-gradient(to right, #3b82f6, #2563eb);
   padding: 1.25rem;
+  min-width: 1200px;
   cursor: pointer;
   transition: all 0.3s ease;
   border-radius: 0.75rem;
