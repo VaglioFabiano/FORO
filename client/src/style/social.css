@@ -33,7 +33,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  max-width: 1400px; /* MODIFICATO: era 1200px, ora corrisponde alla griglia */
+  max-width: 1600px; /* MODIFICATO: corrisponde alla griglia */
   margin: 0 auto;
   padding: 0 2rem;
   margin-bottom: 2rem;
@@ -71,7 +71,7 @@ body {
 
 /* --- MESSAGGI DI STATO --- */
 .foro-social-flashmessage {
-  max-width: 1400px; /* MODIFICATO: era 1200px, ora corrisponde alla griglia */
+  max-width: 1600px; /* MODIFICATO: corrisponde alla griglia */
   margin: 0 auto 1rem auto;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
@@ -108,11 +108,11 @@ body {
 /* --- GRIGLIA E SCHEDE SOCIAL --- */
 .foro-social-ultragrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(600px, 1fr));
   gap: 2rem;
   margin-bottom: 2rem;
   padding: 0 2rem;
-  max-width: 1400px; /* MODIFICATO: era 1200px, ora è più largo */
+  max-width: 1600px;
   margin-left: auto;
   margin-right: auto;
   align-items: start;
@@ -125,7 +125,8 @@ body {
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
-  height: 1200px; /* MODIFICATO: era 550px, ora è più alto */
+  height: 600px;
+  min-width: 600px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -274,7 +275,7 @@ body {
 
 /* --- BARRA TELEGRAM --- */
 .foro-telegram-megacontainer {
-  max-width: 1400px; /* MODIFICATO: era 1200px, ora corrisponde alla griglia */
+  max-width: 1600px; /* MODIFICATO: corrisponde alla griglia */
   margin: 0 auto;
   padding: 0 2rem;
   font-family: "Trebuchet MS", sans-serif;
