@@ -1,16 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { Edit } from 'lucide-react';
-import '../style/header.css';
+import React, { useState, useEffect } from "react";
+import { Edit } from "lucide-react";
+import "../style/header.css";
+
+// --- LOGICA CACHE BASATA SU VERSIONE ---
+const CACHE_VERSION_KEY = "cachedHomepageVersion";
+const CACHE_HEADER_KEY = "cachedHeaderData"; // Cache specifica per l'header
+const CACHE_DATA_KEY = "cachedHomepageData";
+const CACHE_SEGNALAZIONI_KEY = "cachedSegnalazioniData";
+
+const getCachedVersion = () => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return null;
+  return localStorage.getItem(CACHE_VERSION_KEY);
+};
+
+const getCachedData = (key: string) => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return null;
+  const item = localStorage.getItem(key);
+  return item ? JSON.parse(item) : null;
+};
+
+const setCachedVersion = (version: string | number) => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return;
+  localStorage.setItem(CACHE_VERSION_KEY, String(version));
+};
+
+const setCachedData = (key: string, data: any) => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return;
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+// Funzione per invalidare tutta la cache della homepage
+const invalidateHomepageCache = () => {
+  console.log("Invalidating all homepage cache...");
+  localStorage.removeItem(CACHE_VERSION_KEY);
+  localStorage.removeItem(CACHE_DATA_KEY);
+  localStorage.removeItem(CACHE_HEADER_KEY);
+  localStorage.removeItem(CACHE_SEGNALAZIONI_KEY);
+};
+// --- FINE LOGICA CACHE ---
 
 const Header: React.FC = () => {
-  const [descrizione, setDescrizione] = useState<string>('');
+  const [descrizione, setDescrizione] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [tempDescrizione, setTempDescrizione] = useState('');
+  const [tempDescrizione, setTempDescrizione] = useState("");
   const [userLevel, setUserLevel] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const defaultDescription = 'Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce: un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.';
+  const defaultDescription =
+    "Siamo uno spazio gestito da volontari, dedicato allo studio silenzioso e allo studio ad alta voce: un ambiente accogliente dove ognuno può concentrarsi o confrontarsi nel rispetto reciproco.";
 
   useEffect(() => {
     loadDescrizione();
@@ -19,42 +57,57 @@ const Header: React.FC = () => {
 
   const checkUserLevel = () => {
     try {
-      const user = localStorage.getItem('user');
+      const user = localStorage.getItem("user");
       if (user) {
         const userData = JSON.parse(user);
-        console.log('User data:', userData); // Debug
         setUserLevel(userData.level);
-      } else {
-        console.log('No user found in localStorage'); // Debug
       }
     } catch (error) {
-      console.error('Errore nel parsing user data:', error);
+      console.error("Errore nel parsing user data:", error);
       setUserLevel(null);
     }
   };
 
   const loadDescrizione = async () => {
+    setIsLoading(true);
+
+    // --- LOGICA CACHE ---
+    const cookieConsent = localStorage.getItem("cookieConsent");
+    const localVersion = getCachedVersion();
+    const cachedData = getCachedData(CACHE_HEADER_KEY);
+
+    if (cookieConsent === "accepted" && localVersion && cachedData) {
+      console.log("Loading Header from cache");
+      setDescrizione(cachedData);
+      setTempDescrizione(cachedData);
+      setIsLoading(false);
+      return; // Dati caricati dalla cache, nessuna fetch necessaria
+    }
+    // --- FINE LOGICA CACHE ---
+
     try {
-      setIsLoading(true);
-      const response = await fetch('/api/homepage?section=header');
-      
+      console.log("Fetching fresh data for Header");
+      const response = await fetch("/api/homepage?section=header");
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      console.log('Response data:', data); // Debug
-      
+
       if (data.success && data.descrizione) {
         setDescrizione(data.descrizione);
         setTempDescrizione(data.descrizione);
+        // --- LOGICA CACHE ---
+        setCachedData(CACHE_HEADER_KEY, data.descrizione); // Salva i dati
+        setCachedVersion(data.version); // Salva la versione
+        // --- FINE LOGICA CACHE ---
       } else {
-        console.log('Using default description');
         setDescrizione(defaultDescription);
         setTempDescrizione(defaultDescription);
       }
     } catch (error) {
-      console.error('Errore nel caricamento descrizione header:', error);
+      console.error("Errore nel caricamento descrizione header:", error);
       setDescrizione(defaultDescription);
       setTempDescrizione(defaultDescription);
     } finally {
@@ -64,7 +117,6 @@ const Header: React.FC = () => {
 
   const handleEditClick = () => {
     setIsEditing(true);
-    // Assicurati che tempDescrizione sia aggiornata
     setTempDescrizione(descrizione);
   };
 
@@ -74,122 +126,119 @@ const Header: React.FC = () => {
   };
 
   const handleSaveClick = async () => {
-    if (isSaving) return; // Previeni doppi click
+    if (isSaving) return;
 
     try {
       setIsSaving(true);
-      
-      const user = localStorage.getItem('user');
-      console.log('Raw user data from localStorage:', user); // Debug
-      
+
+      const user = localStorage.getItem("user");
       if (!user) {
-        alert('Devi essere loggato per modificare la descrizione');
+        alert("Devi essere loggato per modificare la descrizione");
         return;
       }
 
       const userData = JSON.parse(user);
-      console.log('Parsed user data:', userData); // Debug
-      console.log('User ID:', userData.id); // Debug
-      console.log('User ID type:', typeof userData.id); // Debug
-      
       if (!userData.id) {
-        alert('Dati utente non validi. Riprova a fare il login.');
+        alert("Dati utente non validi. Riprova a fare il login.");
         return;
       }
-      
+
       const requestBody = {
-        type: 'header',
+        type: "header",
         data: { descrizione: tempDescrizione.trim() },
-        user_id: userData.id === 0 ? 1 : userData.id // Converti 0 a 1
+        user_id: userData.id === 0 ? 1 : userData.id,
       };
-      
-      console.log('Final request body:', requestBody); // Debug
-      console.log('Descrizione length:', tempDescrizione.trim().length); // Debug
-      
-      const response = await fetch('/api/homepage', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+
+      const response = await fetch("/api/homepage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
 
-      console.log('Response status:', response.status); // Debug
-      console.log('Response ok:', response.ok); // Debug
-
       if (!response.ok) {
-        // Prova a leggere il messaggio di errore dal server
         let errorMessage = `HTTP error! status: ${response.status}`;
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-          console.log('Error response data:', errorData); // Debug
         } catch (e) {
-          console.log('Could not parse error response as JSON'); // Debug
+          /* ignore */
         }
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      console.log('Save response:', data); // Debug
 
       if (data.success) {
         setDescrizione(tempDescrizione.trim());
         setIsEditing(false);
-        console.log('Descrizione salvata con successo');
+        // --- LOGICA CACHE ---
+        invalidateHomepageCache(); // Invalida tutta la cache
+        // --- FINE LOGICA CACHE ---
       } else {
-        throw new Error(data.error || 'Errore nel salvataggio');
+        throw new Error(data.error || "Errore nel salvataggio");
       }
     } catch (error) {
-      console.error('Errore nel salvataggio descrizione:', error);
-      const errorMessage = (error instanceof Error) ? error.message : String(error);
+      console.error("Errore nel salvataggio descrizione:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       alert(`Errore durante il salvataggio: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
+  const handleImageError = (
+    e: React.SyntheticEvent<HTMLImageElement, Event>
+  ): void => {
     const target = e.target as HTMLImageElement;
     const nextSibling = target.nextElementSibling as HTMLElement;
-    target.style.display = 'none';
+    target.style.display = "none";
     if (nextSibling) {
-      nextSibling.style.display = 'flex';
+      nextSibling.style.display = "flex";
     }
   };
 
-  const canEdit = userLevel !== null && (userLevel === 0 || userLevel === 1 || userLevel === 2);
+  const canEdit =
+    userLevel !== null &&
+    (userLevel === 0 || userLevel === 1 || userLevel === 2);
 
   return (
     <header id="header" className="header">
-      <div className="header-background"></div>
-      <div className="video-overlay"></div>
-      
+      {/* ...il resto del tuo JSX (invariato) ... */}     {" "}
+      <div className="header-background"></div>     {" "}
+      <div className="video-overlay"></div>           {" "}
       <div className="header-content">
+               {" "}
         <div className="logo-container">
-          <img 
+                   {" "}
+          <img
             src="/assets/logo.png"
-            alt="Logo Aula Studio" 
+            alt="Logo Aula Studio"
             className="logo-image"
             onError={handleImageError}
           />
+                   {" "}
           <div className="logo-fallback">
-            <span className="logo-fallback-text">AS</span>
+                        <span className="logo-fallback-text">AS</span>       
+             {" "}
           </div>
+                 {" "}
         </div>
-        
+                       {" "}
         <div className="title-section">
-          <h1 className="main-title">Associazione FORO</h1>
+                    <h1 className="main-title">Associazione FORO</h1>         {" "}
           {isLoading ? (
             <div className="description-loading">
+                           {" "}
               <div className="loading-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+                                <span></span>                <span></span>     
+                          <span></span>             {" "}
               </div>
+                         {" "}
             </div>
           ) : isEditing ? (
             <div className="description-edit">
+                           {" "}
               <textarea
                 value={tempDescrizione}
                 onChange={(e) => setTempDescrizione(e.target.value)}
@@ -197,41 +246,52 @@ const Header: React.FC = () => {
                 placeholder="Inserisci la descrizione..."
                 disabled={isSaving}
               />
+                           {" "}
               <div className="description-edit-buttons">
-                <button 
-                  onClick={handleSaveClick} 
+                               {" "}
+                <button
+                  onClick={handleSaveClick}
                   className="edit-button save-button"
-                  disabled={isSaving || tempDescrizione.trim() === ''}
+                  disabled={isSaving || tempDescrizione.trim() === ""}
                 >
-                  {isSaving ? 'Salvando...' : 'Salva'}
+                                    {isSaving ? "Salvando..." : "Salva"}       
+                         {" "}
                 </button>
-                <button 
-                  onClick={handleCancelClick} 
+                               {" "}
+                <button
+                  onClick={handleCancelClick}
                   className="edit-button cancel-button"
                   disabled={isSaving}
                 >
-                  Annulla
+                                    Annulla                {" "}
                 </button>
+                             {" "}
               </div>
+                         {" "}
             </div>
           ) : (
             <div className="description-container">
+                           {" "}
               <p className="description">
-                {descrizione}
+                                {descrizione}             {" "}
               </p>
+                           {" "}
               {canEdit && (
                 <button onClick={handleEditClick} className="edit-button">
-                 <Edit size={16} />
-                  Modifica
+                                   <Edit size={16} />                  Modifica
+                                 {" "}
                 </button>
               )}
+                         {" "}
             </div>
           )}
+                 {" "}
         </div>
-        
+                       {" "}
         <div className="scroll-hint">
-          <div className="scroll-arrow"></div>
+                    <div className="scroll-arrow"></div>       {" "}
         </div>
+             {" "}
       </div>
     </header>
   );

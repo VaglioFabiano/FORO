@@ -1,6 +1,42 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { ExternalLink, MessageCircle, RefreshCw, Edit } from 'lucide-react';
-import '../style/social.css';
+import React, { useEffect, useState, useRef } from "react";
+import { ExternalLink, MessageCircle, RefreshCw, Edit } from "lucide-react";
+import "../style/social.css";
+
+// --- LOGICA CACHE BASATA SU VERSIONE ---
+const CACHE_VERSION_KEY = "cachedHomepageVersion";
+const CACHE_DATA_KEY = "cachedHomepageData"; // Cache per l'intera risposta /api/homepage
+const CACHE_HEADER_KEY = "cachedHeaderData";
+const CACHE_SEGNALAZIONI_KEY = "cachedSegnalazioniData";
+
+const getCachedVersion = () => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return null;
+  return localStorage.getItem(CACHE_VERSION_KEY);
+};
+
+const getCachedData = (key: string) => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return null;
+  const item = localStorage.getItem(key);
+  return item ? JSON.parse(item) : null;
+};
+
+const setCachedVersion = (version: string | number) => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return;
+  localStorage.setItem(CACHE_VERSION_KEY, String(version));
+};
+
+const setCachedData = (key: string, data: any) => {
+  if (localStorage.getItem("cookieConsent") !== "accepted") return;
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+const invalidateHomepageCache = () => {
+  console.log("Invalidating all homepage cache...");
+  localStorage.removeItem(CACHE_VERSION_KEY);
+  localStorage.removeItem(CACHE_DATA_KEY);
+  localStorage.removeItem(CACHE_HEADER_KEY);
+  localStorage.removeItem(CACHE_SEGNALAZIONI_KEY);
+};
+// --- FINE LOGICA CACHE ---
 
 declare global {
   interface Window {
@@ -26,20 +62,23 @@ interface User {
 const SocialSection: React.FC = () => {
   const [embedLoaded, setEmbedLoaded] = useState(false);
   const [socialData, setSocialData] = useState<SocialData>({
-    post_instagram: '',
-    post_facebook: '',
-    canale_telegram: ''
+    post_instagram: "",
+    post_facebook: "",
+    canale_telegram: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<SocialData>({
-    post_instagram: '',
-    post_facebook: '',
-    canale_telegram: ''
+    post_instagram: "",
+    post_facebook: "",
+    canale_telegram: "",
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const instagramCardRef = useRef<HTMLDivElement>(null);
   const facebookIframeRef = useRef<HTMLIFrameElement>(null);
@@ -70,43 +109,84 @@ const SocialSection: React.FC = () => {
   }, [message]);
 
   const checkUserPermissions = () => {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem("user");
     if (user) {
       try {
         const userData = JSON.parse(user);
         setCurrentUser(userData);
       } catch (error) {
-        console.error('Errore nel parsing user data:', error);
+        console.error("Errore nel parsing user data:", error);
       }
     }
   };
 
+  const processSocialData = (social: any) => {
+    const defaultData = {
+      post_instagram: social?.post_instagram || "",
+      post_facebook: social?.post_facebook || "",
+      canale_telegram: social?.canale_telegram || "",
+    };
+    setSocialData(defaultData);
+    setEditData(defaultData);
+  };
+
   const loadSocialData = async () => {
+    setIsLoading(true);
+
+    // --- LOGICA CACHE ---
+    const cookieConsent = localStorage.getItem("cookieConsent");
+    const localVersion = getCachedVersion();
+    const cachedData = getCachedData(CACHE_DATA_KEY); // Usa la cache completa
+
+    if (
+      cookieConsent === "accepted" &&
+      localVersion &&
+      cachedData &&
+      cachedData.social
+    ) {
+      console.log("Loading Social from cache");
+      processSocialData(cachedData.social);
+      setIsLoading(false);
+      return;
+    }
+    // --- FINE LOGICA CACHE ---
+
     try {
-      setIsLoading(true);
-      const response = await fetch('/api/homepage');
+      console.log("Fetching fresh data for Homepage (Social)");
+      const response = await fetch("/api/homepage");
       const data = await response.json();
-      
-      if (data.success && data.social) {
-        setSocialData(data.social);
-        setEditData(data.social);
+
+      if (data.success) {
+        processSocialData(data.social);
+        // --- LOGICA CACHE ---
+        setCachedData(CACHE_DATA_KEY, data);
+        setCachedData(CACHE_HEADER_KEY, data.header?.descrizione);
+        setCachedData(CACHE_SEGNALAZIONI_KEY, data.segnalazioni);
+        setCachedVersion(data.header?.version);
+        // --- FINE LOGICA CACHE ---
+      } else {
+        processSocialData(null); // Usa fallback (vuoti)
       }
     } catch (error) {
-      console.error('Errore nel caricamento dati social:', error);
-      setMessage({ type: 'error', text: 'Errore nel caricamento dei dati social' });
+      console.error("Errore nel caricamento dati social:", error);
+      processSocialData(null); // Usa fallback (vuoti)
+      setMessage({
+        type: "error",
+        text: "Errore nel caricamento dei dati social",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const loadSocialScripts = () => {
-    if (!document.querySelector('#instagram-embed-script')) {
-      const script = document.createElement('script');
-      script.id = 'instagram-embed-script';
-      script.src = 'https://www.instagram.com/embed.js';
+    if (!document.querySelector("#instagram-embed-script")) {
+      const script = document.createElement("script");
+      script.id = "instagram-embed-script";
+      script.src = "https://www.instagram.com/embed.js";
       script.async = true;
       document.body.appendChild(script);
-      
+
       script.onload = () => {
         if (window.instgrm) {
           window.instgrm.Embeds.process();
@@ -121,7 +201,7 @@ const SocialSection: React.FC = () => {
       event.preventDefault();
     }
     if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -137,22 +217,25 @@ const SocialSection: React.FC = () => {
 
   const handleSave = async () => {
     if (!currentUser) {
-      setMessage({ type: 'error', text: 'Devi essere loggato per modificare i social' });
+      setMessage({
+        type: "error",
+        text: "Devi essere loggato per modificare i social",
+      });
       return;
     }
 
     try {
       setIsSaving(true);
-      
-      const response = await fetch('/api/homepage', {
-        method: 'POST',
+
+      const response = await fetch("/api/homepage", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          type: 'social',
+          type: "social",
           data: editData,
-          user_id: currentUser.id
+          user_id: currentUser.id,
         }),
       });
 
@@ -161,8 +244,15 @@ const SocialSection: React.FC = () => {
       if (data.success) {
         setSocialData(editData);
         setIsEditing(false);
-        setMessage({ type: 'success', text: 'Link social aggiornati con successo!' });
-        
+        setMessage({
+          type: "success",
+          text: "Link social aggiornati con successo!",
+        });
+
+        // --- LOGICA CACHE ---
+        invalidateHomepageCache(); // Invalida tutta la cache
+        // --- FINE LOGICA CACHE ---
+
         // Ricarica gli embed dopo l'aggiornamento
         setTimeout(() => {
           if (window.instgrm) {
@@ -170,333 +260,413 @@ const SocialSection: React.FC = () => {
           }
         }, 500);
       } else {
-        throw new Error(data.error || 'Errore nel salvataggio');
+        throw new Error(data.error || "Errore nel salvataggio");
       }
     } catch (error) {
-      console.error('Errore nel salvataggio:', error);
-      setMessage({ type: 'error', text: 'Errore durante il salvataggio dei link social' });
+      console.error("Errore nel salvataggio:", error);
+      setMessage({
+        type: "error",
+        text: "Errore durante il salvataggio dei link social",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const canEdit = currentUser && (currentUser.level === 0 || currentUser.level === 1 || currentUser.level === 2);
-
-  /*
-  const extractInstagramPostId = (url: string) => {
-    const match = url.match(/\/p\/([^\/\?]+)|\/reel\/([^\/\?]+)/);
-    return match ? (match[1] || match[2]) : null;
-  };*/
+  const canEdit =
+    currentUser &&
+    (currentUser.level === 0 ||
+      currentUser.level === 1 ||
+      currentUser.level === 2);
 
   const renderInstagramContent = () => {
+    // ...il resto del tuo JSX (invariato) ...
     const postUrl = socialData.post_instagram;
-    
     if (!postUrl) {
       return (
         <div className="loading-state">
-          <p>Nessun post Instagram configurato</p>
+                    <p>Nessun post Instagram configurato</p>       {" "}
         </div>
       );
     }
 
     return (
       <div className="posts-container">
+               {" "}
         <div className="posts-grid">
+                   {" "}
           <div className="instagram-embed-wrapper">
-            <blockquote 
-              className="instagram-media" 
-              data-instgrm-captioned 
+                       {" "}
+            <blockquote
+              className="instagram-media"
+              data-instgrm-captioned
               data-instgrm-permalink={postUrl}
               data-instgrm-version="14"
               style={{
-                width: '100%',
-                maxWidth: '100%',
+                width: "100%",
+                maxWidth: "100%",
                 margin: 0,
                 padding: 0,
-                overflow: 'hidden'
+                overflow: "hidden",
               }}
             >
-              <div style={{padding: '16px'}}>
+                         {" "}
+              <div style={{ padding: "16px" }}>
+                           {" "}
                 <a href={postUrl} target="_blank" rel="noopener noreferrer">
-                  Visualizza questo post su Instagram
+                              Visualizza questo post su Instagram          
+                   {" "}
                 </a>
+                           {" "}
               </div>
+                         {" "}
             </blockquote>
+                     {" "}
           </div>
-          
+                             {" "}
           {!embedLoaded && (
             <div className="loading-state">
-              <RefreshCw className="loading-spinner" size={24} />
-              <p>Caricamento post Instagram...</p>
+                        <RefreshCw className="loading-spinner" size={24} />     
+                  <p>Caricamento post Instagram...</p>         {" "}
             </div>
           )}
+                 {" "}
         </div>
+             {" "}
       </div>
     );
   };
 
   const renderFacebookContent = () => {
+    // ...il resto del tuo JSX (invariato) ...
     const postUrl = socialData.post_facebook;
-    
     if (!postUrl) {
       return (
         <div className="loading-state">
-          <p>Nessun post Facebook configurato</p>
+                    <p>Nessun post Facebook configurato</p>       {" "}
         </div>
       );
     }
 
     return (
       <div className="facebook-embed-container">
-        <iframe 
+               {" "}
+        <iframe
           ref={facebookIframeRef}
           src={postUrl}
-          width="100%" 
-          height="100%" 
+          width="100%"
+          height="100%"
           style={{
-            border: 'none',
-            overflow: 'hidden',
+            border: "none",
+            overflow: "hidden",
             margin: 0,
             padding: 0,
-            position: 'absolute',
-            top: '50%',
+            position: "absolute",
+            top: "50%",
             left: 0,
-            width: '100%',
-            height: '150%',
-            transform: 'translateY(-50%)'
-          }} 
-          scrolling="no" 
-          frameBorder="0" 
+            width: "100%",
+            height: "150%",
+            transform: "translateY(-50%)",
+          }}
+          scrolling="no"
+          frameBorder="0"
           allowFullScreen={true}
           allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
           title="Post Facebook"
           onLoad={() => setEmbedLoaded(true)}
         />
-        
+                       {" "}
         {!embedLoaded && (
           <div className="loading-state">
-            <RefreshCw className="loading-spinner" size={24} />
-            <p>Caricamento post Facebook...</p>
+                    <RefreshCw className="loading-spinner" size={24} />       {" "}
+            <p>Caricamento post Facebook...</p>       {" "}
           </div>
         )}
+             {" "}
       </div>
     );
   };
 
   const renderEditModal = () => {
+    // ...il resto del tuo JSX (invariato) ...
     if (!isEditing) return null;
 
     return (
       <div className="social-edit-modal-overlay" onClick={handleCancel}>
+               {" "}
         <div className="social-edit-modal" onClick={(e) => e.stopPropagation()}>
+                   {" "}
           <div className="modal-header">
-            <h3>Modifica Link Social</h3>
-            <button className="close-button" onClick={handleCancel}>×</button>
+                        <h3>Modifica Link Social</h3>           {" "}
+            <button className="close-button" onClick={handleCancel}>
+              ×
+            </button>
+                     {" "}
           </div>
-          
+                             {" "}
           <div className="modal-body">
+                       {" "}
             <div className="form-group">
+                           {" "}
               <label htmlFor="instagram-post">Link Post Instagram</label>
+                           {" "}
               <input
                 id="instagram-post"
                 type="url"
                 value={editData.post_instagram}
-                onChange={(e) => setEditData({...editData, post_instagram: e.target.value})}
+                onChange={(e) =>
+                  setEditData({ ...editData, post_instagram: e.target.value })
+                }
                 placeholder="https://www.instagram.com/reel/..."
                 disabled={isSaving}
               />
-              <small>Inserisci il link del post o reel Instagram da mostrare</small>
+                           {" "}
+              <small>
+                Inserisci il link del post o reel Instagram da mostrare
+              </small>
+                         {" "}
             </div>
-            
+                                   {" "}
             <div className="form-group">
+                           {" "}
               <label htmlFor="facebook-post">Link Post Facebook (Embed)</label>
+                       {" "}
               <input
                 id="facebook-post"
                 type="url"
                 value={editData.post_facebook}
-                onChange={(e) => setEditData({...editData, post_facebook: e.target.value})}
+                onChange={(e) =>
+                  setEditData({ ...editData, post_facebook: e.target.value })
+                }
                 placeholder="https://www.facebook.com/plugins/post.php?href=..."
                 disabled={isSaving}
               />
-              <small>Inserisci il link embed del post Facebook</small>
+                        <small>Inserisci il link embed del post Facebook</small>
+                       {" "}
             </div>
-            
+                               {" "}
             <div className="form-group">
+                       {" "}
               <label htmlFor="telegram-channel">Link Canale Telegram</label>
+                       {" "}
               <input
                 id="telegram-channel"
                 type="url"
                 value={editData.canale_telegram}
-                onChange={(e) => setEditData({...editData, canale_telegram: e.target.value})}
+                onChange={(e) =>
+                  setEditData({ ...editData, canale_telegram: e.target.value })
+                }
                 placeholder="https://t.me/nomecanale"
                 disabled={isSaving}
               />
-              <small>Inserisci il link del canale Telegram</small>
+                        <small>Inserisci il link del canale Telegram</small>   
+                   {" "}
             </div>
+                     {" "}
           </div>
-          
+                             {" "}
           <div className="modal-actions">
-            <button 
-              className="cancel-button" 
+                     {" "}
+            <button
+              className="cancel-button"
               onClick={handleCancel}
               disabled={isSaving}
             >
-              Annulla
+                        Annulla          {" "}
             </button>
-            <button 
-              className="save-button" 
+                     {" "}
+            <button
+              className="save-button"
               onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving ? 'Salvando...' : 'Salva'}
+                  {isSaving ? "Salvando..." : "Salva"}   {" "}
             </button>
+               {" "}
           </div>
+           {" "}
         </div>
+         {" "}
       </div>
     );
   };
 
   if (isLoading) {
+    // ...il resto del tuo JSX (invariato) ...
     return (
       <section className="social-section">
+           {" "}
         <div className="loading-state">
-          <RefreshCw className="loading-spinner" size={24} />
-          <p>Caricamento sezione social...</p>
+              <RefreshCw className="loading-spinner" size={24} />   {" "}
+          <p>Caricamento sezione social...</p>   {" "}
         </div>
+           {" "}
       </section>
     );
   }
 
   return (
+    // ...il resto del tuo JSX (invariato) ...
     <section className="social-section">
+         {" "}
       <div className="social-header">
-        <h2 className="social-title">Seguici sui social</h2>
+            <h2 className="social-title">Seguici sui social</h2>   {" "}
         {canEdit && (
           <button className="edit-social-button" onClick={handleEdit}>
-            <Edit size={16} />
-            Modifica Link
+                <Edit size={16} />    Modifica Link    {" "}
           </button>
         )}
+           {" "}
       </div>
-
+         {" "}
       {message && (
         <div className={`social-message ${message.type}`}>
-          <span>{message.text}</span>
-          <button onClick={() => setMessage(null)}>×</button>
+              <span>{message.text}</span>   {" "}
+          <button onClick={() => setMessage(null)}>×</button>   {" "}
         </div>
       )}
-      
+             {" "}
       <div className="social-grid">
-        {/* Instagram Card */}
-        <div 
+            {/* Instagram Card */}   {" "}
+        <div
           ref={instagramCardRef}
           className="social-card instagram-card"
           onClick={(e) => {
-            const profileUrl = socialData.post_instagram ? 
-              socialData.post_instagram.replace(/\/p\/.*|\/reel\/.*/, '') : 
-              'https://www.instagram.com/associazioneforo/';
+            const profileUrl = socialData.post_instagram
+              ? socialData.post_instagram.replace(/\/p\/.*|\/reel\/.*/, "")
+              : "https://www.instagram.com/associazioneforo/";
             handleSocialClick(profileUrl, e);
           }}
           role="button"
           tabIndex={0}
           aria-label="Visita il profilo Instagram"
         >
+             {" "}
           <div className="social-card-header">
+               {" "}
             <div className="social-platform-info">
-              <div className="instagram-icon">📸</div>
+                  <div className="instagram-icon">📸</div>   {" "}
               <div>
-                <h3 className="platform-title">Instagram</h3>
-                <p className="platform-username">@associazioneforo</p>
+                    <h3 className="platform-title">Instagram</h3>   {" "}
+                <p className="platform-username">@associazioneforo</p>   {" "}
               </div>
+                 {" "}
             </div>
-            <button 
+               {" "}
+            <button
               onClick={(e) => {
                 e.stopPropagation();
-                const profileUrl = socialData.post_instagram ? 
-                  socialData.post_instagram.replace(/\/p\/.*|\/reel\/.*/, '') : 
-                  'https://www.instagram.com/associazioneforo/';
+                const profileUrl = socialData.post_instagram
+                  ? socialData.post_instagram.replace(/\/p\/.*|\/reel\/.*/, "")
+                  : "https://www.instagram.com/associazioneforo/";
                 handleSocialClick(profileUrl, e);
               }}
               className="external-link-btn"
               aria-label="Apri Instagram in una nuova scheda"
             >
-              <ExternalLink size={16} />
+                  <ExternalLink size={16} />   {" "}
             </button>
+               {" "}
           </div>
-          
+                 {" "}
           <div className="social-card-content">
-            {renderInstagramContent()}
+                {renderInstagramContent()}   {" "}
           </div>
+             {" "}
         </div>
-
-        {/* Facebook Card */}
-        <div 
+            {/* Facebook Card */}   {" "}
+        <div
           className="social-card facebook-card"
-          onClick={(e) => handleSocialClick('https://www.facebook.com/associazioneforopiossasco', e)}
+          onClick={(e) =>
+            handleSocialClick(
+              "https://www.facebook.com/associazioneforopiossasco",
+              e
+            )
+          }
           role="button"
           tabIndex={0}
           aria-label="Visita la pagina Facebook"
         >
+             {" "}
           <div className="social-card-header">
+               {" "}
             <div className="social-platform-info">
-              <div className="facebook-icon-header">👥</div>
+                  <div className="facebook-icon-header">👥</div>   {" "}
               <div>
-                <h3 className="platform-title">Facebook</h3>
-                <p className="platform-username">Associazione Foro</p>
+                    <h3 className="platform-title">Facebook</h3>   {" "}
+                <p className="platform-username">Associazione Foro</p>   {" "}
               </div>
+                 {" "}
             </div>
-            <button 
+               {" "}
+            <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleSocialClick('https://www.facebook.com/associazioneforopiossasco', e);
+                handleSocialClick(
+                  "https://www.facebook.com/associazioneforopiossasco",
+                  e
+                );
               }}
               className="external-link-btn"
               aria-label="Apri Facebook in una nuova scheda"
             >
-              <ExternalLink size={16} />
+                  <ExternalLink size={16} />   {" "}
             </button>
+               {" "}
           </div>
-          
+                 {" "}
           <div className="social-card-content facebook-content">
-            {renderFacebookContent()}
+                {renderFacebookContent()}   {" "}
           </div>
+             {" "}
         </div>
+           {" "}
       </div>
-      
-      {/* Telegram Bar */}
+              {/* Telegram Bar */}   {" "}
       <div className="telegram-container">
-        <div 
+           {" "}
+        <div
           className="telegram-bar"
           onClick={(e) => handleSocialClick(socialData.canale_telegram, e)}
           role="button"
           tabIndex={0}
           aria-label="Unisciti al canale Telegram"
         >
+             {" "}
           <div className="telegram-content">
+               {" "}
             <div className="telegram-info">
+                 {" "}
               <div className="telegram-icon">
-                <MessageCircle size={20} />
+                    <MessageCircle size={20} />   {" "}
               </div>
+                 {" "}
               <div className="telegram-text">
-                <h3 className="telegram-title">Telegram</h3>
-                <p className="telegram-username">@aulastudioforo</p>
+                    <h3 className="telegram-title">Telegram</h3>   {" "}
+                <p className="telegram-username">@aulastudioforo</p>   {" "}
                 <span className="telegram-description">
-                  Canale ufficiale per comunicazioni
+                      Canale ufficiale per comunicazioni    {" "}
                 </span>
+                   {" "}
               </div>
+                 {" "}
             </div>
+               {" "}
             <div className="telegram-status">
+                 {" "}
               <div className="status-badge">
-                <div className="status-indicator"></div>
-                <span>Attivo</span>
+                    <div className="status-indicator"></div>   {" "}
+                <span>Attivo</span>   {" "}
               </div>
-              <ExternalLink size={16} className="telegram-arrow" />
+                  <ExternalLink size={16} className="telegram-arrow" />   {" "}
             </div>
+               {" "}
           </div>
+             {" "}
         </div>
+           {" "}
       </div>
-
-      {renderEditModal()}
+          {renderEditModal()}   {" "}
     </section>
   );
 };
