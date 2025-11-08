@@ -18,7 +18,7 @@ body {
 
 /* --- SEZIONE SOCIAL PRINCIPALE --- */
 .social-section {
-  background: transparent; /* Sfondo trasparente per mostrare quello del body */
+  background: transparent;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -66,7 +66,7 @@ body {
 
 .edit-social-button:hover {
   background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 /* --- MESSAGGI DI STATO --- */
@@ -108,6 +108,7 @@ body {
 /* --- GRIGLIA E SCHEDE SOCIAL --- */
 .social-grid {
   display: grid;
+  /* QUESTA È LA REGOLA CHE LE METTE AFFIANCATE SUL DESKTOP */
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
@@ -527,6 +528,7 @@ body {
 
 /* --- RESPONSIVE DESIGN --- */
 @media (max-width: 768px) {
+  /* Su tablet, le schede sono ANCORA AFFIANCATE */
   .social-header {
     gap: 0.8rem;
   }
@@ -537,7 +539,6 @@ body {
 
   .social-grid {
     padding: 0 1rem;
-    /* Le schede restano affiancate (2 colonne) fino a 480px */
   }
 
   .social-card {
@@ -572,7 +573,7 @@ body {
 }
 
 @media (max-width: 480px) {
-  /* Le schede si impilano (1 colonna) solo su schermi piccoli */
+  /* SOLO QUI, su schermi piccoli (telefoni), le schede si impilano */
   .social-grid {
     grid-template-columns: 1fr;
   }
