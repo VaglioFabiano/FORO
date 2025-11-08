@@ -72,10 +72,6 @@ const Statuto: React.FC = () => {
     "https://drive.google.com/file/d/19RWrdBR22kAbuwPdPwVjxxLjuTfzixaL/view?usp=sharing";
   const fallbackPreviewLink =
     "https://drive.google.com/file/d/13NQvWyiiOdIMEdEFN0jIe4VByXn_-zKN/view?usp=drive_link";
-  const fallbackStatutoData = {
-    link_drive: fallbackDownloadLink,
-    anteprima: fallbackPreviewLink,
-  };
 
   useEffect(() => {
     loadStatutoData();
