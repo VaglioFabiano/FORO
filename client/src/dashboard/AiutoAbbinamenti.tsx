@@ -10,6 +10,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: "1px dashed #ccc",
     maxWidth: "700px",
     margin: "0 auto",
+    color: "#000",
   },
   // --- NUOVI STILI PER IL BANNER ---
   instructionsBanner: {
