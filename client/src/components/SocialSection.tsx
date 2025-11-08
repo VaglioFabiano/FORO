@@ -4,7 +4,7 @@ import "../style/social.css";
 
 // --- LOGICA CACHE BASATA SU VERSIONE ---
 const CACHE_VERSION_KEY = "cachedHomepageVersion";
-const CACHE_DATA_KEY = "cachedHomepageData"; // Cache per l'intera risposta /api/homepage
+const CACHE_DATA_KEY = "cachedHomepageData";
 const CACHE_HEADER_KEY = "cachedHeaderData";
 const CACHE_SEGNALAZIONI_KEY = "cachedSegnalazioniData";
 
@@ -36,7 +36,6 @@ const invalidateHomepageCache = () => {
   localStorage.removeItem(CACHE_HEADER_KEY);
   localStorage.removeItem(CACHE_SEGNALAZIONI_KEY);
 };
-// --- FINE LOGICA CACHE ---
 
 declare global {
   interface Window {
@@ -133,10 +132,9 @@ const SocialSection: React.FC = () => {
   const loadSocialData = async () => {
     setIsLoading(true);
 
-    // --- LOGICA CACHE ---
     const cookieConsent = localStorage.getItem("cookieConsent");
     const localVersion = getCachedVersion();
-    const cachedData = getCachedData(CACHE_DATA_KEY); // Usa la cache completa
+    const cachedData = getCachedData(CACHE_DATA_KEY);
 
     if (
       cookieConsent === "accepted" &&
@@ -149,7 +147,6 @@ const SocialSection: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    // --- FINE LOGICA CACHE ---
 
     try {
       console.log("Fetching fresh data for Homepage (Social)");
@@ -158,18 +155,16 @@ const SocialSection: React.FC = () => {
 
       if (data.success) {
         processSocialData(data.social);
-        // --- LOGICA CACHE ---
         setCachedData(CACHE_DATA_KEY, data);
         setCachedData(CACHE_HEADER_KEY, data.header?.descrizione);
         setCachedData(CACHE_SEGNALAZIONI_KEY, data.segnalazioni);
         setCachedVersion(data.header?.version);
-        // --- FINE LOGICA CACHE ---
       } else {
-        processSocialData(null); // Usa fallback (vuoti)
+        processSocialData(null);
       }
     } catch (error) {
       console.error("Errore nel caricamento dati social:", error);
-      processSocialData(null); // Usa fallback (vuoti)
+      processSocialData(null);
       setMessage({
         type: "error",
         text: "Errore nel caricamento dei dati social",
@@ -249,11 +244,8 @@ const SocialSection: React.FC = () => {
           text: "Link social aggiornati con successo!",
         });
 
-        // --- LOGICA CACHE ---
-        invalidateHomepageCache(); // Invalida tutta la cache
-        // --- FINE LOGICA CACHE ---
+        invalidateHomepageCache();
 
-        // Ricarica gli embed dopo l'aggiornamento
         setTimeout(() => {
           if (window.instgrm) {
             window.instgrm.Embeds.process();
@@ -280,23 +272,19 @@ const SocialSection: React.FC = () => {
       currentUser.level === 2);
 
   const renderInstagramContent = () => {
-    // ...il resto del tuo JSX (invariato) ...
     const postUrl = socialData.post_instagram;
     if (!postUrl) {
       return (
-        <div className="loading-state">
-                    <p>Nessun post Instagram configurato</p>       {" "}
+        <div className="foro-loading-superstate">
+          <p>Nessun post Instagram configurato</p>
         </div>
       );
     }
 
     return (
-      <div className="posts-container">
-               {" "}
+      <div className="foro-posts-megacontainer">
         <div className="posts-grid">
-                   {" "}
-          <div className="instagram-embed-wrapper">
-                       {" "}
+          <div className="foro-instagram-ultrawrapper">
             <blockquote
               className="instagram-media"
               data-instgrm-captioned
@@ -310,47 +298,36 @@ const SocialSection: React.FC = () => {
                 overflow: "hidden",
               }}
             >
-                         {" "}
               <div style={{ padding: "16px" }}>
-                           {" "}
                 <a href={postUrl} target="_blank" rel="noopener noreferrer">
-                              Visualizza questo post su Instagram          
-                   {" "}
+                  Visualizza questo post su Instagram
                 </a>
-                           {" "}
               </div>
-                         {" "}
             </blockquote>
-                     {" "}
+            {!embedLoaded && (
+              <div className="foro-loading-superstate">
+                <RefreshCw className="foro-loading-megaspinner" size={24} />
+                <p>Caricamento post Instagram...</p>
+              </div>
+            )}
           </div>
-                             {" "}
-          {!embedLoaded && (
-            <div className="loading-state">
-                        <RefreshCw className="loading-spinner" size={24} />     
-                  <p>Caricamento post Instagram...</p>         {" "}
-            </div>
-          )}
-                 {" "}
         </div>
-             {" "}
       </div>
     );
   };
 
   const renderFacebookContent = () => {
-    // ...il resto del tuo JSX (invariato) ...
     const postUrl = socialData.post_facebook;
     if (!postUrl) {
       return (
-        <div className="loading-state">
-                    <p>Nessun post Facebook configurato</p>       {" "}
+        <div className="foro-loading-superstate">
+          <p>Nessun post Facebook configurato</p>
         </div>
       );
     }
 
     return (
-      <div className="facebook-embed-container">
-               {" "}
+      <div className="foro-facebook-ultracontainer">
         <iframe
           ref={facebookIframeRef}
           src={postUrl}
@@ -375,41 +352,35 @@ const SocialSection: React.FC = () => {
           title="Post Facebook"
           onLoad={() => setEmbedLoaded(true)}
         />
-                       {" "}
         {!embedLoaded && (
-          <div className="loading-state">
-                    <RefreshCw className="loading-spinner" size={24} />       {" "}
-            <p>Caricamento post Facebook...</p>       {" "}
+          <div className="foro-loading-superstate">
+            <RefreshCw className="foro-loading-megaspinner" size={24} />
+            <p>Caricamento post Facebook...</p>
           </div>
         )}
-             {" "}
       </div>
     );
   };
 
   const renderEditModal = () => {
-    // ...il resto del tuo JSX (invariato) ...
     if (!isEditing) return null;
 
     return (
-      <div className="social-edit-modal-overlay" onClick={handleCancel}>
-               {" "}
-        <div className="social-edit-modal" onClick={(e) => e.stopPropagation()}>
-                   {" "}
-          <div className="modal-header">
-                        <h3>Modifica Link Social</h3>           {" "}
-            <button className="close-button" onClick={handleCancel}>
+      <div className="foro-edit-megaoverlay" onClick={handleCancel}>
+        <div
+          className="foro-edit-ultramodal"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="foro-modal-supertop">
+            <h3>Modifica Link Social</h3>
+            <button className="foro-close-megabutton" onClick={handleCancel}>
               ×
             </button>
-                     {" "}
           </div>
-                             {" "}
-          <div className="modal-body">
-                       {" "}
-            <div className="form-group">
-                           {" "}
+
+          <div className="foro-modal-ultrabody">
+            <div className="foro-form-supergroup">
               <label htmlFor="instagram-post">Link Post Instagram</label>
-                           {" "}
               <input
                 id="instagram-post"
                 type="url"
@@ -420,17 +391,13 @@ const SocialSection: React.FC = () => {
                 placeholder="https://www.instagram.com/reel/..."
                 disabled={isSaving}
               />
-                           {" "}
               <small>
                 Inserisci il link del post o reel Instagram da mostrare
               </small>
-                         {" "}
             </div>
-                                   {" "}
-            <div className="form-group">
-                           {" "}
+
+            <div className="foro-form-supergroup">
               <label htmlFor="facebook-post">Link Post Facebook (Embed)</label>
-                       {" "}
               <input
                 id="facebook-post"
                 type="url"
@@ -441,14 +408,11 @@ const SocialSection: React.FC = () => {
                 placeholder="https://www.facebook.com/plugins/post.php?href=..."
                 disabled={isSaving}
               />
-                        <small>Inserisci il link embed del post Facebook</small>
-                       {" "}
+              <small>Inserisci il link embed del post Facebook</small>
             </div>
-                               {" "}
-            <div className="form-group">
-                       {" "}
+
+            <div className="foro-form-supergroup">
               <label htmlFor="telegram-channel">Link Canale Telegram</label>
-                       {" "}
               <input
                 id="telegram-channel"
                 type="url"
@@ -459,78 +423,65 @@ const SocialSection: React.FC = () => {
                 placeholder="https://t.me/nomecanale"
                 disabled={isSaving}
               />
-                        <small>Inserisci il link del canale Telegram</small>   
-                   {" "}
+              <small>Inserisci il link del canale Telegram</small>
             </div>
-                     {" "}
           </div>
-                             {" "}
-          <div className="modal-actions">
-                     {" "}
+
+          <div className="foro-modal-megaactions">
             <button
-              className="cancel-button"
+              className="foro-cancel-ultrabutton"
               onClick={handleCancel}
               disabled={isSaving}
             >
-                        Annulla          {" "}
+              Annulla
             </button>
-                     {" "}
             <button
-              className="save-button"
+              className="foro-save-megabutton"
               onClick={handleSave}
               disabled={isSaving}
             >
-                  {isSaving ? "Salvando..." : "Salva"}   {" "}
+              {isSaving ? "Salvando..." : "Salva"}
             </button>
-               {" "}
           </div>
-           {" "}
         </div>
-         {" "}
       </div>
     );
   };
 
   if (isLoading) {
-    // ...il resto del tuo JSX (invariato) ...
     return (
-      <section className="social-section">
-           {" "}
-        <div className="loading-state">
-              <RefreshCw className="loading-spinner" size={24} />   {" "}
-          <p>Caricamento sezione social...</p>   {" "}
+      <section className="foro-social-megasection">
+        <div className="foro-loading-superstate">
+          <RefreshCw className="foro-loading-megaspinner" size={24} />
+          <p>Caricamento sezione social...</p>
         </div>
-           {" "}
       </section>
     );
   }
 
   return (
-    // ...il resto del tuo JSX (invariato) ...
-    <section className="social-section">
-         {" "}
-      <div className="social-header">
-            <h2 className="social-title">Seguici sui social</h2>   {" "}
+    <section className="foro-social-megasection">
+      <div className="foro-social-masthead">
+        <h2 className="foro-social-supertitle">Seguici sui social</h2>
         {canEdit && (
-          <button className="edit-social-button" onClick={handleEdit}>
-                <Edit size={16} />    Modifica Link    {" "}
+          <button className="foro-edit-social-superbutton" onClick={handleEdit}>
+            <Edit size={16} /> Modifica Link
           </button>
         )}
-           {" "}
       </div>
-         {" "}
+
       {message && (
-        <div className={`social-message ${message.type}`}>
-              <span>{message.text}</span>   {" "}
-          <button onClick={() => setMessage(null)}>×</button>   {" "}
+        <div className={`foro-social-flashmessage ${message.type}`}>
+          <span>{message.text}</span>
+          <button onClick={() => setMessage(null)}>×</button>
         </div>
       )}
-             {" "}
-      <div className="social-grid">
-            {/* Instagram Card */}   {" "}
+
+      <div className="foro-social-ultragrid">
+        {/* Instagram Card */}
         <div
           ref={instagramCardRef}
-          className="social-card instagram-card"
+          className="foro-social-megacard instagram-card"
           onClick={(e) => {
             const profileUrl = socialData.post_instagram
               ? socialData.post_instagram.replace(/\/p\/.*|\/reel\/.*/, "")
@@ -541,18 +492,14 @@ const SocialSection: React.FC = () => {
           tabIndex={0}
           aria-label="Visita il profilo Instagram"
         >
-             {" "}
-          <div className="social-card-header">
-               {" "}
-            <div className="social-platform-info">
-                  <div className="instagram-icon">📸</div>   {" "}
+          <div className="foro-social-cardtop">
+            <div className="foro-social-platformdata">
+              <div className="foro-instagram-supericon">📸</div>
               <div>
-                    <h3 className="platform-title">Instagram</h3>   {" "}
-                <p className="platform-username">@associazioneforo</p>   {" "}
+                <h3 className="foro-platform-megatitle">Instagram</h3>
+                <p className="foro-platform-megausername">@associazioneforo</p>
               </div>
-                 {" "}
             </div>
-               {" "}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -561,22 +508,20 @@ const SocialSection: React.FC = () => {
                   : "https://www.instagram.com/associazioneforo/";
                 handleSocialClick(profileUrl, e);
               }}
-              className="external-link-btn"
+              className="foro-external-ultralink"
               aria-label="Apri Instagram in una nuova scheda"
             >
-                  <ExternalLink size={16} />   {" "}
+              <ExternalLink size={16} />
             </button>
-               {" "}
           </div>
-                 {" "}
-          <div className="social-card-content">
-                {renderInstagramContent()}   {" "}
+          <div className="foro-social-cardcontent">
+            {renderInstagramContent()}
           </div>
-             {" "}
         </div>
-            {/* Facebook Card */}   {" "}
+
+        {/* Facebook Card */}
         <div
-          className="social-card facebook-card"
+          className="foro-social-megacard facebook-card"
           onClick={(e) =>
             handleSocialClick(
               "https://www.facebook.com/associazioneforopiossasco",
@@ -587,18 +532,14 @@ const SocialSection: React.FC = () => {
           tabIndex={0}
           aria-label="Visita la pagina Facebook"
         >
-             {" "}
-          <div className="social-card-header">
-               {" "}
-            <div className="social-platform-info">
-                  <div className="facebook-icon-header">👥</div>   {" "}
+          <div className="foro-social-cardtop">
+            <div className="foro-social-platformdata">
+              <div className="foro-facebook-supericon">👥</div>
               <div>
-                    <h3 className="platform-title">Facebook</h3>   {" "}
-                <p className="platform-username">Associazione Foro</p>   {" "}
+                <h3 className="foro-platform-megatitle">Facebook</h3>
+                <p className="foro-platform-megausername">Associazione Foro</p>
               </div>
-                 {" "}
             </div>
-               {" "}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -607,66 +548,52 @@ const SocialSection: React.FC = () => {
                   e
                 );
               }}
-              className="external-link-btn"
+              className="foro-external-ultralink"
               aria-label="Apri Facebook in una nuova scheda"
             >
-                  <ExternalLink size={16} />   {" "}
+              <ExternalLink size={16} />
             </button>
-               {" "}
           </div>
-                 {" "}
-          <div className="social-card-content facebook-content">
-                {renderFacebookContent()}   {" "}
+          <div className="foro-social-cardcontent facebook-content">
+            {renderFacebookContent()}
           </div>
-             {" "}
         </div>
-           {" "}
       </div>
-              {/* Telegram Bar */}   {" "}
-      <div className="telegram-container">
-           {" "}
+
+      {/* Telegram Bar */}
+      <div className="foro-telegram-megacontainer">
         <div
-          className="telegram-bar"
+          className="foro-telegram-ultrabar"
           onClick={(e) => handleSocialClick(socialData.canale_telegram, e)}
           role="button"
           tabIndex={0}
           aria-label="Unisciti al canale Telegram"
         >
-             {" "}
-          <div className="telegram-content">
-               {" "}
-            <div className="telegram-info">
-                 {" "}
-              <div className="telegram-icon">
-                    <MessageCircle size={20} />   {" "}
+          <div className="foro-telegram-supercontent">
+            <div className="foro-telegram-megainfo">
+              <div className="foro-telegram-supericon">
+                <MessageCircle size={20} />
               </div>
-                 {" "}
-              <div className="telegram-text">
-                    <h3 className="telegram-title">Telegram</h3>   {" "}
-                <p className="telegram-username">@aulastudioforo</p>   {" "}
-                <span className="telegram-description">
-                      Canale ufficiale per comunicazioni    {" "}
+              <div className="foro-telegram-megatext">
+                <h3 className="foro-telegram-supertitle">Telegram</h3>
+                <p className="foro-telegram-megausername">@aulastudioforo</p>
+                <span className="foro-telegram-ultradescription">
+                  Canale ufficiale per comunicazioni
                 </span>
-                   {" "}
               </div>
-                 {" "}
             </div>
-               {" "}
-            <div className="telegram-status">
-                 {" "}
-              <div className="status-badge">
-                    <div className="status-indicator"></div>   {" "}
-                <span>Attivo</span>   {" "}
+            <div className="foro-telegram-megastatus">
+              <div className="foro-status-superbadge">
+                <div className="foro-status-ultraindicator"></div>
+                <span>Attivo</span>
               </div>
-                  <ExternalLink size={16} className="telegram-arrow" />   {" "}
+              <ExternalLink size={16} className="foro-telegram-superarrow" />
             </div>
-               {" "}
           </div>
-             {" "}
         </div>
-           {" "}
       </div>
-          {renderEditModal()}   {" "}
+
+      {renderEditModal()}
     </section>
   );
 };
