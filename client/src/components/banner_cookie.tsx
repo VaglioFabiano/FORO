@@ -216,9 +216,6 @@ const BannerCookie = () => {
                         <div className="cb-list-sub">
                           <p>• Rimangono solo sul tuo dispositivo</p>
                           <p>• Non vengono sincronizzati con server esterni</p>
-                          <p>
-                            • Vengono eliminati automaticamente dopo 30 giorni
-                          </p>
                         </div>
                         <p className="cb-card-text-subtle cb-mt-2">
                           Puoi cancellarli manualmente dalle impostazioni del

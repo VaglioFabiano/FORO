@@ -126,7 +126,7 @@ body {
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
-  aspect-ratio: 1/1;
+  height: 500px;
   display: flex;
   flex-direction: column;
   position: relative;
