@@ -125,7 +125,7 @@ body {
   overflow: hidden;
   transition: all 0.3s ease;
   cursor: pointer;
-  height: 600px; /* MODIFICATO: era 550px, ora è più alto */
+  height: 1200px; /* MODIFICATO: era 550px, ora è più alto */
   display: flex;
   flex-direction: column;
   position: relative;
