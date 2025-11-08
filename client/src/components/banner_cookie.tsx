@@ -7,8 +7,14 @@ const BannerCookie = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const cookieConsent = localStorage.getItem("cookieConsent");
-    if (!cookieConsent) {
+    // Controlla il consenso permanente (localStorage)
+    const permConsent = localStorage.getItem("cookieConsent");
+    // Controlla il consenso temporaneo (sessionStorage)
+    const tempConsent = sessionStorage.getItem("cookieConsent");
+
+    // Mostra il banner SOLO se l'utente non ha "accettato" (permanente)
+    // E non ha "rifiutato" (temporaneo, per questa sessione)
+    if (permConsent !== "accepted" && tempConsent !== "rejected") {
       setShowBanner(true);
       // Animazione di entrata ritardata
       setTimeout(() => setIsVisible(true), 100);
@@ -16,13 +22,21 @@ const BannerCookie = () => {
   }, []);
 
   const handleAccept = () => {
+    // Consenso permanente: salva in localStorage
     localStorage.setItem("cookieConsent", "accepted");
+    // Rimuovi un eventuale rifiuto temporaneo
+    sessionStorage.removeItem("cookieConsent");
+
     setIsVisible(false);
     setTimeout(() => setShowBanner(false), 300);
   };
 
   const handleReject = () => {
-    localStorage.setItem("cookieConsent", "rejected");
+    // Consenso temporaneo: salva in sessionStorage
+    // L'utente non sarà infastidito per questa sessione,
+    // ma il banner riapparirà alla prossima visita.
+    sessionStorage.setItem("cookieConsent", "rejected");
+
     setIsVisible(false);
     setTimeout(() => setShowBanner(false), 300);
   };
@@ -36,56 +50,35 @@ const BannerCookie = () => {
   return (
     <>
       {/* Overlay scuro quando i dettagli sono aperti */}
-      {showDetails && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
-          onClick={toggleDetails}
-        />
-      )}
+      {showDetails && <div className="cb-overlay" onClick={toggleDetails} />}
 
-      <div
-        className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-out ${
-          isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
-        }`}
-      >
-        <div className="relative">
+      <div className={`cb-container ${isVisible ? "cb-visible" : ""}`}>
+        <div className="cb-relative-wrapper">
           {/* Gradiente superiore per sfumare nel contenuto */}
-          <div
-            className="absolute top-0 left-0 right-0 h-8 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(to top, rgba(12, 73, 91, 0.95), transparent)",
-            }}
-          />
+          <div className="cb-top-gradient" />
 
           <div
-            className={`backdrop-blur-xl border-t border-white/10 shadow-2xl ${
-              showDetails ? "rounded-t-2xl" : ""
-            }`}
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(12, 73, 91, 0.98) 0%, rgba(12, 73, 91, 0.95) 50%, rgba(15, 85, 105, 0.95) 100%)",
-            }}
+            className={`cb-main-content ${showDetails ? "cb-rounded-top" : ""}`}
           >
-            <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div className="cb-max-width-wrapper">
               {!showDetails ? (
                 // Vista compatta moderna
-                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                <div className="cb-compact-view">
                   {/* Icona e testo */}
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg">
-                      <Cookie className="w-6 h-6 text-white" />
+                  <div className="cb-compact-text-group">
+                    <div className="cb-icon-wrapper">
+                      <Cookie className="cb-icon-cookie" />
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-bold text-lg mb-1.5 flex items-center gap-2">
+                    <div className="cb-compact-text-content">
+                      <h3 className="cb-compact-title">
                         Cookie e Privacy
-                        <Shield className="w-4 h-4 text-green-400" />
+                        <Shield className="cb-icon-shield" />
                       </h3>
-                      <p className="text-gray-300 text-sm leading-relaxed">
+                      <p className="cb-compact-description">
                         Utilizziamo solo cookie tecnici essenziali per garantire
                         il corretto funzionamento del sito.
-                        <span className="text-gray-400">
+                        <span className="cb-compact-description-sub">
                           {" "}
                           Nessun tracciamento, nessuna profilazione.
                         </span>
@@ -94,67 +87,65 @@ const BannerCookie = () => {
                   </div>
 
                   {/* Pulsanti azione */}
-                  <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto flex-shrink-0">
+                  <div className="cb-compact-buttons">
                     <button
                       onClick={handleAccept}
-                      className="group px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-cyan-500 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+                      className="cb-button cb-button-accept"
                     >
                       Accetta
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                      <ChevronRight className="cb-button-icon" />
                     </button>
 
                     <button
                       onClick={handleReject}
-                      className="px-6 py-2.5 bg-white/10 text-white border border-white/20 rounded-xl font-semibold hover:bg-white/20 transition-all duration-200 backdrop-blur-sm"
+                      className="cb-button cb-button-reject"
                     >
                       Rifiuta
                     </button>
 
                     <button
                       onClick={toggleDetails}
-                      className="px-4 py-2.5 text-gray-300 hover:text-white transition-colors duration-200 text-sm font-medium flex items-center justify-center gap-1.5 group"
+                      className="cb-button cb-button-details"
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="cb-button-icon-eye" />
                       Dettagli
-                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      <ChevronRight className="cb-button-icon-details" />
                     </button>
                   </div>
                 </div>
               ) : (
                 // Vista dettagli espansa
-                <div className="text-white">
+                <div className="cb-details-view">
                   {/* Header dettagli */}
-                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-white" />
+                  <div className="cb-details-header">
+                    <div className="cb-details-title-group">
+                      <div className="cb-details-icon-wrapper">
+                        <Shield className="cb-icon-shield-details" />
                       </div>
-                      <h3 className="text-2xl font-bold">
-                        Informativa Privacy
-                      </h3>
+                      <h3 className="cb-details-title">Informativa Privacy</h3>
                     </div>
                     <button
                       onClick={toggleDetails}
-                      className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors duration-200"
+                      className="cb-button-close"
                       aria-label="Chiudi dettagli"
                     >
-                      <X className="w-6 h-6" />
+                      <X className="cb-icon-close" />
                     </button>
                   </div>
 
                   {/* Contenuto scrollabile */}
-                  <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-5 custom-scrollbar">
+                  <div className="cb-details-scroll-content">
                     {/* Sezione 1 */}
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Lock className="w-4 h-4 text-blue-400" />
+                    <div className="cb-details-card">
+                      <div className="cb-details-card-header">
+                        <div className="cb-card-icon-wrapper cb-card-icon-blue">
+                          <Lock className="cb-card-icon" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-lg mb-2">
+                          <h4 className="cb-card-title">
                             Gestione delle informazioni
                           </h4>
-                          <p className="text-gray-300 text-sm leading-relaxed">
+                          <p className="cb-card-text">
                             Questo sito utilizza esclusivamente cookie tecnici e
                             localStorage per garantire una navigazione fluida ed
                             efficiente.
@@ -164,76 +155,72 @@ const BannerCookie = () => {
                     </div>
 
                     {/* Sezione 2 */}
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <div className="w-2 h-2 bg-cyan-400 rounded-full" />
+                    <div className="cb-details-card">
+                      <h4 className="cb-card-title cb-flex">
+                        <div className="cb-dot cb-dot-cyan" />
                         Cos'è il localStorage?
                       </h4>
-                      <p className="text-gray-300 text-sm leading-relaxed mb-3">
+                      <p className="cb-card-text cb-mb-3">
                         Il localStorage è uno spazio di memoria del tuo browser
                         che permette al sito di conservare informazioni
                         localmente:
                       </p>
-                      <div className="space-y-2">
+                      <div className="cb-list-wrapper">
                         {[
                           "Non invia dati a server esterni",
                           "Non viene condiviso con terze parti",
                           "Migliora l'esperienza di navigazione",
                         ].map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <ChevronRight className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                            <span className="text-gray-300 text-sm">
-                              {item}
-                            </span>
+                          <div key={idx} className="cb-list-item">
+                            <ChevronRight className="cb-list-icon-cyan" />
+                            <span className="cb-card-text">{item}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* Sezione 3 */}
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    <div className="cb-details-card">
+                      <h4 className="cb-card-title cb-flex">
+                        <div className="cb-dot cb-dot-green" />
                         Finalità d'uso
                       </h4>
-                      <div className="space-y-2">
+                      <div className="cb-list-wrapper">
                         {[
                           "Ricordare le preferenze di navigazione",
                           "Velocizzare il caricamento delle pagine",
                           "Evitare messaggi ripetitivi",
                         ].map((item, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <div className="w-5 h-5 bg-green-500/20 rounded flex items-center justify-center flex-shrink-0">
-                              <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                          <div key={idx} className="cb-list-item-alt">
+                            <div className="cb-list-icon-box">
+                              <div className="cb-list-icon-dot" />
                             </div>
-                            <span className="text-gray-300 text-sm">
-                              {item}
-                            </span>
+                            <span className="cb-card-text">{item}</span>
                           </div>
                         ))}
                       </div>
-                      <p className="text-gray-400 text-sm mt-3 italic">
+                      <p className="cb-card-text-italic">
                         Nessun tracciamento, profilazione o analisi
                         comportamentale.
                       </p>
                     </div>
 
                     {/* Sezione 4 */}
-                    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full" />
+                    <div className="cb-details-card">
+                      <h4 className="cb-card-title cb-flex">
+                        <div className="cb-dot cb-dot-purple" />
                         Durata conservazione
                       </h4>
-                      <div className="space-y-2 text-gray-300 text-sm">
+                      <div className="cb-list-wrapper cb-card-text">
                         <p>I dati memorizzati:</p>
-                        <div className="pl-4 space-y-1.5">
+                        <div className="cb-list-sub">
                           <p>• Rimangono solo sul tuo dispositivo</p>
                           <p>• Non vengono sincronizzati con server esterni</p>
                           <p>
                             • Vengono eliminati automaticamente dopo 30 giorni
                           </p>
                         </div>
-                        <p className="text-gray-400 mt-2">
+                        <p className="cb-card-text-subtle cb-mt-2">
                           Puoi cancellarli manualmente dalle impostazioni del
                           browser.
                         </p>
@@ -242,16 +229,16 @@ const BannerCookie = () => {
                   </div>
 
                   {/* Footer con azioni */}
-                  <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-5 border-t border-white/10">
+                  <div className="cb-details-footer">
                     <button
                       onClick={handleAccept}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-cyan-500 transition-all duration-200 shadow-lg hover:shadow-xl"
+                      className="cb-button-footer cb-button-accept-details"
                     >
                       Accetta e Continua
                     </button>
                     <button
                       onClick={handleReject}
-                      className="flex-1 px-6 py-3 bg-white/10 text-white border border-white/20 rounded-xl font-semibold hover:bg-white/20 transition-all duration-200"
+                      className="cb-button-footer cb-button-reject-details"
                     >
                       Rifiuta
                     </button>
@@ -263,19 +250,455 @@ const BannerCookie = () => {
         </div>
 
         <style>{`
-          .custom-scrollbar::-webkit-scrollbar {
+          /* === Overlay === */
+          .cb-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 40;
+            transition-property: opacity;
+            transition-duration: 300ms;
+          }
+
+          /* === Contenitore Principale === */
+          .cb-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            transition: all 300ms ease-out;
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          .cb-container.cb-visible {
+            transform: translateY(0);
+            opacity: 1;
+          }
+
+          /* === Wrapper Interni === */
+          .cb-relative-wrapper {
+            position: relative;
+          }
+          .cb-top-gradient {
+            position: absolute;
+            top: 0; /* Si attacca al main-content */
+            left: 0;
+            right: 0;
+            height: 2rem; /* 32px */
+            pointer-events: none;
+            background: linear-gradient(to top, rgba(12, 73, 91, 0.95), transparent);
+            transform: translateY(-100%); /* Sposta il gradiente sopra il box */
+          }
+          .cb-main-content {
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.2), 0 -10px 10px -5px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, rgba(12, 73, 91, 0.98) 0%, rgba(12, 73, 91, 0.95) 50%, rgba(15, 85, 105, 0.95) 100%);
+          }
+          .cb-main-content.cb-rounded-top {
+            border-top-left-radius: 1rem; /* 16px */
+            border-top-right-radius: 1rem; /* 16px */
+          }
+          .cb-max-width-wrapper {
+            max-width: 80rem; /* 1280px - max-w-7xl */
+            margin-left: auto;
+            margin-right: auto;
+            padding: 1rem 1rem; /* 16px 16px */
+          }
+          @media (min-width: 640px) {
+            .cb-max-width-wrapper {
+              padding: 1rem 1.5rem; /* 16px 24px */
+            }
+          }
+          @media (min-width: 1024px) {
+            .cb-max-width-wrapper {
+              padding: 1rem 2rem; /* 16px 32px */
+            }
+          }
+
+          /* === Vista Compatta === */
+          .cb-compact-view {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* 16px */
+          }
+          @media (min-width: 1024px) {
+            .cb-compact-view {
+              flex-direction: row;
+              align-items: center;
+            }
+          }
+          .cb-compact-text-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem; /* 16px */
+            flex: 1;
+          }
+          .cb-icon-wrapper {
+            flex-shrink: 0;
+            width: 3rem; /* 48px */
+            height: 3rem; /* 48px */
+            background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+            border-radius: 0.75rem; /* 12px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          }
+          .cb-icon-cookie {
+            width: 1.5rem; /* 24px */
+            height: 1.5rem; /* 24px */
+            color: white;
+          }
+          .cb-compact-text-content {
+            flex: 1;
+            min-width: 0;
+          }
+          .cb-compact-title {
+            color: white;
+            font-weight: 700;
+            font-size: 1.125rem; /* 18px */
+            margin-bottom: 0.375rem; /* 6px */
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* 8px */
+          }
+          .cb-icon-shield {
+            width: 1rem; /* 16px */
+            height: 1rem; /* 16px */
+            color: #4ade80; /* green-400 */
+          }
+          .cb-compact-description {
+            color: #d1d5db; /* gray-300 */
+            font-size: 0.875rem; /* 14px */
+            line-height: 1.625;
+          }
+          .cb-compact-description-sub {
+            color: #9ca3af; /* gray-400 */
+          }
+
+          /* === Pulsanti Compatti === */
+          .cb-compact-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem; /* 10px */
+            width: 100%;
+          }
+          @media (min-width: 640px) {
+            .cb-compact-buttons {
+              flex-direction: row;
+            }
+          }
+          @media (min-width: 1024px) {
+            .cb-compact-buttons {
+              width: auto;
+              flex-shrink: 0;
+            }
+          }
+
+          .cb-button {
+            padding-left: 1.5rem; /* 24px */
+            padding-right: 1.5rem; /* 24px */
+            padding-top: 0.625rem; /* 10px */
+            padding-bottom: 0.625rem; /* 10px */
+            border-radius: 0.75rem; /* 12px */
+            font-weight: 600;
+            transition: all 200ms;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem; /* 8px */
+            cursor: pointer;
+            border: none;
+          }
+          .cb-button-accept {
+            background: linear-gradient(to right, #3b82f6, #06b6d4);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          }
+          .cb-button-accept:hover {
+            background: linear-gradient(to right, #2563eb, #0891b2);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: scale(1.05);
+          }
+          .cb-button-icon {
+            width: 1rem; /* 16px */
+            height: 1rem; /* 16px */
+            transition: transform 150ms;
+          }
+          .cb-button-accept:hover .cb-button-icon {
+            transform: translateX(2px);
+          }
+          .cb-button-reject {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+          }
+          .cb-button-reject:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+          }
+          .cb-button-details {
+            padding-left: 1rem; /* 16px */
+            padding-right: 1rem; /* 16px */
+            color: #d1d5db; /* gray-300 */
+            font-size: 0.875rem; /* 14px */
+            font-weight: 500;
+            gap: 0.375rem; /* 6px */
+            background: none;
+          }
+          .cb-button-details:hover {
+            color: white;
+          }
+          .cb-button-icon-eye {
+            width: 1rem; /* 16px */
+            height: 1rem; /* 16px */
+          }
+          .cb-button-icon-details {
+            width: 0.875rem; /* 14px */
+            height: 0.875rem; /* 14px */
+            transition: transform 150ms;
+          }
+          .cb-button-details:hover .cb-button-icon-details {
+            transform: translateX(2px);
+          }
+
+          /* === Vista Dettagli === */
+          .cb-details-view {
+            color: white;
+          }
+          .cb-details-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem; /* 24px */
+            padding-bottom: 1rem; /* 16px */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          .cb-details-title-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem; /* 12px */
+          }
+          .cb-details-icon-wrapper {
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            background: linear-gradient(to bottom right, #3b82f6, #06b6d4);
+            border-radius: 0.5rem; /* 8px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .cb-icon-shield-details {
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            color: white;
+          }
+          .cb-details-title {
+            font-size: 1.5rem; /* 24px */
+            font-weight: 700;
+          }
+          .cb-button-close {
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem; /* 8px */
+            transition: background-color 200ms;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+          }
+          .cb-button-close:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+          .cb-icon-close {
+            width: 1.5rem; /* 24px */
+            height: 1.5rem; /* 24px */
+          }
+
+          /* === Contenuto Dettagli === */
+          .cb-details-scroll-content {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 0.5rem; /* 8px */
+            display: grid;
+            gap: 1.25rem; /* 20px */
+          }
+          
+          /* === Scrollbar Custom === */
+          .cb-details-scroll-content::-webkit-scrollbar {
             width: 6px;
           }
-          .custom-scrollbar::-webkit-scrollbar-track {
+          .cb-details-scroll-content::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
           }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
+          .cb-details-scroll-content::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.2);
             border-radius: 10px;
           }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          .cb-details-scroll-content::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.3);
+          }
+          
+          .cb-details-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem; /* 12px */
+            padding: 1rem; /* 16px */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          .cb-details-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem; /* 12px */
+            margin-bottom: 0.75rem; /* 12px */
+          }
+          .cb-card-icon-wrapper {
+            width: 2rem; /* 32px */
+            height: 2rem; /* 32px */
+            border-radius: 0.5rem; /* 8px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+          .cb-card-icon-blue {
+            background-color: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+          }
+          .cb-card-icon {
+            width: 1rem; /* 16px */
+            height: 1rem; /* 16px */
+            color: #60a5fa; /* blue-400 */
+          }
+          .cb-card-title {
+            font-weight: 600;
+            font-size: 1.125rem; /* 18px */
+            margin-bottom: 0.75rem; /* 12px */
+          }
+          .cb-card-title.cb-flex {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* 8px */
+          }
+          .cb-card-text {
+            color: #d1d5db; /* gray-300 */
+            font-size: 0.875rem; /* 14px */
+            line-height: 1.625;
+          }
+          .cb-card-text.cb-mb-3 {
+            margin-bottom: 0.75rem; /* 12px */
+          }
+          .cb-card-text-subtle {
+            color: #9ca3af; /* gray-400 */
+            font-size: 0.875rem; /* 14px */
+          }
+          .cb-card-text-italic {
+            color: #9ca3af; /* gray-400 */
+            font-size: 0.875rem; /* 14px */
+            margin-top: 0.75rem; /* 12px */
+            font-style: italic;
+          }
+
+          /* === Elementi lista === */
+          .cb-dot {
+            width: 0.5rem; /* 8px */
+            height: 0.5rem; /* 8px */
+            border-radius: 9999px;
+          }
+          .cb-dot-cyan { background-color: #22d3ee; }
+          .cb-dot-green { background-color: #4ade80; }
+          .cb-dot-purple { background-color: #c084fc; }
+          
+          .cb-list-wrapper {
+            display: grid;
+            gap: 0.5rem; /* 8px */
+          }
+          .cb-list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem; /* 8px */
+          }
+          .cb-list-icon-cyan {
+            width: 1rem; /* 16px */
+            height: 1rem; /* 16px */
+            color: #22d3ee; /* cyan-400 */
+            flex-shrink: 0;
+            margin-top: 0.125rem; /* 2px */
+          }
+          
+          .cb-list-item-alt {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem; /* 8px */
+          }
+          .cb-list-icon-box {
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            background-color: rgba(34, 197, 94, 0.2); /* green-500/20 */
+            border-radius: 0.25rem; /* 4px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+          .cb-list-icon-dot {
+            width: 0.375rem; /* 6px */
+            height: 0.375rem; /* 6px */
+            background-color: #4ade80; /* green-400 */
+            border-radius: 9999px;
+          }
+          .cb-list-sub {
+            padding-left: 1rem; /* 16px */
+            display: grid;
+            gap: 0.375rem; /* 6px */
+          }
+          .cb-mt-2 { margin-top: 0.5rem; /* 8px */ }
+
+          /* === Footer Dettagli === */
+          .cb-details-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem; /* 12px */
+            margin-top: 1.5rem; /* 24px */
+            padding-top: 1.25rem; /* 20px */
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+          }
+          @media (min-width: 640px) {
+            .cb-details-footer {
+              flex-direction: row;
+            }
+          }
+          .cb-button-footer {
+            flex: 1;
+            padding: 0.75rem 1.5rem; /* 12px 24px */
+            border-radius: 0.75rem; /* 12px */
+            font-weight: 600;
+            transition: all 200ms;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem; /* 16px */
+          }
+          .cb-button-accept-details {
+            background: linear-gradient(to right, #3b82f6, #06b6d4);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          }
+          .cb-button-accept-details:hover {
+            background: linear-gradient(to right, #2563eb, #0891b2);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          }
+          .cb-button-reject-details {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+          }
+          .cb-button-reject-details:hover {
+            background-color: rgba(255, 255, 255, 0.2);
           }
         `}</style>
       </div>

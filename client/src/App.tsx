@@ -10,7 +10,8 @@ import Login from "./components/Login";
 import SegnalazioniSection from "./components/Segnalazioni";
 import AssociatiSection from "./components/Associati";
 import HomeDash from "./dashboard/homedash";
-//import BannerCookie from "./components/banner_cookie";
+// --- IMPORTA IL BANNER COOKIE CORRETTO ---
+import BannerCookie from "./components/banner_cookie";
 // import MappeSection from './components/mappe';
 // import PrenotaEventoPage from './components/PrenotaEventoPage';
 
@@ -32,8 +33,6 @@ function App() {
     id: number;
     level: number;
   } | null>(null);
-
-  // ... (tutte le funzioni parseUrl, checkUserPermissions, ecc. rimangono invariate) ...
 
   // Funzione per parsare l'URL e determinare la pagina corrente
   const parseUrl = (): RouteState => {
@@ -88,6 +87,9 @@ function App() {
           return;
         }
       } else {
+        // Non svuotare tutto se il banner cookie non è accettato,
+        // altrimenti si crea un loop. Qui si svuota solo
+        // se il login è SCADUTO.
         localStorage.clear();
       }
     }
@@ -166,7 +168,7 @@ function App() {
       />
 
       {/* MODIFICA CHIAVE: 
-        Spostiamo la logica di 'max-width' e 'margin: auto' qui dentro.
+          Spostiamo la logica di 'max-width' e 'margin: auto' qui dentro.
       */}
 
       {currentRoute.page === "dashboard" ? (
@@ -215,6 +217,8 @@ function App() {
           </main>
         </>
       )}
+
+      <BannerCookie />
     </div>
   );
 }

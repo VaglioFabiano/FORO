@@ -11,6 +11,22 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxWidth: "700px",
     margin: "0 auto",
   },
+  // --- NUOVI STILI PER IL BANNER ---
+  instructionsBanner: {
+    backgroundColor: "#e6f7ff", // Un azzurro "info"
+    border: "1px solid #b3e0ff",
+    color: "#0056b3",
+    padding: "1rem",
+    borderRadius: "8px",
+    margin: "1rem 0",
+    textAlign: "left",
+    lineHeight: "1.6",
+  },
+  instructionsList: {
+    paddingLeft: "20px",
+    margin: "0.5rem 0 0 0",
+  },
+  // --- FINE NUOVI STILI ---
   videoFeed: {
     width: "100%",
     maxHeight: "400px",
@@ -86,8 +102,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginTop: "2rem",
     paddingTop: "1rem",
   },
-
-  // --- NUOVI STILI QUI ---
   chatHeader: {
     display: "flex",
     justifyContent: "space-between",
@@ -95,7 +109,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginBottom: "0.5rem",
   },
   clearChatButton: {
-    backgroundColor: "#ffc107", // Un giallo "warning"
+    backgroundColor: "#ffc107",
     color: "#212529",
     padding: "5px 10px",
     border: "none",
@@ -104,8 +118,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "12px",
     fontWeight: "bold",
   },
-  // --- FINE NUOVI STILI ---
-
   chatHistory: {
     height: "300px",
     overflowY: "auto",
@@ -340,7 +352,7 @@ const AiutoAbbinamenti: React.FC = () => {
     }
   };
 
-  // --- NUOVA FUNZIONE PER SVUOTARE LA CHAT ---
+  // Funzione per svuotare la chat (invariata)
   const clearChat = () => {
     setChatMessages([]);
   };
@@ -362,6 +374,21 @@ const AiutoAbbinamenti: React.FC = () => {
   return (
     <div style={styles.container}>
       <h2>Aiuto Abbinamenti 📸</h2>
+
+      {/* --- NUOVO BANNER ISTRUZIONI --- */}
+      <div style={styles.instructionsBanner}>
+        <strong>Come funziona:</strong>
+        <ol style={styles.instructionsList}>
+          <li>Clicca "Apri Fotocamera" per iniziare.</li>
+          <li>Inquadra un colore che vuoi analizzare.</li>
+          <li>Premi "+ Aggiungi Colore" per salvarlo nella palette.</li>
+          <li>
+            Quando hai finito, scrivi un messaggio a Heidi per chiedere un
+            consiglio!
+          </li>
+        </ol>
+      </div>
+      {/* --- FINE BANNER ISTRUZIONI --- */}
 
       {/* Sezione Videocamera */}
       <div style={styles.buttonGroup}>
@@ -429,11 +456,12 @@ const AiutoAbbinamenti: React.FC = () => {
         </>
       )}
 
-      {/* --- SEZIONE CHAT MODIFICATA --- */}
+      {/* Sezione Chat */}
       <div style={styles.chatContainer}>
         {/* Header della chat con il nuovo pulsante */}
         <div style={styles.chatHeader}>
-          <h3>Consulente di Stile 🤖</h3>
+          {/* --- TITOLO MODIFICATO --- */}
+          <h3>Consulente di Stile Heidi 🤖</h3>
           {/* Mostra il pulsante solo se ci sono messaggi */}
           {chatMessages.length > 0 && (
             <button
@@ -478,7 +506,7 @@ const AiutoAbbinamenti: React.FC = () => {
                 color: "#555",
               }}
             >
-              Lo stilista sta pensando...
+              Heidi sta pensando...
             </div>
           )}
         </div>
