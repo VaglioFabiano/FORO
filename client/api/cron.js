@@ -462,7 +462,7 @@ ${
   }
 }
 
-// REPORT SETTIMANALE TURNI VUOTI - Sabato 12:00 (Versione con logica turni)
+// REPORT SETTIMANALE TURNI VUOTI - Sabato 12:00 (Versione Ottimizzata)
 async function weeklyEmptyShiftsReport(timestamp) {
   try {
     if (!db) {
@@ -475,54 +475,59 @@ async function weeklyEmptyShiftsReport(timestamp) {
     }
 
     const italianTime = getItalianTime();
-    console.log(`📋 Generando report turni vuoti per la prossima settimana`);
-
-    // Template degli orari predefiniti
+    console.log(
+      `📋 Generando report turni vuoti (OTTIMIZZATO) per la prossima settimana`
+    );
     const orariTemplate = [
       { inizio: "09:00", fine: "13:00", index: 0 }, // turno_index 0
       { inizio: "13:00", fine: "16:00", index: 1 }, // turno_index 1
       { inizio: "16:00", fine: "19:30", index: 2 }, // turno_index 2
       { inizio: "21:00", fine: "24:00", index: 3 }, // turno_index 3
-    ];
+    ]; // Ottieni le date della prossima settimana
 
-    // Ottieni le date della prossima settimana usando la tua logica
     const weekOffset = 1; // prossima settimana
-    const prossimaSettimana = getWeekDatesForOffset(weekOffset);
+    const prossimaSettimana = getWeekDatesForOffset(weekOffset); // Calcola il lunedì della prossima settimana
+    const monday = new Date(prossimaSettimana[0]); // <--- MODIFICA: Funzione di logica corretta
+    // Riflette la logica della sundayEndTask (Lun-Ven, 09:00-19:30)
 
-    // Calcola il lunedì della prossima settimana per il calcolo delle date
-    const now = new Date();
-    const currentDay = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(
-      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
-    );
-
-    // Funzione per verificare se un turno è naturalmente chiuso
-    const isSlotNaturallyClosed = (dayIndex, turnoIndex, weekType) => {
-      if (weekType === "plus2" || weekType === "plus3") {
-        // Chiudi sempre il turno serale (21:00-24:00)
-        if (turnoIndex === 3) return true;
-
-        // Chiudi i weekend (sabato=5, domenica=6)
-        if (dayIndex === 5 || dayIndex === 6) return true;
+    const isSlotNaturallyClosed = (dayIndex, turnoIndex) => {
+      // Sabato (5) o Domenica (6)
+      // (dayIndex è 0-based: 0=Lunedì, 5=Sabato, 6=Domenica)
+      if (dayIndex === 5 || dayIndex === 6) {
+        return true;
+      } // Turno serale (21:00-24:00, index 3)
+      if (turnoIndex === 3) {
+        return true;
       }
       return false;
-    };
+    }; // <--- MODIFICA: Esegui UNA SOLA QUERY per tutti i turni
 
-    // Per la prossima settimana, il weekType è 'prossima' (non plus2/plus3)
-    const weekType = "prossima";
+    console.log(
+      `⚡ Eseguo query singola per tutti i turni dal ${prossimaSettimana[0]} al ${prossimaSettimana[6]}`
+    );
+    const turniEsistentiResult = await db.execute({
+      sql: `SELECT data, turno_inizio, turno_fine 
+            FROM turni 
+            WHERE data >= ? AND data <= ?`,
+      args: [prossimaSettimana[0], prossimaSettimana[6]],
+    }); // <--- MODIFICA: Metti i turni in un Set per un controllo O(1) velocissimo
 
-    // Array per raccogliere tutti i turni teorici e quelli vuoti
+    const turniOccupati = new Set();
+    turniEsistentiResult.rows.forEach((t) => {
+      turniOccupati.add(`${t.data}_${t.turno_inizio}_${t.turno_fine}`);
+    });
+    console.log(
+      `📊 Trovati ${turniOccupati.size} turni occupati nella prossima settimana`
+    ); // Array per raccogliere i risultati
+
     let turniTeorici = [];
     let turniVuoti = [];
-    let totaleTurniOccupati = 0;
+    let turniStraordinari = [];
+    let totaleTurniOccupati = 0; // <--- MODIFICA: Elabora i dati IN MEMORIA (molto più veloce)
 
-    // Genera tutti i turni teorici per la settimana
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      const targetDate = new Date(monday);
-      targetDate.setDate(monday.getDate() + dayIndex);
-      const dataGiorno = targetDate.toISOString().split("T")[0]; // YYYY-MM-DD
-      const nomeGiorno = getDayName((dayIndex + 1) % 7); // Lunedì = 1, Domenica = 0
+      const dataGiorno = prossimaSettimana[dayIndex];
+      const nomeGiorno = getDayName((dayIndex + 1) % 7); // 1=Lunedì, 0=Domenica
 
       for (
         let turnoIndex = 0;
@@ -530,16 +535,26 @@ async function weeklyEmptyShiftsReport(timestamp) {
         turnoIndex++
       ) {
         const orario = orariTemplate[turnoIndex];
+        const keyTurno = `${dataGiorno}_${orario.inizio}_${orario.fine}`;
+        const isClosed = isSlotNaturallyClosed(dayIndex, turnoIndex);
+        const isOccupato = turniOccupati.has(keyTurno);
 
-        // Verifica se questo slot dovrebbe essere naturalmente chiuso
-        const isNaturallyClosed = isSlotNaturallyClosed(
-          dayIndex,
-          turnoIndex,
-          weekType
-        );
-
-        // Se non è naturalmente chiuso, è un turno che dovrebbe essere disponibile
-        if (!isNaturallyClosed) {
+        if (isClosed) {
+          // È uno slot "chiuso" (Sab/Dom/Sera)
+          if (isOccupato) {
+            // C'è un turno in uno slot chiuso = Straordinario
+            turniStraordinari.push({
+              data: dataGiorno,
+              giorno: nomeGiorno,
+              day_index: dayIndex,
+              turno_index: turnoIndex,
+              turno_inizio: orario.inizio,
+              turno_fine: orario.fine,
+            });
+            totaleTurniOccupati++;
+          }
+        } else {
+          // È uno slot "teorico" (Lun-Ven, 09:00-19:30)
           const turnoTeorico = {
             data: dataGiorno,
             giorno: nomeGiorno,
@@ -548,72 +563,24 @@ async function weeklyEmptyShiftsReport(timestamp) {
             turno_inizio: orario.inizio,
             turno_fine: orario.fine,
           };
-
           turniTeorici.push(turnoTeorico);
 
-          // Verifica se esiste già un turno assegnato per questo slot
-          const turnoEsistente = await db.execute({
-            sql: `SELECT COUNT(*) as count FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?`,
-            args: [dataGiorno, orario.inizio, orario.fine],
-          });
-
-          if (turnoEsistente.rows[0].count === 0) {
-            // Turno vuoto trovato
-            turniVuoti.push(turnoTeorico);
-          } else {
+          if (isOccupato) {
             totaleTurniOccupati++;
+          } else {
+            // Turno teorico non occupato = Vuoto
+            turniVuoti.push(turnoTeorico);
           }
         }
       }
-    }
+    } // <--- MODIFICA: Query per admin e moderatori con GROUP BY
+    // Questo RISOLVE IL PROBLEMA DEI MESSAGGI DOPPI
 
-    // Verifica anche se ci sono turni straordinari (turni in slot che dovrebbero essere chiusi)
-    let turniStraordinari = [];
-
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      const targetDate = new Date(monday);
-      targetDate.setDate(monday.getDate() + dayIndex);
-      const dataGiorno = targetDate.toISOString().split("T")[0];
-
-      for (
-        let turnoIndex = 0;
-        turnoIndex < orariTemplate.length;
-        turnoIndex++
-      ) {
-        const orario = orariTemplate[turnoIndex];
-        const isNaturallyClosed = isSlotNaturallyClosed(
-          dayIndex,
-          turnoIndex,
-          weekType
-        );
-
-        if (isNaturallyClosed) {
-          // Verifica se c'è un turno assegnato in uno slot che dovrebbe essere chiuso
-          const turnoStraordinario = await db.execute({
-            sql: `SELECT * FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?`,
-            args: [dataGiorno, orario.inizio, orario.fine],
-          });
-
-          if (turnoStraordinario.rows.length > 0) {
-            turniStraordinari.push({
-              data: dataGiorno,
-              giorno: getDayName((dayIndex + 1) % 7),
-              day_index: dayIndex,
-              turno_index: turnoIndex,
-              turno_inizio: orario.inizio,
-              turno_fine: orario.fine,
-              turno: turnoStraordinario.rows[0],
-            });
-          }
-        }
-      }
-    }
-
-    // Ottieni utenti level 0 e level 1
     const adminResult = await db.execute({
       sql: `SELECT id, name, surname, telegram_chat_id, level
-            FROM users 
-            WHERE telegram_chat_id IS NOT NULL AND (level = 0 OR level = 1)`,
+            FROM users 
+            WHERE telegram_chat_id IS NOT NULL AND (level = 0 OR level = 1)
+            GROUP BY telegram_chat_id`,
       args: [],
     });
 
@@ -622,9 +589,8 @@ async function weeklyEmptyShiftsReport(timestamp) {
     if (adminsAndModerators.length === 0) {
       console.log("📋 Nessun admin o moderatore trovato per il report");
       return;
-    }
+    } // Genera il messaggio del report
 
-    // Genera il messaggio del report
     let reportMessage = `📋 <b>Report Settimanale Turni Vuoti</b>
 
 📅 Settimana: ${formatDate(prossimaSettimana[0])} - ${formatDate(prossimaSettimana[6])}
@@ -632,10 +598,9 @@ async function weeklyEmptyShiftsReport(timestamp) {
 
 📊 <b>Riepilogo:</b>
 🔸 Turni totali teorici: <b>${turniTeorici.length}</b>
-✅ Turni già occupati: <b>${totaleTurniOccupati}</b>
+✅ Turni già occupati: <b>${totaleTurniOccupati - turniStraordinari.length}</b>
 ❌ Turni vuoti: <b>${turniVuoti.length}</b>`;
 
-    // Aggiungi informazioni sui turni straordinari se presenti
     if (turniStraordinari.length > 0) {
       reportMessage += `\n⭐ Turni straordinari: <b>${turniStraordinari.length}</b>`;
     }
@@ -646,8 +611,6 @@ async function weeklyEmptyShiftsReport(timestamp) {
       reportMessage += `🎉 <b>Ottimo!</b> Tutti i turni teorici della prossima settimana sono occupati!`;
     } else {
       reportMessage += `⚠️ <b>Turni vuoti da coprire:</b>\n\n`;
-
-      // Raggruppa per giorno
       const turniPerGiorno = {};
       turniVuoti.forEach((turno) => {
         if (!turniPerGiorno[turno.giorno]) {
@@ -656,7 +619,6 @@ async function weeklyEmptyShiftsReport(timestamp) {
         turniPerGiorno[turno.giorno].push(turno);
       });
 
-      // Ordina i giorni
       const giorniOrdinati = [
         "Lunedì",
         "Martedì",
@@ -666,27 +628,22 @@ async function weeklyEmptyShiftsReport(timestamp) {
         "Sabato",
         "Domenica",
       ];
-
       for (const giorno of giorniOrdinati) {
         if (turniPerGiorno[giorno]) {
           reportMessage += `📅 <b>${giorno}:</b>\n`;
-
-          // Ordina per turno_index
           turniPerGiorno[giorno]
             .sort((a, b) => a.turno_index - b.turno_index)
             .forEach((turno) => {
-              reportMessage += `   • ${turno.turno_inizio} - ${turno.turno_fine}\n`;
+              reportMessage += `   • ${turno.turno_inizio} - ${turno.turno_fine}\n`;
             });
           reportMessage += `\n`;
         }
       }
     }
 
-    // Aggiungi sezione turni straordinari se presenti
     if (turniStraordinari.length > 0) {
       reportMessage += `\n⭐ <b>Turni Straordinari Attivi:</b>\n`;
       reportMessage += `<i>(Turni in slot che normalmente sarebbero chiusi)</i>\n\n`;
-
       const straordinariPerGiorno = {};
       turniStraordinari.forEach((turno) => {
         if (!straordinariPerGiorno[turno.giorno]) {
@@ -704,22 +661,19 @@ async function weeklyEmptyShiftsReport(timestamp) {
         "Sabato",
         "Domenica",
       ];
-
       for (const giorno of giorniOrdinati) {
         if (straordinariPerGiorno[giorno]) {
           reportMessage += `📅 <b>${giorno}:</b>\n`;
-
           straordinariPerGiorno[giorno]
             .sort((a, b) => a.turno_index - b.turno_index)
             .forEach((turno) => {
-              reportMessage += `   ⭐ ${turno.turno_inizio} - ${turno.turno_fine}\n`;
+              reportMessage += `   ⭐ ${turno.turno_inizio} - ${turno.turno_fine}\n`;
             });
           reportMessage += `\n`;
         }
       }
-    }
+    } // Invia il report (ora a utenti unici)
 
-    // Invia il report a tutti gli admin e moderatori
     for (const user of adminsAndModerators) {
       try {
         await sendTelegramMessage(user.telegram_chat_id, reportMessage);
@@ -733,33 +687,39 @@ async function weeklyEmptyShiftsReport(timestamp) {
     }
 
     console.log(
-      `📋 Report turni vuoti inviato a ${adminsAndModerators.length} utenti (admin/moderatori)`
+      `📋 Report turni vuoti inviato a ${adminsAndModerators.length} utenti unici (admin/moderatori)`
     );
-
-    // Log dettagliato per debug
-    console.log(`📊 Statistiche report:
-    - Turni teorici totali: ${turniTeorici.length}
-    - Turni vuoti: ${turniVuoti.length}  
-    - Turni occupati: ${totaleTurniOccupati}
-    - Turni straordinari: ${turniStraordinari.length}`);
+    console.log(`📊 Statistiche report (ottimizzato):
+    - Turni teorici totali: ${turniTeorici.length}
+    - Turni vuoti: ${turniVuoti.length}  
+    - Turni occupati (teorici): ${totaleTurniOccupati - turniStraordinari.length}
+    - Turni straordinari: ${turniStraordinari.length}`);
   } catch (error) {
-    console.error("❌ Errore nel report turni vuoti:", error);
-
-    // Invia notifica di errore
+    console.error("❌ Errore nel report turni vuoti (ottimizzato):", error);
     await sendTelegramMessage(
       TEST_CHAT_ID,
-      `❌ Errore nel report turni vuoti: ${error.message}`
+      `❌ Errore nel report turni vuoti (ottimizzato): ${error.message}`
     );
   }
 }
 
-// FUNZIONE CAMBIO SETTIMANA SEMPLIFICATA - Domenica 23:59 (orario italiano)
-// STRATEGIA: Salva tutto → Cancella tutto → Ricrea tutto (spostato di 1 settimana)
+// FUNZIONE CAMBIO SETTIMANA CON TRANSAZIONE - Domenica 23:59 (orario italiano)
+// STRATEGIA: Salva -> Cancella -> Ricrea (TUTTO IN UNA TRANSAZIONE)
 async function sundayEndTask(timestamp) {
   const italianTime = getItalianTime();
   console.log(
-    `📊 Task fine domenica (23:59 orario italiano) - Cambio settimana con rotazione semplificata (2 settimane)`
-  );
+    `📊 Task fine domenica (23:59 orario italiano) - Avvio cambio settimana con TRANSAZIONE`
+  ); // <--- MODIFICA: Variabili per il report definite fuori dalla transazione
+  let deleteTurniCorrente = { rowsAffected: 0 };
+  let orariCorrente = 0;
+  let turniCorrente = 0;
+  let orariProssima = 0;
+  let turniProssima = 0;
+  let verificaCorrente,
+    verificaProssima,
+    verificaTurniCorrente,
+    verificaTurniProssima;
+  let tx; // <--- MODIFICA: Dichiara la transazione qui
 
   try {
     if (!db) {
@@ -768,15 +728,13 @@ async function sundayEndTask(timestamp) {
         "⚠️ Database non disponibile per cambio settimana"
       );
       return;
-    }
-
+    } // ========================================
+    // FASE 1: CALCOLO DATE (fuori dalla transazione)
     // ========================================
-    // FASE 1: CALCOLO DATE
-    // ========================================
-    const settimanaCorrente = getWeekDatesForOffset(0); // Settimana che sta finendo (da eliminare)
-    const settimana1 = getWeekDatesForOffset(1); // Diventa la nuova "corrente"
-    const settimana2 = getWeekDatesForOffset(2); // Diventa la nuova "prossima"
 
+    const settimanaCorrente = getWeekDatesForOffset(0);
+    const settimana1 = getWeekDatesForOffset(1);
+    const settimana2 = getWeekDatesForOffset(2);
     console.log(`\n🗓️ === CALCOLO DATE ===`);
     console.log(
       `🗑️ Settimana da eliminare: ${settimanaCorrente[0]} - ${settimanaCorrente[6]}`
@@ -786,231 +744,225 @@ async function sundayEndTask(timestamp) {
     );
     console.log(
       `📅 Nuova prossima (nuova): ${settimana2[0]} - ${settimana2[6]}`
-    );
+    ); // <--- MODIFICA: AVVIO BLOCCO TRY PER TRANSAZIONE
 
-    // ========================================
-    // FASE 2: SALVATAGGIO COMPLETO STATO ATTUALE
-    // ========================================
-    console.log(`\n💾 === SALVATAGGIO STATO ATTUALE ===`);
+    try {
+      // <--- MODIFICA: AVVIO TRANSAZIONE 'write'
+      tx = await db.transaction("write");
+      console.log("\n⚡ === TRANSAZIONE AVVIATA === ⚡"); // ========================================
+      // FASE 2: SALVATAGGIO STATO ATTUALE (in transazione)
+      // ========================================
 
-    // 2.1 Salva TUTTI gli orari prossima
-    const orariProssimaSalvati = await db.execute({
-      sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima ORDER BY giorno, ora_inizio`,
-      args: [],
-    });
-    console.log(
-      `📋 Salvati ${orariProssimaSalvati.rows.length} orari da fasce_orarie_prossima`
-    );
+      console.log(`\n💾 === SALVATAGGIO STATO ATTUALE ===`);
+      const orariProssimaSalvati = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `SELECT giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima ORDER BY giorno, ora_inizio`,
+        args: [],
+      });
+      console.log(
+        `📋 Salvati ${orariProssimaSalvati.rows.length} orari da fasce_orarie_prossima`
+      );
 
-    // 2.2 Salva TUTTI i turni delle settimane 1 e 2 (SENZA fascia_id)
-    const turniSettimana1Salvati = await db.execute({
-      sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
-            FROM turni
-            WHERE data >= ? AND data <= ?
-            ORDER BY data, turno_inizio`,
-      args: [settimana1[0], settimana1[6]],
-    });
-    console.log(
-      `📋 Salvati ${turniSettimana1Salvati.rows.length} turni della settimana 1`
-    );
+      const turniSettimana1Salvati = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
+               FROM turni
+               WHERE data >= ? AND data <= ?
+               ORDER BY data, turno_inizio`,
+        args: [settimana1[0], settimana1[6]],
+      });
+      console.log(
+        `📋 Salvati ${turniSettimana1Salvati.rows.length} turni della settimana 1`
+      );
 
-    const turniSettimana2Salvati = await db.execute({
-      sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
-            FROM turni
-            WHERE data >= ? AND data <= ?
-            ORDER BY data, turno_inizio`,
-      args: [settimana2[0], settimana2[6]],
-    });
-    console.log(
-      `📋 Salvati ${turniSettimana2Salvati.rows.length} turni della settimana 2`
-    );
+      const turniSettimana2Salvati = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
+               FROM turni
+               WHERE data >= ? AND data <= ?
+               ORDER BY data, turno_inizio`,
+        args: [settimana2[0], settimana2[6]],
+      });
+      console.log(
+        `📋 Salvati ${turniSettimana2Salvati.rows.length} turni della settimana 2`
+      ); // ========================================
+      // FASE 3: CANCELLAZIONE COMPLETA (in transazione)
+      // ========================================
 
-    // ========================================
-    // FASE 3: CANCELLAZIONE COMPLETA
-    // ========================================
-    console.log(`\n🗑️ === CANCELLAZIONE COMPLETA ===`);
+      console.log(`\n🗑️ === CANCELLAZIONE COMPLETA ===`);
+      deleteTurniCorrente = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
+        args: [settimanaCorrente[0], settimanaCorrente[6]],
+      });
+      console.log(
+        `✅ Eliminati ${deleteTurniCorrente.rowsAffected} turni della settimana terminata`
+      );
 
-    // 3.1 Elimina turni settimana corrente (che sta finendo)
-    const deleteTurniCorrente = await db.execute({
-      sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
-      args: [settimanaCorrente[0], settimanaCorrente[6]],
-    });
-    console.log(
-      `✅ Eliminati ${deleteTurniCorrente.rowsAffected} turni della settimana terminata`
-    );
+      const deleteTurniSettimana1 = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
+        args: [settimana1[0], settimana1[6]],
+      });
+      console.log(
+        `✅ Eliminati ${deleteTurniSettimana1.rowsAffected} turni settimana 1 (verranno ricreati)`
+      );
 
-    // 3.2 Elimina turni settimana 1 e 2 (verranno ricreati)
-    const deleteTurniSettimana1 = await db.execute({
-      sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
-      args: [settimana1[0], settimana1[6]],
-    });
-    console.log(
-      `✅ Eliminati ${deleteTurniSettimana1.rowsAffected} turni settimana 1 (verranno ricreati)`
-    );
+      const deleteTurniSettimana2 = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
+        args: [settimana2[0], settimana2[6]],
+      });
+      console.log(
+        `✅ Eliminati ${deleteTurniSettimana2.rowsAffected} turni settimana 2 (verranno ricreati)`
+      );
 
-    const deleteTurniSettimana2 = await db.execute({
-      sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,
-      args: [settimana2[0], settimana2[6]],
-    });
-    console.log(
-      `✅ Eliminati ${deleteTurniSettimana2.rowsAffected} turni settimana 2 (verranno ricreati)`
-    );
+      await tx.execute({ sql: `DELETE FROM fasce_orarie`, args: [] }); // <--- MODIFICA: tx.execute
+      console.log(`✅ Tabella fasce_orarie cancellata`);
+      await tx.execute({ sql: `DELETE FROM fasce_orarie_prossima`, args: [] }); // <--- MODIFICA: tx.execute
+      console.log(`✅ Tabella fasce_orarie_prossima cancellata`); // ========================================
+      // FASE 4: RICOSTRUZIONE - ORARI CORRENTE (in transazione)
+      // ========================================
 
-    // 3.3 Cancella tutte le tabelle orari
-    await db.execute({ sql: `DELETE FROM fasce_orarie`, args: [] });
-    console.log(`✅ Tabella fasce_orarie cancellata`);
+      console.log(`\n🔄 === RICOSTRUZIONE ORARI CORRENTE ===`);
+      for (const orario of orariProssimaSalvati.rows) {
+        await tx.execute({
+          // <--- MODIFICA: tx.execute
+          sql: `INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
+          args: [
+            orario.giorno,
+            orario.ora_inizio,
+            orario.ora_fine,
+            orario.note || null,
+          ],
+        });
+        orariCorrente++; // <--- MODIFICA: aggiorna variabile esterna
+      }
+      console.log(`📊 Totale orari corrente creati: ${orariCorrente}`); // ========================================
+      // FASE 5: RICOSTRUZIONE - TURNI SETTIMANA CORRENTE (in transazione)
+      // ========================================
 
-    await db.execute({ sql: `DELETE FROM fasce_orarie_prossima`, args: [] });
-    console.log(`✅ Tabella fasce_orarie_prossima cancellata`);
+      console.log(`\n🔄 === RICOSTRUZIONE TURNI SETTIMANA CORRENTE ===`);
+      for (const turno of turniSettimana1Salvati.rows) {
+        await tx.execute({
+          // <--- MODIFICA: tx.execute
+          sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
+                  VALUES (?, ?, ?, NULL, ?, ?, ?)`,
+          args: [
+            turno.data,
+            turno.turno_inizio,
+            turno.turno_fine,
+            turno.user_id,
+            turno.note,
+            turno.is_closed_override,
+          ],
+        });
+        turniCorrente++; // <--- MODIFICA: aggiorna variabile esterna
+      }
+      console.log(
+        `📊 Totale turni settimana corrente ricreati: ${turniCorrente}`
+      ); // ========================================
+      // FASE 6: RICOSTRUZIONE - ORARI PROSSIMA (standard) (in transazione)
+      // ========================================
 
-    // ========================================
-    // FASE 4: RICOSTRUZIONE - ORARI CORRENTE
-    // ========================================
-    console.log(`\n🔄 === RICOSTRUZIONE ORARI CORRENTE ===`);
+      console.log(`\n🆕 === RICOSTRUZIONE ORARI PROSSIMA (standard) ===`);
+      const orariStandard = [
+        { giorno: "Lunedì", ora_inizio: "09:00", ora_fine: "19:30" },
+        { giorno: "Martedì", ora_inizio: "09:00", ora_fine: "19:30" },
+        { giorno: "Mercoledì", ora_inizio: "09:00", ora_fine: "19:30" },
+        { giorno: "Giovedì", ora_inizio: "09:00", ora_fine: "19:30" },
+        { giorno: "Venerdì", ora_inizio: "09:00", ora_fine: "19:30" },
+      ];
 
-    let orariCorrente = 0;
-    for (const orario of orariProssimaSalvati.rows) {
-      await db.execute({
-        sql: `INSERT INTO fasce_orarie (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
-        args: [
-          orario.giorno,
-          orario.ora_inizio,
-          orario.ora_fine,
-          orario.note || null,
-        ],
+      for (const orario of orariStandard) {
+        await tx.execute({
+          // <--- MODIFICA: tx.execute
+          sql: `INSERT INTO fasce_orarie_prossima (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
+          args: [orario.giorno, orario.ora_inizio, orario.ora_fine, ""],
+        });
+        orariProssima++; // <--- MODIFICA: aggiorna variabile esterna
+      }
+      console.log(`📊 Totale orari prossima creati: ${orariProssima}`); // ========================================
+      // FASE 7: RICOSTRUZIONE - TURNI SETTIMANA PROSSIMA (in transazione)
+      // ========================================
+
+      console.log(`\n🔄 === RICOSTRUZIONE TURNI SETTIMANA PROSSIMA ===`);
+      for (const turno of turniSettimana2Salvati.rows) {
+        await tx.execute({
+          // <--- MODIFICA: tx.execute
+          sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
+                  VALUES (?, ?, ?, NULL, ?, ?, ?)`,
+          args: [
+            turno.data,
+            turno.turno_inizio,
+            turno.turno_fine,
+            turno.user_id,
+            turno.note,
+            turno.is_closed_override,
+          ],
+        });
+        turniProssima++; // <--- MODIFICA: aggiorna variabile esterna
+      }
+      console.log(
+        `📊 Totale turni settimana prossima ricreati: ${turniProssima}`
+      ); // ========================================
+      // FASE 8: VERIFICA FINALE (in transazione)
+      // ========================================
+
+      console.log(`\n🔍 === VERIFICA FINALE ===`);
+      verificaCorrente = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `SELECT COUNT(*) as count FROM fasce_orarie`,
+        args: [],
+      });
+      verificaProssima = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `SELECT COUNT(*) as count FROM fasce_orarie_prossima`,
+        args: [],
+      });
+      verificaTurniCorrente = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
+        args: [settimana1[0], settimana1[6]],
+      });
+      verificaTurniProssima = await tx.execute({
+        // <--- MODIFICA: tx.execute
+        sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
+        args: [settimana2[0], settimana2[6]],
       });
 
-      orariCorrente++;
+      console.log(`✅ Orari corrente: ${verificaCorrente.rows[0].count}`);
+      console.log(`✅ Orari prossima: ${verificaProssima.rows[0].count}`);
       console.log(
-        `  ✅ Creato orario corrente: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine}`
+        `✅ Turni settimana corrente: ${verificaTurniCorrente.rows[0].count}`
       );
-    }
-    console.log(`📊 Totale orari corrente creati: ${orariCorrente}`);
-
-    // ========================================
-    // FASE 5: RICOSTRUZIONE - TURNI SETTIMANA CORRENTE
-    // ========================================
-    console.log(`\n🔄 === RICOSTRUZIONE TURNI SETTIMANA CORRENTE ===`);
-
-    let turniCorrente = 0;
-    for (const turno of turniSettimana1Salvati.rows) {
-      await db.execute({
-        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
-              VALUES (?, ?, ?, NULL, ?, ?, ?)`,
-        args: [
-          turno.data,
-          turno.turno_inizio,
-          turno.turno_fine,
-          turno.user_id,
-          turno.note,
-          turno.is_closed_override,
-        ],
-      });
-      turniCorrente++;
       console.log(
-        `  ✅ Ricreato turno: ${turno.data} ${turno.turno_inizio}-${turno.turno_fine}`
+        `✅ Turni settimana prossima: ${verificaTurniProssima.rows[0].count}`
+      ); // <--- MODIFICA: COMMIT DELLA TRANSAZIONE
+
+      await tx.commit();
+      console.log("\n✅ === TRANSAZIONE COMPLETATA (COMMIT ESEGUITO) === ✅");
+    } catch (txError) {
+      // <--- MODIFICA: CATTURA ERRORE TRANSAZIONE
+      console.error(
+        "❌ ERRORE DURANTE LA TRANSAZIONE, ESEGUO ROLLBACK...",
+        txError
       );
-    }
-    console.log(
-      `📊 Totale turni settimana corrente ricreati: ${turniCorrente}`
-    );
-
+      if (tx) {
+        await tx.rollback();
+        console.log(
+          "🔄 === ROLLBACK COMPLETATO. Nessuna modifica al database. === 🔄"
+        );
+      }
+      throw txError; // Rilancia l'errore per il blocco catch esterno
+    } // ========================================
+    // FASE 9: NOTIFICA ADMIN (solo se la transazione ha avuto successo)
     // ========================================
-    // FASE 6: RICOSTRUZIONE - ORARI PROSSIMA (standard)
-    // ========================================
-    console.log(`\n🆕 === RICOSTRUZIONE ORARI PROSSIMA (standard) ===`);
-
-    const orariStandard = [
-      { giorno: "Lunedì", ora_inizio: "09:00", ora_fine: "19:30" },
-      { giorno: "Martedì", ora_inizio: "09:00", ora_fine: "19:30" },
-      { giorno: "Mercoledì", ora_inizio: "09:00", ora_fine: "19:30" },
-      { giorno: "Giovedì", ora_inizio: "09:00", ora_fine: "19:30" },
-      { giorno: "Venerdì", ora_inizio: "09:00", ora_fine: "19:30" },
-      // Sabato e Domenica: chiuso
-    ];
-
-    let orariProssima = 0;
-    for (const orario of orariStandard) {
-      await db.execute({
-        sql: `INSERT INTO fasce_orarie_prossima (giorno, ora_inizio, ora_fine, note) VALUES (?, ?, ?, ?)`,
-        args: [orario.giorno, orario.ora_inizio, orario.ora_fine, ""],
-      });
-
-      orariProssima++;
-      console.log(
-        `  ✅ Creato orario prossima: ${orario.giorno} ${orario.ora_inizio}-${orario.ora_fine}`
-      );
-    }
-    console.log(`📊 Totale orari prossima creati: ${orariProssima}`);
-
-    // ========================================
-    // FASE 7: RICOSTRUZIONE - TURNI SETTIMANA PROSSIMA
-    // ========================================
-    console.log(`\n🔄 === RICOSTRUZIONE TURNI SETTIMANA PROSSIMA ===`);
-
-    let turniProssima = 0;
-    for (const turno of turniSettimana2Salvati.rows) {
-      await db.execute({
-        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override) 
-              VALUES (?, ?, ?, NULL, ?, ?, ?)`,
-        args: [
-          turno.data,
-          turno.turno_inizio,
-          turno.turno_fine,
-          turno.user_id,
-          turno.note,
-          turno.is_closed_override,
-        ],
-      });
-      turniProssima++;
-      console.log(
-        `  ✅ Ricreato turno prossima: ${turno.data} ${turno.turno_inizio}-${turno.turno_fine}`
-      );
-    }
-    console.log(
-      `📊 Totale turni settimana prossima ricreati: ${turniProssima}`
-    );
-
-    // ========================================
-    // FASE 8: VERIFICA FINALE
-    // ========================================
-    console.log(`\n🔍 === VERIFICA FINALE ===`);
-
-    const verificaCorrente = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM fasce_orarie`,
-      args: [],
-    });
-    const verificaProssima = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM fasce_orarie_prossima`,
-      args: [],
-    });
-    const verificaTurniCorrente = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
-      args: [settimana1[0], settimana1[6]],
-    });
-    const verificaTurniProssima = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM turni WHERE data >= ? AND data <= ?`,
-      args: [settimana2[0], settimana2[6]],
-    });
-
-    console.log(`✅ Orari corrente: ${verificaCorrente.rows[0].count}`);
-    console.log(`✅ Orari prossima: ${verificaProssima.rows[0].count}`);
-    console.log(
-      `✅ Turni settimana corrente: ${verificaTurniCorrente.rows[0].count}`
-    );
-    console.log(
-      `✅ Turni settimana prossima: ${verificaTurniProssima.rows[0].count}`
-    );
-
-    // ========================================
-    // FASE 9: NOTIFICA ADMIN
-    // ========================================
-    console.log(`\n📨 === INVIO NOTIFICHE ===`);
-
+    console.log(`\n📨 === INVIO NOTIFICHE ===`); // <--- MODIFICA: Ora usa db.execute, la transazione è chiusa
     const adminResult = await db.execute({
       sql: `SELECT id, name, surname, telegram_chat_id, level
-            FROM users 
-            WHERE telegram_chat_id IS NOT NULL AND level = 0`,
+            FROM users 
+            WHERE telegram_chat_id IS NOT NULL AND level = 0`,
       args: [],
     });
 
@@ -1038,7 +990,7 @@ async function sundayEndTask(timestamp) {
 • Sabato e Domenica: Chiuso
 
 ✅ Sistema pronto per la nuova settimana!
-🎯 Rotazione semplificata completata con successo`;
+🎯 Transazione completata con successo.`;
 
     let notificheInviate = 0;
     for (const admin of adminResult.rows) {
@@ -1054,9 +1006,8 @@ async function sundayEndTask(timestamp) {
       }
     }
 
-    console.log(`✅ Notifiche inviate a ${notificheInviate} admin`);
+    console.log(`✅ Notifiche inviate a ${notificheInviate} admin`); // Log nel database
 
-    // Log nel database
     await db
       .execute({
         sql: `INSERT INTO cron_logs (task_type, executed_at, status, error_message) VALUES (?, ?, ?, ?)`,
@@ -1071,25 +1022,24 @@ async function sundayEndTask(timestamp) {
         console.error("Errore log database:", error);
       });
 
-    console.log(`\n✅ === CAMBIO SETTIMANA COMPLETATO CON SUCCESSO ===\n`);
+    console.log(`\n✅ === CAMBIO SETTIMANA COMPLETATO CON SUCCESSO ===\V`);
   } catch (error) {
+    // <--- MODIFICA: Questo è il blocco catch esterno
     console.error("❌ ERRORE CRITICO NEL CAMBIO SETTIMANA:", error);
-
     const errorMessage = `❌ <b>Errore Cambio Settimana</b>
 📋 <i>Rotazione Semplificata</i>
-      
+      
 ⏰ Domenica 23:59 (orario italiano)
 🚨 Errore: ${error.message}
 
-⚠️ Il cambio settimana potrebbe non essere stato completato correttamente!
-🔧 Verificare manualmente il sistema turni e orari.
+⚠️ <b>ROLLBACK ESEGUITO.</b> Il cambio settimana NON è stato effettuato.
+Il database è stato ripristinato allo stato precedente all'avvio del task.
 
 📋 <b>Azione richiesta:</b>
-• Verificare tabelle fasce_orarie e fasce_orarie_prossima
-• Verificare turni delle settimane corrente e prossima
-• Contattare il supporto tecnico se necessario`;
+• Verificare il log per l'errore.
+• Il sistema è ancora alla settimana precedente.
+• Contattare il supporto tecnico.`; // Notifica admin dell'errore
 
-    // Notifica admin dell'errore
     if (db) {
       try {
         const adminResult = await db.execute({
@@ -1111,11 +1061,9 @@ async function sundayEndTask(timestamp) {
     }
 
     await sendTelegramMessage(TEST_CHAT_ID, errorMessage);
-
-    throw error;
+    throw error; // Rilancia l'errore per Vercel
   }
 }
-
 // Task generale per test e chiamate non programmate
 async function generalTask(timestamp) {
   const italianTime = getItalianTime();
