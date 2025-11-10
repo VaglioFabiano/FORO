@@ -15,7 +15,7 @@ if (!config.url || !config.authToken) {
 const client = createClient(config);
 
 // Token bot Telegram
-const TELEGRAM_BOT_TOKEN = '7608037480:AAGkJbIf02G98dTEnREBhfjI2yna5-Y1pzc';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
 // Funzione per verificare l'utente basata sui dati del token temporaneo
