@@ -139,7 +139,10 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem("user");
+    localStorage.removeItem("loginTime");
+    localStorage.removeItem("sessionToken");
+    localStorage.removeItem("rememberMe");
     navigateTo({ page: "home" });
     setForceNavbarUpdate((prev) => !prev);
     checkUserPermissions();
