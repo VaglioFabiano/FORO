@@ -1,33 +1,27 @@
 import { createClient } from "@libsql/client/web";
 import crypto from "crypto";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// --- Configurazione Database (dal tuo codice) ---
+// --- Configurazione Database ---
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
   authToken: process.env.TURSO_AUTH_TOKEN?.trim(),
 };
 
+// Log di debug per la configurazione (senza esporre i segreti)
 console.log("Configurazione database:", {
   hasUrl: !!config.url,
   hasToken: !!config.authToken,
-  urlLength: config.url?.length || 0,
-  tokenLength: config.authToken?.length || 0,
 });
 
 if (!config.url || !config.authToken) {
   console.error("Mancano le variabili d'ambiente per il DB!");
-  console.error(
-    "TURSO_DATABASE_URL presente:",
-    !!process.env.TURSO_DATABASE_URL
-  );
-  console.error("TURSO_AUTH_TOKEN presente:", !!process.env.TURSO_AUTH_TOKEN);
   throw new Error("Configurazione database mancante");
 }
 
 const client = createClient(config);
-console.log("Client database creato con successo");
 
-// --- Funzione Helper Hashing (dal tuo codice) ---
+// --- Funzione Helper Hashing ---
 function hashPassword(password, salt) {
   try {
     return crypto
@@ -38,8 +32,6 @@ function hashPassword(password, salt) {
     throw new Error("Errore nella generazione della password");
   }
 }
-
-// --- ⬇️ NUOVE FUNZIONI PER CHAT STILISTA ⬇️ ---
 
 /**
  * Funzione helper per convertire RGB in HEX
@@ -52,21 +44,21 @@ function rgbToHex(r, g, b) {
 }
 
 /**
- * Gestisce la logica della chat con OpenRouter
- * Questa funzione ha il suo try/catch ed è autonoma.
+ * Gestisce la logica della chat con Google Gemini
  */
 async function handleChatStilista(req, res) {
-  console.log("Esecuzione di handleChatStilista...");
+  console.log("Esecuzione di handleChatStilista (Gemini)...");
   try {
-    // 1. Leggi la chiave API segreta (impostata su Vercel)
-    const apiKey = process.env.OPENROUTER_API_KEY;
-
+    // 1. Inizializza il client Gemini
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("OPENROUTER_API_KEY non è impostata!");
+      console.error("GEMINI_API_KEY non è impostata!");
       return res
         .status(500)
         .json({ success: false, error: "Configurazione server errata." });
     }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     // 2. Estrai i dati dal frontend
     const { history, userPrompt, colors } = req.body;
@@ -77,74 +69,70 @@ async function handleChatStilista(req, res) {
         .json({ success: false, error: "Messaggio utente mancante" });
     }
 
-    // 3. Costruisci i messaggi per l'IA
-    const systemPrompt =
-      "Sei uno stilista professionista e il tuo compito è aiutare persone comuni ad abbinare i vestiti in modo semplice ed elegante. Se pensi che due colori non si abbinino, sottolinea che è un abbianamento audace e consiglia delle alternative. Rispondi in italiano.";
+    // 3. Configura il modello e le istruzioni di sistema
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-lite-preview-02-05", // Modello richiesto
+      systemInstruction:
+        "Sei Heidi, una consulente di stile esperta, amichevole ed empatica. Il tuo compito è aiutare persone comuni ad abbinare i vestiti in modo semplice ed elegante. Se pensi che due colori non si abbinino, sottolinea che è un abbinamento audace e consiglia delle alternative. Rispondi in italiano, sii concisa e usa qualche emoji.",
+    });
 
-    const messages = [{ role: "system", content: systemPrompt }];
-
-    // Aggiungi la cronologia precedente
-    if (history && Array.isArray(history)) {
-      messages.push(...history);
-    }
-
-    // 4. Formatta il messaggio finale (aggiunge i colori solo al primo invio)
-    let finalUserPrompt = userPrompt;
-    if (history.length === 0 && colors && colors.length > 0) {
+    // 4. Prepara il contesto dei colori
+    let colorContext = "";
+    if (colors && colors.length > 0) {
       const colorHexList = colors
-        .map((c) => rgbToHex(c.r, c.g, c.b))
+        .map((c) => `${rgbToHex(c.r, c.g, c.b)} (RGB: ${c.r},${c.g},${c.b})`)
         .join(", ");
-      finalUserPrompt = `[Ho questi colori: ${colorHexList}] ${userPrompt}`;
-      console.log("Invio colori con primo prompt:", finalUserPrompt);
+      colorContext = `[L'utente ha campionato questi colori dalla fotocamera: ${colorHexList}] `;
     }
 
-    messages.push({ role: "user", content: finalUserPrompt });
+    // 5. Converti la cronologia nel formato Gemini (user/model)
+    // Il frontend manda 'assistant', Gemini vuole 'model'
+    const chatHistory = Array.isArray(history)
+      ? history.map((msg) => ({
+          role: msg.role === "assistant" ? "model" : "user",
+          parts: [{ text: msg.content }],
+        }))
+      : [];
 
-    // 5. Chiama l'API di OpenRouter
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
+    // 6. Avvia la chat
+    const chat = model.startChat({
+      history: chatHistory,
+    });
+
+    // 7. Invia il messaggio (combinando contesto colori e prompt utente)
+    const finalPrompt = `${colorContext}${userPrompt}`;
+    console.log("Invio a Gemini:", finalPrompt);
+
+    const result = await chat.sendMessage(finalPrompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // 8. Formatta la risposta come se fosse OpenAI (per compatibilità Frontend)
+    // Il frontend si aspetta data.choices[0].message.content
+    return res.status(200).json({
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content: text,
+          },
         },
-        body: JSON.stringify({
-          model: "tngtech/deepseek-r1t2-chimera:free",
-          messages: messages,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Errore da OpenRouter:", errorData);
-      return res.status(response.status).json({
-        success: false,
-        error: "Errore dal servizio IA",
-        details: errorData,
-      });
-    }
-
-    // 6. Invia la risposta dell'IA al frontend
-    const data = await response.json();
-    return res.status(200).json(data); // Invia direttamente la risposta di OpenRouter
+      ],
+    });
   } catch (error) {
     console.error("Errore in handleChatStilista:", error);
-    return res
-      .status(500)
-      .json({ success: false, error: "Errore interno del server (chat)" });
+    return res.status(500).json({
+      success: false,
+      error: "Errore interno del server (Gemini)",
+      details: error.message,
+    });
   }
 }
-
-// --- ⬆️ FINE NUOVE FUNZIONI ⬆️ ---
-
-// --- Funzioni CRUD Utenti (dal tuo codice) ---
 
 // Handler per creare un nuovo utente (POST)
 async function createUser(req, res) {
   try {
-    const { name, surname, username, tel, level, password } = req.body; // Validazione input
+    const { name, surname, username, tel, level, password } = req.body;
 
     if (
       !name?.trim() ||
@@ -165,7 +153,7 @@ async function createUser(req, res) {
         success: false,
         error: "Livello non valido",
       });
-    } // Validazione username univoco
+    }
 
     const existingUsername = await client.execute({
       sql: "SELECT id FROM users WHERE username = ?",
@@ -177,7 +165,7 @@ async function createUser(req, res) {
         success: false,
         error: "Username già registrato",
       });
-    } // Validazione telefono univoco
+    }
 
     const existingTel = await client.execute({
       sql: "SELECT id FROM users WHERE tel = ?",
@@ -189,14 +177,14 @@ async function createUser(req, res) {
         success: false,
         error: "Telefono già registrato",
       });
-    } // Creazione utente - usa username come salt
+    }
 
     const salt = username.trim();
     const passwordHash = hashPassword(password, salt);
 
     const result = await client.execute({
       sql: `INSERT INTO users (name, surname, username, tel, level, password_hash, salt)
-            VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, name, surname, username, tel, level, created_at`,
+            VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, name, surname, username, tel, level, created_at`,
       args: [
         name.trim(),
         surname.trim(),
@@ -226,12 +214,7 @@ async function createUser(req, res) {
 // Handler per ottenere tutti gli utenti (GET)
 async function getUsers(req, res) {
   try {
-    console.log("Tentativo di recupero utenti...");
     const result = await client.execute("SELECT * FROM users");
-    console.log("Query eseguita, numero righe:", result.rows.length);
-    if (result.rows.length > 0) {
-      console.log("Prima riga:", JSON.stringify(result.rows[0], null, 2));
-    }
 
     const users = result.rows.map((row) => ({
       id: row.id,
@@ -245,19 +228,13 @@ async function getUsers(req, res) {
       telegram_chat_id: row.telegram_chat_id,
     }));
 
-    console.log("Utenti trasformati:", users.length);
-
     return res.status(200).json({
       success: true,
       users: users,
       count: users.length,
     });
   } catch (error) {
-    console.error("Errore dettagliato nel recupero utenti:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
+    console.error("Errore recupero utenti:", error);
     return res.status(500).json({
       success: false,
       error: "Errore interno del server",
@@ -290,7 +267,7 @@ async function updateUser(req, res) {
         success: false,
         error: "Livello non valido",
       });
-    } // Verifica esistenza utente
+    }
 
     const targetUser = await client.execute({
       sql: "SELECT id, level, username, tel FROM users WHERE id = ?",
@@ -302,7 +279,7 @@ async function updateUser(req, res) {
         success: false,
         error: "Utente non trovato",
       });
-    } // Verifica username univoco (solo se è diverso da quello attuale)
+    }
 
     if (username.trim() !== targetUser.rows[0].username) {
       const usernameCheck = await client.execute({
@@ -316,7 +293,7 @@ async function updateUser(req, res) {
           error: "Username già registrato",
         });
       }
-    } // Verifica telefono univoco (solo se è diverso da quello attuale)
+    }
 
     if (tel.trim() !== targetUser.rows[0].tel) {
       const telCheck = await client.execute({
@@ -330,7 +307,7 @@ async function updateUser(req, res) {
           error: "Telefono già registrato",
         });
       }
-    } // Costruzione query dinamica
+    }
 
     let updateSql =
       "UPDATE users SET name = ?, surname = ?, username = ?, tel = ?, level = ?";
@@ -349,7 +326,7 @@ async function updateUser(req, res) {
           error: "Password troppo corta (minimo 6 caratteri)",
         });
       }
-      const salt = username.trim(); // Usa il nuovo username come salt
+      const salt = username.trim();
       const passwordHash = hashPassword(password, salt);
       updateSql += ", password_hash = ?, salt = ?";
       updateArgs.push(passwordHash, salt);
@@ -368,7 +345,7 @@ async function updateUser(req, res) {
       user: result.rows[0],
     });
   } catch (error) {
-    console.error("Errore nell'aggiornamento utente:", error);
+    console.error("Errore aggiornamento utente:", error);
     return res.status(500).json({
       success: false,
       error: "Errore interno del server",
@@ -408,7 +385,7 @@ async function deleteUser(req, res) {
       message: "Utente eliminato con successo",
     });
   } catch (error) {
-    console.error("Errore nell'eliminazione utente:", error);
+    console.error("Errore eliminazione utente:", error);
     return res.status(500).json({
       success: false,
       error: "Errore interno del server",
@@ -418,9 +395,9 @@ async function deleteUser(req, res) {
   }
 }
 
-// --- HANDLER PRINCIPALE (MODIFICATO PER SMISTARE TRA CHAT E UTENTI) ---
+// --- HANDLER PRINCIPALE ---
 export default async function handler(req, res) {
-  console.log(`API /user chiamata con metodo: ${req.method}`); // CORS headers
+  // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -432,62 +409,35 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // --- ⬇️ SMISTAMENTO RICHIESTE ⬇️ ---
-  // Controlliamo se è una richiesta POST per la chat.
-  // Lo facciamo prima di tentare la connessione al DB, perché la chat non ne ha bisogno.
+  // --- SMISTAMENTO RICHIESTE ---
+  // Se è una richiesta per la chat, NON connetterti al DB
   if (req.method === "POST" && req.body.action === "chatStilista") {
-    console.log("Handling POST request for [chatStilista]...");
     return await handleChatStilista(req, res);
   }
-  // --- ⬆️ FINE SMISTAMENTO ⬆️ ---
 
-  // Se non è una richiesta di chat, prosegue con la normale logica di gestione UTENTI
-  // che richiede la connessione al DB.
+  // Altrimenti gestisci le operazioni Utente/DB
   try {
-    // Test connessione DB
-    console.log("Testing database connection for user management...");
-    const testResult = await client.execute("SELECT 1 as test");
-    console.log("Database connection successful:", testResult);
     switch (req.method) {
       case "GET":
-        console.log("Handling GET request for [getUsers]...");
         return await getUsers(req, res);
       case "POST":
-        // Arriva qui solo se 'action' NON è 'chatStilista'
-        console.log("Handling POST request for [createUser]...");
         return await createUser(req, res);
       case "PUT":
-        console.log("Handling PUT request for [updateUser]...");
         return await updateUser(req, res);
       case "DELETE":
-        console.log("Handling DELETE request for [deleteUser]...");
         return await deleteUser(req, res);
       default:
-        console.log(`Metodo non supportato: ${req.method}`);
         return res.status(405).json({
           success: false,
           error: "Metodo non supportato",
         });
     }
   } catch (error) {
-    console.error("Errore API dettagliato (DB or main handler):", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      code: error.code,
-    });
+    console.error("Errore Handler Principale:", error);
     return res.status(500).json({
       success: false,
       error: "Errore interno del server",
       details: error.message,
-      debugInfo:
-        process.env.NODE_ENV === "development"
-          ? {
-              stack: error.stack,
-              name: error.name,
-              code: error.code,
-            }
-          : undefined,
     });
   }
 }
