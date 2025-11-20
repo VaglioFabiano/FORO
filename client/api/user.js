@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client/web";
 import crypto from "crypto";
-import { GoogleGenerativeAI } from "@google/generative-ai"; // Importiamo Gemini
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // --- Configurazione Database (CODICE ORIGINALE) ---
 const config = {
@@ -118,12 +118,10 @@ async function handleChatStilista(req, res) {
     if (!apiKey) {
       console.error("OPENROUTER_API_KEY non è impostata!");
       // Se anche questo manca/fallisce, diamo errore
-      return res
-        .status(500)
-        .json({
-          success: false,
-          error: "Configurazione AI mancante (Né Gemini né OpenRouter).",
-        });
+      return res.status(500).json({
+        success: false,
+        error: "Configurazione AI mancante (Né Gemini né OpenRouter).",
+      });
     }
 
     const systemPrompt =
