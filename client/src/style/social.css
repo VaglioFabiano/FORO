@@ -1,12 +1,5 @@
-/* --- IMPOSTAZIONI GLOBALI E SFONDO --- */
-html,
-body,
-#root {
-  height: 100%;
-  margin: 0;
-}
-
-body {
+/* --- SEZIONE SOCIAL PRINCIPALE --- */
+.foro-social-megasection {
   background-image: url("../assets/sfondo_scuro.png");
   background-size: cover;
   background-position: center;
@@ -14,11 +7,6 @@ body {
   background-attachment: fixed;
   color: white;
   font-family: "Trebuchet MS", sans-serif;
-}
-
-/* --- SEZIONE SOCIAL PRINCIPALE --- */
-.foro-social-megasection {
-  background: transparent;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -126,7 +114,7 @@ body {
   transition: all 0.3s ease;
   cursor: pointer;
   height: 600px;
-  min-width: 600px;
+  width: 100%; /* Changed from min-width to width 100% */
   display: flex;
   flex-direction: column;
   position: relative;
@@ -284,7 +272,8 @@ body {
 .foro-telegram-ultrabar {
   background: linear-gradient(to right, #3b82f6, #2563eb);
   padding: 1.25rem;
-  min-width: 1250px;
+  width: 100%; /* Changed from min-width to width 100% */
+  box-sizing: border-box;
   cursor: pointer;
   transition: all 0.3s ease;
   border-radius: 0.75rem;
