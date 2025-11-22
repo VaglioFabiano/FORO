@@ -29,51 +29,6 @@
             color: rgb(255, 232, 204);
             text-align: left;
             padding: 40px;
-            max-width: 1200px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .logo-container {
-            margin-bottom: 40px;
-            align-self: flex-start;
-        }
-
-        .logo-image {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 232, 204, 0.3);
-            object-fit: cover;
-        }
-
-        .logo-fallback {
-            display: none;
-            width: 120px;
-            height: 120px;
-            background: rgba(255, 232, 204, 0.8);
-            border-radius: 50%;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid rgba(255, 232, 204, 0.5);
-        }
-
-        .logo-fallback-text {
-            color: rgb(12, 73, 91);
-            font-weight: 700;
-            font-size: 48px;
-            font-family: 'Trebuchet MS', sans-serif;
-        }
-
-        .title-section {
-            margin-bottom: 32px;
-            max-width: 800px;
-        }
-
-        .main-title {
-            font-size: 4.5rem;
-            font-weight: 700;
             margin-bottom: 24px;
             color: rgb(255, 232, 204);
             font-family: 'Trebuchet MS', sans-serif;
