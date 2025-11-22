@@ -1,18 +1,35 @@
 /* --- SEZIONE SOCIAL PRINCIPALE --- */
+/* --- SEZIONE SOCIAL PRINCIPALE --- */
 .foro-social-megasection {
-  background-image: url("../assets/sfondo_scuro.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  color: white;
-  font-family: "Trebuchet MS", sans-serif;
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   padding: 2rem 0;
   width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* Background fixed robusto per mobile */
+.foro-social-megasection::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("../assets/sfondo_scuro.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Box sizing globale per la sezione */
+.foro-social-megasection * {
   box-sizing: border-box;
 }
 
@@ -96,11 +113,12 @@
 /* --- GRIGLIA E SCHEDE SOCIAL --- */
 .foro-social-ultragrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(600px, 1fr));
+  grid-template-columns: repeat(2, 1fr); /* Changed to simple fraction */
   gap: 2rem;
   margin-bottom: 2rem;
   padding: 0 2rem;
   max-width: 1600px;
+  width: 100%; /* Ensure it takes full width */
   margin-left: auto;
   margin-right: auto;
   align-items: start;
@@ -586,10 +604,12 @@
 }
 
 /* Smartphone - schede impilate verticalmente */
+/* Smartphone - schede impilate verticalmente */
 @media (max-width: 640px) {
   .foro-social-ultragrid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    padding: 0 1rem; /* Ensure padding is consistent */
   }
 
   .foro-social-megasection {
@@ -602,6 +622,13 @@
 
   .foro-social-megacard {
     height: 500px;
+    width: 100%; /* Force full width */
+  }
+  
+  /* Ensure telegram bar fits */
+  .foro-telegram-megacontainer {
+    width: 100%;
+    padding: 0 1rem;
   }
 
   .foro-platform-megatitle {
