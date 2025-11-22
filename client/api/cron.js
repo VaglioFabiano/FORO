@@ -112,7 +112,6 @@ export default async function handler(req, res) {
   }
 }
 
-// FUNZIONE CORRETTA - Sostituire nel file api/cron.js
 
 function determineTaskType(hour, minute, day) {
   console.log(
@@ -507,8 +506,8 @@ async function weeklyEmptyShiftsReport(timestamp) {
     );
     const turniEsistentiResult = await db.execute({
       sql: `SELECT data, turno_inizio, turno_fine 
-            FROM turni 
-            WHERE data >= ? AND data <= ?`,
+            FROM turni 
+            WHERE data >= ? AND data <= ?`,
       args: [prossimaSettimana[0], prossimaSettimana[6]],
     }); // <--- MODIFICA: Metti i turni in un Set per un controllo O(1) velocissimo
 
@@ -578,9 +577,9 @@ async function weeklyEmptyShiftsReport(timestamp) {
 
     const adminResult = await db.execute({
       sql: `SELECT id, name, surname, telegram_chat_id, level
-            FROM users 
-            WHERE telegram_chat_id IS NOT NULL AND (level = 0 OR level = 1)
-            GROUP BY telegram_chat_id`,
+            FROM users 
+            WHERE telegram_chat_id IS NOT NULL AND (level = 0 OR level = 1)
+            GROUP BY telegram_chat_id`,
       args: [],
     });
 
@@ -766,9 +765,9 @@ async function sundayEndTask(timestamp) {
       const turniSettimana1Salvati = await tx.execute({
         // <--- MODIFICA: tx.execute
         sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
-               FROM turni
-               WHERE data >= ? AND data <= ?
-               ORDER BY data, turno_inizio`,
+               FROM turni
+               WHERE data >= ? AND data <= ?
+               ORDER BY data, turno_inizio`,
         args: [settimana1[0], settimana1[6]],
       });
       console.log(
@@ -778,9 +777,9 @@ async function sundayEndTask(timestamp) {
       const turniSettimana2Salvati = await tx.execute({
         // <--- MODIFICA: tx.execute
         sql: `SELECT data, turno_inizio, turno_fine, user_id, note, is_closed_override
-               FROM turni
-               WHERE data >= ? AND data <= ?
-               ORDER BY data, turno_inizio`,
+               FROM turni
+               WHERE data >= ? AND data <= ?
+               ORDER BY data, turno_inizio`,
         args: [settimana2[0], settimana2[6]],
       });
       console.log(
