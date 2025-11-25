@@ -789,6 +789,16 @@ async function sundayEndTask(timestamp) {
       // ========================================
 
       console.log(`\n🗑️ === CANCELLAZIONE COMPLETA ===`);
+
+      // FIX: Sgancia i turni storici dalle fasce orarie per evitare errori di Foreign Key
+      await tx.execute({
+        sql: `UPDATE turni SET fascia_id = NULL`,
+        args: [],
+      });
+      console.log(
+        `✅ Sganciati turni storici da fasce_orarie (fascia_id = NULL)`
+      );
+
       deleteTurniCorrente = await tx.execute({
         // <--- MODIFICA: tx.execute
         sql: `DELETE FROM turni WHERE data >= ? AND data <= ?`,

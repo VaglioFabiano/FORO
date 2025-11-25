@@ -217,16 +217,12 @@ const Header: React.FC = () => {
             className="logo-image"
             onError={handleImageError}
           />
-                   {" "}
           <div className="logo-fallback">
-                        <span className="logo-fallback-text">AS</span>       
-             {" "}
+            <span className="logo-fallback-text">AS</span>
           </div>
-                 {" "}
         </div>
-                       {" "}
         <div className="title-section">
-                    <h1 className="main-title">Associazione FORO</h1>         {" "}
+          <h1 className="main-title">Associazione FORO</h1>
           {isLoading ? (
             <div className="description-loading">
                            {" "}
