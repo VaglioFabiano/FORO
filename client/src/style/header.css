@@ -1,4 +1,14 @@
-/* NOTA: Ho rimosso i selettori globali (html, body, *) per evitare conflitti */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
 
 .header_foro_wrapper {
   position: relative;
