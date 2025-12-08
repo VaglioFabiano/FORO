@@ -1,384 +1,366 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* NOTA: Ho rimosso i selettori globali (html, body, *) per evitare conflitti */
+
+.header_foro_wrapper {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Trebuchet MS", sans-serif;
+  padding-top: 100px;
+  background-color: rgb(12, 73, 91);
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow-x: hidden;
-    font-family: 'Trebuchet MS', sans-serif;
+.header_foro_background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(12, 73, 91);
+  z-index: 1;
 }
 
-.header {
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Trebuchet MS', sans-serif;
-    padding-top: 100px;
-    background-color: rgb(12, 73, 91);
+.header_foro_overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  z-index: 2;
 }
 
-.header-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgb(12, 73, 91);
-    z-index: 1;
+.header_foro_content {
+  position: relative;
+  z-index: 10;
+  color: rgb(255, 232, 204);
+  text-align: left;
+  padding: 40px;
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Su desktop lasciamo l'allineamento default (start) */
 }
 
-.video-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
-    z-index: 2;
+.header_foro_logo_container {
+  margin-bottom: 40px;
+  align-self: flex-start; /* Allinea il logo a sinistra su desktop */
 }
 
-.header-content {
-    position: relative;
-    z-index: 10;
-    color: rgb(255, 232, 204);
-    text-align: left;
-    padding: 40px;
-    max-width: 1200px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
+.header_foro_logo_image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 232, 204, 0.3);
+  object-fit: cover;
 }
 
-.logo-container {
-    margin-bottom: 40px;
-    align-self: flex-start;
+.header_foro_logo_fallback {
+  display: none;
+  width: 120px;
+  height: 120px;
+  background: rgba(255, 232, 204, 0.8);
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 232, 204, 0.5);
 }
 
-.logo-image {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 232, 204, 0.3);
-    object-fit: cover;
+.header_foro_logo_text {
+  color: rgb(12, 73, 91);
+  font-weight: 700;
+  font-size: 48px;
+  font-family: "Trebuchet MS", sans-serif;
 }
 
-.logo-fallback {
-    display: none;
-    width: 120px;
-    height: 120px;
-    background: rgba(255, 232, 204, 0.8);
-    border-radius: 50%;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid rgba(255, 232, 204, 0.5);
+.header_foro_title_section {
+  margin-bottom: 32px;
+  max-width: 800px;
 }
 
-.logo-fallback-text {
-    color: rgb(12, 73, 91);
-    font-weight: 700;
-    font-size: 48px;
-    font-family: 'Trebuchet MS', sans-serif;
+.header_foro_main_title {
+  font-size: 4.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: rgb(255, 232, 204);
+  font-family: "Trebuchet MS", sans-serif;
+  line-height: 1.1;
 }
 
-.title-section {
-    margin-bottom: 32px;
-    max-width: 800px;
+.header_foro_description {
+  font-size: 1.25rem;
+  color: rgba(255, 232, 204, 0.9);
+  line-height: 1.6;
+  font-family: "Trebuchet MS", sans-serif;
+  font-weight: 400;
+  animation: fadeInForo 0.5s ease-in-out;
 }
 
-.main-title {
-    font-size: 4.5rem;
-    font-weight: 700;
-    margin-bottom: 24px;
-    color: rgb(255, 232, 204);
-    font-family: 'Trebuchet MS', sans-serif;
-    line-height: 1.1;
+@keyframes fadeInForo {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.description {
-    font-size: 1.25rem;
-    color: rgba(255, 232, 204, 0.9);
-    line-height: 1.6;
-    font-family: 'Trebuchet MS', sans-serif;
-    font-weight: 400;
-    animation: fadeInDescription 0.5s ease-in-out;
+.header_foro_scroll_hint {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 32px;
 }
 
-@keyframes fadeInDescription {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.header_foro_scroll_arrow {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 232, 204, 0.7);
+  border-left: none;
+  border-top: none;
+  transform: rotate(45deg);
+  animation: scrollBounceForo 2s infinite;
 }
 
-.scroll-hint {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 32px;
+@keyframes scrollBounceForo {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0) rotate(45deg);
+  }
+  40% {
+    transform: translateY(-10px) rotate(45deg);
+  }
+  60% {
+    transform: translateY(-5px) rotate(45deg);
+  }
 }
 
-.scroll-arrow {
-    width: 24px;
-    height: 24px;
-    border: 2px solid rgba(255, 232, 204, 0.7);
-    border-left: none;
-    border-top: none;
-    transform: rotate(45deg);
-    animation: scrollBounce 2s infinite;
+/* Loading */
+.header_foro_loading_container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 60px;
 }
 
-@keyframes scrollBounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0) rotate(45deg);
-    }
-    40% {
-        transform: translateY(-10px) rotate(45deg);
-    }
-    60% {
-        transform: translateY(-5px) rotate(45deg);
-    }
+.header_foro_loading_dots {
+  display: flex;
+  gap: 8px;
 }
 
-/* Loading per la descrizione */
-.description-loading {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    min-height: 60px;
+.header_foro_loading_dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 232, 204, 0.8);
+  animation: loadingDotsForo 1.4s infinite ease-in-out both;
 }
 
-.loading-dots {
-    display: flex;
-    gap: 8px;
+.header_foro_loading_dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.header_foro_loading_dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+.header_foro_loading_dots span:nth-child(3) {
+  animation-delay: 0s;
 }
 
-.loading-dots span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background-color: rgba(255, 232, 204, 0.8);
-    animation: loadingDots 1.4s infinite ease-in-out both;
-}
-
-.loading-dots span:nth-child(1) {
-    animation-delay: -0.32s;
-}
-
-.loading-dots span:nth-child(2) {
-    animation-delay: -0.16s;
-}
-
-.loading-dots span:nth-child(3) {
-    animation-delay: 0s;
-}
-
-@keyframes loadingDots {
-    0%, 80%, 100% {
-        transform: scale(0);
-        opacity: 0.5;
-    }
-    40% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-/* Sezione di modifica */
-.description-container {
-    position: relative;
-}
-
-.description-edit {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    animation: fadeInDescription 0.3s ease-in-out;
-}
-
-.description-textarea {
-    width: 100%;
-    min-height: 120px;
-    padding: 15px;
-    border: 2px solid rgba(255, 232, 204, 0.3);
-    background-color: rgba(12, 73, 91, 0.9);
-    color: rgb(255, 232, 204);
-    font-size: 1.25rem;
-    line-height: 1.6;
-    font-family: 'Trebuchet MS', sans-serif;
-    border-radius: 8px;
-    resize: vertical;
-    transition: all 0.3s ease;
-}
-
-.description-textarea:focus {
-    outline: none;
-    border-color: rgba(255, 232, 204, 0.7);
-    box-shadow: 0 0 0 3px rgba(255, 232, 204, 0.1);
-}
-
-.description-textarea:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.description-textarea::placeholder {
-    color: rgba(255, 232, 204, 0.5);
-}
-
-.description-edit-buttons {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.edit-button {
-    background-color: rgba(255, 232, 204, 0.1);
-    color: rgb(255, 232, 204);
-    border: 2px solid rgba(255, 232, 204, 0.3);
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: 'Trebuchet MS', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    margin-top: 10px;
-    min-width: 80px;
-}
-
-.edit-button:hover:not(:disabled) {
-    background-color: rgba(255, 232, 204, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.edit-button:disabled {
+@keyframes loadingDotsForo {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
     opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-.save-button {
-    background-color: rgba(76, 175, 80, 0.2);
-    border-color: rgba(76, 175, 80, 0.5);
-    color: #4CAF50;
+/* Edit Section */
+.header_foro_desc_container {
+  position: relative;
 }
 
-.save-button:hover:not(:disabled) {
-    background-color: rgba(76, 175, 80, 0.3);
-    border-color: rgba(76, 175, 80, 0.7);
+.header_foro_edit_container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  animation: fadeInForo 0.3s ease-in-out;
 }
 
-.cancel-button {
-    background-color: rgba(244, 67, 54, 0.2);
-    border-color: rgba(244, 67, 54, 0.5);
-    color: #f44336;
+.header_foro_textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 15px;
+  border: 2px solid rgba(255, 232, 204, 0.3);
+  background-color: rgba(12, 73, 91, 0.9);
+  color: rgb(255, 232, 204);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-family: "Trebuchet MS", sans-serif;
+  border-radius: 8px;
+  resize: vertical;
+  transition: all 0.3s ease;
 }
 
-.cancel-button:hover:not(:disabled) {
-    background-color: rgba(244, 67, 54, 0.3);
-    border-color: rgba(244, 67, 54, 0.7);
+.header_foro_textarea:focus {
+  outline: none;
+  border-color: rgba(255, 232, 204, 0.7);
+  box-shadow: 0 0 0 3px rgba(255, 232, 204, 0.1);
 }
 
-/* Mobile styles */
+.header_foro_buttons_row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header_foro_btn {
+  background-color: rgba(255, 232, 204, 0.1);
+  color: rgb(255, 232, 204);
+  border: 2px solid rgba(255, 232, 204, 0.3);
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: "Trebuchet MS", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  min-width: 80px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header_foro_btn:hover:not(:disabled) {
+  background-color: rgba(255, 232, 204, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.header_foro_btn_save {
+  background-color: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.5);
+  color: #4caf50;
+}
+
+.header_foro_btn_save:hover:not(:disabled) {
+  background-color: rgba(76, 175, 80, 0.3);
+  border-color: rgba(76, 175, 80, 0.7);
+}
+
+.header_foro_btn_cancel {
+  background-color: rgba(244, 67, 54, 0.2);
+  border-color: rgba(244, 67, 54, 0.5);
+  color: #f44336;
+}
+
+.header_foro_btn_cancel:hover:not(:disabled) {
+  background-color: rgba(244, 67, 54, 0.3);
+  border-color: rgba(244, 67, 54, 0.7);
+}
+
+/* --- MOBILE STYLES --- */
 @media (max-width: 768px) {
-    .header {
-        padding-top: 20px;
-    }
-    
-    .header-content {
-        text-align: center;
-        align-items: center;
-        padding: 40px 20px;
-    }
-    
-    .logo-container {
-        align-self: center;
-        margin-bottom: 30px;
-    }
-    
-    .logo-image,
-    .logo-fallback {
-        width: 90px;
-        height: 90px;
-    }
-    
-    .logo-fallback-text {
-        font-size: 36px;
-    }
-    
-    .main-title {
-        font-size: 3.2rem;
-    }
-    
-    .description {
-        font-size: 1.1rem;
-    }
-    
-    .description-textarea {
-        min-height: 100px;
-        font-size: 1.1rem;
-        padding: 12px;
-    }
-    
-    .edit-button {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-    }
-    
-    .description-loading {
-        justify-content: center;
-    }
+  .header_foro_wrapper {
+    padding-top: 20px;
+    /* Rimosso height: 100vh se crea problemi su mobile con barra indirizzi, altrimenti lascialo */
+  }
+
+  .header_foro_content {
+    text-align: center;
+    /* FIX FONDAMENTALE: centra gli elementi flex (come il div del logo) */
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  .header_foro_logo_container {
+    align-self: center; /* Forza il logo al centro */
+    margin-bottom: 30px;
+  }
+
+  .header_foro_logo_image,
+  .header_foro_logo_fallback {
+    width: 90px;
+    height: 90px;
+  }
+
+  .header_foro_logo_text {
+    font-size: 36px;
+  }
+
+  .header_foro_main_title {
+    font-size: 3.2rem;
+  }
+
+  .header_foro_description {
+    font-size: 1.1rem;
+  }
+
+  .header_foro_textarea {
+    min-height: 100px;
+    font-size: 1.1rem;
+    padding: 12px;
+  }
+
+  .header_foro_btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .header_foro_loading_container {
+    justify-content: center; /* Centra i puntini di caricamento su mobile */
+  }
+
+  .header_foro_buttons_row {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 480px) {
-    .header {
-        padding-top: 60px;
-    }
-    
-    .logo-image,
-    .logo-fallback {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .logo-fallback-text {
-        font-size: 32px;
-    }
-    
-    .main-title {
-        font-size: 2.8rem;
-    }
-    
-    .description-textarea {
-        min-height: 80px;
-        font-size: 1rem;
-        padding: 10px;
-    }
-    
-    .edit-button {
-        padding: 6px 12px;
-        font-size: 0.85rem;
-    }
-    
-    .description-edit-buttons {
-        justify-content: center;
-    }
-}
+  .header_foro_wrapper {
+    padding-top: 60px;
+  }
 
-/* Smooth scrolling */
-html {
-    scroll-behavior: smooth;
+  .header_foro_logo_image,
+  .header_foro_logo_fallback {
+    width: 80px;
+    height: 80px;
+  }
+
+  .header_foro_logo_text {
+    font-size: 32px;
+  }
+
+  .header_foro_main_title {
+    font-size: 2.8rem;
+  }
+
+  .header_foro_textarea {
+    min-height: 80px;
+    font-size: 1rem;
+    padding: 10px;
+  }
+
+  .header_foro_btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
 }
