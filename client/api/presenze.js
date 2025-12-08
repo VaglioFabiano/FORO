@@ -1,9 +1,9 @@
-import { createClient } from '@libsql/client/web';
+import { createClient } from "@libsql/client/web";
 
 // Configurazione database
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
-  authToken: process.env.TURSO_AUTH_TOKEN?.trim()
+  authToken: process.env.TURSO_AUTH_TOKEN?.trim(),
 };
 
 if (!config.url || !config.authToken) {
@@ -14,36 +14,45 @@ if (!config.url || !config.authToken) {
 const client = createClient(config);
 
 // Fasce orarie disponibili
-const FASCE_ORARIE = ['9-13', '13-16', '16-19', '21-24'];
+const FASCE_ORARIE = ["9-13", "13-16", "16-19", "21-24"];
+
+// --- HELPER FUNZIONI DATE ---
 
 // Funzione per ottenere i giorni di un mese specifico
 function getMonthDates(monthOffset = 0) {
   const now = new Date();
-  const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+  const targetDate = new Date(
+    now.getFullYear(),
+    now.getMonth() + monthOffset,
+    1
+  );
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
-  
+
   // Primo giorno del mese
   const firstDay = new Date(year, month, 1);
   // Ultimo giorno del mese
   const lastDay = new Date(year, month + 1, 0);
-  
+
   const monthDates = [];
   for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
-    monthDates.push(new Date(d).toISOString().split('T')[0]);
+    monthDates.push(new Date(d).toISOString().split("T")[0]);
   }
-  
+
   return {
     dates: monthDates,
-    monthName: targetDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' }),
+    monthName: targetDate.toLocaleDateString("it-IT", {
+      month: "long",
+      year: "numeric",
+    }),
     year: year,
-    month: month + 1 // JavaScript months are 0-based
+    month: month + 1, // JavaScript months are 0-based
   };
 }
 
 // Funzione per ottenere dati di un mese specifico da stringa YYYY-MM
 function getMonthDataFromString(monthString) {
-  const [year, month] = monthString.split('-').map(Number);
+  const [year, month] = monthString.split("-").map(Number);
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -66,16 +75,98 @@ function getNextMonth() {
   return getMonthDates(1);
 }
 
+// --- NUOVO HELPER: Normalizzazione Orari ---
+// Converte il formato del DB storico ("09:00 - 13:00") nel formato frontend ("9-13")
+function normalizzaFascia(inputFascia) {
+  if (!inputFascia) return "";
+  // Se è già nel formato breve (es. ID convertito o stringa breve), ritorna così com'è
+  if (!inputFascia.includes(":")) return inputFascia;
+
+  return inputFascia
+    .replace(/:00/g, "") // Rimuove :00
+    .replace(/^0/, "") // Rimuove lo 0 iniziale (09 -> 9)
+    .replace(/ - 0?/, "-") // Cambia " - 0" o " - " in "-"
+    .replace(/ /g, ""); // Rimuove spazi extra
+}
+
+// --- NUOVO HELPER: Recupero Dati Unificato (Attuale + Storico) ---
+async function fetchUnifiedData(startDate, endDate) {
+  // 1. Dati Attivi (Settimana corrente)
+  // Faccio JOIN con fasce_orarie per ottenere l'orario testuale (es "09:00") da concatenare
+  const activeQuery = `
+        SELECT p.id, p.data, 
+               (f.ora_inizio || '-' || f.ora_fine) as fascia_raw,
+               p.numero_presenze, p.note, p.user_id,
+               u.name, u.surname, u.username, 
+               0 as is_history
+        FROM presenze p
+        LEFT JOIN fasce_orarie f ON p.fascia_oraria = f.id
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE p.data >= ? AND p.data <= ?
+    `;
+
+  // 2. Dati Storici (Passato)
+  const historyQuery = `
+        SELECT id, data, orario as fascia_raw, numero_presenze, note, 
+               NULL as user_id, 'Archivio' as name, '' as surname, '' as username, 
+               1 as is_history
+        FROM presenze_storico
+        WHERE data >= ? AND data <= ?
+    `;
+
+  const activeResult = await client.execute({
+    sql: activeQuery,
+    args: [startDate, endDate],
+  });
+
+  let historyRows = [];
+  try {
+    const historyResult = await client.execute({
+      sql: historyQuery,
+      args: [startDate, endDate],
+    });
+    historyRows = historyResult.rows;
+  } catch (e) {
+    // Ignora errore se la tabella storico non esiste ancora
+  }
+
+  const allRows = [...activeResult.rows, ...historyRows];
+
+  // Normalizza e pulisce i dati unificati
+  return allRows.map((row) => ({
+    ...row,
+    // La fascia attiva dal DB potrebbe essere null se sganciata, o una stringa grezza
+    // Se fascia_raw è null (es. record orfani), prova a usare la logica standard o stringa vuota
+    fascia_oraria: normalizzaFascia(row.fascia_raw || ""),
+  }));
+}
+
 // Handler per log delle modifiche
-async function logPresenzeChange(presenzeId, data, fasciaOraria, oldValue, newValue, userId, action) {
+async function logPresenzeChange(
+  presenzeId,
+  data,
+  fasciaOraria,
+  oldValue,
+  newValue,
+  userId,
+  action
+) {
   try {
     await client.execute({
       sql: `INSERT INTO presenze_log (presenze_id, data, fascia_oraria, numero_presenze_old, numero_presenze_new, user_id, action)
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      args: [presenzeId, data, fasciaOraria, oldValue, newValue, userId, action]
+      args: [
+        presenzeId,
+        data,
+        fasciaOraria,
+        oldValue,
+        newValue,
+        userId,
+        action,
+      ],
     });
   } catch (error) {
-    console.error('Errore nel log delle presenze:', error);
+    console.error("Errore nel log delle presenze:", error);
   }
 }
 
@@ -90,73 +181,24 @@ async function generatePDF(presenzeData, monthsInfo) {
     <meta charset="UTF-8">
     <title>Report Presenze</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            color: #333;
-        }
-        .header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            border-bottom: 2px solid #8B4513;
-            padding-bottom: 15px;
-        }
-        .month-section { 
-            margin-bottom: 40px; 
-            page-break-inside: avoid;
-        }
-        .month-title { 
-            font-size: 18px; 
-            font-weight: bold; 
-            color: #8B4513; 
-            margin-bottom: 15px;
-            border-left: 4px solid #D2691E;
-            padding-left: 10px;
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-bottom: 20px;
-            font-size: 12px;
-        }
-        th, td { 
-            border: 1px solid #ddd; 
-            padding: 8px; 
-            text-align: center; 
-        }
-        th { 
-            background-color: #8B4513; 
-            color: white; 
-            font-weight: bold;
-        }
-        .weekend { 
-            background-color: #fff3cd; 
-        }
-        .has-presenze { 
-            background-color: #d4edda; 
-            font-weight: bold;
-        }
-        .total-row { 
-            background-color: #f8f9fa; 
-            font-weight: bold; 
-        }
-        .stats { 
-            margin-top: 15px; 
-            padding: 10px; 
-            background-color: #f8f9fa; 
-            border-radius: 5px;
-        }
-        .stats-title { 
-            font-weight: bold; 
-            margin-bottom: 8px; 
-            color: #8B4513;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #8B4513; padding-bottom: 15px; }
+        .month-section { margin-bottom: 40px; page-break-inside: avoid; }
+        .month-title { font-size: 18px; font-weight: bold; color: #8B4513; margin-bottom: 15px; border-left: 4px solid #D2691E; padding-left: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #8B4513; color: white; font-weight: bold; }
+        .weekend { background-color: #fff3cd; }
+        .has-presenze { background-color: #d4edda; font-weight: bold; }
+        .total-row { background-color: #f8f9fa; font-weight: bold; }
+        .stats { margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; }
+        .stats-title { font-weight: bold; margin-bottom: 8px; color: #8B4513; }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>📊 Report Presenze</h1>
-        <p>Generato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}</p>
+        <p>Generato il ${new Date().toLocaleDateString("it-IT")} alle ${new Date().toLocaleTimeString("it-IT")}</p>
         <p>Periodo: ${monthsInfo.length} mesi selezionati</p>
     </div>
 `;
@@ -165,7 +207,7 @@ async function generatePDF(presenzeData, monthsInfo) {
     for (const monthData of presenzeData) {
       const monthInfo = monthData.monthInfo;
       const presenze = monthData.presenze;
-      
+
       html += `
     <div class="month-section">
         <div class="month-title">${monthInfo.monthName}</div>
@@ -186,7 +228,7 @@ async function generatePDF(presenzeData, monthsInfo) {
 
       // Organizza presenze per data
       const presenzeMap = {};
-      presenze.forEach(p => {
+      presenze.forEach((p) => {
         if (!presenzeMap[p.data]) {
           presenzeMap[p.data] = {};
         }
@@ -194,28 +236,28 @@ async function generatePDF(presenzeData, monthsInfo) {
       });
 
       // Genera righe per ogni giorno del mese
-      monthInfo.dates.forEach(data => {
+      monthInfo.dates.forEach((data) => {
         const date = new Date(data);
         const dayOfWeek = date.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-        
+        const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
         const totaleGiorno = FASCE_ORARIE.reduce((sum, fascia) => {
           return sum + (presenzeMap[data]?.[fascia] || 0);
         }, 0);
 
         html += `
-                <tr class="${isWeekend ? 'weekend' : ''}">
+                <tr class="${isWeekend ? "weekend" : ""}">
                     <td>${date.getDate()}</td>
                     <td>${dayNames[dayOfWeek]}</td>
 `;
 
-        FASCE_ORARIE.forEach(fascia => {
+        FASCE_ORARIE.forEach((fascia) => {
           const numero = presenzeMap[data]?.[fascia] || 0;
-          html += `                    <td class="${numero > 0 ? 'has-presenze' : ''}">${numero > 0 ? numero : '-'}</td>\n`;
+          html += `                    <td class="${numero > 0 ? "has-presenze" : ""}">${numero > 0 ? numero : "-"}</td>\n`;
         });
 
-        html += `                    <td class="${totaleGiorno > 0 ? 'has-presenze' : ''}">${totaleGiorno > 0 ? totaleGiorno : '-'}</td>
+        html += `                    <td class="${totaleGiorno > 0 ? "has-presenze" : ""}">${totaleGiorno > 0 ? totaleGiorno : "-"}</td>
                 </tr>
 `;
       });
@@ -223,10 +265,10 @@ async function generatePDF(presenzeData, monthsInfo) {
       // Calcola totali per fascia e totale mese
       const totaliFascia = {};
       let totaleMese = 0;
-      
-      FASCE_ORARIE.forEach(fascia => {
+
+      FASCE_ORARIE.forEach((fascia) => {
         totaliFascia[fascia] = presenze
-          .filter(p => p.fascia_oraria === fascia)
+          .filter((p) => p.fascia_oraria === fascia)
           .reduce((sum, p) => sum + p.numero_presenze, 0);
         totaleMese += totaliFascia[fascia];
       });
@@ -236,7 +278,7 @@ async function generatePDF(presenzeData, monthsInfo) {
                     <td colspan="2"><strong>TOTALI MESE</strong></td>
 `;
 
-      FASCE_ORARIE.forEach(fascia => {
+      FASCE_ORARIE.forEach((fascia) => {
         html += `                    <td><strong>${totaliFascia[fascia]}</strong></td>\n`;
       });
 
@@ -249,9 +291,13 @@ async function generatePDF(presenzeData, monthsInfo) {
             <div class="stats-title">Statistiche ${monthInfo.monthName}</div>
             <p><strong>Totale mese:</strong> ${totaleMese} presenze</p>
             <p><strong>Media giornaliera:</strong> ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno</p>
-            <p><strong>Giorni con presenze:</strong> ${Object.keys(presenzeMap).filter(data => 
-              FASCE_ORARIE.some(fascia => (presenzeMap[data]?.[fascia] || 0) > 0)
-            ).length} su ${monthInfo.dates.length}</p>
+            <p><strong>Giorni con presenze:</strong> ${
+              Object.keys(presenzeMap).filter((data) =>
+                FASCE_ORARIE.some(
+                  (fascia) => (presenzeMap[data]?.[fascia] || 0) > 0
+                )
+              ).length
+            } su ${monthInfo.dates.length}</p>
         </div>
     </div>
 `;
@@ -263,7 +309,7 @@ async function generatePDF(presenzeData, monthsInfo) {
 
     return html;
   } catch (error) {
-    console.error('Errore nella generazione del PDF:', error);
+    console.error("Errore nella generazione del PDF:", error);
     throw error;
   }
 }
@@ -276,86 +322,92 @@ async function downloadPDF(req, res) {
     if (!months || !Array.isArray(months) || months.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Lista mesi mancante o vuota'
+        error: "Lista mesi mancante o vuota",
       });
     }
 
     // Verifica permessi utente
     const userResult = await client.execute({
-      sql: 'SELECT level FROM users WHERE id = ?',
-      args: [user_id]
+      sql: "SELECT level FROM users WHERE id = ?",
+      args: [user_id],
     });
 
-    if (!userResult.rows.length || (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1)) {
+    if (
+      !userResult.rows.length ||
+      (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1)
+    ) {
       return res.status(403).json({
         success: false,
-        error: 'Non hai i permessi per scaricare il PDF'
+        error: "Non hai i permessi per scaricare il PDF",
       });
     }
 
     // Raccoglie dati per tutti i mesi richiesti
     const presenzeData = [];
-    
+
     for (const monthString of months) {
       try {
         const monthInfo = getMonthDataFromString(monthString);
-        
-        // Ottieni presenze per questo mese
-        const presenzeResult = await client.execute({
-          sql: `SELECT data, fascia_oraria, numero_presenze, note
-                FROM presenze
-                WHERE data >= ? AND data <= ?
-                ORDER BY data, fascia_oraria`,
-          args: [monthInfo.dates[0], monthInfo.dates[monthInfo.dates.length - 1]]
+
+        // MODIFICA IBRIDA: Usa la funzione unificata per prendere dati attivi + storici
+        const rows = await fetchUnifiedData(
+          monthInfo.dates[0],
+          monthInfo.dates[monthInfo.dates.length - 1]
+        );
+
+        // Ordina per data e fascia
+        rows.sort((a, b) => {
+          if (a.data !== b.data) return a.data.localeCompare(b.data);
+          return (
+            FASCE_ORARIE.indexOf(a.fascia_oraria) -
+            FASCE_ORARIE.indexOf(b.fascia_oraria)
+          );
         });
+
+        // Filtra solo le fasce valide per il PDF (opzionale, ma pulisce il report)
+        const filteredRows = rows.filter((r) =>
+          FASCE_ORARIE.includes(r.fascia_oraria)
+        );
 
         presenzeData.push({
           monthInfo: monthInfo,
-          presenze: presenzeResult.rows
+          presenze: filteredRows,
         });
       } catch (error) {
-        console.error(`Errore nel recupero dati per il mese ${monthString}:`, error);
+        console.error(
+          `Errore nel recupero dati per il mese ${monthString}:`,
+          error
+        );
       }
     }
 
     if (presenzeData.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Nessun dato trovato per i mesi selezionati'
+        error: "Nessun dato trovato per i mesi selezionati",
       });
     }
 
     // Genera HTML per PDF
     const htmlContent = await generatePDF(presenzeData, months);
-    
-    // Per un ambiente Node.js, dovresti usare puppeteer o una libreria simile
-    // Per ora restituisco l'HTML che può essere convertito lato client
-    // In una implementazione completa useresti:
-    // const puppeteer = require('puppeteer');
-    // const browser = await puppeteer.launch();
-    // const page = await browser.newPage();
-    // await page.setContent(htmlContent);
-    // const pdfBuffer = await page.pdf({ format: 'A4', margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' } });
-    // await browser.close();
-    
-    // Per ora, restituisco una risposta che simula il PDF
-    // In produzione sostituiresti questo con il buffer del PDF reale
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="presenze_report_${months.length}_mesi.pdf"`);
-    
-    // Placeholder - in produzione qui andrà il PDF buffer
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="presenze_report_${months.length}_mesi.pdf"`
+    );
+
     return res.status(200).json({
       success: true,
-      message: 'PDF generato con successo',
-      html: htmlContent, // Rimosso in produzione
-      months_processed: presenzeData.length
+      message: "PDF generato con successo",
+      html: htmlContent,
+      months_processed: presenzeData.length,
     });
-
   } catch (error) {
-    console.error('Errore nella generazione PDF:', error);
+    console.error("Errore nella generazione PDF:", error);
     return res.status(500).json({
       success: false,
-      error: 'Errore interno del server nella generazione PDF'
+      error: "Errore interno del server nella generazione PDF",
     });
   }
 }
@@ -364,12 +416,12 @@ async function downloadPDF(req, res) {
 async function getPresenze(req, res) {
   try {
     const { mese } = req.query; // 'corrente', 'precedente', 'successivo', o 'YYYY-MM'
-    
+
     let monthData;
-    
-    if (mese === 'precedente') {
+
+    if (mese === "precedente") {
       monthData = getPreviousMonth();
-    } else if (mese === 'successivo') {
+    } else if (mese === "successivo") {
       monthData = getNextMonth();
     } else if (mese && mese.match(/^\d{4}-\d{2}$/)) {
       // Formato YYYY-MM specifico
@@ -377,27 +429,23 @@ async function getPresenze(req, res) {
     } else {
       monthData = getCurrentMonth();
     }
-    
-    // Ottieni presenze esistenti per il mese
-    const presenzeResult = await client.execute({
-      sql: `SELECT p.id, p.data, p.fascia_oraria, p.numero_presenze, p.note, p.user_id,
-                   u.name, u.surname, u.username
-            FROM presenze p
-            LEFT JOIN users u ON p.user_id = u.id
-            WHERE p.data >= ? AND p.data <= ?
-            ORDER BY p.data, p.fascia_oraria`,
-      args: [monthData.dates[0], monthData.dates[monthData.dates.length - 1]]
-    });
+
+    // MODIFICA IBRIDA: Recupera dati unificati (Attivi + Storico)
+    const mergedRows = await fetchUnifiedData(
+      monthData.dates[0],
+      monthData.dates[monthData.dates.length - 1]
+    );
 
     // Crea struttura completa con tutti i giorni e fasce
     const presenzeComplete = [];
-    
-    monthData.dates.forEach(data => {
+
+    monthData.dates.forEach((data) => {
       const dayOfWeek = new Date(data).getDay(); // 0 = Domenica, 1 = Lunedì, etc.
-      
-      FASCE_ORARIE.forEach(fascia => {
-        const esistente = presenzeResult.rows.find(p => 
-          p.data === data && p.fascia_oraria === fascia
+
+      FASCE_ORARIE.forEach((fascia) => {
+        // Cerca corrispondenza nell'array unificato normalizzato
+        const esistente = mergedRows.find(
+          (p) => p.data === data && p.fascia_oraria === fascia
         );
 
         presenzeComplete.push({
@@ -405,13 +453,14 @@ async function getPresenze(req, res) {
           data: data,
           fascia_oraria: fascia,
           numero_presenze: esistente?.numero_presenze || 0,
-          note: esistente?.note || '',
+          note: esistente?.note || "",
           user_id: esistente?.user_id || null,
-          user_name: esistente?.name || '',
-          user_surname: esistente?.surname || '',
-          user_username: esistente?.username || '',
+          user_name: esistente?.name || "",
+          user_surname: esistente?.surname || "",
+          user_username: esistente?.username || "",
           day_of_week: dayOfWeek,
-          esistente: !!esistente
+          esistente: !!esistente,
+          is_history: esistente?.is_history === 1, // Flag per frontend
         });
       });
     });
@@ -420,14 +469,13 @@ async function getPresenze(req, res) {
       success: true,
       presenze: presenzeComplete,
       month_info: monthData,
-      mese: mese || 'corrente'
+      mese: mese || "corrente",
     });
-
   } catch (error) {
-    console.error('Errore nel recupero presenze:', error);
+    console.error("Errore nel recupero presenze:", error);
     return res.status(500).json({
       success: false,
-      error: 'Errore interno del server'
+      error: "Errore interno del server",
     });
   }
 }
@@ -435,12 +483,18 @@ async function getPresenze(req, res) {
 // POST - Aggiorna presenze
 async function aggiornaPresenze(req, res) {
   try {
-    const { data, fascia_oraria, numero_presenze, note, current_user_id } = req.body;
+    const { data, fascia_oraria, numero_presenze, note, current_user_id } =
+      req.body;
 
-    if (!data || !fascia_oraria || numero_presenze === undefined || numero_presenze === null) {
+    if (
+      !data ||
+      !fascia_oraria ||
+      numero_presenze === undefined ||
+      numero_presenze === null
+    ) {
       return res.status(400).json({
         success: false,
-        error: 'Dati mancanti'
+        error: "Dati mancanti",
       });
     }
 
@@ -449,14 +503,60 @@ async function aggiornaPresenze(req, res) {
     if (isNaN(numeroPresenze) || numeroPresenze < 0) {
       return res.status(400).json({
         success: false,
-        error: 'Numero presenze deve essere un numero positivo'
+        error: "Numero presenze deve essere un numero positivo",
       });
     }
 
-    // Verifica se esiste già un record
+    // MODIFICA IBRIDA: Trova l'ID reale della fascia attiva per la settimana corrente
+    // Mappa frontend '9-13' -> backend orario
+    const mapOrari = {
+      "9-13": { start: "09:00" },
+      "13-16": { start: "13:00" },
+      "16-19": { start: "16:00" },
+      "21-24": { start: "21:00" },
+    };
+    const target = mapOrari[fascia_oraria];
+
+    // Trova il giorno della settimana per la data richiesta
+    const dateObj = new Date(data);
+    const days = [
+      "domenica",
+      "lunedì",
+      "martedì",
+      "mercoledì",
+      "giovedì",
+      "venerdì",
+      "sabato",
+    ];
+    const giornoTarget = days[dateObj.getDay()];
+
+    // Cerca l'ID nella tabella fasce_orarie attiva
+    let fasciaIdReale = null;
+
+    if (target) {
+      const idFasciaRes = await client.execute({
+        sql: `SELECT id FROM fasce_orarie WHERE giorno = ? AND ora_inizio = ?`,
+        args: [giornoTarget, target.start],
+      });
+      if (idFasciaRes.rows.length > 0) {
+        fasciaIdReale = idFasciaRes.rows[0].id;
+      }
+    }
+
+    // Se non troviamo la fascia ID, significa che stiamo provando a modificare una data passata (storico)
+    // o una configurazione non valida per la settimana corrente.
+    if (!fasciaIdReale) {
+      return res.status(403).json({
+        success: false,
+        error:
+          "Modifica non consentita: Settimana archiviata o fascia non attiva.",
+      });
+    }
+
+    // Verifica se esiste già un record nella tabella ATTIVA
     const esistente = await client.execute({
-      sql: 'SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?',
-      args: [data, fascia_oraria]
+      sql: "SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?",
+      args: [data, fasciaIdReale],
     });
 
     let result;
@@ -464,25 +564,30 @@ async function aggiornaPresenze(req, res) {
 
     if (esistente.rows.length > 0) {
       const oldValue = esistente.rows[0].numero_presenze;
-      
+
       // Aggiorna record esistente
       result = await client.execute({
         sql: `UPDATE presenze SET numero_presenze = ?, note = ?, user_id = ?, updated_at = CURRENT_TIMESTAMP 
-              WHERE data = ? AND fascia_oraria = ?
+              WHERE id = ?
               RETURNING id, data, fascia_oraria, numero_presenze, note, user_id`,
-        args: [numeroPresenze, note || '', current_user_id, data, fascia_oraria]
+        args: [
+          numeroPresenze,
+          note || "",
+          current_user_id,
+          esistente.rows[0].id,
+        ],
       });
 
-      action = 'UPDATE';
-      
+      action = "UPDATE";
+
       // Log della modifica
       await logPresenzeChange(
-        esistente.rows[0].id, 
-        data, 
-        fascia_oraria, 
-        oldValue, 
-        numeroPresenze, 
-        current_user_id, 
+        esistente.rows[0].id,
+        data,
+        fascia_oraria,
+        oldValue,
+        numeroPresenze,
+        current_user_id,
         action
       );
     } else {
@@ -491,19 +596,25 @@ async function aggiornaPresenze(req, res) {
         sql: `INSERT INTO presenze (data, fascia_oraria, numero_presenze, note, user_id)
               VALUES (?, ?, ?, ?, ?)
               RETURNING id, data, fascia_oraria, numero_presenze, note, user_id`,
-        args: [data, fascia_oraria, numeroPresenze, note || '', current_user_id]
+        args: [
+          data,
+          fasciaIdReale,
+          numeroPresenze,
+          note || "",
+          current_user_id,
+        ],
       });
 
-      action = 'INSERT';
-      
+      action = "INSERT";
+
       // Log dell'inserimento
       await logPresenzeChange(
-        result.rows[0].id, 
-        data, 
-        fascia_oraria, 
-        null, 
-        numeroPresenze, 
-        current_user_id, 
+        result.rows[0].id,
+        data,
+        fascia_oraria,
+        null,
+        numeroPresenze,
+        current_user_id,
         action
       );
     }
@@ -511,14 +622,13 @@ async function aggiornaPresenze(req, res) {
     return res.status(200).json({
       success: true,
       presenza: result.rows[0],
-      action: action.toLowerCase()
+      action: action.toLowerCase(),
     });
-
   } catch (error) {
-    console.error('Errore nell\'aggiornamento presenze:', error);
+    console.error("Errore nell'aggiornamento presenze:", error);
     return res.status(500).json({
       success: false,
-      error: 'Errore interno del server'
+      error: "Errore interno del server",
     });
   }
 }
@@ -529,55 +639,89 @@ async function eliminaPresenza(req, res) {
     const { data, fascia_oraria, current_user_id } = req.body;
 
     if (!data || !fascia_oraria) {
-      return res.status(400).json({
-        success: false,
-        error: 'Dati mancanti'
+      return res.status(400).json({ success: false, error: "Dati mancanti" });
+    }
+
+    // MODIFICA IBRIDA: Stessa logica di ricerca ID dell'aggiornamento
+    const mapOrari = {
+      "9-13": { start: "09:00" },
+      "13-16": { start: "13:00" },
+      "16-19": { start: "16:00" },
+      "21-24": { start: "21:00" },
+    };
+    const target = mapOrari[fascia_oraria];
+    const dateObj = new Date(data);
+    const days = [
+      "domenica",
+      "lunedì",
+      "martedì",
+      "mercoledì",
+      "giovedì",
+      "venerdì",
+      "sabato",
+    ];
+    const giornoTarget = days[dateObj.getDay()];
+
+    let fasciaIdReale = null;
+    if (target) {
+      const idRes = await client.execute({
+        sql: `SELECT id FROM fasce_orarie WHERE giorno = ? AND ora_inizio = ?`,
+        args: [giornoTarget, target.start],
       });
+      if (idRes.rows.length > 0) fasciaIdReale = idRes.rows[0].id;
+    }
+
+    if (!fasciaIdReale) {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          error: "Impossibile eliminare dati archiviati",
+        });
     }
 
     // Ottieni info prima di eliminare per il log
     const esistente = await client.execute({
-      sql: 'SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?',
-      args: [data, fascia_oraria]
+      sql: "SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?",
+      args: [data, fasciaIdReale],
     });
 
     if (esistente.rows.length > 0) {
       const oldValue = esistente.rows[0].numero_presenze;
-      
+
       const result = await client.execute({
-        sql: 'DELETE FROM presenze WHERE data = ? AND fascia_oraria = ?',
-        args: [data, fascia_oraria]
+        sql: "DELETE FROM presenze WHERE id = ?",
+        args: [esistente.rows[0].id],
       });
 
       // Log dell'eliminazione
       if (result.rowsAffected > 0) {
         await logPresenzeChange(
-          esistente.rows[0].id, 
-          data, 
-          fascia_oraria, 
-          oldValue, 
-          null, 
-          current_user_id, 
-          'DELETE'
+          esistente.rows[0].id,
+          data,
+          fascia_oraria,
+          oldValue,
+          null,
+          current_user_id,
+          "DELETE"
         );
       }
 
       return res.status(200).json({
         success: true,
-        deleted: result.rowsAffected > 0
+        deleted: result.rowsAffected > 0,
       });
     } else {
       return res.status(404).json({
         success: false,
-        error: 'Presenza non trovata'
+        error: "Presenza non trovata",
       });
     }
-
   } catch (error) {
-    console.error('Errore nell\'eliminazione presenza:', error);
+    console.error("Errore nell'eliminazione presenza:", error);
     return res.status(500).json({
       success: false,
-      error: 'Errore interno del server'
+      error: "Errore interno del server",
     });
   }
 }
@@ -586,56 +730,71 @@ async function eliminaPresenza(req, res) {
 async function getStatistiche(req, res) {
   try {
     const { mese } = req.query;
-    
+
     let monthData;
-    if (mese === 'precedente') {
+    if (mese === "precedente") {
       monthData = getPreviousMonth();
-    } else if (mese === 'successivo') {
+    } else if (mese === "successivo") {
       monthData = getNextMonth();
     } else {
       monthData = getCurrentMonth();
     }
 
-    // Statistiche per fascia oraria
-    const statsResult = await client.execute({
-      sql: `SELECT 
-              fascia_oraria,
-              SUM(numero_presenze) as totale_presenze,
-              AVG(numero_presenze) as media_presenze,
-              MAX(numero_presenze) as max_presenze,
-              COUNT(*) as giorni_registrati
-            FROM presenze 
-            WHERE data >= ? AND data <= ? AND numero_presenze > 0
-            GROUP BY fascia_oraria
-            ORDER BY fascia_oraria`,
-      args: [monthData.dates[0], monthData.dates[monthData.dates.length - 1]]
+    // MODIFICA IBRIDA: Calcolo statistiche su dati unificati
+    const mergedRows = await fetchUnifiedData(
+      monthData.dates[0],
+      monthData.dates[monthData.dates.length - 1]
+    );
+
+    // Filtra solo record con presenze > 0
+    const validRows = mergedRows.filter(
+      (r) => r.numero_presenze > 0 && FASCE_ORARIE.includes(r.fascia_oraria)
+    );
+
+    // Calcolo aggregati manuale (poiché i dati sono in array JS ora)
+    const totalMese = validRows.reduce((sum, r) => sum + r.numero_presenze, 0);
+    const perFasciaMap = {};
+
+    validRows.forEach((r) => {
+      if (!perFasciaMap[r.fascia_oraria]) {
+        perFasciaMap[r.fascia_oraria] = { total: 0, count: 0, max: 0 };
+      }
+      const stats = perFasciaMap[r.fascia_oraria];
+      stats.total += r.numero_presenze;
+      stats.count += 1;
+      if (r.numero_presenze > stats.max) stats.max = r.numero_presenze;
     });
 
-    // Totale mensile
-    const totaleResult = await client.execute({
-      sql: `SELECT 
-              SUM(numero_presenze) as totale_mese,
-              AVG(numero_presenze) as media_giornaliera
-            FROM presenze 
-            WHERE data >= ? AND data <= ?`,
-      args: [monthData.dates[0], monthData.dates[monthData.dates.length - 1]]
-    });
+    const perFasciaArray = Object.keys(perFasciaMap)
+      .map((fascia) => ({
+        fascia_oraria: fascia,
+        totale_presenze: perFasciaMap[fascia].total,
+        media_presenze: (
+          perFasciaMap[fascia].total / perFasciaMap[fascia].count
+        ).toFixed(2),
+        max_presenze: perFasciaMap[fascia].max,
+        giorni_registrati: perFasciaMap[fascia].count,
+      }))
+      .sort(
+        (a, b) =>
+          FASCE_ORARIE.indexOf(a.fascia_oraria) -
+          FASCE_ORARIE.indexOf(b.fascia_oraria)
+      );
 
     return res.status(200).json({
       success: true,
       statistiche: {
-        per_fascia: statsResult.rows,
-        totale_mese: totaleResult.rows[0]?.totale_mese || 0,
-        media_giornaliera: parseFloat(totaleResult.rows[0]?.media_giornaliera || 0).toFixed(2),
-        month_info: monthData
-      }
+        per_fascia: perFasciaArray,
+        totale_mese: totalMese,
+        media_giornaliera: (totalMese / monthData.dates.length).toFixed(2),
+        month_info: monthData,
+      },
     });
-
   } catch (error) {
-    console.error('Errore nel recupero statistiche:', error);
+    console.error("Errore nel recupero statistiche:", error);
     return res.status(500).json({
       success: false,
-      error: 'Errore interno del server'
+      error: "Errore interno del server",
     });
   }
 }
@@ -643,46 +802,46 @@ async function getStatistiche(req, res) {
 // Handler principale
 export default async function handler(req, res) {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
 
   try {
     // Test connessione DB
     await client.execute("SELECT 1");
-    
+
     // Route per PDF download
-    if (req.method === 'POST' && req.url?.includes('download-pdf')) {
+    if (req.method === "POST" && req.url?.includes("download-pdf")) {
       return await downloadPDF(req, res);
     }
-    
+
     // Route per statistiche
-    if (req.method === 'GET' && req.query.stats === 'true') {
+    if (req.method === "GET" && req.query.stats === "true") {
       return await getStatistiche(req, res);
     }
-    
+
     switch (req.method) {
-      case 'GET':
+      case "GET":
         return await getPresenze(req, res);
-      case 'POST':
+      case "POST":
         return await aggiornaPresenze(req, res);
-      case 'DELETE':
+      case "DELETE":
         return await eliminaPresenza(req, res);
       default:
-        return res.status(405).json({ 
-          success: false, 
-          error: 'Metodo non supportato' 
+        return res.status(405).json({
+          success: false,
+          error: "Metodo non supportato",
         });
     }
   } catch (error) {
-    console.error('Errore API presenze:', error);
-    return res.status(500).json({ 
+    console.error("Errore API presenze:", error);
+    return res.status(500).json({
       success: false,
-      error: 'Errore interno del server'
+      error: "Errore interno del server",
     });
   }
 }
