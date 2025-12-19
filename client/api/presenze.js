@@ -78,31 +78,34 @@ function getNextMonth() {
 }
 
 // --- NUOVO HELPER: Normalizzazione Orari ---
-// Converte il formato del DB storico ("09:00 - 13:00") nel formato frontend ("9-13")
+// Converte il formato del DB storico ("09:00 - 13:00") o sporco ("5.0") nel formato frontend
 function normalizzaFascia(inputFascia) {
   if (!inputFascia) return "";
+  const s = String(inputFascia); // Assicura che sia stringa
   // Se è già nel formato breve (es. ID convertito o stringa breve), ritorna così com'è
-  if (!inputFascia.includes(":")) return inputFascia;
+  if (!s.includes(":")) return s;
 
-  return inputFascia
+  return s
     .replace(/:00/g, "") // Rimuove :00
     .replace(/^0/, "") // Rimuove lo 0 iniziale (09 -> 9)
     .replace(/ - 0?/, "-") // Cambia " - 0" o " - " in "-"
     .replace(/ /g, ""); // Rimuove spazi extra
 }
 
-// --- NUOVO HELPER: Recupero Dati Unificato (Attuale + Storico) ---
+// --- RECUPERO DATI UNIFICATO (CORRETTO PER "5.0") ---
 async function fetchUnifiedData(startDate, endDate) {
-  // 1. Dati Attivi (Settimana corrente)
-  // Faccio JOIN con fasce_orarie per ottenere l'orario testuale (es "09:00") da concatenare
+  console.log(`[DEBUG] Fetching data from ${startDate} to ${endDate}`);
+
+  // FIX: La query ora converte p.fascia_oraria in INTEGER per il JOIN
+  // e usa COALESCE per mostrare il valore grezzo se il JOIN fallisce (es. dati storici vecchi)
   const activeQuery = `
         SELECT p.id, p.data, 
-               (f.ora_inizio || '-' || f.ora_fine) as fascia_raw,
+               COALESCE(f.ora_inizio || '-' || f.ora_fine, CAST(p.fascia_oraria AS TEXT)) as fascia_raw,
                p.numero_presenze, p.note, p.user_id,
                u.name, u.surname, u.username, 
                0 as is_history
         FROM presenze p
-        LEFT JOIN fasce_orarie f ON p.fascia_oraria = f.id
+        LEFT JOIN fasce_orarie f ON CAST(p.fascia_oraria AS INTEGER) = f.id
         LEFT JOIN users u ON p.user_id = u.id
         WHERE p.data >= ? AND p.data <= ?
     `;
@@ -116,29 +119,35 @@ async function fetchUnifiedData(startDate, endDate) {
         WHERE data >= ? AND data <= ?
     `;
 
-  const activeResult = await client.execute({
-    sql: activeQuery,
-    args: [startDate, endDate],
-  });
+  let activeRows = [];
+  try {
+    const res = await client.execute({
+      sql: activeQuery,
+      args: [startDate, endDate],
+    });
+    activeRows = res.rows;
+    console.log(`[DEBUG] Active rows found: ${activeRows.length}`);
+  } catch (e) {
+    console.error("[DEBUG] Error querying active table:", e);
+  }
 
   let historyRows = [];
   try {
-    const historyResult = await client.execute({
+    const res = await client.execute({
       sql: historyQuery,
       args: [startDate, endDate],
     });
-    historyRows = historyResult.rows;
+    historyRows = res.rows;
+    console.log(`[DEBUG] History rows found: ${historyRows.length}`);
   } catch (e) {
     // Ignora errore se la tabella storico non esiste ancora
   }
 
-  const allRows = [...activeResult.rows, ...historyRows];
+  const allRows = [...activeRows, ...historyRows];
 
   // Normalizza e pulisce i dati unificati
   return allRows.map((row) => ({
     ...row,
-    // La fascia attiva dal DB potrebbe essere null se sganciata, o una stringa grezza
-    // Se fascia_raw è null (es. record orfani), prova a usare la logica standard o stringa vuota
     fascia_oraria: normalizzaFascia(row.fascia_raw || ""),
   }));
 }
@@ -351,7 +360,6 @@ async function downloadPDF(req, res) {
       try {
         const monthInfo = getMonthDataFromString(monthString);
 
-        // MODIFICA IBRIDA: Usa la funzione unificata per prendere dati attivi + storici
         const rows = await fetchUnifiedData(
           monthInfo.dates[0],
           monthInfo.dates[monthInfo.dates.length - 1]
@@ -427,40 +435,32 @@ async function getPresenze(req, res) {
       monthData = getCurrentMonth();
     }
 
-    // MODIFICA IBRIDA: Recupera dati unificati (Attivi + Storico)
-    const mergedRows = await fetchUnifiedData(
+    // Recupera dati unificati (Attivi + Storico)
+    const rows = await fetchUnifiedData(
       monthData.dates[0],
       monthData.dates[monthData.dates.length - 1]
     );
 
-    // Crea struttura completa con tutti i giorni e fasce
-    const presenzeComplete = [];
+    // Mappa TUTTE le righe per il frontend
+    const presenzeComplete = rows.map((row) => ({
+      id: row.id,
+      data: row.data,
+      fascia_oraria: row.fascia_oraria,
+      numero_presenze: row.numero_presenze,
+      note: row.note || "",
+      user_id: row.user_id,
+      user_name: row.name || "",
+      user_surname: row.surname || "",
+      user_username: row.username || "",
+      // day_of_week calcolato nel frontend se serve, qui lo lasciamo o lo calcoliamo
+      day_of_week: new Date(row.data).getDay(),
+      esistente: true,
+      is_history: row.is_history === 1,
+    }));
 
-    monthData.dates.forEach((data) => {
-      const dayOfWeek = new Date(data).getDay(); // 0 = Domenica, 1 = Lunedì, etc.
-
-      FASCE_ORARIE.forEach((fascia) => {
-        // Cerca corrispondenza nell'array unificato normalizzato
-        const esistente = mergedRows.find(
-          (p) => p.data === data && p.fascia_oraria === fascia
-        );
-
-        presenzeComplete.push({
-          id: esistente?.id || null,
-          data: data,
-          fascia_oraria: fascia,
-          numero_presenze: esistente?.numero_presenze || 0,
-          note: esistente?.note || "",
-          user_id: esistente?.user_id || null,
-          user_name: esistente?.name || "",
-          user_surname: esistente?.surname || "",
-          user_username: esistente?.username || "",
-          day_of_week: dayOfWeek,
-          esistente: !!esistente,
-          is_history: esistente?.is_history === 1, // Flag per frontend
-        });
-      });
-    });
+    // Nota: Il frontend renderCalendarGrid si aspetta di trovare i buchi vuoti
+    // Ma il frontend attuale genera la griglia basandosi su monthData.dates e fa .find().
+    // Quindi è sufficiente restituire la lista delle presenze esistenti.
 
     return res.status(200).json({
       success: true,
@@ -745,16 +745,20 @@ async function getStatistiche(req, res) {
       monthData.dates[monthData.dates.length - 1]
     );
 
-    // Filtra solo record con presenze > 0
-    const validRows = mergedRows.filter(
+    // Filtra solo record con presenze > 0 e fasce standard per il dettaglio
+    // Per il totale_mese invece contiamo TUTTO
+    const totalMese = mergedRows
+      .filter((r) => r.numero_presenze > 0)
+      .reduce((sum, r) => sum + r.numero_presenze, 0);
+
+    // Per il dettaglio fasce, teniamo solo quelle standard
+    const validRowsForStats = mergedRows.filter(
       (r) => r.numero_presenze > 0 && FASCE_ORARIE.includes(r.fascia_oraria)
     );
 
-    // Calcolo aggregati manuale (poiché i dati sono in array JS ora)
-    const totalMese = validRows.reduce((sum, r) => sum + r.numero_presenze, 0);
     const perFasciaMap = {};
 
-    validRows.forEach((r) => {
+    validRowsForStats.forEach((r) => {
       if (!perFasciaMap[r.fascia_oraria]) {
         perFasciaMap[r.fascia_oraria] = { total: 0, count: 0, max: 0 };
       }

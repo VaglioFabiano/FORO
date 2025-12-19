@@ -14,7 +14,7 @@ interface Presenza {
   user_username: string;
   day_of_week: number;
   esistente: boolean;
-  is_history?: boolean; // Aggiunto per gestire i dati storici
+  is_history?: boolean; // Fondamentale per i dati storici
 }
 
 interface MonthInfo {
@@ -69,7 +69,7 @@ const Presenze: React.FC = () => {
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
-  // Fasce orarie (DEVONO corrispondere alle chiavi 'mapOrari' nel backend)
+  // Fasce orarie standard per la visualizzazione a colonne
   const fasce = ["9-13", "13-16", "16-19", "21-24"];
 
   // Giorni per la visualizzazione UI
@@ -376,7 +376,6 @@ const Presenze: React.FC = () => {
 
   const generateAndDownloadPdf = async (pdfData: any[]) => {
     try {
-      // Prova a caricare jsPDF
       const script = document.createElement("script");
       script.src =
         "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
@@ -572,7 +571,7 @@ const Presenze: React.FC = () => {
         text: "Generando report in formato testo...",
       });
 
-      // FALLBACK TXT (Codice completo per evitare warning)
+      // FALLBACK TXT
       let content = "=".repeat(60) + "\n";
       content += "              REPORT PRESENZE\n";
       content += "=".repeat(60) + "\n";
@@ -586,7 +585,7 @@ const Presenze: React.FC = () => {
         content += `MESE: ${monthInfo.monthName.toUpperCase()}\n`;
         content += "-".repeat(50) + "\n\n";
 
-        // Organizza presenze per data (utilizzando la variabile 'presenze')
+        // Organizza presenze per data
         const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
         presenze.forEach((p: any) => {
           if (!presenzeMap[p.data]) {
@@ -644,7 +643,6 @@ const Presenze: React.FC = () => {
         content += `- Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno\n`;
         content += `- Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}\n`;
 
-        // Utilizzo della variabile 'index' per separatore
         if (index < pdfData.length - 1) {
           content += "\n\n";
         }
@@ -714,12 +712,14 @@ const Presenze: React.FC = () => {
   const renderCalendarGrid = () => {
     if (!monthInfo) return null;
 
-    const presenzeMap: { [key: string]: { [fascia: string]: Presenza } } = {};
+    // Organizza le presenze in una mappa per accesso rapido
+    // Nota: Un giorno può avere più record (es. diverse fasce orarie)
+    const presenzeMap: { [key: string]: Presenza[] } = {};
     presenze.forEach((presenza) => {
       if (!presenzeMap[presenza.data]) {
-        presenzeMap[presenza.data] = {};
+        presenzeMap[presenza.data] = [];
       }
-      presenzeMap[presenza.data][presenza.fascia_oraria] = presenza;
+      presenzeMap[presenza.data].push(presenza);
     });
 
     return (
@@ -736,10 +736,15 @@ const Presenze: React.FC = () => {
 
         <div className="calendar-body">
           {monthInfo.dates.map((data) => {
-            const totaleDiario = fasce.reduce((sum, fascia) => {
-              const presenza = presenzeMap[data]?.[fascia];
-              return sum + (presenza?.numero_presenze || 0);
-            }, 0);
+            // Recupera tutte le presenze per questo giorno
+            const dailyPresenze = presenzeMap[data] || [];
+
+            // Calcolo totale ROBUSTO: somma tutte le presenze del giorno,
+            // indipendentemente dalla fascia oraria (anche "5.0" o "09:00 - 19:30")
+            const totaleDiario = dailyPresenze.reduce(
+              (sum, p) => sum + p.numero_presenze,
+              0
+            );
 
             return (
               <div
@@ -751,10 +756,12 @@ const Presenze: React.FC = () => {
                   <div className="day-name">{getDayName(data)}</div>
                 </div>
 
+                {/* Cicla le colonne visualizzate (9-13, 13-16, etc.) */}
                 {fasce.map((fascia) => {
-                  const presenza = presenzeMap[data]?.[fascia];
+                  const presenza = dailyPresenze.find(
+                    (p) => p.fascia_oraria === fascia
+                  );
                   const numero = presenza?.numero_presenze || 0;
-                  // Se è uno storico, potresti volerlo stilizzare diversamente
                   const isHistory = presenza?.is_history;
 
                   return (
