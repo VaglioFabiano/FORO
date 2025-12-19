@@ -78,7 +78,7 @@ function getNextMonth() {
 }
 
 // --- NUOVO HELPER: Normalizzazione Orari ---
-// Converte il formato del DB storico ("09:00 - 13:00") o "5.0" nel formato frontend ("9-13")
+// Converte il formato del DB storico ("09:00 - 13:00") o sporco ("5.0") nel formato frontend ("9-13")
 function normalizzaFascia(inputFascia) {
   if (!inputFascia) return "";
   let s = String(inputFascia); // Assicura che sia stringa
@@ -132,6 +132,12 @@ async function fetchUnifiedData(startDate, endDate) {
     });
     activeRows = res.rows;
     console.log(`[DEBUG] Active rows found: ${activeRows.length}`);
+    if (activeRows.length > 0) {
+      console.log(
+        "[DEBUG] Active Row Sample:",
+        JSON.stringify(activeRows[0], null, 2)
+      );
+    }
   } catch (e) {
     console.error("[DEBUG] Error querying active table:", e);
   }
@@ -144,17 +150,36 @@ async function fetchUnifiedData(startDate, endDate) {
     });
     historyRows = res.rows;
     console.log(`[DEBUG] History rows found: ${historyRows.length}`);
+    if (historyRows.length > 0) {
+      console.log(
+        "[DEBUG] History Row Sample:",
+        JSON.stringify(historyRows[0], null, 2)
+      );
+    }
   } catch (e) {
     // Ignora errore se la tabella storico non esiste ancora
+    console.log("[DEBUG] History table might not exist or error:", e.message);
   }
 
   const allRows = [...activeRows, ...historyRows];
 
   // Normalizza e pulisce i dati unificati
-  return allRows.map((row) => ({
-    ...row,
-    fascia_oraria: normalizzaFascia(row.fascia_raw || ""),
-  }));
+  return allRows.map((row) => {
+    const originalFascia = row.fascia_raw || "";
+    const normalizedFascia = normalizzaFascia(originalFascia);
+
+    // Log per capire come stiamo trasformando le fasce
+    if (originalFascia !== normalizedFascia) {
+      console.log(
+        `[DEBUG] Normalizing fascia: '${originalFascia}' -> '${normalizedFascia}'`
+      );
+    }
+
+    return {
+      ...row,
+      fascia_oraria: normalizedFascia,
+    };
+  });
 }
 
 // Handler per log delle modifiche
@@ -733,7 +758,6 @@ async function getStatistiche(req, res) {
     );
 
     // Filtra solo record con presenze > 0
-    // Per il totale includiamo tutto
     const validRowsTotal = mergedRows.filter((r) => r.numero_presenze > 0);
     const totalMese = validRowsTotal.reduce(
       (sum, r) => sum + r.numero_presenze,
