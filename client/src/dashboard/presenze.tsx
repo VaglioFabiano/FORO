@@ -586,7 +586,7 @@ const Presenze: React.FC = () => {
         content += `MESE: ${monthInfo.monthName.toUpperCase()}\n`;
         content += "-".repeat(50) + "\n\n";
 
-        // Organizza presenze per data
+        // Organizza presenze per data (utilizzando la variabile 'presenze')
         const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
         presenze.forEach((p: any) => {
           if (!presenzeMap[p.data]) {
@@ -644,6 +644,7 @@ const Presenze: React.FC = () => {
         content += `- Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno\n`;
         content += `- Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}\n`;
 
+        // Utilizzo della variabile 'index' per separatore
         if (index < pdfData.length - 1) {
           content += "\n\n";
         }
