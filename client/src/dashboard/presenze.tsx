@@ -60,7 +60,6 @@ const Presenze: React.FC = () => {
   const [selectedCell, setSelectedCell] = useState<{
     data: string;
     fascia: string;
-    isExtra: boolean;
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editValue, setEditValue] = useState<string>("");
@@ -73,7 +72,6 @@ const Presenze: React.FC = () => {
 
   // --- CONFIGURAZIONE ---
   const fasceStandard = ["9-13", "13-16", "16-19", "21-24"];
-  const fasciaExtraLabel = "Altro";
   const giorni = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
   const mesi = [
     "Gennaio",
@@ -230,37 +228,13 @@ const Presenze: React.FC = () => {
   };
 
   // --- GESTIONE CELLE E MODALE ---
-  const getPresenza = (
-    data: string,
-    colonna: string,
-    isExtra: boolean
-  ): Presenza | undefined => {
-    if (isExtra) {
-      return presenze.find(
-        (p) => p.data === data && !fasceStandard.includes(p.fascia_oraria)
-      );
-    }
+  const getPresenza = (data: string, colonna: string): Presenza | undefined => {
     return presenze.find((p) => p.data === data && p.fascia_oraria === colonna);
   };
 
-  const handleCellClick = (
-    data: string,
-    colonna: string,
-    isExtra: boolean = false
-  ) => {
-    const presenza = getPresenza(data, colonna, isExtra);
-
-    if (isExtra && !presenza) {
-      setMessage({
-        type: "info",
-        text: "Usa le colonne standard per i nuovi inserimenti.",
-      });
-      return;
-    }
-
-    const fasciaReale = presenza ? presenza.fascia_oraria : colonna;
-
-    setSelectedCell({ data, fascia: fasciaReale, isExtra });
+  const handleCellClick = (data: string, colonna: string) => {
+    const presenza = getPresenza(data, colonna);
+    setSelectedCell({ data, fascia: colonna });
     setEditValue(presenza?.numero_presenze.toString() || "0");
     setEditNote(presenza?.note || "");
     setIsModalOpen(true);
@@ -533,17 +507,10 @@ const Presenze: React.FC = () => {
               {f}
             </div>
           ))}
-          <div
-            className="fascia-header extra-header"
-            title="Orari non standard"
-          >
-            {fasciaExtraLabel}
-          </div>
           <div className="total-column">Tot</div>
         </div>
         <div className="calendar-body">
           {monthInfo.dates.map((data) => {
-            // FIX: Uso degli helper per evitare warning di variabili inutilizzate
             const isWknd = isWeekend(data);
             const dayNum = formatDate(data);
             const dayName = getDayName(data);
@@ -552,20 +519,11 @@ const Presenze: React.FC = () => {
             const dayPresenze = presenzeMap[data] || [];
 
             // CALCOLO TOTALE: Somma tutto ciò che è nel DB per oggi
+            // Questo include anche le fasce che NON sono visualizzate nelle colonne
             const totaleDiario = dayPresenze.reduce(
               (sum, p) => sum + p.numero_presenze,
               0
             );
-
-            // Trova se c'è un record "extra" (es. "5.0" o "09:00 - 19:30")
-            const presenzaExtra = dayPresenze.find(
-              (p) => !fasceStandard.includes(p.fascia_oraria)
-            );
-            const numeroExtra = presenzaExtra?.numero_presenze || 0;
-            const extraNote = presenzaExtra?.note ? "📝" : "";
-            const extraTooltip = presenzaExtra
-              ? `Orario: ${presenzaExtra.fascia_oraria}\n${presenzaExtra.note}`
-              : "";
 
             return (
               <div
@@ -600,20 +558,7 @@ const Presenze: React.FC = () => {
                   );
                 })}
 
-                {/* Colonna Extra (Altro) */}
-                <div
-                  className={`presenza-cell ${numeroExtra > 0 ? "has-presenze is-extra" : "empty"} ${presenzaExtra?.is_history ? "is-history" : ""}`}
-                  onClick={() => handleCellClick(data, fasciaExtraLabel, true)}
-                  title={extraTooltip}
-                >
-                  <div className="numero-presenze">
-                    {numeroExtra > 0 ? numeroExtra : "-"}
-                  </div>
-                  {extraNote && (
-                    <div className="presenza-note">{extraNote}</div>
-                  )}
-                </div>
-
+                {/* Colonna Totale (Unica e Definitiva) */}
                 <div
                   className={`total-cell ${totaleDiario > 0 ? "has-total" : ""}`}
                 >
@@ -660,8 +605,7 @@ const Presenze: React.FC = () => {
     );
 
   const currentCellIsHistory = selectedCell
-    ? getPresenza(selectedCell.data, selectedCell.fascia, selectedCell.isExtra)
-        ?.is_history
+    ? getPresenza(selectedCell.data, selectedCell.fascia)?.is_history
     : false;
 
   return (
@@ -762,11 +706,8 @@ const Presenze: React.FC = () => {
                 {new Date(selectedCell.data).toLocaleDateString("it-IT")}
               </p>
               <p>
-                <strong>Fascia:</strong> {selectedCell.fascia || "Altro"}
+                <strong>Fascia:</strong> {selectedCell.fascia}
               </p>
-              {selectedCell.isExtra && (
-                <p className="history-badge">Fascia non standard</p>
-              )}
 
               <div className="form-group">
                 <label>Numero</label>
@@ -798,11 +739,8 @@ const Presenze: React.FC = () => {
                     className="delete-button"
                     onClick={handleEliminaPresenza}
                     disabled={
-                      !getPresenza(
-                        selectedCell.data,
-                        selectedCell.fascia,
-                        selectedCell.isExtra
-                      )?.esistente
+                      !getPresenza(selectedCell.data, selectedCell.fascia)
+                        ?.esistente
                     }
                   >
                     Elimina

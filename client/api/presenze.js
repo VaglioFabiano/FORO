@@ -18,7 +18,6 @@ const FASCE_ORARIE = ["9-13", "13-16", "16-19", "21-24"];
 
 // --- HELPER FUNZIONI DATE ---
 
-// Funzione per ottenere i giorni di un mese specifico
 function getMonthDates(monthOffset = 0) {
   const now = new Date();
   const targetDate = new Date(
@@ -52,7 +51,6 @@ function getMonthDates(monthOffset = 0) {
   };
 }
 
-// Funzione per ottenere dati di un mese specifico da stringa YYYY-MM
 function getMonthDataFromString(monthString) {
   const [year, month] = monthString.split("-").map(Number);
   const now = new Date();
@@ -78,7 +76,6 @@ function getNextMonth() {
 }
 
 // --- NORMALIZZAZIONE INTELLIGENTE (FORZATURA) ---
-// Questa funzione è CRUCIALE: forza qualsiasi dato "strano" in una delle 4 fasce standard
 function normalizzaFascia(inputFascia) {
   if (!inputFascia) return "";
   let s = String(inputFascia).trim();
@@ -90,35 +87,27 @@ function normalizzaFascia(inputFascia) {
   if (FASCE_ORARIE.includes(s)) return s;
 
   // 3. Analisi euristica: Cerca l'ora di inizio
-  // Cattura il primo numero (1 o 2 cifre) all'inizio della stringa
-  // Es: "09:00 - 19:30" -> cattura "09"
-  // Es: "9" -> cattura "9"
-  // Es: "13:00" -> cattura "13"
   const match = s.match(/^0?(\d{1,2})/);
 
   if (match) {
     const hour = parseInt(match[1], 10);
 
     // Mappatura forzata alle fasce standard in base all'ora di inizio
-    // Questa logica "indovina" dove mettere il dato in base all'ora
-    if (hour >= 8 && hour < 13) return "9-13"; // Mattina (es. 09:00, 10:00, 12:30)
-    if (hour >= 13 && hour < 16) return "13-16"; // Primo pomeriggio (es. 13:00, 14:00)
-    if (hour >= 16 && hour < 20) return "16-19"; // Tardo pomeriggio (es. 16:00, 19:30)
-    if (hour >= 20 || hour < 5) return "21-24"; // Sera/Notte (es. 21:00, 23:00)
+    if (hour >= 8 && hour < 13) return "9-13";
+    if (hour >= 13 && hour < 16) return "13-16";
+    if (hour >= 16 && hour < 20) return "16-19";
+    if (hour >= 20 || hour < 5) return "21-24";
   }
 
   // Se non riusciamo a decifrarlo, ritorniamo la stringa originale
-  // (Il frontend la metterà in "Altro")
   return s;
 }
 
-// --- RECUPERO DATI UNIFICATO (Attuale + Storico) ---
+// --- RECUPERO DATI UNIFICATO ---
 async function fetchUnifiedData(startDate, endDate) {
   console.log(`[DEBUG] Fetching data from ${startDate} to ${endDate}`);
 
-  // FIX CRITICO:
-  // 1. CAST(p.fascia_oraria AS INTEGER) permette di unire "5.0" con ID 5.
-  // 2. COALESCE gestisce il fallback: se il JOIN fallisce (es. dato storico testuale), usa il valore originale.
+  // FIX: CAST e COALESCE per leggere sia ID numerici che stringhe di fallback
   const activeQuery = `
         SELECT p.id, p.data, 
                COALESCE(f.ora_inizio || '-' || f.ora_fine, CAST(p.fascia_oraria AS TEXT)) as fascia_raw,
@@ -131,7 +120,6 @@ async function fetchUnifiedData(startDate, endDate) {
         WHERE p.data >= ? AND p.data <= ?
     `;
 
-  // 2. Dati Storici (Passato)
   const historyQuery = `
         SELECT id, data, orario as fascia_raw, numero_presenze, note, 
                NULL as user_id, 'Archivio' as name, '' as surname, '' as username, 
@@ -147,7 +135,6 @@ async function fetchUnifiedData(startDate, endDate) {
       args: [startDate, endDate],
     });
     activeRows = res.rows;
-    console.log(`[DEBUG] Active rows found: ${activeRows.length}`);
   } catch (e) {
     console.error("[DEBUG] Error querying active table:", e);
   }
@@ -159,9 +146,8 @@ async function fetchUnifiedData(startDate, endDate) {
       args: [startDate, endDate],
     });
     historyRows = res.rows;
-    console.log(`[DEBUG] History rows found: ${historyRows.length}`);
   } catch (e) {
-    // Ignora errore se la tabella storico non esiste ancora
+    // Ignora errore se la tabella storico non esiste
   }
 
   const allRows = [...activeRows, ...historyRows];
@@ -171,13 +157,9 @@ async function fetchUnifiedData(startDate, endDate) {
     const raw = row.fascia_raw || "";
     const normalized = normalizzaFascia(raw);
 
-    if (raw !== normalized && raw !== "") {
-      console.log(`[DEBUG] Mapped '${raw}' -> '${normalized}'`);
-    }
-
     return {
       ...row,
-      fascia_oraria: normalized, // Ora è una delle 4 fasce standard (se possibile)
+      fascia_oraria: normalized,
     };
   });
 }
@@ -194,8 +176,7 @@ async function logPresenzeChange(
 ) {
   try {
     await client.execute({
-      sql: `INSERT INTO presenze_log (presenze_id, data, fascia_oraria, numero_presenze_old, numero_presenze_new, user_id, action)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO presenze_log (presenze_id, data, fascia_oraria, numero_presenze_old, numero_presenze_new, user_id, action) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       args: [
         presenzeId,
         data,
@@ -211,10 +192,9 @@ async function logPresenzeChange(
   }
 }
 
-// Funzione per generare PDF (restituisce HTML per il frontend)
+// --- GENERAZIONE PDF ---
 async function generatePDF(presenzeData, monthsInfo) {
   try {
-    // Header HTML per il PDF
     let html = `
 <!DOCTYPE html>
 <html>
@@ -244,7 +224,6 @@ async function generatePDF(presenzeData, monthsInfo) {
     </div>
 `;
 
-    // Genera sezione per ogni mese
     for (const monthData of presenzeData) {
       const monthInfo = monthData.monthInfo;
       const presenze = monthData.presenze;
@@ -267,25 +246,24 @@ async function generatePDF(presenzeData, monthsInfo) {
             <tbody>
 `;
 
-      // Organizza presenze per data
       const presenzeMap = {};
       presenze.forEach((p) => {
-        if (!presenzeMap[p.data]) {
-          presenzeMap[p.data] = {};
-        }
+        if (!presenzeMap[p.data]) presenzeMap[p.data] = {};
         presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
       });
 
-      // Genera righe per ogni giorno del mese
       monthInfo.dates.forEach((data) => {
         const date = new Date(data);
         const dayOfWeek = date.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
-        const totaleGiorno = FASCE_ORARIE.reduce((sum, fascia) => {
-          return sum + (presenzeMap[data]?.[fascia] || 0);
-        }, 0);
+        // Somma tutto il giorno, anche fasce non standard
+        const dayRecords = presenze.filter((p) => p.data === data);
+        const totaleGiorno = dayRecords.reduce(
+          (sum, p) => sum + p.numero_presenze,
+          0
+        );
 
         html += `
                 <tr class="${isWeekend ? "weekend" : ""}">
@@ -303,7 +281,6 @@ async function generatePDF(presenzeData, monthsInfo) {
 `;
       });
 
-      // Calcola totali per fascia e totale mese
       const totaliFascia = {};
       let totaleMese = 0;
 
@@ -313,6 +290,12 @@ async function generatePDF(presenzeData, monthsInfo) {
           .reduce((sum, p) => sum + p.numero_presenze, 0);
         totaleMese += totaliFascia[fascia];
       });
+
+      // Aggiungi al totale mese anche le fasce extra non tabellate
+      const extraTotal = presenze
+        .filter((p) => !FASCE_ORARIE.includes(p.fascia_oraria))
+        .reduce((sum, p) => sum + p.numero_presenze, 0);
+      totaleMese += extraTotal;
 
       html += `
                 <tr class="total-row">
@@ -332,13 +315,6 @@ async function generatePDF(presenzeData, monthsInfo) {
             <div class="stats-title">Statistiche ${monthInfo.monthName}</div>
             <p><strong>Totale mese:</strong> ${totaleMese} presenze</p>
             <p><strong>Media giornaliera:</strong> ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno</p>
-            <p><strong>Giorni con presenze:</strong> ${
-              Object.keys(presenzeMap).filter((data) =>
-                FASCE_ORARIE.some(
-                  (fascia) => (presenzeMap[data]?.[fascia] || 0) > 0
-                )
-              ).length
-            } su ${monthInfo.dates.length}</p>
         </div>
     </div>
 `;
@@ -355,19 +331,16 @@ async function generatePDF(presenzeData, monthsInfo) {
   }
 }
 
-// POST - Genera e scarica PDF (Restituisce HTML)
+// POST - Download PDF Endpoint
 async function downloadPDF(req, res) {
   try {
     const { months, user_id } = req.body;
-
     if (!months || !Array.isArray(months) || months.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Lista mesi mancante o vuota",
-      });
+      return res
+        .status(400)
+        .json({ success: false, error: "Lista mesi mancante" });
     }
 
-    // Verifica permessi utente
     const userResult = await client.execute({
       sql: "SELECT level FROM users WHERE id = ?",
       args: [user_id],
@@ -377,26 +350,20 @@ async function downloadPDF(req, res) {
       !userResult.rows.length ||
       (userResult.rows[0].level !== 0 && userResult.rows[0].level !== 1)
     ) {
-      return res.status(403).json({
-        success: false,
-        error: "Non hai i permessi per scaricare il PDF",
-      });
+      return res
+        .status(403)
+        .json({ success: false, error: "Permessi insufficienti" });
     }
 
-    // Raccoglie dati per tutti i mesi richiesti
     const presenzeData = [];
-
     for (const monthString of months) {
       try {
         const monthInfo = getMonthDataFromString(monthString);
-
-        // Usa la funzione unificata corretta
         const rows = await fetchUnifiedData(
           monthInfo.dates[0],
           monthInfo.dates[monthInfo.dates.length - 1]
         );
 
-        // Ordina per data e fascia
         rows.sort((a, b) => {
           if (a.data !== b.data) return a.data.localeCompare(b.data);
           return (
@@ -405,105 +372,71 @@ async function downloadPDF(req, res) {
           );
         });
 
-        // Filtra solo le fasce valide per il PDF (opzionale, ma pulisce il report)
-        const filteredRows = rows.filter((r) =>
-          FASCE_ORARIE.includes(r.fascia_oraria)
-        );
-
-        presenzeData.push({
-          monthInfo: monthInfo,
-          presenze: filteredRows,
-        });
-      } catch (error) {
-        console.error(
-          `Errore nel recupero dati per il mese ${monthString}:`,
-          error
-        );
+        const filteredRows = rows.filter((r) => r.numero_presenze > 0); // Includi tutti per il PDF
+        presenzeData.push({ monthInfo: monthInfo, presenze: filteredRows });
+      } catch (e) {
+        console.error(e);
       }
     }
 
-    if (presenzeData.length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Nessun dato trovato per i mesi selezionati",
-      });
-    }
+    if (presenzeData.length === 0)
+      return res.status(400).json({ success: false, error: "Nessun dato" });
 
-    // Genera HTML per PDF
     const htmlContent = await generatePDF(presenzeData, months);
-
-    return res.status(200).json({
-      success: true,
-      message: "Report generato con successo",
-      html: htmlContent,
-      months_processed: presenzeData.length,
-    });
+    return res.status(200).json({ success: true, html: htmlContent });
   } catch (error) {
-    console.error("Errore nella generazione PDF:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server nella generazione PDF",
-    });
+    return res.status(500).json({ success: false, error: "Errore server PDF" });
   }
 }
 
-// GET - Ottieni presenze del mese
+// GET - Presenze
 async function getPresenze(req, res) {
   try {
-    const { mese } = req.query; // 'corrente', 'precedente', 'successivo', o 'YYYY-MM'
-
+    const { mese } = req.query;
     let monthData;
 
-    if (mese === "precedente") {
-      monthData = getPreviousMonth();
-    } else if (mese === "successivo") {
-      monthData = getNextMonth();
-    } else if (mese && mese.match(/^\d{4}-\d{2}$/)) {
-      // Formato YYYY-MM specifico
+    if (mese === "precedente") monthData = getPreviousMonth();
+    else if (mese === "successivo") monthData = getNextMonth();
+    else if (mese && mese.match(/^\d{4}-\d{2}$/))
       monthData = getMonthDataFromString(mese);
-    } else {
-      monthData = getCurrentMonth();
-    }
+    else monthData = getCurrentMonth();
 
-    // Recupera dati unificati (Attivi + Storico)
     const rows = await fetchUnifiedData(
       monthData.dates[0],
       monthData.dates[monthData.dates.length - 1]
     );
 
-    // Mappa TUTTE le righe per il frontend
     const presenzeComplete = rows.map((row) => ({
       id: row.id,
       data: row.data,
-      fascia_oraria: row.fascia_oraria, // Sarà normalizzato ("9-13")
+      fascia_oraria: row.fascia_oraria,
       numero_presenze: row.numero_presenze,
       note: row.note || "",
       user_id: row.user_id,
       user_name: row.name || "",
       user_surname: row.surname || "",
       user_username: row.username || "",
-      // day_of_week calcolato nel frontend se serve, qui lo lasciamo o lo calcoliamo
       day_of_week: new Date(row.data).getDay(),
       esistente: true,
       is_history: row.is_history === 1,
     }));
 
-    return res.status(200).json({
-      success: true,
-      presenze: presenzeComplete,
-      month_info: monthData,
-      mese: mese || "corrente",
-    });
+    return res
+      .status(200)
+      .json({
+        success: true,
+        presenze: presenzeComplete,
+        month_info: monthData,
+        mese: mese || "corrente",
+      });
   } catch (error) {
-    console.error("Errore nel recupero presenze:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-    });
+    return res
+      .status(500)
+      .json({ success: false, error: "Errore interno server" });
   }
 }
 
-// POST - Aggiorna presenze
+// POST - Aggiorna con FALLBACK per fasce non configurate
 async function aggiornaPresenze(req, res) {
   try {
     const { data, fascia_oraria, numero_presenze, note, current_user_id } =
@@ -515,30 +448,17 @@ async function aggiornaPresenze(req, res) {
       numero_presenze === undefined ||
       numero_presenze === null
     ) {
-      return res.status(400).json({
-        success: false,
-        error: "Dati mancanti",
-      });
+      return res.status(400).json({ success: false, error: "Dati mancanti" });
     }
 
-    const numeroPresenze = parseInt(numero_presenze);
-    if (isNaN(numeroPresenze) || numeroPresenze < 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Numero presenze deve essere un numero positivo",
-      });
-    }
-
-    // Mapping Frontend -> Backend
+    // Mapping
     const mapOrari = {
-      "9-13": { start: "09:00" },
-      "13-16": { start: "13:00" },
-      "16-19": { start: "16:00" },
-      "21-24": { start: "21:00" },
+      "9-13": "09:00",
+      "13-16": "13:00",
+      "16-19": "16:00",
+      "21-24": "21:00",
     };
-    const target = mapOrari[fascia_oraria];
-
-    // Trova il giorno usando i nomi esatti (minuscoli) come nel DB
+    const targetStart = mapOrari[fascia_oraria];
     const days = [
       "domenica",
       "lunedì",
@@ -548,126 +468,100 @@ async function aggiornaPresenze(req, res) {
       "venerdì",
       "sabato",
     ];
-    const dateObj = new Date(data);
-    const giornoTarget = days[dateObj.getDay()];
+    const giornoTarget = days[new Date(data).getDay()];
 
-    // Cerca l'ID nella tabella fasce_orarie attiva
-    let fasciaIdReale = null;
+    let fasciaDaSalvare = null;
 
-    if (target) {
-      const idFasciaRes = await client.execute({
+    // 1. Tenta di trovare l'ID
+    if (targetStart) {
+      const fRes = await client.execute({
         sql: `SELECT id FROM fasce_orarie WHERE giorno = ? AND ora_inizio = ?`,
-        args: [giornoTarget, target.start],
+        args: [giornoTarget, targetStart],
       });
-      if (idFasciaRes.rows.length > 0) {
-        fasciaIdReale = idFasciaRes.rows[0].id;
+      if (fRes.rows.length > 0) {
+        fasciaDaSalvare = fRes.rows[0].id;
       }
     }
 
-    if (!fasciaIdReale) {
-      return res.status(403).json({
-        success: false,
-        error:
-          "Modifica non consentita: Settimana archiviata o fascia non attiva per " +
-          giornoTarget,
-      });
+    // 2. FALLBACK: Se non trova l'ID, salva la stringa raw (Fix per "fascia non attiva")
+    if (!fasciaDaSalvare) {
+      console.warn(
+        `[WARN] ID fascia non trovato per ${giornoTarget} ${fascia_oraria}. Uso fallback.`
+      );
+      fasciaDaSalvare = fascia_oraria;
     }
 
-    // Verifica esistenza
-    const esistente = await client.execute({
+    const check = await client.execute({
       sql: "SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?",
-      args: [data, fasciaIdReale],
+      args: [data, fasciaDaSalvare],
     });
 
     let result;
     let action;
 
-    if (esistente.rows.length > 0) {
-      const oldValue = esistente.rows[0].numero_presenze;
-
+    if (check.rows.length > 0) {
       // UPDATE
       result = await client.execute({
-        sql: `UPDATE presenze SET numero_presenze = ?, note = ?, user_id = ?, updated_at = CURRENT_TIMESTAMP 
-              WHERE id = ?
-              RETURNING id, data, fascia_oraria, numero_presenze, note, user_id`,
-        args: [
-          numeroPresenze,
-          note || "",
-          current_user_id,
-          esistente.rows[0].id,
-        ],
+        sql: `UPDATE presenze SET numero_presenze = ?, note = ?, user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING id`,
+        args: [numero_presenze, note || "", current_user_id, check.rows[0].id],
       });
-
       action = "UPDATE";
-
       await logPresenzeChange(
-        esistente.rows[0].id,
+        check.rows[0].id,
         data,
         fascia_oraria,
-        oldValue,
-        numeroPresenze,
+        check.rows[0].numero_presenze,
+        numero_presenze,
         current_user_id,
         action
       );
     } else {
       // INSERT
       result = await client.execute({
-        sql: `INSERT INTO presenze (data, fascia_oraria, numero_presenze, note, user_id)
-              VALUES (?, ?, ?, ?, ?)
-              RETURNING id, data, fascia_oraria, numero_presenze, note, user_id`,
+        sql: `INSERT INTO presenze (data, fascia_oraria, numero_presenze, note, user_id) VALUES (?, ?, ?, ?, ?) RETURNING id`,
         args: [
           data,
-          fasciaIdReale,
-          numeroPresenze,
+          fasciaDaSalvare,
+          numero_presenze,
           note || "",
           current_user_id,
         ],
       });
-
       action = "INSERT";
-
       await logPresenzeChange(
         result.rows[0].id,
         data,
         fascia_oraria,
         null,
-        numeroPresenze,
+        numero_presenze,
         current_user_id,
         action
       );
     }
 
-    return res.status(200).json({
-      success: true,
-      presenza: result.rows[0],
-      action: action.toLowerCase(),
-    });
+    return res
+      .status(200)
+      .json({ success: true, presenza: result.rows[0], action });
   } catch (error) {
-    console.error("Errore nell'aggiornamento presenze:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-    });
+    console.error("Errore aggiornamento:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 }
 
-// DELETE - Elimina presenza (opzionale)
+// DELETE - Elimina con FALLBACK
 async function eliminaPresenza(req, res) {
   try {
     const { data, fascia_oraria, current_user_id } = req.body;
-
-    if (!data || !fascia_oraria) {
+    if (!data || !fascia_oraria)
       return res.status(400).json({ success: false, error: "Dati mancanti" });
-    }
 
     const mapOrari = {
-      "9-13": { start: "09:00" },
-      "13-16": { start: "13:00" },
-      "16-19": { start: "16:00" },
-      "21-24": { start: "21:00" },
+      "9-13": "09:00",
+      "13-16": "13:00",
+      "16-19": "16:00",
+      "21-24": "21:00",
     };
-    const target = mapOrari[fascia_oraria];
-    const dateObj = new Date(data);
+    const targetStart = mapOrari[fascia_oraria];
     const days = [
       "domenica",
       "lunedì",
@@ -677,110 +571,79 @@ async function eliminaPresenza(req, res) {
       "venerdì",
       "sabato",
     ];
-    const giornoTarget = days[dateObj.getDay()];
+    const giornoTarget = days[new Date(data).getDay()];
 
-    let fasciaIdReale = null;
-    if (target) {
-      const idRes = await client.execute({
+    let fasciaDaSalvare = null;
+    if (targetStart) {
+      const fRes = await client.execute({
         sql: `SELECT id FROM fasce_orarie WHERE giorno = ? AND ora_inizio = ?`,
-        args: [giornoTarget, target.start],
+        args: [giornoTarget, targetStart],
       });
-      if (idRes.rows.length > 0) fasciaIdReale = idRes.rows[0].id;
+      if (fRes.rows.length > 0) fasciaDaSalvare = fRes.rows[0].id;
     }
+    // Fallback
+    if (!fasciaDaSalvare) fasciaDaSalvare = fascia_oraria;
 
-    if (!fasciaIdReale) {
-      return res.status(403).json({
-        success: false,
-        error: "Impossibile eliminare dati archiviati o fascia non attiva",
-      });
-    }
-
-    const esistente = await client.execute({
+    const check = await client.execute({
       sql: "SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?",
-      args: [data, fasciaIdReale],
+      args: [data, fasciaDaSalvare],
     });
 
-    if (esistente.rows.length > 0) {
-      const oldValue = esistente.rows[0].numero_presenze;
-
+    if (check.rows.length > 0) {
       const result = await client.execute({
         sql: "DELETE FROM presenze WHERE id = ?",
-        args: [esistente.rows[0].id],
+        args: [check.rows[0].id],
       });
-
       if (result.rowsAffected > 0) {
         await logPresenzeChange(
-          esistente.rows[0].id,
+          check.rows[0].id,
           data,
           fascia_oraria,
-          oldValue,
+          check.rows[0].numero_presenze,
           null,
           current_user_id,
           "DELETE"
         );
       }
-
-      return res.status(200).json({
-        success: true,
-        deleted: result.rowsAffected > 0,
-      });
+      return res.status(200).json({ success: true, deleted: true });
     } else {
-      return res.status(404).json({
-        success: false,
-        error: "Presenza non trovata",
-      });
+      return res
+        .status(404)
+        .json({ success: false, error: "Presenza non trovata" });
     }
   } catch (error) {
-    console.error("Errore nell'eliminazione presenza:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-    });
+    console.error("Errore eliminazione:", error);
+    return res.status(500).json({ success: false, error: "Errore interno" });
   }
 }
 
-// GET - Ottieni statistiche mensili
+// GET - Stats
 async function getStatistiche(req, res) {
   try {
     const { mese } = req.query;
-
     let monthData;
-    if (mese === "precedente") {
-      monthData = getPreviousMonth();
-    } else if (mese === "successivo") {
-      monthData = getNextMonth();
-    } else {
-      monthData = getCurrentMonth();
-    }
+    if (mese === "precedente") monthData = getPreviousMonth();
+    else if (mese === "successivo") monthData = getNextMonth();
+    else monthData = getCurrentMonth();
 
-    const mergedRows = await fetchUnifiedData(
+    const rows = await fetchUnifiedData(
       monthData.dates[0],
       monthData.dates[monthData.dates.length - 1]
     );
-
-    // Filtra solo record con presenze > 0
-    // Per il totale includiamo tutto
-    const validRowsTotal = mergedRows.filter((r) => r.numero_presenze > 0);
-    const totalMese = validRowsTotal.reduce(
-      (sum, r) => sum + r.numero_presenze,
-      0
-    );
-
-    // Per il dettaglio per fascia, prendiamo solo quelle standard
-    const validRowsFasce = validRowsTotal.filter((r) =>
-      FASCE_ORARIE.includes(r.fascia_oraria)
-    );
+    const validRows = rows.filter((r) => r.numero_presenze > 0);
+    const totalMese = validRows.reduce((sum, r) => sum + r.numero_presenze, 0);
 
     const perFasciaMap = {};
-
-    validRowsFasce.forEach((r) => {
-      if (!perFasciaMap[r.fascia_oraria]) {
-        perFasciaMap[r.fascia_oraria] = { total: 0, count: 0, max: 0 };
-      }
-      const stats = perFasciaMap[r.fascia_oraria];
-      stats.total += r.numero_presenze;
-      stats.count += 1;
-      if (r.numero_presenze > stats.max) stats.max = r.numero_presenze;
+    validRows.forEach((r) => {
+      const fKey = FASCE_ORARIE.includes(r.fascia_oraria)
+        ? r.fascia_oraria
+        : "Altro";
+      if (!perFasciaMap[fKey])
+        perFasciaMap[fKey] = { total: 0, count: 0, max: 0 };
+      const s = perFasciaMap[fKey];
+      s.total += r.numero_presenze;
+      s.count++;
+      if (r.numero_presenze > s.max) s.max = r.numero_presenze;
     });
 
     const perFasciaArray = Object.keys(perFasciaMap)
@@ -809,38 +672,25 @@ async function getStatistiche(req, res) {
       },
     });
   } catch (error) {
-    console.error("Errore nel recupero statistiche:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-    });
+    return res.status(500).json({ success: false, error: "Errore stats" });
   }
 }
 
-// Handler principale
+// MAIN
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // Test connessione DB
     await client.execute("SELECT 1");
 
-    // Route per PDF download
-    if (req.method === "POST" && req.url?.includes("download-pdf")) {
+    if (req.method === "POST" && req.url?.includes("download-pdf"))
       return await downloadPDF(req, res);
-    }
-
-    // Route per statistiche
-    if (req.method === "GET" && req.query.stats === "true") {
+    if (req.method === "GET" && req.query.stats === "true")
       return await getStatistiche(req, res);
-    }
 
     switch (req.method) {
       case "GET":
@@ -850,16 +700,14 @@ export default async function handler(req, res) {
       case "DELETE":
         return await eliminaPresenza(req, res);
       default:
-        return res.status(405).json({
-          success: false,
-          error: "Metodo non supportato",
-        });
+        return res
+          .status(405)
+          .json({ success: false, error: "Metodo non supportato" });
     }
   } catch (error) {
-    console.error("Errore API presenze:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-    });
+    console.error("Errore API:", error);
+    return res
+      .status(500)
+      .json({ success: false, error: "Errore interno server" });
   }
 }
