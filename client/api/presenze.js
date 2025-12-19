@@ -77,26 +77,42 @@ function getNextMonth() {
   return getMonthDates(1);
 }
 
-// --- NUOVO HELPER: Normalizzazione Orari ---
-// Converte il formato del DB storico ("09:00 - 13:00") o sporco ("5.0") nel formato frontend ("9-13")
+// --- NORMALIZZAZIONE INTELLIGENTE (FORZATURA) ---
+// Questa funzione è CRUCIALE: forza qualsiasi dato "strano" in una delle 4 fasce standard
 function normalizzaFascia(inputFascia) {
   if (!inputFascia) return "";
-  let s = String(inputFascia); // Assicura che sia stringa
+  let s = String(inputFascia).trim();
 
-  // Rimuove decimali se presenti (es. "5.0" -> "5")
+  // 1. Pulizia formati numerici (es. "5.0" -> "5")
   if (s.endsWith(".0")) s = s.replace(".0", "");
 
-  // Se è già nel formato breve (es. ID convertito o stringa breve senza :), ritorna così com'è
-  if (!s.includes(":")) return s;
+  // 2. Se è già una fascia standard, la ritorniamo subito
+  if (FASCE_ORARIE.includes(s)) return s;
 
-  return s
-    .replace(/:00/g, "") // Rimuove :00
-    .replace(/^0/, "") // Rimuove lo 0 iniziale (09 -> 9)
-    .replace(/ - 0?/, "-") // Cambia " - 0" o " - " in "-"
-    .replace(/ /g, ""); // Rimuove spazi extra
+  // 3. Analisi euristica: Cerca l'ora di inizio
+  // Cattura il primo numero (1 o 2 cifre) all'inizio della stringa
+  // Es: "09:00 - 19:30" -> cattura "09"
+  // Es: "9" -> cattura "9"
+  // Es: "13:00" -> cattura "13"
+  const match = s.match(/^0?(\d{1,2})/);
+
+  if (match) {
+    const hour = parseInt(match[1], 10);
+
+    // Mappatura forzata alle fasce standard in base all'ora di inizio
+    // Questa logica "indovina" dove mettere il dato in base all'ora
+    if (hour >= 8 && hour < 13) return "9-13"; // Mattina (es. 09:00, 10:00, 12:30)
+    if (hour >= 13 && hour < 16) return "13-16"; // Primo pomeriggio (es. 13:00, 14:00)
+    if (hour >= 16 && hour < 20) return "16-19"; // Tardo pomeriggio (es. 16:00, 19:30)
+    if (hour >= 20 || hour < 5) return "21-24"; // Sera/Notte (es. 21:00, 23:00)
+  }
+
+  // Se non riusciamo a decifrarlo, ritorniamo la stringa originale
+  // (Il frontend la metterà in "Altro")
+  return s;
 }
 
-// --- NUOVO HELPER: Recupero Dati Unificato (Attuale + Storico) ---
+// --- RECUPERO DATI UNIFICATO (Attuale + Storico) ---
 async function fetchUnifiedData(startDate, endDate) {
   console.log(`[DEBUG] Fetching data from ${startDate} to ${endDate}`);
 
@@ -132,12 +148,6 @@ async function fetchUnifiedData(startDate, endDate) {
     });
     activeRows = res.rows;
     console.log(`[DEBUG] Active rows found: ${activeRows.length}`);
-    if (activeRows.length > 0) {
-      console.log(
-        "[DEBUG] Active Row Sample:",
-        JSON.stringify(activeRows[0], null, 2)
-      );
-    }
   } catch (e) {
     console.error("[DEBUG] Error querying active table:", e);
   }
@@ -150,34 +160,24 @@ async function fetchUnifiedData(startDate, endDate) {
     });
     historyRows = res.rows;
     console.log(`[DEBUG] History rows found: ${historyRows.length}`);
-    if (historyRows.length > 0) {
-      console.log(
-        "[DEBUG] History Row Sample:",
-        JSON.stringify(historyRows[0], null, 2)
-      );
-    }
   } catch (e) {
     // Ignora errore se la tabella storico non esiste ancora
-    console.log("[DEBUG] History table might not exist or error:", e.message);
   }
 
   const allRows = [...activeRows, ...historyRows];
 
   // Normalizza e pulisce i dati unificati
   return allRows.map((row) => {
-    const originalFascia = row.fascia_raw || "";
-    const normalizedFascia = normalizzaFascia(originalFascia);
+    const raw = row.fascia_raw || "";
+    const normalized = normalizzaFascia(raw);
 
-    // Log per capire come stiamo trasformando le fasce
-    if (originalFascia !== normalizedFascia) {
-      console.log(
-        `[DEBUG] Normalizing fascia: '${originalFascia}' -> '${normalizedFascia}'`
-      );
+    if (raw !== normalized && raw !== "") {
+      console.log(`[DEBUG] Mapped '${raw}' -> '${normalized}'`);
     }
 
     return {
       ...row,
-      fascia_oraria: normalizedFascia,
+      fascia_oraria: normalized, // Ora è una delle 4 fasce standard (se possibile)
     };
   });
 }
@@ -475,13 +475,14 @@ async function getPresenze(req, res) {
     const presenzeComplete = rows.map((row) => ({
       id: row.id,
       data: row.data,
-      fascia_oraria: row.fascia_oraria,
+      fascia_oraria: row.fascia_oraria, // Sarà normalizzato ("9-13")
       numero_presenze: row.numero_presenze,
       note: row.note || "",
       user_id: row.user_id,
       user_name: row.name || "",
       user_surname: row.surname || "",
       user_username: row.username || "",
+      // day_of_week calcolato nel frontend se serve, qui lo lasciamo o lo calcoliamo
       day_of_week: new Date(row.data).getDay(),
       esistente: true,
       is_history: row.is_history === 1,
@@ -758,6 +759,7 @@ async function getStatistiche(req, res) {
     );
 
     // Filtra solo record con presenze > 0
+    // Per il totale includiamo tutto
     const validRowsTotal = mergedRows.filter((r) => r.numero_presenze > 0);
     const totalMese = validRowsTotal.reduce(
       (sum, r) => sum + r.numero_presenze,
