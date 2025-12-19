@@ -32,7 +32,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   const [selectedComponent, setSelectedComponent] = useState<string | null>(
     null
   );
-  const [userLevel, setUserLevel] = useState<number>(-1); // Elementi della dashboard con i livelli minimi richiesti
+  const [userLevel, setUserLevel] = useState<number>(-1);
 
   const dashboardItems: DashboardItem[] = [
     {
@@ -133,7 +133,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
         const rememberMe = localStorage.getItem("rememberMe") === "true";
         if (!user || !loginTime) {
           throw new Error("Dati di autenticazione mancanti");
-        } // Verifica validità sessione
+        }
 
         const now = new Date().getTime();
         const loginTimestamp = parseInt(loginTime);
@@ -162,16 +162,15 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     };
 
     checkAuth();
-  }, [onLogout]); // Filtra gli elementi visibili in base al livello utente
+  }, [onLogout]);
 
   const visibleItems = dashboardItems.filter(
     (item) => item.minLevel === undefined || userLevel <= item.minLevel
   );
 
   const handleCardClick = (item: DashboardItem) => {
-    console.log("Card clicked:", item.id); // Debug log
+    console.log("Card clicked:", item.id);
     if (item.isHomepageLink) {
-      // Naviga alla homepage con scroll alla sezione header
       onBackToHome();
       setTimeout(() => {
         const element = document.getElementById("header");
@@ -182,15 +181,15 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       return;
     }
     if (item.component) {
-      console.log("Setting selected component:", item.id); // Debug log
+      console.log("Setting selected component:", item.id);
       setSelectedComponent(item.id);
     }
   };
 
   const handleBackToDashboard = () => {
-    console.log("Back to dashboard"); // Debug log
+    console.log("Back to dashboard");
     setSelectedComponent(null);
-  }; // Funzione per ottenere il componente selezionato
+  };
 
   const getSelectedComponent = () => {
     const item = dashboardItems.find((item) => item.id === selectedComponent);
@@ -199,17 +198,18 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
 
   if (isLoading) {
     return (
-      <div className="loading-container">
-                <div className="loading-spinner"></div>       {" "}
-        <p>Caricamento...</p>     {" "}
+      <div className="homedashcss_loading-container">
+        <div className="homedashcss_loading-spinner"></div>
+        <p>Caricamento...</p>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return null;
-  } // Rendering del componente selezionato
+  }
 
+  // Rendering del componente selezionato
   if (selectedComponent) {
     const SelectedComponent = getSelectedComponent();
     if (!SelectedComponent) {
@@ -219,56 +219,49 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     }
 
     return (
-      <div className="dashboard-container">
-               {" "}
-        <div className="dashboard-header">
-                   {" "}
-          <button className="back-button" onClick={handleBackToDashboard}>
-                        ← Torna alla Dashboard          {" "}
+      <div className="homedashcss_dashboard-container">
+        <div className="homedashcss_dashboard-header">
+          <button
+            className="homedashcss_back-button"
+            onClick={handleBackToDashboard}
+          >
+            ← Torna alla Dashboard
           </button>
-                 {" "}
         </div>
-               {" "}
-        <div className="component-container">
-                    <SelectedComponent />       {" "}
+        <div className="homedashcss_component-container">
+          <SelectedComponent />
         </div>
-             {" "}
       </div>
     );
-  } // Rendering della dashboard principale
+  }
 
+  // Rendering della dashboard principale
   return (
-    <div className="dashboard-container">
-                 {" "}
-      <div className="dashboard-grid">
-               {" "}
+    <div className="homedashcss_dashboard-container">
+      <div className="homedashcss_dashboard-grid">
         {visibleItems.length > 0 ? (
           visibleItems.map((item) => (
             <div
               key={item.id}
-              className="dashboard-card"
+              className="homedashcss_dashboard-card"
               onClick={() => handleCardClick(item)}
               style={{ cursor: "pointer" }}
             >
-                            <div className="card-icon">{item.icon}</div>       
-                    <h3 className="card-title">{item.title}</h3>             {" "}
-              <p className="card-description">{item.description}</p>         
-               {" "}
+              <div className="homedashcss_card-icon">{item.icon}</div>
+              <h3 className="homedashcss_card-title">{item.title}</h3>
+              <p className="homedashcss_card-description">{item.description}</p>
             </div>
           ))
         ) : (
-          <div className="no-access">
-                        <h2>Nessun accesso</h2>           {" "}
+          <div className="homedashcss_no-access">
+            <h2>Nessun accesso</h2>
             <p>
               Il tuo livello ({userLevel}) non ti permette di vedere alcun
               elemento.
             </p>
-                     {" "}
           </div>
         )}
-             {" "}
       </div>
-         {" "}
     </div>
   );
 };

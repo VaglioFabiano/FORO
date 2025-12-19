@@ -1,12 +1,12 @@
 /* HomeDash.css */
 
-.dashboard-container {
+.homedashcss_dashboard-container {
   min-height: 100vh;
   padding-top: 6rem;
   background-color: rgb(12, 73, 91);
 }
 
-.dashboard-header {
+.homedashcss_dashboard-header {
   position: fixed;
   top: 0;
   left: 0;
@@ -20,14 +20,14 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.dashboard-title {
+.homedashcss_dashboard-title {
   font-size: 2rem;
   font-weight: bold;
   color: #1f2937;
   margin: 0;
 }
 
-.logout-button {
+.homedashcss_logout-button {
   background-color: #ef4444;
   color: white;
   border: none;
@@ -38,11 +38,11 @@
   transition: background-color 0.2s;
 }
 
-.logout-button:hover {
+.homedashcss_logout-button:hover {
   background-color: #dc2626;
 }
 
-.back-button {
+.homedashcss_back-button {
   background-color: #6b7280;
   color: white;
   border: none;
@@ -53,11 +53,11 @@
   transition: background-color 0.2s;
 }
 
-.back-button:hover {
+.homedashcss_back-button:hover {
   background-color: #4b5563;
 }
 
-.dashboard-grid {
+.homedashcss_dashboard-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
@@ -66,11 +66,13 @@
   margin: 0 auto;
 }
 
-.dashboard-card {
+.homedashcss_dashboard-card {
   background-color: rgb(248, 233, 205);
   border-radius: 0.75rem;
   padding: 2rem 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
@@ -82,39 +84,43 @@
   align-items: center;
 }
 
-.dashboard-card:hover {
+.homedashcss_dashboard-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   border-color: #3b82f6;
 }
 
-.card-icon {
+.homedashcss_card-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
 }
 
-.card-title {
+.homedashcss_card-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0 0 0.5rem 0;
 }
 
-.card-description {
+.homedashcss_card-description {
   font-size: 0.875rem;
   color: #6b7280;
   margin: 0;
   line-height: 1.4;
 }
 
-.component-container {
+.homedashcss_component-container {
   background-color: rgb(248, 233, 205);
   border-radius: 0.75rem;
   margin: 0 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.loading-container {
+.homedashcss_loading-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -123,71 +129,76 @@
   gap: 1rem;
 }
 
-.loading-spinner {
+.homedashcss_loading-spinner {
   width: 2rem;
   height: 2rem;
   border: 3px solid #e5e7eb;
   border-top: 3px solid #3b82f6;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: homedashcss_spin 1s linear infinite;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+/* Ho rinominato anche l'animazione per evitare conflitti */
+@keyframes homedashcss_spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .dashboard-grid {
+  .homedashcss_dashboard-grid {
     grid-template-columns: repeat(3, 1fr);
     padding: 0 1rem;
   }
-  
-  .dashboard-header {
+
+  .homedashcss_dashboard-header {
     padding: 1rem;
   }
-  
-  .component-container {
+
+  .homedashcss_component-container {
     margin: 0 1rem;
   }
 }
 
 @media (max-width: 768px) {
-  .dashboard-grid {
+  .homedashcss_dashboard-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
-  
-  .dashboard-card {
+
+  .homedashcss_dashboard-card {
     padding: 1.5rem 1rem;
   }
-  
-  .card-icon {
+
+  .homedashcss_card-icon {
     font-size: 2.5rem;
   }
-  
-  .card-title {
+
+  .homedashcss_card-title {
     font-size: 1.125rem;
   }
-  
-  .dashboard-title {
+
+  .homedashcss_dashboard-title {
     font-size: 1.5rem;
   }
 }
 
 @media (max-width: 480px) {
-  .dashboard-grid {
+  .homedashcss_dashboard-grid {
     grid-template-columns: 1fr;
   }
-  
-  .dashboard-header {
+
+  .homedashcss_dashboard-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
-  .dashboard-card {
+
+  .homedashcss_dashboard-card {
     aspect-ratio: 2/1;
   }
 }
