@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../style/presenze.css";
 
-// Interfaccia coerente con la risposta JSON del backend
+// --- INTERFACCE ---
 interface Presenza {
   id: number | null;
   data: string;
@@ -14,7 +14,7 @@ interface Presenza {
   user_username: string;
   day_of_week: number;
   esistente: boolean;
-  is_history?: boolean; // Fondamentale per i dati storici
+  is_history?: boolean;
 }
 
 interface MonthInfo {
@@ -51,14 +51,16 @@ interface Statistiche {
 }
 
 const Presenze: React.FC = () => {
+  // --- STATO ---
   const [presenze, setPresenze] = useState<Presenza[]>([]);
   const [monthInfo, setMonthInfo] = useState<MonthInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<Message | null>(null);
-  const [currentMonthOffset, setCurrentMonthOffset] = useState<number>(0); // 0 = mese corrente
+  const [currentMonthOffset, setCurrentMonthOffset] = useState<number>(0);
   const [selectedCell, setSelectedCell] = useState<{
     data: string;
     fascia: string;
+    isExtra: boolean;
   } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editValue, setEditValue] = useState<string>("");
@@ -69,12 +71,10 @@ const Presenze: React.FC = () => {
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
-  // Fasce orarie standard per la visualizzazione a colonne
-  const fasce = ["9-13", "13-16", "16-19", "21-24"];
-
-  // Giorni per la visualizzazione UI
+  // --- CONFIGURAZIONE ---
+  const fasceStandard = ["9-13", "13-16", "16-19", "21-24"];
+  const fasciaExtraLabel = "Altro";
   const giorni = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
-
   const mesi = [
     "Gennaio",
     "Febbraio",
@@ -90,21 +90,20 @@ const Presenze: React.FC = () => {
     "Dicembre",
   ];
 
+  // --- EFFETTI ---
   useEffect(() => {
     fetchPresenze();
     getCurrentUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMonthOffset]);
 
   useEffect(() => {
     if (message) {
-      const timer = setTimeout(() => {
-        setMessage(null);
-      }, 5000);
+      const timer = setTimeout(() => setMessage(null), 5000);
       return () => clearTimeout(timer);
     }
   }, [message]);
 
-  // Gestione tastiera
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (
@@ -130,11 +129,11 @@ const Presenze: React.FC = () => {
         }
       }
     };
-
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [isModalOpen, isPdfModalOpen]);
 
+  // --- FUNZIONI DI UTILITÀ ---
   const getMonthNameFromOffset = (offset: number) => {
     const now = new Date();
     const targetDate = new Date(now.getFullYear(), now.getMonth() + offset, 1);
@@ -145,13 +144,9 @@ const Presenze: React.FC = () => {
   };
 
   const navigateToMonth = (direction: "prev" | "next" | "current") => {
-    if (direction === "prev") {
-      setCurrentMonthOffset((prev) => prev - 1);
-    } else if (direction === "next") {
-      setCurrentMonthOffset((prev) => prev + 1);
-    } else {
-      setCurrentMonthOffset(0);
-    }
+    if (direction === "prev") setCurrentMonthOffset((prev) => prev - 1);
+    else if (direction === "next") setCurrentMonthOffset((prev) => prev + 1);
+    else setCurrentMonthOffset(0);
   };
 
   const getCurrentUser = () => {
@@ -161,528 +156,9 @@ const Presenze: React.FC = () => {
         const user = JSON.parse(userData);
         setCurrentUser(user);
       } catch (error) {
-        console.error("Errore nel parsing user data:", error);
+        console.error("Errore user data:", error);
       }
     }
-  };
-
-  const fetchPresenze = async () => {
-    setLoading(true);
-    try {
-      const now = new Date();
-      const targetDate = new Date(
-        now.getFullYear(),
-        now.getMonth() + currentMonthOffset,
-        1
-      );
-      const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
-
-      const response = await fetch(`/api/presenze?mese=${monthString}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setPresenze(data.presenze);
-        setMonthInfo(data.month_info);
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Errore nel caricamento presenze",
-        });
-      }
-    } catch (error) {
-      console.error("Errore nel caricamento presenze:", error);
-      setMessage({ type: "error", text: "Errore di connessione" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStatistiche = async () => {
-    try {
-      const now = new Date();
-      const targetDate = new Date(
-        now.getFullYear(),
-        now.getMonth() + currentMonthOffset,
-        1
-      );
-      const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
-
-      const response = await fetch(
-        `/api/presenze?mese=${monthString}&stats=true`
-      );
-      const data = await response.json();
-
-      if (data.success) {
-        setStatistiche(data.statistiche);
-      }
-    } catch (error) {
-      console.error("Errore nel caricamento statistiche:", error);
-    }
-  };
-
-  const getPresenzaByDataFascia = (
-    data: string,
-    fascia: string
-  ): Presenza | undefined => {
-    return presenze.find((p) => p.data === data && p.fascia_oraria === fascia);
-  };
-
-  const handleCellClick = (data: string, fascia: string) => {
-    const presenza = getPresenzaByDataFascia(data, fascia);
-    setSelectedCell({ data, fascia });
-    setEditValue(presenza?.numero_presenze.toString() || "0");
-    setEditNote(presenza?.note || "");
-    setIsModalOpen(true);
-  };
-
-  const handleSalvaPresenza = async () => {
-    if (!selectedCell) return;
-
-    const numeroPresenze = parseInt(editValue) || 0;
-    if (numeroPresenze < 0) {
-      setMessage({
-        type: "error",
-        text: "Il numero di presenze non può essere negativo",
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/presenze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: selectedCell.data,
-          fascia_oraria: selectedCell.fascia,
-          numero_presenze: numeroPresenze,
-          note: editNote,
-          current_user_id: currentUser?.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setMessage({
-          type: "success",
-          text: "Presenza aggiornata con successo!",
-        });
-        fetchPresenze();
-        closeModal();
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Errore nel salvataggio",
-        });
-      }
-    } catch (error) {
-      console.error("Errore nel salvataggio presenza:", error);
-      setMessage({ type: "error", text: "Errore di connessione" });
-    }
-  };
-
-  const handleEliminaPresenza = async () => {
-    if (!selectedCell) return;
-
-    try {
-      const response = await fetch("/api/presenze", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: selectedCell.data,
-          fascia_oraria: selectedCell.fascia,
-          current_user_id: currentUser?.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setMessage({
-          type: "success",
-          text: "Presenza eliminata con successo!",
-        });
-        fetchPresenze();
-        closeModal();
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Errore nell'eliminazione",
-        });
-      }
-    } catch (error) {
-      console.error("Errore nell'eliminazione presenza:", error);
-      setMessage({ type: "error", text: "Errore di connessione" });
-    }
-  };
-
-  // --- LOGICA PDF LATO CLIENT ---
-  const handleDownloadPdf = async () => {
-    if (selectedMonths.length === 0) {
-      setMessage({ type: "error", text: "Seleziona almeno un mese" });
-      return;
-    }
-
-    try {
-      setMessage({ type: "info", text: "Raccolta dati in corso..." });
-      const pdfData = await collectPdfData();
-
-      if (pdfData.length === 0) {
-        setMessage({
-          type: "error",
-          text: "Nessun dato trovato per i mesi selezionati",
-        });
-        return;
-      }
-
-      setMessage({ type: "info", text: "Generazione PDF in corso..." });
-      await generateAndDownloadPdf(pdfData);
-
-      setMessage({
-        type: "success",
-        text: `PDF scaricato con successo! Elaborati ${pdfData.length} mesi.`,
-      });
-      closePdfModal();
-    } catch (error) {
-      console.error("Errore nel download PDF:", error);
-      setMessage({ type: "error", text: "Errore nella generazione del PDF" });
-    }
-  };
-
-  const collectPdfData = async () => {
-    const pdfData = [];
-    for (const monthString of selectedMonths) {
-      try {
-        const response = await fetch(`/api/presenze?mese=${monthString}`);
-        const data = await response.json();
-        if (data.success) {
-          pdfData.push({
-            monthInfo: data.month_info,
-            presenze: data.presenze.filter(
-              (p: Presenza) => p.numero_presenze > 0
-            ),
-          });
-        }
-      } catch (error) {
-        console.error(`Errore nel recupero dati per ${monthString}:`, error);
-      }
-    }
-    return pdfData;
-  };
-
-  const generateAndDownloadPdf = async (pdfData: any[]) => {
-    try {
-      const script = document.createElement("script");
-      script.src =
-        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-
-      await new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-      });
-
-      const { jsPDF } = (window as any).jspdf;
-      const doc = new jsPDF();
-      let yPosition = 20;
-      const pageHeight = doc.internal.pageSize.height;
-      const margin = 15;
-
-      doc.setFontSize(16);
-      doc.setFont(undefined, "bold");
-      doc.text("REPORT PRESENZE", 105, yPosition, { align: "center" });
-      yPosition += 10;
-
-      doc.setFontSize(10);
-      doc.setFont(undefined, "normal");
-      doc.text(
-        `Generato il: ${new Date().toLocaleDateString("it-IT")} alle ${new Date().toLocaleTimeString("it-IT")}`,
-        105,
-        yPosition,
-        { align: "center" }
-      );
-      yPosition += 5;
-      doc.text(`Periodo: ${pdfData.length} mesi selezionati`, 105, yPosition, {
-        align: "center",
-      });
-      yPosition += 15;
-
-      doc.line(margin, yPosition, 210 - margin, yPosition);
-      yPosition += 10;
-
-      pdfData.forEach((monthData, monthIndex) => {
-        const { monthInfo, presenze } = monthData;
-
-        if (yPosition > pageHeight - 60) {
-          doc.addPage();
-          yPosition = 20;
-        }
-
-        doc.setFontSize(14);
-        doc.setFont(undefined, "bold");
-        doc.text(monthInfo.monthName.toUpperCase(), margin, yPosition);
-        yPosition += 10;
-
-        const presenzeMap: Record<string, Record<string, number>> = {};
-        presenze.forEach((p: any) => {
-          if (!presenzeMap[p.data]) {
-            presenzeMap[p.data] = {};
-          }
-          presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
-        });
-
-        doc.setFontSize(8);
-        doc.setFont(undefined, "bold");
-
-        const colWidths = [15, 15, 20, 20, 20, 20, 20];
-        const headers = [
-          "Data",
-          "Giorno",
-          "9-13",
-          "13-16",
-          "16-19",
-          "21-24",
-          "Tot",
-        ];
-        let xPosition = margin;
-
-        headers.forEach((header, i) => {
-          doc.text(header, xPosition, yPosition);
-          xPosition += colWidths[i];
-        });
-        yPosition += 5;
-
-        doc.line(margin, yPosition, 210 - margin, yPosition);
-        yPosition += 5;
-
-        doc.setFont(undefined, "normal");
-        let totaliFascia = { "9-13": 0, "13-16": 0, "16-19": 0, "21-24": 0 };
-        let totaleMese = 0;
-        let giorniConPresenze = 0;
-
-        monthInfo.dates.forEach((data: string) => {
-          const date = new Date(data);
-          const dayOfWeek = date.getDay();
-          const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
-
-          // Somma tutto il giorno, non solo le colonne standard
-          const dayRecords = presenze.filter((p: any) => p.data === data);
-          const totaleGiorno = dayRecords.reduce(
-            (sum: number, p: any) => sum + p.numero_presenze,
-            0
-          );
-
-          if (totaleGiorno > 0) {
-            if (yPosition > pageHeight - 15) {
-              doc.addPage();
-              yPosition = 20;
-              doc.setFont(undefined, "bold");
-              xPosition = margin;
-              headers.forEach((header, i) => {
-                doc.text(header, xPosition, yPosition);
-                xPosition += colWidths[i];
-              });
-              yPosition += 5;
-              doc.line(margin, yPosition, 210 - margin, yPosition);
-              yPosition += 5;
-              doc.setFont(undefined, "normal");
-            }
-
-            giorniConPresenze++;
-            const giorno = date.getDate().toString();
-            const nomeGiorno = dayNames[dayOfWeek];
-
-            xPosition = margin;
-            doc.text(giorno, xPosition, yPosition);
-            xPosition += colWidths[0];
-
-            doc.text(nomeGiorno, xPosition, yPosition);
-            xPosition += colWidths[1];
-
-            fasce.forEach((fascia, i) => {
-              const numero = presenzeMap[data]?.[fascia] || 0;
-              doc.text(
-                numero > 0 ? numero.toString() : "-",
-                xPosition,
-                yPosition
-              );
-              totaliFascia[fascia as keyof typeof totaliFascia] += numero;
-              totaleMese += numero;
-              xPosition += colWidths[i + 2];
-            });
-
-            doc.text(totaleGiorno.toString(), xPosition, yPosition);
-            yPosition += 4;
-          }
-        });
-
-        yPosition += 2;
-        doc.line(margin, yPosition, 210 - margin, yPosition);
-        yPosition += 5;
-
-        doc.setFont(undefined, "bold");
-        xPosition = margin;
-        doc.text("TOTALI", xPosition, yPosition);
-        xPosition += colWidths[0] + colWidths[1];
-
-        fasce.forEach((fascia, i) => {
-          doc.text(
-            totaliFascia[fascia as keyof typeof totaliFascia].toString(),
-            xPosition,
-            yPosition
-          );
-          xPosition += colWidths[i + 2];
-        });
-        doc.text(totaleMese.toString(), xPosition, yPosition);
-        yPosition += 10;
-
-        doc.setFont(undefined, "normal");
-        doc.text(`Totale mese: ${totaleMese} presenze`, margin, yPosition);
-        yPosition += 4;
-        doc.text(
-          `Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno`,
-          margin,
-          yPosition
-        );
-        yPosition += 4;
-        doc.text(
-          `Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}`,
-          margin,
-          yPosition
-        );
-        yPosition += 15;
-
-        if (monthIndex < pdfData.length - 1) {
-          doc.line(margin, yPosition, 210 - margin, yPosition);
-          yPosition += 10;
-        }
-      });
-
-      doc.save(`presenze_report_${selectedMonths.length}_mesi.pdf`);
-      document.head.removeChild(script);
-    } catch (error) {
-      console.error(
-        "Errore nel caricamento di jsPDF o nella generazione:",
-        error
-      );
-      setMessage({
-        type: "info",
-        text: "Generando report in formato testo...",
-      });
-
-      // FALLBACK TXT
-      let content = "=".repeat(60) + "\n";
-      content += "              REPORT PRESENZE\n";
-      content += "=".repeat(60) + "\n";
-      content += `Generato il: ${new Date().toLocaleDateString("it-IT")} alle ${new Date().toLocaleTimeString("it-IT")}\n`;
-      content += `Periodo: ${pdfData.length} mesi selezionati\n\n`;
-
-      pdfData.forEach((monthData, index) => {
-        const { monthInfo, presenze } = monthData;
-
-        content += "\n" + "-".repeat(50) + "\n";
-        content += `MESE: ${monthInfo.monthName.toUpperCase()}\n`;
-        content += "-".repeat(50) + "\n\n";
-
-        // Organizza presenze per data (utilizzando la variabile 'presenze')
-        const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
-        presenze.forEach((p: any) => {
-          if (!presenzeMap[p.data]) {
-            presenzeMap[p.data] = {};
-          }
-          presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
-        });
-
-        // Tabella giorni
-        content += "DATA  | GG  | 9-13 | 13-16 | 16-19 | 21-24 | TOT\n";
-        content += "------|-----|------|-------|-------|-------|----\n";
-
-        let totaliFascia = { "9-13": 0, "13-16": 0, "16-19": 0, "21-24": 0 };
-        let totaleMese = 0;
-        let giorniConPresenze = 0;
-
-        monthInfo.dates.forEach((data: string) => {
-          const date = new Date(data);
-          const dayOfWeek = date.getDay();
-          const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
-
-          const totaleGiorno = fasce.reduce((sum, fascia) => {
-            return sum + (presenzeMap[data]?.[fascia] || 0);
-          }, 0);
-
-          if (totaleGiorno > 0) {
-            giorniConPresenze++;
-            const giorno = date.getDate().toString().padStart(2, " ");
-            const nomeGiorno = dayNames[dayOfWeek];
-
-            content += `${giorno}    | ${nomeGiorno} |`;
-
-            fasce.forEach((fascia) => {
-              const numero = presenzeMap[data]?.[fascia] || 0;
-              content += ` ${numero.toString().padStart(4, " ")} |`;
-              totaliFascia[fascia as keyof typeof totaliFascia] += numero;
-              totaleMese += numero;
-            });
-
-            content += ` ${totaleGiorno.toString().padStart(3, " ")}\n`;
-          }
-        });
-
-        // Totali
-        content += "------|-----|------|-------|-------|-------|----\n";
-        content += "TOT   |     |";
-        fasce.forEach((fascia) => {
-          content += ` ${totaliFascia[fascia as keyof typeof totaliFascia].toString().padStart(4, " ")} |`;
-        });
-        content += ` ${totaleMese.toString().padStart(3, " ")}\n\n`;
-
-        // Statistiche
-        content += "STATISTICHE:\n";
-        content += `- Totale mese: ${totaleMese} presenze\n`;
-        content += `- Media giornaliera: ${(totaleMese / monthInfo.dates.length).toFixed(2)} presenze/giorno\n`;
-        content += `- Giorni con presenze: ${giorniConPresenze} su ${monthInfo.dates.length}\n`;
-
-        if (index < pdfData.length - 1) {
-          content += "\n\n";
-        }
-      });
-
-      // Scarica come file di testo
-      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = `presenze_report_${selectedMonths.length}_mesi.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    }
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedCell(null);
-    setEditValue("");
-    setEditNote("");
-  };
-
-  const closePdfModal = () => {
-    setIsPdfModalOpen(false);
-    setSelectedMonths([]);
-  };
-
-  const toggleMonthSelection = (monthKey: string) => {
-    setSelectedMonths((prev) =>
-      prev.includes(monthKey)
-        ? prev.filter((m: string) => m !== monthKey)
-        : [...prev, monthKey]
-    );
   };
 
   const formatDate = (dateString: string) => {
@@ -701,90 +177,442 @@ const Presenze: React.FC = () => {
     return day === 0 || day === 6;
   };
 
-  const toggleStats = () => {
-    if (!showStats) {
-      fetchStatistiche();
-    }
-    setShowStats(!showStats);
-  };
-
   const canDownloadPdf = () => {
     return currentUser && (currentUser.level === 0 || currentUser.level === 1);
   };
 
+  // --- API CALLS ---
+  const fetchPresenze = async () => {
+    setLoading(true);
+    try {
+      const now = new Date();
+      const targetDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + currentMonthOffset,
+        1
+      );
+      const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
+
+      const response = await fetch(`/api/presenze?mese=${monthString}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setPresenze(data.presenze);
+        setMonthInfo(data.month_info);
+      } else {
+        setMessage({ type: "error", text: data.error || "Errore dati" });
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage({ type: "error", text: "Errore connessione" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStatistiche = async () => {
+    try {
+      const now = new Date();
+      const targetDate = new Date(
+        now.getFullYear(),
+        now.getMonth() + currentMonthOffset,
+        1
+      );
+      const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
+      const response = await fetch(
+        `/api/presenze?mese=${monthString}&stats=true`
+      );
+      const data = await response.json();
+      if (data.success) setStatistiche(data.statistiche);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // --- GESTIONE CELLE E MODALE ---
+  const getPresenza = (
+    data: string,
+    colonna: string,
+    isExtra: boolean
+  ): Presenza | undefined => {
+    if (isExtra) {
+      return presenze.find(
+        (p) => p.data === data && !fasceStandard.includes(p.fascia_oraria)
+      );
+    }
+    return presenze.find((p) => p.data === data && p.fascia_oraria === colonna);
+  };
+
+  const handleCellClick = (
+    data: string,
+    colonna: string,
+    isExtra: boolean = false
+  ) => {
+    const presenza = getPresenza(data, colonna, isExtra);
+
+    if (isExtra && !presenza) {
+      setMessage({
+        type: "info",
+        text: "Usa le colonne standard per i nuovi inserimenti.",
+      });
+      return;
+    }
+
+    const fasciaReale = presenza ? presenza.fascia_oraria : colonna;
+
+    setSelectedCell({ data, fascia: fasciaReale, isExtra });
+    setEditValue(presenza?.numero_presenze.toString() || "0");
+    setEditNote(presenza?.note || "");
+    setIsModalOpen(true);
+  };
+
+  const handleSalvaPresenza = async () => {
+    if (!selectedCell) return;
+    const numeroPresenze = parseInt(editValue) || 0;
+    if (numeroPresenze < 0) {
+      setMessage({ type: "error", text: "Numero non valido" });
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/presenze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: selectedCell.data,
+          fascia_oraria: selectedCell.fascia,
+          numero_presenze: numeroPresenze,
+          note: editNote,
+          current_user_id: currentUser?.id,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMessage({ type: "success", text: "Salvato!" });
+        fetchPresenze();
+        closeModal();
+      } else {
+        setMessage({ type: "error", text: data.error || "Errore salvataggio" });
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage({ type: "error", text: "Errore rete" });
+    }
+  };
+
+  const handleEliminaPresenza = async () => {
+    if (!selectedCell) return;
+    try {
+      const response = await fetch("/api/presenze", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: selectedCell.data,
+          fascia_oraria: selectedCell.fascia,
+          current_user_id: currentUser?.id,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMessage({ type: "success", text: "Eliminato!" });
+        fetchPresenze();
+        closeModal();
+      } else {
+        setMessage({
+          type: "error",
+          text: data.error || "Errore eliminazione",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage({ type: "error", text: "Errore rete" });
+    }
+  };
+
+  // --- PDF EXPORT ---
+  const handleDownloadPdf = async () => {
+    if (selectedMonths.length === 0) {
+      setMessage({ type: "error", text: "Seleziona un mese" });
+      return;
+    }
+    try {
+      setMessage({ type: "info", text: "Raccolta dati..." });
+      const pdfData = await collectPdfData();
+      if (pdfData.length === 0) {
+        setMessage({ type: "error", text: "Nessun dato trovato" });
+        return;
+      }
+      setMessage({ type: "info", text: "Generazione PDF..." });
+      await generateAndDownloadPdf(pdfData);
+      setMessage({ type: "success", text: "PDF scaricato!" });
+      closePdfModal();
+    } catch (error) {
+      console.error(error);
+      setMessage({ type: "error", text: "Errore PDF" });
+    }
+  };
+
+  const collectPdfData = async () => {
+    const pdfData = [];
+    for (const monthString of selectedMonths) {
+      try {
+        const response = await fetch(`/api/presenze?mese=${monthString}`);
+        const data = await response.json();
+        if (data.success) {
+          pdfData.push({
+            monthInfo: data.month_info,
+            presenze: data.presenze.filter(
+              (p: Presenza) => p.numero_presenze > 0
+            ),
+          });
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    return pdfData;
+  };
+
+  const generateAndDownloadPdf = async (pdfData: any[]) => {
+    try {
+      const script = document.createElement("script");
+      script.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+
+      const { jsPDF } = (window as any).jspdf;
+      const doc = new jsPDF();
+      let yPosition = 20;
+      const pageHeight = doc.internal.pageSize.height;
+      const margin = 15;
+
+      doc.setFontSize(16);
+      doc.text("REPORT PRESENZE", 105, yPosition, { align: "center" });
+      yPosition += 15;
+
+      pdfData.forEach((monthData: any, monthIndex: number) => {
+        const { monthInfo, presenze } = monthData;
+        if (yPosition > pageHeight - 60) {
+          doc.addPage();
+          yPosition = 20;
+        }
+
+        doc.setFontSize(14);
+        doc.text(monthInfo.monthName.toUpperCase(), margin, yPosition);
+        yPosition += 10;
+
+        const presenzeMap: Record<string, Record<string, number>> = {};
+        presenze.forEach((p: any) => {
+          if (!presenzeMap[p.data]) presenzeMap[p.data] = {};
+          presenzeMap[p.data][p.fascia_oraria] = p.numero_presenze;
+        });
+
+        doc.setFontSize(8);
+        const colWidths = [15, 15, 20, 20, 20, 20, 20];
+        const headers = [
+          "Data",
+          "Giorno",
+          "9-13",
+          "13-16",
+          "16-19",
+          "21-24",
+          "Tot",
+        ];
+        let xPos = margin;
+        headers.forEach((h, i) => {
+          doc.text(h, xPos, yPosition);
+          xPos += colWidths[i];
+        });
+        yPosition += 5;
+        doc.line(margin, yPosition, 210 - margin, yPosition);
+        yPosition += 5;
+
+        monthInfo.dates.forEach((data: string) => {
+          const date = new Date(data);
+          const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+          const dayRecords = presenze.filter((p: any) => p.data === data);
+          const totalDay = dayRecords.reduce(
+            (sum: number, p: any) => sum + p.numero_presenze,
+            0
+          );
+
+          if (totalDay > 0) {
+            if (yPosition > pageHeight - 15) {
+              doc.addPage();
+              yPosition = 20;
+            }
+            xPos = margin;
+            doc.text(date.getDate().toString(), xPos, yPosition);
+            xPos += colWidths[0];
+            doc.text(dayNames[date.getDay()], xPos, yPosition);
+            xPos += colWidths[1];
+
+            fasceStandard.forEach((f, i) => {
+              const num = presenzeMap[data]?.[f] || 0;
+              doc.text(num > 0 ? num.toString() : "-", xPos, yPosition);
+              xPos += colWidths[i + 2];
+            });
+            doc.text(totalDay.toString(), xPos, yPosition);
+            yPosition += 4;
+          }
+        });
+
+        yPosition += 5;
+        doc.line(margin, yPosition, 210 - margin, yPosition);
+        if (monthIndex < pdfData.length - 1) yPosition += 10;
+      });
+
+      doc.save(`presenze_report.pdf`);
+      document.head.removeChild(script);
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: "info", text: "Errore PDF, fallback TXT..." });
+      generateTxtFallback(pdfData);
+    }
+  };
+
+  const generateTxtFallback = (pdfData: any[]) => {
+    let content = "REPORT PRESENZE\n\n";
+    pdfData.forEach((monthData: any) => {
+      content += `MESE: ${monthData.monthInfo.monthName}\n`;
+      monthData.presenze.forEach((p: any) => {
+        content += `${p.data} | ${p.fascia_oraria}: ${p.numero_presenze}\n`;
+      });
+      content += "\n";
+    });
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "report.txt";
+    a.click();
+  };
+
+  // --- MODALI ---
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedCell(null);
+    setEditValue("");
+    setEditNote("");
+  };
+  const closePdfModal = () => {
+    setIsPdfModalOpen(false);
+    setSelectedMonths([]);
+  };
+  const toggleMonthSelection = (key: string) => {
+    setSelectedMonths((prev) =>
+      prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key]
+    );
+  };
+  const toggleStats = () => {
+    if (!showStats) fetchStatistiche();
+    setShowStats(!showStats);
+  };
+
+  // --- RENDER COMPONENTI ---
   const renderCalendarGrid = () => {
     if (!monthInfo) return null;
 
-    // Raggruppa tutte le presenze del mese per data
     const presenzeMap: Record<string, Presenza[]> = {};
-    presenze.forEach((presenza) => {
-      if (!presenzeMap[presenza.data]) {
-        presenzeMap[presenza.data] = [];
-      }
-      presenzeMap[presenza.data].push(presenza);
+    presenze.forEach((p) => {
+      if (!presenzeMap[p.data]) presenzeMap[p.data] = [];
+      presenzeMap[p.data].push(p);
     });
 
     return (
       <div className="presenze-calendar compact">
         <div className="calendar-header">
           <div className="date-column">Data</div>
-          {fasce.map((fascia) => (
-            <div key={fascia} className="fascia-header">
-              {fascia}
+          {fasceStandard.map((f) => (
+            <div key={f} className="fascia-header">
+              {f}
             </div>
           ))}
+          <div
+            className="fascia-header extra-header"
+            title="Orari non standard"
+          >
+            {fasciaExtraLabel}
+          </div>
           <div className="total-column">Tot</div>
         </div>
-
         <div className="calendar-body">
           {monthInfo.dates.map((data) => {
-            const dateObj = new Date(data);
-            const isWknd = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+            // FIX: Uso degli helper per evitare warning di variabili inutilizzate
+            const isWknd = isWeekend(data);
+            const dayNum = formatDate(data);
+            const dayName = getDayName(data);
 
-            // Recupera TUTTE le presenze di questo giorno
-            const dailyPresenze = presenzeMap[data] || [];
+            // Dati del giorno
+            const dayPresenze = presenzeMap[data] || [];
 
-            // Calcolo totale ROBUSTO: somma tutte le presenze del giorno,
-            // indipendentemente dalla fascia oraria (anche "5.0" o "09:00 - 19:30")
-            const totaleDiario = dailyPresenze.reduce(
+            // CALCOLO TOTALE: Somma tutto ciò che è nel DB per oggi
+            const totaleDiario = dayPresenze.reduce(
               (sum, p) => sum + p.numero_presenze,
               0
             );
 
+            // Trova se c'è un record "extra" (es. "5.0" o "09:00 - 19:30")
+            const presenzaExtra = dayPresenze.find(
+              (p) => !fasceStandard.includes(p.fascia_oraria)
+            );
+            const numeroExtra = presenzaExtra?.numero_presenze || 0;
+            const extraNote = presenzaExtra?.note ? "📝" : "";
+            const extraTooltip = presenzaExtra
+              ? `Orario: ${presenzaExtra.fascia_oraria}\n${presenzaExtra.note}`
+              : "";
+
             return (
               <div
                 key={data}
-                className={`calendar-row ${isWeekend(data) ? "weekend" : ""}`}
+                className={`calendar-row ${isWknd ? "weekend" : ""}`}
               >
                 <div className="date-cell">
-                  <div className="day-number">{formatDate(data)}</div>
-                  <div className="day-name">{getDayName(data)}</div>
+                  <div className="day-number">{dayNum}</div>
+                  <div className="day-name">{dayName}</div>
                 </div>
 
-                {fasce.map((fascia) => {
-                  const presenza = dailyPresenze.find(
-                    (p) => p.fascia_oraria === fascia
+                {/* Colonne Standard */}
+                {fasceStandard.map((f) => {
+                  const presenza = dayPresenze.find(
+                    (p) => p.fascia_oraria === f
                   );
                   const numero = presenza?.numero_presenze || 0;
                   const isHistory = presenza?.is_history;
-
                   return (
                     <div
-                      key={`${data}-${fascia}`}
+                      key={`${data}-${f}`}
                       className={`presenza-cell ${numero > 0 ? "has-presenze" : "empty"} ${isWknd ? "weekend" : ""} ${isHistory ? "is-history" : ""}`}
-                      onClick={() => handleCellClick(data, fascia)}
+                      onClick={() => handleCellClick(data, f)}
                     >
                       <div className="numero-presenze">
                         {numero > 0 ? numero : "-"}
                       </div>
                       {presenza?.note && (
-                        <div className="presenza-note" title={presenza.note}>
-                          📝
-                        </div>
+                        <div className="presenza-note">📝</div>
                       )}
                     </div>
                   );
                 })}
+
+                {/* Colonna Extra (Altro) */}
+                <div
+                  className={`presenza-cell ${numeroExtra > 0 ? "has-presenze is-extra" : "empty"} ${presenzaExtra?.is_history ? "is-history" : ""}`}
+                  onClick={() => handleCellClick(data, fasciaExtraLabel, true)}
+                  title={extraTooltip}
+                >
+                  <div className="numero-presenze">
+                    {numeroExtra > 0 ? numeroExtra : "-"}
+                  </div>
+                  {extraNote && (
+                    <div className="presenza-note">{extraNote}</div>
+                  )}
+                </div>
 
                 <div
                   className={`total-cell ${totaleDiario > 0 ? "has-total" : ""}`}
@@ -799,129 +627,40 @@ const Presenze: React.FC = () => {
     );
   };
 
-  const renderStatistiche = () => {
-    if (!statistiche) return null;
-
-    return (
-      <div className="statistiche-panel">
-        <h3>📊 Statistiche {statistiche.month_info.monthName}</h3>
-
-        <div className="stats-summary">
-          <div className="stat-card">
-            <div className="stat-label">Totale Mese</div>
-            <div className="stat-value">{statistiche.totale_mese}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Media Giornaliera</div>
-            <div className="stat-value">{statistiche.media_giornaliera}</div>
-          </div>
-        </div>
-
-        <div className="stats-per-fascia">
-          <h4>Per Fascia Oraria</h4>
-          {statistiche.per_fascia.map((stat) => (
-            <div key={stat.fascia_oraria} className="fascia-stat">
-              <div className="fascia-label">{stat.fascia_oraria}</div>
-              <div className="fascia-values">
-                <span>Totale: {stat.totale_presenze}</span>
-                <span>
-                  Media: {parseFloat(stat.media_presenze.toString()).toFixed(1)}
-                </span>
-                <span>Max: {stat.max_presenze}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const renderPdfModal = () => {
-    const months: Array<{ key: string; name: string }> = [];
-    const currentDate = new Date();
-
-    // Genera 24 mesi: 12 nel passato e 12 nel futuro rispetto al mese corrente
+  const renderPdfModalContent = () => {
+    const list = [];
+    const now = new Date();
     for (let i = -12; i <= 12; i++) {
-      const date = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth() + i,
-        1
-      );
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const monthName = `${mesi[date.getMonth()]} ${date.getFullYear()}`;
-      months.push({ key: monthKey, name: monthName });
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const n = `${mesi[d.getMonth()]} ${d.getFullYear()}`;
+      list.push({ key: k, name: n });
     }
-
     return (
-      <div className="presenza-modal-overlay" onClick={closePdfModal}>
-        <div
-          className="presenza-modal-content pdf-modal"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="presenza-modal-header">
-            <h3>📄 Scarica Report PDF</h3>
-            <button className="close-button" onClick={closePdfModal}>
-              ×
-            </button>
-          </div>
-
-          <div className="presenza-modal-body">
-            <p className="pdf-instructions">
-              Seleziona i mesi di cui vuoi scaricare il report PDF:
-            </p>
-
-            <div className="months-grid">
-              {months.map((month) => (
-                <label key={month.key} className="month-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={selectedMonths.includes(month.key)}
-                    onChange={() => toggleMonthSelection(month.key)}
-                  />
-                  <span className="checkmark"></span>
-                  {month.name}
-                </label>
-              ))}
-            </div>
-
-            <div className="selected-count">
-              {selectedMonths.length > 0 && (
-                <p>Selezionati: {selectedMonths.length} mesi</p>
-              )}
-            </div>
-          </div>
-
-          <div className="presenza-modal-actions">
-            <button className="cancel-button" onClick={closePdfModal}>
-              Annulla
-            </button>
-            <button
-              className="save-button"
-              onClick={handleDownloadPdf}
-              disabled={selectedMonths.length === 0}
-            >
-              📄 Scarica Report
-            </button>
-          </div>
-        </div>
+      <div className="months-grid">
+        {list.map((m) => (
+          <label key={m.key} className="month-checkbox">
+            <input
+              type="checkbox"
+              checked={selectedMonths.includes(m.key)}
+              onChange={() => toggleMonthSelection(m.key)}
+            />
+            <span className="checkmark"></span> {m.name}
+          </label>
+        ))}
       </div>
     );
   };
 
-  if (loading && presenze.length === 0) {
+  if (loading && presenze.length === 0)
     return (
       <div className="presenze-container">
-        <div className="presenze-loading">
-          <div className="loading-spinner"></div>
-          <p>Caricamento presenze...</p>
-        </div>
+        <div className="presenze-loading">Caricamento...</div>
       </div>
     );
-  }
 
-  // Helper per controllare se il record corrente è storico
   const currentCellIsHistory = selectedCell
-    ? getPresenzaByDataFascia(selectedCell.data, selectedCell.fascia)
+    ? getPresenza(selectedCell.data, selectedCell.fascia, selectedCell.isExtra)
         ?.is_history
     : false;
 
@@ -929,65 +668,46 @@ const Presenze: React.FC = () => {
     <div className="presenze-container">
       <div className="presenze-header-section">
         <h1>👥 Gestione Presenze</h1>
-
         <div className="month-selector">
           <button
             className="month-button"
             onClick={() => navigateToMonth("prev")}
-            title="Mese precedente"
           >
-            ← {getMonthNameFromOffset(currentMonthOffset - 1)}
+            ←
           </button>
           <button
-            className={`month-button ${currentMonthOffset === 0 ? "active" : ""}`}
+            className="month-button active"
             onClick={() => navigateToMonth("current")}
-            title="Torna al mese corrente"
           >
             {getMonthNameFromOffset(currentMonthOffset)}
-            {currentMonthOffset !== 0 && (
-              <span className="month-offset-indicator">
-                {currentMonthOffset > 0
-                  ? `+${currentMonthOffset}`
-                  : currentMonthOffset}
-              </span>
-            )}
           </button>
           <button
             className="month-button"
             onClick={() => navigateToMonth("next")}
-            title="Mese successivo"
           >
-            {getMonthNameFromOffset(currentMonthOffset + 1)} →
+            →
           </button>
         </div>
-
         <div className="presenze-actions">
           {canDownloadPdf() && (
             <button
               onClick={() => setIsPdfModalOpen(true)}
               className="pdf-button"
             >
-              📄 Scarica PDF
+              📄 PDF
             </button>
           )}
           <button onClick={toggleStats} className="stats-button">
-            {showStats ? "📊 Nascondi Stats" : "📊 Mostra Stats"}
+            {showStats ? "Nascondi" : "Stats"}
           </button>
           <button onClick={fetchPresenze} className="refresh-button">
-            🔄 Aggiorna
+            🔄
           </button>
         </div>
       </div>
 
       {message && (
         <div className={`presenze-message ${message.type}`}>
-          <span className="message-icon">
-            {message.type === "success"
-              ? "✅"
-              : message.type === "error"
-                ? "❌"
-                : "ℹ️"}
-          </span>
           {message.text}
           <button className="close-message" onClick={() => setMessage(null)}>
             ×
@@ -995,11 +715,35 @@ const Presenze: React.FC = () => {
         </div>
       )}
 
-      {showStats && renderStatistiche()}
+      {showStats && statistiche && (
+        <div className="statistiche-panel">
+          <h3>📊 Statistiche {statistiche.month_info.monthName}</h3>
+          <div className="stats-summary">
+            <div className="stat-card">
+              <div className="stat-label">Totale Mese</div>
+              <div className="stat-value">{statistiche.totale_mese}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Media Giornaliera</div>
+              <div className="stat-value">{statistiche.media_giornaliera}</div>
+            </div>
+          </div>
+          <div className="stats-per-fascia">
+            {statistiche.per_fascia.map((stat) => (
+              <div key={stat.fascia_oraria} className="fascia-stat">
+                <div className="fascia-label">{stat.fascia_oraria}</div>
+                <div className="fascia-values">
+                  <span>Tot: {stat.totale_presenze}</span>
+                  <span>Max: {stat.max_presenze}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="presenze-content">{renderCalendarGrid()}</div>
 
-      {/* Modal Modifica */}
       {isModalOpen && selectedCell && (
         <div className="presenza-modal-overlay" onClick={closeModal}>
           <div
@@ -1007,82 +751,64 @@ const Presenze: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="presenza-modal-header">
-              <h3>
-                {currentCellIsHistory
-                  ? "🔒 Dettaglio Storico"
-                  : "Modifica Presenza"}
-              </h3>
+              <h3>{currentCellIsHistory ? "🔒 Storico" : "Modifica"}</h3>
               <button className="close-button" onClick={closeModal}>
                 ×
               </button>
             </div>
-
             <div className="presenza-modal-body">
-              <div className="presenza-info">
-                <p>
-                  <strong>Data:</strong>{" "}
-                  {new Date(selectedCell.data).toLocaleDateString("it-IT")}
-                </p>
-                <p>
-                  <strong>Fascia oraria:</strong> {selectedCell.fascia}
-                </p>
-                <p>
-                  <strong>Giorno:</strong> {getDayName(selectedCell.data)}
-                </p>
-                {currentCellIsHistory && (
-                  <p className="history-badge">
-                    ⚠️ Record di Archivio (Sola Lettura)
-                  </p>
-                )}
-              </div>
+              <p>
+                <strong>Data:</strong>{" "}
+                {new Date(selectedCell.data).toLocaleDateString("it-IT")}
+              </p>
+              <p>
+                <strong>Fascia:</strong> {selectedCell.fascia || "Altro"}
+              </p>
+              {selectedCell.isExtra && (
+                <p className="history-badge">Fascia non standard</p>
+              )}
 
               <div className="form-group">
-                <label htmlFor="numero-presenze">Numero Presenze</label>
+                <label>Numero</label>
                 <input
-                  id="numero-presenze"
                   type="number"
                   min="0"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  placeholder="Inserisci numero presenze"
-                  disabled={currentCellIsHistory} // Disabilita se storico
+                  disabled={currentCellIsHistory}
                 />
               </div>
-
               <div className="form-group">
-                <label htmlFor="note-presenza">Note</label>
+                <label>Note</label>
                 <input
-                  id="note-presenza"
                   type="text"
                   value={editNote}
                   onChange={(e) => setEditNote(e.target.value)}
-                  placeholder="Note aggiuntive (opzionale)"
-                  disabled={currentCellIsHistory} // Disabilita se storico
+                  disabled={currentCellIsHistory}
                 />
               </div>
             </div>
-
             <div className="presenza-modal-actions">
               <button className="cancel-button" onClick={closeModal}>
                 {currentCellIsHistory ? "Chiudi" : "Annulla"}
               </button>
-
-              {!currentCellIsHistory && (
+              {!currentCellIsHistory && selectedCell.fascia && (
                 <>
                   <button
                     className="delete-button"
                     onClick={handleEliminaPresenza}
                     disabled={
-                      !getPresenzaByDataFascia(
+                      !getPresenza(
                         selectedCell.data,
-                        selectedCell.fascia
+                        selectedCell.fascia,
+                        selectedCell.isExtra
                       )?.esistente
                     }
                   >
-                    🗑️ Elimina
+                    Elimina
                   </button>
                   <button className="save-button" onClick={handleSalvaPresenza}>
-                    💾 Salva
+                    Salva
                   </button>
                 </>
               )}
@@ -1091,7 +817,37 @@ const Presenze: React.FC = () => {
         </div>
       )}
 
-      {isPdfModalOpen && renderPdfModal()}
+      {isPdfModalOpen && (
+        <div className="presenza-modal-overlay" onClick={closePdfModal}>
+          <div
+            className="presenza-modal-content pdf-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="presenza-modal-header">
+              <h3>Scarica PDF</h3>
+              <button className="close-button" onClick={closePdfModal}>
+                ×
+              </button>
+            </div>
+            <div className="presenza-modal-body">
+              <p>Seleziona mesi:</p>
+              {renderPdfModalContent()}
+            </div>
+            <div className="presenza-modal-actions">
+              <button className="cancel-button" onClick={closePdfModal}>
+                Annulla
+              </button>
+              <button
+                className="save-button"
+                onClick={handleDownloadPdf}
+                disabled={selectedMonths.length === 0}
+              >
+                Scarica
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
