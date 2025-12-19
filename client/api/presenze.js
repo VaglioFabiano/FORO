@@ -13,7 +13,7 @@ if (!config.url || !config.authToken) {
 
 const client = createClient(config);
 
-// Fasce orarie disponibili
+// Fasce orarie disponibili (Front-end format)
 const FASCE_ORARIE = ["9-13", "13-16", "16-19", "21-24"];
 
 // --- HELPER FUNZIONI DATE ---
@@ -36,7 +36,9 @@ function getMonthDates(monthOffset = 0) {
 
   const monthDates = [];
   for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
-    monthDates.push(new Date(d).toISOString().split("T")[0]);
+    // Gestione fuso orario locale per evitare sfasamenti di data
+    const offsetDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    monthDates.push(offsetDate.toISOString().split("T")[0]);
   }
 
   return {
@@ -170,7 +172,7 @@ async function logPresenzeChange(
   }
 }
 
-// Funzione per generare PDF
+// Funzione per generare PDF (restituisce HTML per il frontend)
 async function generatePDF(presenzeData, monthsInfo) {
   try {
     // Header HTML per il PDF
@@ -314,7 +316,7 @@ async function generatePDF(presenzeData, monthsInfo) {
   }
 }
 
-// POST - Genera e scarica PDF
+// POST - Genera e scarica PDF (Restituisce HTML)
 async function downloadPDF(req, res) {
   try {
     const { months, user_id } = req.body;
@@ -391,15 +393,10 @@ async function downloadPDF(req, res) {
     // Genera HTML per PDF
     const htmlContent = await generatePDF(presenzeData, months);
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="presenze_report_${months.length}_mesi.pdf"`
-    );
-
+    // Nota: Restituiamo JSON con HTML. Il frontend gestisce la creazione del PDF con jsPDF o stampa.
     return res.status(200).json({
       success: true,
-      message: "PDF generato con successo",
+      message: "Report generato con successo",
       html: htmlContent,
       months_processed: presenzeData.length,
     });
@@ -518,7 +515,7 @@ async function aggiornaPresenze(req, res) {
     const target = mapOrari[fascia_oraria];
 
     // Trova il giorno della settimana per la data richiesta
-    const dateObj = new Date(data);
+    // Array GIORNI ESATTI come nel DB (minuscolo)
     const days = [
       "domenica",
       "lunedì",
@@ -528,12 +525,14 @@ async function aggiornaPresenze(req, res) {
       "venerdì",
       "sabato",
     ];
+    const dateObj = new Date(data);
     const giornoTarget = days[dateObj.getDay()];
 
     // Cerca l'ID nella tabella fasce_orarie attiva
     let fasciaIdReale = null;
 
     if (target) {
+      // Query con match esatto sul giorno minuscolo
       const idFasciaRes = await client.execute({
         sql: `SELECT id FROM fasce_orarie WHERE giorno = ? AND ora_inizio = ?`,
         args: [giornoTarget, target.start],
@@ -549,7 +548,8 @@ async function aggiornaPresenze(req, res) {
       return res.status(403).json({
         success: false,
         error:
-          "Modifica non consentita: Settimana archiviata o fascia non attiva.",
+          "Modifica non consentita: Settimana archiviata o fascia non attiva per " +
+          giornoTarget,
       });
     }
 
@@ -651,6 +651,7 @@ async function eliminaPresenza(req, res) {
     };
     const target = mapOrari[fascia_oraria];
     const dateObj = new Date(data);
+    // Array GIORNI ESATTI come nel DB (minuscolo)
     const days = [
       "domenica",
       "lunedì",
@@ -672,12 +673,10 @@ async function eliminaPresenza(req, res) {
     }
 
     if (!fasciaIdReale) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Impossibile eliminare dati archiviati",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Impossibile eliminare dati archiviati o fascia non attiva",
+      });
     }
 
     // Ottieni info prima di eliminare per il log
