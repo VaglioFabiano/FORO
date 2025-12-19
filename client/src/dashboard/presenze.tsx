@@ -427,7 +427,7 @@ const Presenze: React.FC = () => {
         doc.text(monthInfo.monthName.toUpperCase(), margin, yPosition);
         yPosition += 10;
 
-        const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
+        const presenzeMap: Record<string, Record<string, number>> = {};
         presenze.forEach((p: any) => {
           if (!presenzeMap[p.data]) {
             presenzeMap[p.data] = {};
@@ -469,9 +469,12 @@ const Presenze: React.FC = () => {
           const dayOfWeek = date.getDay();
           const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
-          const totaleGiorno = fasce.reduce((sum, fascia) => {
-            return sum + (presenzeMap[data]?.[fascia] || 0);
-          }, 0);
+          // Somma tutto il giorno, non solo le colonne standard
+          const dayRecords = presenze.filter((p: any) => p.data === data);
+          const totaleGiorno = dayRecords.reduce(
+            (sum: number, p: any) => sum + p.numero_presenze,
+            0
+          );
 
           if (totaleGiorno > 0) {
             if (yPosition > pageHeight - 15) {
@@ -573,7 +576,7 @@ const Presenze: React.FC = () => {
 
       // FALLBACK TXT
       let content = "=".repeat(60) + "\n";
-      content += "              REPORT PRESENZE\n";
+      content += "              REPORT PRESENZE\n";
       content += "=".repeat(60) + "\n";
       content += `Generato il: ${new Date().toLocaleDateString("it-IT")} alle ${new Date().toLocaleTimeString("it-IT")}\n`;
       content += `Periodo: ${pdfData.length} mesi selezionati\n\n`;
@@ -585,7 +588,7 @@ const Presenze: React.FC = () => {
         content += `MESE: ${monthInfo.monthName.toUpperCase()}\n`;
         content += "-".repeat(50) + "\n\n";
 
-        // Organizza presenze per data
+        // Organizza presenze per data (utilizzando la variabile 'presenze')
         const presenzeMap: { [key: string]: { [fascia: string]: number } } = {};
         presenze.forEach((p: any) => {
           if (!presenzeMap[p.data]) {
@@ -595,7 +598,7 @@ const Presenze: React.FC = () => {
         });
 
         // Tabella giorni
-        content += "DATA  | GG  | 9-13 | 13-16 | 16-19 | 21-24 | TOT\n";
+        content += "DATA  | GG  | 9-13 | 13-16 | 16-19 | 21-24 | TOT\n";
         content += "------|-----|------|-------|-------|-------|----\n";
 
         let totaliFascia = { "9-13": 0, "13-16": 0, "16-19": 0, "21-24": 0 };
@@ -616,7 +619,7 @@ const Presenze: React.FC = () => {
             const giorno = date.getDate().toString().padStart(2, " ");
             const nomeGiorno = dayNames[dayOfWeek];
 
-            content += `${giorno}    | ${nomeGiorno} |`;
+            content += `${giorno}    | ${nomeGiorno} |`;
 
             fasce.forEach((fascia) => {
               const numero = presenzeMap[data]?.[fascia] || 0;
@@ -631,7 +634,7 @@ const Presenze: React.FC = () => {
 
         // Totali
         content += "------|-----|------|-------|-------|-------|----\n";
-        content += "TOT   |     |";
+        content += "TOT   |     |";
         fasce.forEach((fascia) => {
           content += ` ${totaliFascia[fascia as keyof typeof totaliFascia].toString().padStart(4, " ")} |`;
         });
@@ -712,9 +715,8 @@ const Presenze: React.FC = () => {
   const renderCalendarGrid = () => {
     if (!monthInfo) return null;
 
-    // Organizza le presenze in una mappa per accesso rapido
-    // Nota: Un giorno può avere più record (es. diverse fasce orarie)
-    const presenzeMap: { [key: string]: Presenza[] } = {};
+    // Raggruppa tutte le presenze del mese per data
+    const presenzeMap: Record<string, Presenza[]> = {};
     presenze.forEach((presenza) => {
       if (!presenzeMap[presenza.data]) {
         presenzeMap[presenza.data] = [];
@@ -736,7 +738,10 @@ const Presenze: React.FC = () => {
 
         <div className="calendar-body">
           {monthInfo.dates.map((data) => {
-            // Recupera tutte le presenze per questo giorno
+            const dateObj = new Date(data);
+            const isWknd = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+
+            // Recupera TUTTE le presenze di questo giorno
             const dailyPresenze = presenzeMap[data] || [];
 
             // Calcolo totale ROBUSTO: somma tutte le presenze del giorno,
@@ -756,7 +761,6 @@ const Presenze: React.FC = () => {
                   <div className="day-name">{getDayName(data)}</div>
                 </div>
 
-                {/* Cicla le colonne visualizzate (9-13, 13-16, etc.) */}
                 {fasce.map((fascia) => {
                   const presenza = dailyPresenze.find(
                     (p) => p.fascia_oraria === fascia
@@ -767,7 +771,7 @@ const Presenze: React.FC = () => {
                   return (
                     <div
                       key={`${data}-${fascia}`}
-                      className={`presenza-cell ${numero > 0 ? "has-presenze" : "empty"} ${isWeekend(data) ? "weekend" : ""} ${isHistory ? "is-history" : ""}`}
+                      className={`presenza-cell ${numero > 0 ? "has-presenze" : "empty"} ${isWknd ? "weekend" : ""} ${isHistory ? "is-history" : ""}`}
                       onClick={() => handleCellClick(data, fascia)}
                     >
                       <div className="numero-presenze">
