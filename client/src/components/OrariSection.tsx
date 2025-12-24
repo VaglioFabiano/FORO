@@ -95,9 +95,8 @@ const OrariSection: React.FC = () => {
           const giorniGenerati: OrarioGiorno[] = [];
 
           // Calcoliamo il Lunedì della settimana CORRENTE
-          // getDay(): 0=Dom, 1=Lun...
           const dayOfWeek = oggi.getDay();
-          const diffToMonday = (dayOfWeek + 6) % 7; // Giorni da sottrarre per arrivare a Lunedì
+          const diffToMonday = (dayOfWeek + 6) % 7;
           const currentWeekMonday = new Date(oggi);
           currentWeekMonday.setDate(oggi.getDate() - diffToMonday);
           currentWeekMonday.setHours(0, 0, 0, 0);
@@ -112,8 +111,6 @@ const OrariSection: React.FC = () => {
             dataTarget.setDate(oggi.getDate() + i);
 
             // Decidiamo da quale tabella prendere i dati
-            // Se la dataTarget è >= al Lunedì della prossima settimana, usiamo 'next'
-            // Confrontiamo i timestamp per sicurezza
             const isNextWeek = dataTarget.getTime() >= nextWeekMonday.getTime();
             const sourceArray = isNextWeek ? next : current;
 
@@ -168,8 +165,6 @@ const OrariSection: React.FC = () => {
       month: "long",
     };
     const startStr = start.toLocaleDateString("it-IT", options);
-
-    // Se mese diverso mostriamo tutto, altrimenti semplifichiamo (opzionale, qui mostro tutto per chiarezza)
     const endStr = end.toLocaleDateString("it-IT", options);
 
     return `${startStr} - ${endStr}`;
@@ -190,39 +185,49 @@ const OrariSection: React.FC = () => {
               <div className="error">{error}</div>
             ) : (
               <div className="orari-list">
-                {orariDisplay.map((item, index) => (
-                  <div
-                    key={index}
-                    className={`orario-item ${isOrarioStraordinario(item.fasce) ? "orario-straordinario" : ""} ${index === 0 ? "giorno-corrente" : ""}`}
-                  >
-                    <div className="testo">
-                      <strong>{item.giornoLabel}:</strong>{" "}
-                      {item.fasce.length === 0 ? (
-                        <span className="chiuso">Chiuso</span>
-                      ) : (
-                        <>
-                          {item.fasce.map((fascia, fasciaIndex) => (
-                            <span
-                              key={fasciaIndex}
-                              className={
-                                fasciaIndex === 0
-                                  ? "orario-principale"
-                                  : "orario-serale"
-                              }
-                            >
-                              {fasciaIndex > 0 && " + "}
-                              {fascia.ora_inizio.slice(0, 5)} -{" "}
-                              {fascia.ora_fine.slice(0, 5)}
-                            </span>
-                          ))}
-                        </>
-                      )}
-                      {item.note && (
-                        <span className="nota"> ({item.note})</span>
-                      )}
+                {orariDisplay.map((item, index) => {
+                  // --- FIX QUI: Definiamo se è oggi ---
+                  const isToday = index === 0;
+
+                  return (
+                    <div
+                      key={index}
+                      // --- FIX QUI: Usiamo la classe 'oggi' invece di 'giorno-corrente' ---
+                      className={`orario-item ${isOrarioStraordinario(item.fasce) ? "orario-straordinario" : ""} ${isToday ? "oggi" : ""}`}
+                    >
+                      <div className="testo">
+                        <strong>
+                          {item.giornoLabel}:
+                          {/* --- FIX QUI: Aggiungiamo il badge visivo "OGGI" --- */}
+                          {isToday && <span className="badge-oggi">OGGI</span>}
+                        </strong>{" "}
+                        {item.fasce.length === 0 ? (
+                          <span className="chiuso">Chiuso</span>
+                        ) : (
+                          <>
+                            {item.fasce.map((fascia, fasciaIndex) => (
+                              <span
+                                key={fasciaIndex}
+                                className={
+                                  fasciaIndex === 0
+                                    ? "orario-principale"
+                                    : "orario-serale"
+                                }
+                              >
+                                {fasciaIndex > 0 && " + "}
+                                {fascia.ora_inizio.slice(0, 5)} -{" "}
+                                {fascia.ora_fine.slice(0, 5)}
+                              </span>
+                            ))}
+                          </>
+                        )}
+                        {item.note && (
+                          <span className="nota"> ({item.note})</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
