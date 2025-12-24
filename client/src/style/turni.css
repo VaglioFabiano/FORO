@@ -1,23 +1,23 @@
-/* Container principale */
 .turni-container {
   min-height: 100vh;
   background-color: rgb(248, 233, 205);
   padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  /* Previene lo scroll della pagina intera se si scorre dentro la griglia */
+  overflow-x: hidden;
 }
 
-/* Header sezione */
 .turni-header-section {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
   gap: 20px;
 }
 
 .turni-header-section h1 {
-  color: #8B4513;
+  color: #8b4513;
   font-size: 28px;
   font-weight: 700;
   margin: 0;
@@ -34,7 +34,7 @@
 .week-button {
   padding: 12px 20px;
   background: rgba(255, 255, 255, 0.8);
-  color: #8B4513;
+  color: #8b4513;
   border: 2px solid rgba(139, 69, 19, 0.2);
   border-radius: 12px;
   cursor: pointer;
@@ -46,18 +46,19 @@
 
 .week-button:hover {
   background: rgba(210, 105, 30, 0.1);
-  border-color: #D2691E;
+  border-color: #d2691e;
 }
 
 .week-button.active {
-  background: linear-gradient(135deg, #D2691E 0%, #CD853F 100%);
+  background: linear-gradient(135deg, #d2691e 0%, #cd853f 100%);
   color: white;
-  border-color: #D2691E;
+  border-color: #d2691e;
 }
 
+/* Bottone Aggiorna */
 .refresh-button {
   padding: 12px 20px;
-  background: linear-gradient(135deg, #D2691E 0%, #CD853F 100%);
+  background: linear-gradient(135deg, #d2691e 0%, #cd853f 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -73,12 +74,14 @@
 }
 
 .refresh-button:hover {
-  background: linear-gradient(135deg, #CD853F 0%, #D2691E 100%);
+  background: linear-gradient(135deg, #cd853f 0%, #d2691e 100%);
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(210, 105, 30, 0.3);
 }
 
-/* Messaggi */
+/* =========================================
+   MESSAGGI DI STATO
+   ========================================= */
 .turni-message {
   display: flex;
   align-items: center;
@@ -125,62 +128,64 @@
   opacity: 0.7;
 }
 
-.close-message:hover {
-  opacity: 1;
-}
-
-/* Loading */
+/* =========================================
+   LOADING SPINNER
+   ========================================= */
 .turni-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #8B4513;
+  color: #8b4513;
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
   border: 4px solid rgba(139, 69, 19, 0.1);
-  border-top: 4px solid #8B4513;
+  border-top: 4px solid #8b4513;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
 }
 
-/* Grid turni */
+/* =========================================
+   GRIGLIA TURNI (LOGICA EXCEL / STICKY)
+   ========================================= */
+
+/* Contenitore con scroll */
 .turni-content {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 15px;
-  overflow: hidden;
-  border: 2px solid rgba(139, 69, 19, 0.1);
+  border: 1px solid rgba(139, 69, 19, 0.2);
   box-shadow: 0 10px 30px rgba(139, 69, 19, 0.1);
+
+  /* Fondamentale per lo scroll stile Excel */
+  overflow: auto;
+  max-height: 80vh; /* Altezza massima prima di scrollare verticalmente */
+  position: relative;
 }
 
 .turni-grid {
   display: flex;
   flex-direction: column;
+  /* Forza la larghezza minima: se lo schermo è piccolo, appaiono le barre di scroll */
+  min-width: 1200px;
 }
 
-/* Header della griglia */
+/* --- HEADER DELLA GRIGLIA (STICKY TOP) --- */
 .turni-header {
   display: grid;
   grid-template-columns: 120px repeat(7, 1fr);
-  background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+  background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
   color: white;
-}
 
-.turni-time-column {
-  padding: 20px 15px;
-  font-weight: 700;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  /* Blocca in alto */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .turni-day-header {
@@ -196,16 +201,15 @@
   font-weight: 700;
   font-size: 14px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
   margin-bottom: 5px;
 }
 
 .day-date {
   font-size: 12px;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
-/* Body della griglia */
+/* --- BODY GRIGLIA --- */
 .turni-body {
   display: flex;
   flex-direction: column;
@@ -221,325 +225,312 @@
   border-bottom: none;
 }
 
+/* --- COLONNA ORARI (STICKY LEFT) --- */
+.turni-time-column,
 .turni-time-cell {
-  padding: 20px 15px;
-  background: rgba(139, 69, 19, 0.05);
-  border-right: 1px solid rgba(139, 69, 19, 0.1);
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  width: 120px; /* Larghezza fissa */
+
+  /* Sfondo necessario per coprire le celle che scorrono sotto */
+  background-color: #fcf4e8;
+  border-right: 2px solid rgba(139, 69, 19, 0.2);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  color: #8B4513;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #8b4513;
+  box-sizing: border-box;
 }
 
-/* Celle dei turni */
+.turni-time-column {
+  background: #8b4513; /* Colore dell'header per l'angolo */
+  color: white;
+  z-index: 20; /* Deve stare sopra tutto (angolo in alto a sinistra) */
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --- CELLE DEI TURNI --- */
 .turni-cell {
-  padding: 15px 10px;
+  padding: 10px;
   border-right: 1px solid rgba(139, 69, 19, 0.1);
   min-height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   position: relative;
 }
 
 .turni-cell:hover {
-  background: rgba(210, 105, 30, 0.05);
+  background: rgba(210, 105, 30, 0.1);
 }
 
+/* Stati delle celle */
 .turni-cell.available {
   background: rgba(76, 175, 80, 0.1);
-  border-left: 4px solid #4CAF50;
+  border-left: 4px solid #4caf50;
 }
-
-.turni-cell.available:hover {
-  background: rgba(76, 175, 80, 0.2);
-}
-
 .turni-cell.assigned {
   background: rgba(33, 150, 243, 0.1);
-  border-left: 4px solid #2196F3;
+  border-left: 4px solid #2196f3;
 }
-
-.turni-cell.assigned:hover {
-  background: rgba(33, 150, 243, 0.2);
-}
-
 .turni-cell.closed {
   background: rgba(158, 158, 158, 0.1);
-  border-left: 4px solid #9E9E9E;
-  cursor: pointer; /* Manteniamo cursor pointer per permettere richieste */
+  border-left: 4px solid #9e9e9e;
 }
-
 .turni-cell.closed:hover {
-  background: rgba(255, 152, 0, 0.1); /* Colore diverso per indicare possibilità di richiesta */
+  background: rgba(255, 152, 0, 0.15);
   border-left-color: #ff9800;
 }
+.turni-cell.assigned-extraordinary {
+  background-color: #fff3cd !important;
+  border-left: 4px solid #ffc107 !important;
+}
 
-/* Contenuto delle celle */
+/* Testi dentro le celle */
 .turno-available {
-  color: #2E7D32;
-  font-weight: 600;
-  font-size: 14px;
-  text-align: center;
-}
-
-.turno-assigned {
-  text-align: center;
-}
-
-.user-name {
-  color: #1565C0;
+  color: #2e7d32;
   font-weight: 600;
   font-size: 13px;
-  margin-bottom: 4px;
+  text-align: center;
 }
-
+.turno-assigned {
+  text-align: center;
+  width: 100%;
+}
+.user-name {
+  color: #1565c0;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
 .turno-note {
   color: #666;
   font-size: 11px;
   font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
-
 .turno-nota-automatica {
   color: #ff9800;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 700;
   text-transform: uppercase;
-  margin-top: 2px;
   text-align: center;
 }
-
 .turno-closed {
   color: #757575;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   text-align: center;
 }
+.turno-straordinario-badge {
+  background-color: #ffc107;
+  color: #212529;
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 4px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 2px;
+}
 
-/* Modal */
+/* =========================================
+   MODALE (Popup)
+   ========================================= */
 .turno-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
+  z-index: 2000;
+  backdrop-filter: blur(3px);
 }
 
 .turno-modal-content {
   background: rgb(248, 233, 205);
-  border-radius: 20px;
-  padding: 0;
-  max-width: 500px;
+  border-radius: 15px;
   width: 90%;
+  max-width: 500px;
   max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(139, 69, 19, 0.1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  border: 1px solid #8b4513;
 }
 
 .turno-modal-header {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(139, 69, 19, 0.2);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 25px 30px;
-  border-bottom: 2px solid rgba(139, 69, 19, 0.1);
-  background: rgba(255, 255, 255, 0.5);
 }
-
 .turno-modal-header h3 {
-  color: #8B4513;
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: #8B4513;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-button:hover {
-  background: rgba(139, 69, 19, 0.1);
-  transform: rotate(90deg);
+  color: #8b4513;
+  font-size: 18px;
 }
 
 .turno-modal-body {
-  padding: 30px;
+  padding: 20px;
+  overflow-y: auto;
 }
 
 .turno-info {
-  background: rgba(255, 255, 255, 0.7);
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 25px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
   border: 1px solid rgba(139, 69, 19, 0.1);
 }
 
-.turno-info p {
-  margin: 8px 0;
-  color: #8B4513;
-  font-weight: 500;
-}
-
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
-
 .form-group label {
   display: block;
-  color: #8B4513;
+  color: #8b4513;
   font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 5px;
+  font-size: 13px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
-
 .form-group select,
 .form-group input[type="text"] {
   width: 100%;
-  padding: 15px 20px;
-  border: 2px solid rgba(139, 69, 19, 0.1);
-  border-radius: 12px;
+  padding: 12px;
+  border: 2px solid rgba(139, 69, 19, 0.2);
+  border-radius: 8px;
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.8);
-  color: #333;
-  transition: border-color 0.3s ease;
-  outline: none;
-  box-sizing: border-box;
+  background: white;
 }
-
-.form-group select:focus,
-.form-group input[type="text"]:focus {
-  border-color: #D2691E;
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 0 0 3px rgba(210, 105, 30, 0.1);
-}
-
-.form-group select {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238B4513' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1.5em;
-}
-
-.form-group input[type="text"]::placeholder {
-  color: #999;
-  font-style: italic;
-}
-
-/* Checkbox styling */
-.form-group input[type="checkbox"] {
-  width: auto;
-  margin-right: 8px;
-  transform: scale(1.2);
-}
-
 .form-group label:has(input[type="checkbox"]) {
   display: flex;
   align-items: center;
   text-transform: none;
-  font-size: 14px;
   color: #ff9800;
-  font-weight: 500;
+}
+.form-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
 }
 
-/* Azioni modal */
 .turno-modal-actions {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(139, 69, 19, 0.1);
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
-  padding: 25px 30px;
-  border-top: 2px solid rgba(139, 69, 19, 0.1);
-  background: rgba(255, 255, 255, 0.3);
+  gap: 10px;
 }
 
-.cancel-button {
-  padding: 12px 20px;
-  background: rgba(108, 117, 125, 0.1);
-  color: #6c757d;
-  border: 2px solid rgba(108, 117, 125, 0.2);
-  border-radius: 12px;
-  cursor: pointer;
+.cancel-button,
+.assign-button,
+.remove-button {
+  padding: 12px 18px;
+  border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-}
-
-.cancel-button:hover {
-  background: rgba(108, 117, 125, 0.2);
-  border-color: rgba(108, 117, 125, 0.3);
-}
-
-.assign-button {
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
-  color: white;
+  cursor: pointer;
   border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
 }
-
-.assign-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #45A049 0%, #4CAF50 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(76, 175, 80, 0.3);
+.cancel-button {
+  background: #e0e0e0;
+  color: #555;
 }
-
+.assign-button {
+  background: #4caf50;
+  color: white;
+}
 .assign-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
 }
-
 .remove-button {
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  background: #f44336;
   color: white;
+}
+.close-button {
   border: none;
-  border-radius: 12px;
+  background: none;
+  font-size: 24px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
+  color: #8b4513;
 }
 
-.remove-button:hover {
-  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(244, 67, 54, 0.3);
+/* =========================================
+   MEDIA QUERY: MOBILE & TABLET
+   ========================================= */
+@media (max-width: 768px) {
+  .turni-container {
+    padding: 10px;
+  }
+
+  /* Header più compatto */
+  .turni-header-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .turni-header-section h1 {
+    text-align: center;
+    font-size: 24px;
+  }
+
+  /* Barra settimane scorrevole orizzontalmente (tipo Instagram stories) */
+  .week-selector {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .week-button {
+    flex: 0 0 auto; /* Non schiacciare i bottoni */
+    font-size: 13px;
+    padding: 10px 15px;
+  }
+
+  /* Modale Full Screen su Mobile */
+  .turno-modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+  .turno-modal-actions {
+    flex-direction: column;
+  }
+  .turno-modal-actions button {
+    width: 100%;
+    padding: 15px; /* Più facile da cliccare */
+  }
+
+  /* Aggiustamenti font celle */
+  .turni-cell {
+    min-height: 70px;
+  }
+  .user-name {
+    font-size: 12px;
+  }
+  .turno-note {
+    display: none;
+  } /* Nascondi note lunghe in griglia su mobile */
 }
 
 /* Animazioni */
@@ -553,176 +544,11 @@
     transform: translateY(0);
   }
 }
-
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Responsive */
-@media (max-width: 1200px) {
-  .turni-header,
-  .turni-row {
-    grid-template-columns: 100px repeat(7, 1fr);
+  0% {
+    transform: rotate(0deg);
   }
-  
-  .turni-time-column,
-  .turni-time-cell {
-    font-size: 12px;
-    padding: 15px 10px;
+  100% {
+    transform: rotate(360deg);
   }
-  
-  .turni-day-header {
-    padding: 15px 8px;
-  }
-  
-  .day-name {
-    font-size: 12px;
-  }
-  
-  .day-date {
-    font-size: 10px;
-  }
-}
-
-@media (max-width: 768px) {
-  .turni-container {
-    padding: 15px;
-  }
-  
-  .turni-header-section {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 15px;
-  }
-  
-  .turni-header-section h1 {
-    font-size: 24px;
-    text-align: center;
-  }
-  
-  .week-selector {
-    justify-content: center;
-  }
-  
-  .week-button {
-    flex: 1;
-    padding: 10px 15px;
-    font-size: 12px;
-  }
-  
-  .turni-header,
-  .turni-row {
-    grid-template-columns: 80px repeat(7, 1fr);
-  }
-  
-  .turni-time-column,
-  .turni-time-cell {
-    font-size: 10px;
-    padding: 10px 5px;
-  }
-  
-  .turni-day-header {
-    padding: 10px 5px;
-  }
-  
-  .day-name {
-    font-size: 10px;
-  }
-  
-  .day-date {
-    font-size: 9px;
-  }
-  
-  .turni-cell {
-    padding: 10px 5px;
-    min-height: 60px;
-  }
-  
-  .user-name {
-    font-size: 11px;
-  }
-  
-  .turno-note {
-    font-size: 9px;
-  }
-  
-  .turno-modal-content {
-    width: 95%;
-    margin: 10px;
-  }
-  
-  .turno-modal-header,
-  .turno-modal-body,
-  .turno-modal-actions {
-    padding: 20px;
-  }
-  
-  .turno-modal-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .week-selector {
-    flex-direction: column;
-  }
-  
-  .turni-header,
-  .turni-row {
-    grid-template-columns: 60px repeat(7, 1fr);
-  }
-  
-  .turni-time-column,
-  .turni-time-cell {
-    font-size: 9px;
-    padding: 8px 3px;
-  }
-  
-  .day-name {
-    font-size: 9px;
-  }
-  
-  .day-date {
-    display: none;
-  }
-  
-  .turni-cell {
-    padding: 8px 3px;
-    min-height: 50px;
-  }
-  
-  .user-name {
-    font-size: 10px;
-  }
-  
-  .turno-available,
-  .turno-closed {
-    font-size: 12px;
-  }
-}
-
-/* Stili per turni straordinari */
-.turni-cell.assigned-extraordinary {
-  background-color: #fff3cd !important;
-  border: 2px solid #ffc107 !important;
-  box-shadow: 0 0 8px rgba(255, 193, 7, 0.3) !important;
-}
-
-.turno-assigned.straordinario {
-  background-color: #fff3cd;
-  border-radius: 6px;
-  padding: 4px;
-}
-
-.turno-straordinario-badge {
-  background-color: #ffc107;
-  color: #212529;
-  font-size: 9px;
-  font-weight: bold;
-  padding: 1px 4px;
-  border-radius: 8px;
-  margin-bottom: 2px;
-  text-align: center;
 }
