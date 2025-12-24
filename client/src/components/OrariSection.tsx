@@ -1,34 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import '../style/orari.css';
+import React, { useState, useEffect } from "react";
+import "../style/orari.css";
 
 interface FasciaOraria {
   id: number;
   giorno: string;
   ora_inizio: string;
   ora_fine: string;
-  note?: string; // Aggiunto campo note opzionale
+  note?: string;
 }
 
 interface OrarioGiorno {
-  giorno: string;
+  giornoLabel: string; // Es: "Lunedì 24"
+  giornoSettimana: string; // Es: "lunedì" (nome DB)
+  dataCompleta: Date;
   fasce: FasciaOraria[];
   note?: string;
 }
 
 interface ApiResponse {
   success: boolean;
-  data: any[];
-  count?: number;
+  // Supportiamo sia il formato array singolo che l'oggetto rolling combinato
+  data: FasciaOraria[] | { current: FasciaOraria[]; next: FasciaOraria[] };
   message?: string;
 }
 
 const OrariSection: React.FC = () => {
-  const [orari, setOrari] = useState<OrarioGiorno[]>([]);
+  const [orariDisplay, setOrariDisplay] = useState<OrarioGiorno[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Lista completa dei giorni della settimana
-  const tuttiGiorni = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
   // Coordinate e indirizzo per Via Alfieri 4, Piossasco
   const latitude = 44.9876736673456;
@@ -36,114 +35,120 @@ const OrariSection: React.FC = () => {
   const address = "Via Alfieri 4, Piossasco (TO)";
 
   const handleMapClick = () => {
-    // Apri Google Maps con l'indirizzo
     const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-    window.open(mapsUrl, '_blank');
+    window.open(mapsUrl, "_blank");
   };
 
   const handleGetDirections = () => {
-    // Apri Google Maps con le indicazioni stradali
     const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-    window.open(directionsUrl, '_blank');
+    window.open(directionsUrl, "_blank");
   };
 
   // Funzione per verificare se un orario è straordinario
   const isOrarioStraordinario = (fasce: FasciaOraria[]): boolean => {
-    // Se non ci sono fasce (chiuso), non è straordinario
-    if (fasce.length === 0) {
-      return false;
-    }
-
-    // Se ci sono più fasce, è straordinario
-    if (fasce.length > 1) {
-      return true;
-    }
-
-    // Se c'è una sola fascia, controlla se è diversa dall'orario ordinario 9:00-19:30
+    if (fasce.length === 0) return false;
+    if (fasce.length > 1) return true;
     const fascia = fasce[0];
     const oraInizio = fascia.ora_inizio.slice(0, 5);
     const oraFine = fascia.ora_fine.slice(0, 5);
-    
-    return !(oraInizio === '09:00' && oraFine === '19:30');
+    return !(oraInizio === "09:00" && oraFine === "19:30");
   };
 
-  // Funzione per raggruppare le fasce orarie per giorno
-  const raggruppaOrariPerGiorno = (fasceOrarie: FasciaOraria[]): OrarioGiorno[] => {
-    const gruppi: { [key: string]: FasciaOraria[] } = {};
-    
-    // Inizializza tutti i giorni con array vuoto
-    tuttiGiorni.forEach(giorno => {
-      gruppi[giorno] = [];
-    });
-    
-    // Raggruppa le fasce orarie per giorno
-    fasceOrarie.forEach(fascia => {
-      if (gruppi[fascia.giorno]) {
-        gruppi[fascia.giorno].push(fascia);
-      }
-    });
-
-    return tuttiGiorni.map(giorno => ({
-      giorno: giorno.charAt(0).toUpperCase() + giorno.slice(1),
-      fasce: gruppi[giorno],
-      note: determineNota(gruppi[giorno])
-    }));
-  };
-
-  // Funzione migliorata per determinare la nota in base alle fasce orarie
+  // Funzione per determinare la nota
   const determineNota = (fasce: FasciaOraria[]): string | undefined => {
-    if (fasce.length === 0) {
-      return undefined; // Nessuna nota per i giorni chiusi
-    }
-    
-    console.log('Verificando note per fasce:', fasce);
-    
-    // Raccoglie tutte le note non vuote e uniche
+    if (fasce.length === 0) return undefined;
     const noteUniche = fasce
-      .map(fascia => {
-        console.log(`Fascia ${fascia.id}: nota = "${fascia.note}"`);
-        return fascia.note?.trim();
-      })
-      .filter((nota): nota is string => nota !== undefined && nota !== '')
-      .filter((nota, index, array) => array.indexOf(nota) === index); // Rimuove duplicati
-    
-    console.log('Note uniche trovate:', noteUniche);
-    
-    // Se ci sono note, le unisce con un separatore
-    const risultato = noteUniche.length > 0 ? noteUniche.join(' • ') : undefined;
-    console.log('Risultato nota:', risultato);
-    
-    return risultato;
+      .map((fascia) => fascia.note?.trim())
+      .filter((nota): nota is string => nota !== undefined && nota !== "")
+      .filter((nota, index, array) => array.indexOf(nota) === index);
+    return noteUniche.length > 0 ? noteUniche.join(" • ") : undefined;
   };
 
-  // Carica gli orari dal database
+  // Mappa indice getDay() (0=Domenica) -> nome giorno DB (italiano)
+  const getNomeGiornoItaliano = (dayIndex: number): string => {
+    const days = [
+      "domenica",
+      "lunedì",
+      "martedì",
+      "mercoledì",
+      "giovedì",
+      "venerdì",
+      "sabato",
+    ];
+    return days[dayIndex];
+  };
+
   useEffect(() => {
     const fetchOrari = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        const response = await fetch('/api/orari_settimana');
+
+        // Chiediamo la modalità "rolling" per avere current e next insieme
+        const response = await fetch("/api/orari_settimana?settimana=rolling");
         const data: ApiResponse = await response.json();
-        
-        if (data.success) {
-          // Debug: log dei dati ricevuti
-          console.log('Dati ricevuti dal database:', data.data);
-          
-          // Verifica se ci sono note nei dati
-          const fasceConNote = data.data.filter(fascia => fascia.note && fascia.note.trim() !== '');
-          console.log('Fasce con note trovate:', fasceConNote);
-          
-          const orariRaggruppati = raggruppaOrariPerGiorno(data.data);
-          console.log('Orari raggruppati:', orariRaggruppati);
-          
-          setOrari(orariRaggruppati);
+
+        if (data.success && data.data && "current" in data.data) {
+          const { current, next } = data.data;
+
+          const oggi = new Date();
+          const giorniGenerati: OrarioGiorno[] = [];
+
+          // Calcoliamo il Lunedì della settimana CORRENTE
+          // getDay(): 0=Dom, 1=Lun...
+          const dayOfWeek = oggi.getDay();
+          const diffToMonday = (dayOfWeek + 6) % 7; // Giorni da sottrarre per arrivare a Lunedì
+          const currentWeekMonday = new Date(oggi);
+          currentWeekMonday.setDate(oggi.getDate() - diffToMonday);
+          currentWeekMonday.setHours(0, 0, 0, 0);
+
+          // Calcoliamo il Lunedì della settimana PROSSIMA
+          const nextWeekMonday = new Date(currentWeekMonday);
+          nextWeekMonday.setDate(currentWeekMonday.getDate() + 7);
+
+          // Loop per generare i prossimi 7 giorni (da oggi a oggi+6)
+          for (let i = 0; i < 7; i++) {
+            const dataTarget = new Date(oggi);
+            dataTarget.setDate(oggi.getDate() + i);
+
+            // Decidiamo da quale tabella prendere i dati
+            // Se la dataTarget è >= al Lunedì della prossima settimana, usiamo 'next'
+            // Confrontiamo i timestamp per sicurezza
+            const isNextWeek = dataTarget.getTime() >= nextWeekMonday.getTime();
+            const sourceArray = isNextWeek ? next : current;
+
+            const nomeGiorno = getNomeGiornoItaliano(dataTarget.getDay());
+
+            // Filtriamo le fasce per quel giorno specifico
+            const fasceDelGiorno = sourceArray.filter(
+              (f) => f.giorno.toLowerCase() === nomeGiorno
+            );
+
+            // Formattiamo l'etichetta (es: "Lunedì 24")
+            const options: Intl.DateTimeFormatOptions = {
+              weekday: "long",
+              day: "numeric",
+            };
+            const labelRaw = dataTarget.toLocaleDateString("it-IT", options);
+            const labelCapitalized =
+              labelRaw.charAt(0).toUpperCase() + labelRaw.slice(1);
+
+            giorniGenerati.push({
+              giornoLabel: labelCapitalized,
+              giornoSettimana: nomeGiorno,
+              dataCompleta: dataTarget,
+              fasce: fasceDelGiorno,
+              note: determineNota(fasceDelGiorno),
+            });
+          }
+
+          setOrariDisplay(giorniGenerati);
         } else {
-          setError(data.message || 'Errore nel caricamento degli orari');
+          setError(data.message || "Formato dati non valido");
         }
       } catch (err) {
-        setError('Errore di connessione nel caricamento degli orari');
-        console.error('Errore nel fetch degli orari:', err);
+        setError("Errore di connessione nel caricamento degli orari");
+        console.error("Errore nel fetch degli orari:", err);
       } finally {
         setLoading(false);
       }
@@ -152,78 +157,77 @@ const OrariSection: React.FC = () => {
     fetchOrari();
   }, []);
 
-  // Funzione per ottenere il periodo corrente
-  const getCurrentWeek = (): string => {
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 = domenica, 1 = lunedì, ..., 6 = sabato
-    
-    // Calcola quanti giorni sottrarre per arrivare a lunedì
-    const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
-    
-    // Calcola la data del lunedì
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - daysToMonday);
-    
-    // Calcola la data della domenica (lunedì + 6 giorni)
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    
-    // Ottieni il nome del mese
-    const monthName = monday.toLocaleDateString('it-IT', { month: 'long' });
-    
-    // Se lunedì e domenica sono nello stesso mese
-    if (monday.getMonth() === sunday.getMonth()) {
-        return `${monday.getDate()}-${sunday.getDate()} ${monthName}`;
-    } else {
-        // Se la settimana attraversa due mesi
-        const sundayMonthName = sunday.toLocaleDateString('it-IT', { month: 'long' });
-        return `${monday.getDate()} ${monthName} - ${sunday.getDate()} ${sundayMonthName}`;
-    }
+  // Calcola il titolo del periodo (Es: "24 Settembre - 30 Settembre")
+  const getPeriodoTitle = (): string => {
+    if (orariDisplay.length === 0) return "";
+    const start = orariDisplay[0].dataCompleta;
+    const end = orariDisplay[orariDisplay.length - 1].dataCompleta;
+
+    const options: Intl.DateTimeFormatOptions = {
+      day: "numeric",
+      month: "long",
+    };
+    const startStr = start.toLocaleDateString("it-IT", options);
+
+    // Se mese diverso mostriamo tutto, altrimenti semplifichiamo (opzionale, qui mostro tutto per chiarezza)
+    const endStr = end.toLocaleDateString("it-IT", options);
+
+    return `${startStr} - ${endStr}`;
   };
 
   return (
     <section className="orari-full-width">
       <div className="orari-container">
         <div className="orari-header">
-          <h2>Orari di Apertura {getCurrentWeek()}</h2>
+          <h2>Orari: {getPeriodoTitle()}</h2>
         </div>
 
         <div className="orari-content">
           <div className="orari-left">
-            {loading && orari.length === 0 ? (
+            {loading ? (
               <div className="loading">Caricamento orari...</div>
-            ) : error && orari.length === 0 ? (
+            ) : error ? (
               <div className="error">{error}</div>
             ) : (
               <div className="orari-list">
-                {orari.map((item, index) => (
-                  <div 
-                    key={index} 
-                    className={`orario-item ${isOrarioStraordinario(item.fasce) ? 'orario-straordinario' : ''}`}
+                {orariDisplay.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`orario-item ${isOrarioStraordinario(item.fasce) ? "orario-straordinario" : ""} ${index === 0 ? "giorno-corrente" : ""}`}
                   >
                     <div className="testo">
-                      <strong>{item.giorno}:</strong>{' '}
+                      <strong>{item.giornoLabel}:</strong>{" "}
                       {item.fasce.length === 0 ? (
                         <span className="chiuso">Chiuso</span>
                       ) : (
                         <>
                           {item.fasce.map((fascia, fasciaIndex) => (
-                            <span key={fasciaIndex} className={fasciaIndex === 0 ? "orario-principale" : "orario-serale"}>
+                            <span
+                              key={fasciaIndex}
+                              className={
+                                fasciaIndex === 0
+                                  ? "orario-principale"
+                                  : "orario-serale"
+                              }
+                            >
                               {fasciaIndex > 0 && " + "}
-                              {fascia.ora_inizio.slice(0, 5)} - {fascia.ora_fine.slice(0, 5)}
+                              {fascia.ora_inizio.slice(0, 5)} -{" "}
+                              {fascia.ora_fine.slice(0, 5)}
                             </span>
                           ))}
                         </>
                       )}
-                      {item.note && <span className="nota"> ({item.note})</span>}
+                      {item.note && (
+                        <span className="nota"> ({item.note})</span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
-            
+
             <div className="avviso">
-              Disponibili le pagode per studiare all'aperto 
+              Disponibili le pagode per studiare all'aperto
               <br />
               Rimanete collegatə per tutti gli aggiornamenti
             </div>
@@ -232,7 +236,7 @@ const OrariSection: React.FC = () => {
           <div className="orari-right">
             <div className="mappa-container">
               <h3>Come Raggiungerci</h3>
-              
+
               <div className="map-wrapper">
                 <div className="interactive-map" onClick={handleMapClick}>
                   <iframe
@@ -245,7 +249,6 @@ const OrariSection: React.FC = () => {
                     referrerPolicy="no-referrer-when-downgrade"
                     title="Mappa della nostra sede"
                   ></iframe>
-                  
                 </div>
               </div>
 
@@ -257,10 +260,10 @@ const OrariSection: React.FC = () => {
                 </div>
 
                 <div className="map-buttons">
-                 <div 
+                  <div
                     className="orario-item"
                     onClick={handleGetDirections}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: "pointer" }}
                   >
                     <div className="testo">
                       <span className="material-symbols-outlined">
@@ -269,15 +272,19 @@ const OrariSection: React.FC = () => {
                       <strong>Ottieni Indicazioni</strong>
                     </div>
                   </div>
-                  
-                  <div 
+
+                  <div
                     className="orario-item"
                     onClick={handleMapClick}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: "pointer" }}
                   >
                     <div className="testo">
-                      <svg className="map-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z"/>
+                      <svg
+                        className="map-icon"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z" />
                       </svg>
                       <strong>Apri Google Maps</strong>
                     </div>
