@@ -4,50 +4,55 @@
 .turni-container {
   min-height: 100vh;
   background-color: rgb(248, 233, 205);
-  padding: 5px; /* Padding minimo */
+  padding: 10px; /* Ridotto padding generale */
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   overflow-x: hidden;
 }
 
 /* =========================================
-   HEADER SUPER COMPATTO (Bottoni Verticali)
+   HEADER COMPATTO (Titolo e Bottoni Verticali)
    ========================================= */
 .turni-header-section {
   display: flex;
-  flex-direction: column; /* Impila verticalmente */
-  gap: 5px; /* Spazio minimo tra gli elementi */
-  margin-bottom: 10px;
+  flex-direction: column; /* Impila tutto verticalmente */
+  align-items: stretch; /* Allarga i bottoni al 100% */
+  margin-bottom: 15px; /* Meno spazio sotto l'header */
+  gap: 10px;
 }
 
 .turni-header-section h1 {
   color: #8b4513;
-  font-size: 18px; /* Titolo molto più piccolo */
+  font-size: 22px; /* Font più piccolo */
   font-weight: 700;
   margin: 0;
   text-align: center;
-  padding: 5px 0;
 }
 
-/* Selettore settimana: LISTA VERTICALE COMPATTA */
+/* Selettore settimana: LISTA VERTICALE */
 .week-selector {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: column; /* Uno sotto l'altro come richiesto */
+  gap: 5px; /* Spazio ridotto tra i bottoni */
   width: 100%;
 }
 
 .week-button {
-  padding: 6px 0; /* Padding verticale ridotto */
+  padding: 8px 10px; /* Pulsanti più sottili */
   background: rgba(255, 255, 255, 0.9);
   color: #8b4513;
-  border: 1px solid rgba(139, 69, 19, 0.3);
-  border-radius: 6px;
+  border: 1px solid rgba(139, 69, 19, 0.3); /* Bordo più sottile */
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 11px; /* Font minuscolo */
+  font-size: 13px; /* Testo più piccolo */
   text-align: center;
-  width: 100%;
-  transition: all 0.2s;
+  width: 100%; /* Occupa tutta la larghezza */
+  transition: all 0.2s ease;
+}
+
+.week-button:hover {
+  background: rgba(210, 105, 30, 0.1);
+  border-color: #d2691e;
 }
 
 .week-button.active {
@@ -58,90 +63,108 @@
 
 /* Bottone Aggiorna */
 .refresh-button {
-  padding: 6px 0;
+  padding: 8px 10px;
   background: linear-gradient(135deg, #d2691e 0%, #cd853f 100%);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
   width: 100%;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center; /* Centrato */
+  gap: 5px;
 }
 
 /* =========================================
-   MESSAGGI
+   MESSAGGI DI STATO COMPATTI
    ========================================= */
 .turni-message {
-  padding: 8px;
-  border-radius: 6px;
-  margin-bottom: 10px;
-  font-size: 11px;
   display: flex;
   align-items: center;
+  padding: 10px 15px; /* Più piccolo */
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 13px; /* Testo più piccolo */
+  font-weight: 500;
+  position: relative;
 }
+
+.turni-message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.turni-message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.turni-message.info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
 .message-icon {
-  font-size: 14px;
-  margin-right: 5px;
+  margin-right: 8px;
+  font-size: 16px;
 }
 .close-message {
-  font-size: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  right: 5px;
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+/* Loading */
+.turni-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #8b4513;
+}
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(139, 69, 19, 0.1);
+  border-top: 3px solid #8b4513;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
 }
 
 /* =========================================
-   GRIGLIA TURNI CON SCROLL HINT
+   GRIGLIA TURNI (RIMASTA UGUALE - STILE EXCEL)
    ========================================= */
 .turni-content {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(139, 69, 19, 0.2);
-  /* Imposta altezza fissa per vedere bene lo scroll verticale */
-  height: 65vh;
-  overflow: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  overflow: auto; /* Scroll attivo */
+  max-height: 75vh; /* Lascia spazio per lo scroll verticale */
   position: relative;
-
-  /* OMBRA A DESTRA PER SUGGERIRE LO SCROLL */
-  box-shadow: inset -10px 0 10px -5px rgba(0, 0, 0, 0.1);
-}
-
-/* SUGGERIMENTO VISIVO "SCORRI ->" */
-/* Questo crea un badge lampeggiante sopra la tabella */
-.turni-content::after {
-  content: "Scorri ➡";
-  position: absolute;
-  top: 55px; /* Appena sotto l'header della tabella */
-  right: 10px;
-  background: rgba(139, 69, 19, 0.85);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: bold;
-  pointer-events: none; /* Permette di cliccare attraverso il badge */
-  z-index: 100; /* Sopra a tutto */
-  animation: blinkHint 3s infinite;
-  opacity: 0.8;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .turni-grid {
   display: flex;
   flex-direction: column;
-  min-width: 800px; /* Larghezza minima per forzare lo scroll */
+  min-width: 1000px; /* Mantiene lo scroll orizzontale */
 }
 
 /* Header Grid Sticky */
 .turni-header {
   display: grid;
-  /* Colonna orari ridotta a 60px */
-  grid-template-columns: 60px repeat(7, 1fr);
+  grid-template-columns: 100px repeat(7, 1fr); /* Prima colonna un po' più stretta */
   background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
   color: white;
   position: sticky;
@@ -150,53 +173,50 @@
 }
 
 .turni-day-header {
-  padding: 8px 2px;
+  padding: 10px 5px;
   text-align: center;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
-  overflow: hidden;
 }
 
 .day-name {
   font-weight: 700;
-  font-size: 10px;
+  font-size: 12px;
   text-transform: uppercase;
   margin-bottom: 2px;
 }
 .day-date {
-  font-size: 9px;
-  opacity: 0.8;
+  font-size: 11px;
+  opacity: 0.9;
 }
 
-/* Body e Righe */
+/* Righe */
 .turni-body {
   display: flex;
   flex-direction: column;
 }
 .turni-row {
   display: grid;
-  grid-template-columns: 60px repeat(7, 1fr);
+  grid-template-columns: 100px repeat(7, 1fr);
   border-bottom: 1px solid rgba(139, 69, 19, 0.1);
 }
 
-/* Colonna Orari Sticky Left (Molto stretta) */
+/* Colonna Orari Sticky Left */
 .turni-time-column,
 .turni-time-cell {
   position: sticky;
   left: 0;
   z-index: 5;
-  width: 60px; /* Molto stretta */
+  width: 100px;
   background-color: #fcf4e8;
-  border-right: 2px solid rgba(139, 69, 19, 0.3);
+  border-right: 2px solid rgba(139, 69, 19, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 9px; /* Testo orario piccolo */
+  font-size: 11px; /* Font orario ridotto */
   color: #8b4513;
-  padding: 2px;
-  text-align: center;
+  padding: 5px;
 }
-/* Angolo in alto a sinistra */
 .turni-time-column {
   background: #8b4513;
   color: white;
@@ -206,82 +226,81 @@
 
 /* Celle */
 .turni-cell {
-  padding: 2px;
+  padding: 5px;
   border-right: 1px solid rgba(139, 69, 19, 0.1);
-  min-height: 50px; /* Altezza celle ridotta al minimo */
+  min-height: 60px; /* Altezza celle ridotta */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  position: relative;
 }
 
-/* Colori celle */
+.turni-cell:hover {
+  background: rgba(210, 105, 30, 0.1);
+}
 .turni-cell.available {
   background: rgba(76, 175, 80, 0.1);
-  border-left: 2px solid #4caf50;
+  border-left: 3px solid #4caf50;
 }
 .turni-cell.assigned {
   background: rgba(33, 150, 243, 0.1);
-  border-left: 2px solid #2196f3;
+  border-left: 3px solid #2196f3;
 }
 .turni-cell.closed {
   background: rgba(158, 158, 158, 0.1);
-  border-left: 2px solid #9e9e9e;
+  border-left: 3px solid #9e9e9e;
 }
 .turni-cell.assigned-extraordinary {
   background-color: #fff3cd !important;
-  border-left: 2px solid #ffc107 !important;
+  border-left: 3px solid #ffc107 !important;
 }
 
-/* Testi dentro le celle (Minuscoli) */
+/* Testi celle ridotti */
 .turno-available {
   color: #2e7d32;
   font-weight: 600;
-  font-size: 10px;
+  font-size: 12px;
   text-align: center;
 }
 .turno-assigned {
   text-align: center;
   width: 100%;
-  overflow: hidden;
 }
 .user-name {
   color: #1565c0;
   font-weight: 600;
-  font-size: 10px;
-  line-height: 1.1;
+  font-size: 11px;
   margin-bottom: 1px;
-  /* Tronca il testo se troppo lungo */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 80px;
+  line-height: 1.2;
 }
 .turno-note {
   display: none;
-} /* Nascondi note */
+} /* Note nascoste per risparmiare spazio */
 .turno-nota-automatica {
   color: #ff9800;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 700;
   text-transform: uppercase;
   text-align: center;
-  display: block;
 }
 .turno-closed {
   color: #757575;
   font-weight: 500;
-  font-size: 10px;
+  font-size: 11px;
   text-align: center;
 }
 .turno-straordinario-badge {
-  font-size: 7px;
-  padding: 0 2px;
-  border-radius: 2px;
+  background-color: #ffc107;
+  color: #212529;
+  font-size: 8px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  display: inline-block;
 }
 
 /* =========================================
-   MODALE PICCOLA (Popup)
+   MODALE (Popup)
    ========================================= */
 .turno-modal-overlay {
   position: fixed;
@@ -294,19 +313,21 @@
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  backdrop-filter: blur(2px);
 }
 .turno-modal-content {
   background: rgb(248, 233, 205);
-  border-radius: 10px;
-  width: 90%;
-  max-width: 350px; /* Molto stretta */
-  max-height: 80vh;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 400px; /* Modale più stretta */
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid #8b4513;
 }
 .turno-modal-header {
-  padding: 10px 15px;
+  padding: 15px;
   background: rgba(255, 255, 255, 0.5);
   border-bottom: 1px solid rgba(139, 69, 19, 0.2);
   display: flex;
@@ -315,57 +336,82 @@
 }
 .turno-modal-header h3 {
   margin: 0;
-  font-size: 14px;
   color: #8b4513;
-}
-.close-button {
-  font-size: 18px;
-  padding: 5px;
-  width: 30px;
-  height: 30px;
+  font-size: 16px;
 }
 .turno-modal-body {
   padding: 15px;
   overflow-y: auto;
 }
 .turno-info {
-  padding: 8px;
-  margin-bottom: 10px;
-  font-size: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(139, 69, 19, 0.1);
+  font-size: 13px;
+}
+.form-group {
+  margin-bottom: 12px;
 }
 .form-group label {
-  font-size: 11px;
-  margin-bottom: 2px;
+  display: block;
+  color: #8b4513;
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 12px;
+  text-transform: uppercase;
 }
 .form-group select,
 .form-group input[type="text"] {
-  padding: 8px;
-  font-size: 13px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(139, 69, 19, 0.3);
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
 }
 .turno-modal-actions {
-  padding: 10px;
-  gap: 5px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(139, 69, 19, 0.1);
+  display: flex;
   flex-direction: column;
+  gap: 8px;
 }
-.turno-modal-actions button {
-  padding: 10px;
-  font-size: 12px;
+.cancel-button,
+.assign-button,
+.remove-button {
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  text-transform: uppercase;
   width: 100%;
-  margin: 0;
+}
+.cancel-button {
+  background: #e0e0e0;
+  color: #555;
+}
+.assign-button {
+  background: #4caf50;
+  color: white;
+}
+.remove-button {
+  background: #f44336;
+  color: white;
+}
+.close-button {
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #8b4513;
 }
 
-/* Animazione indicatore scroll */
-@keyframes blinkHint {
-  0%,
-  100% {
-    opacity: 0;
-    transform: translateX(5px);
-  }
-  50% {
-    opacity: 0.9;
-    transform: translateX(0);
-  }
-}
+/* Animazioni */
 @keyframes spin {
   0% {
     transform: rotate(0deg);
