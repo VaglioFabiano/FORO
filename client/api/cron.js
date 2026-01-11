@@ -1,4 +1,3 @@
-// api/cron.js
 import { createClient } from "@libsql/client/web";
 import { Resend } from "resend";
 
