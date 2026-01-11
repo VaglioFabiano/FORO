@@ -27,8 +27,7 @@ const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 const TEST_CHAT_ID = "1129901266"; // Chat ID per i test
 
 // Link Google Sheets per le presenze
-const GOOGLE_SHEETS_LINK =
-  "https://docs.google.com/spreadsheets/d/1JO-0aETjC09KJk-RptMsdc1CXnilvP6z/edit?gid=887368033#gid=887368033";
+const GOOGLE_SHEETS_LINK = "https://foroets.com/dashboard";
 
 // FUNZIONE PER OTTENERE L'ORARIO ITALIANO
 function getItalianTime() {
@@ -442,7 +441,7 @@ ${
 
 🔗 Accedi al sistema per gestire le presenze.
 
-📋 Accedi al Google Sheets: ${GOOGLE_SHEETS_LINK}`;
+📋 Accedi alla sezione della dashboard: ${GOOGLE_SHEETS_LINK}`;
 
         await sendTelegramMessage(utente.telegram_chat_id, message);
 
