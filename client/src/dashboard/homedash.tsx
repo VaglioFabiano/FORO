@@ -22,7 +22,7 @@ import {
   FcLandscape,
   FcHome,
   FcHighPriority,
-  FcBusinessman,
+  FcReading,
 } from "react-icons/fc";
 
 interface HomeDashProps {
@@ -135,7 +135,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "profilo-utente",
       title: "Il Mio Profilo",
       description: "Modifica le tue informazioni personali",
-      icon: <FcBusinessman size={iconSize} />,
+      icon: <FcReading size={iconSize} />,
       component: ProfiloUtente,
       minLevel: 4,
     },
