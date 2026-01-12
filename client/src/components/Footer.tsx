@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Edit } from "lucide-react";
+// Importiamo le icone
+import {
+  FaEdit,
+  FaTelegram,
+  FaInstagram,
+  FaFacebook,
+  FaEnvelope,
+} from "react-icons/fa";
 import "../style/footer.css";
 
 // --- LOGICA CACHE BASATA SU VERSIONE ---
 const CACHE_VERSION_KEY = "cachedHomepageVersion";
-const CACHE_DATA_KEY = "cachedHomepageData"; // Cache per l'intera risposta /api/homepage
+const CACHE_DATA_KEY = "cachedHomepageData";
 const CACHE_HEADER_KEY = "cachedHeaderData";
 const CACHE_SEGNALAZIONI_KEY = "cachedSegnalazioniData";
 
@@ -117,10 +124,9 @@ const Footer: React.FC = () => {
   const loadFooterData = async () => {
     setIsLoading(true);
 
-    // --- LOGICA CACHE ---
     const cookieConsent = localStorage.getItem("cookieConsent");
     const localVersion = getCachedVersion();
-    const cachedData = getCachedData(CACHE_DATA_KEY); // Usa la cache completa
+    const cachedData = getCachedData(CACHE_DATA_KEY);
 
     if (
       cookieConsent === "accepted" &&
@@ -133,7 +139,6 @@ const Footer: React.FC = () => {
       setIsLoading(false);
       return;
     }
-    // --- FINE LOGICA CACHE ---
 
     try {
       console.log("Fetching fresh data for Homepage (Footer)");
@@ -142,19 +147,16 @@ const Footer: React.FC = () => {
 
       if (data.success) {
         processFooterData(data.contatti);
-        // --- LOGICA CACHE ---
-        // Salva *tutti* i dati della homepage per pre-popolare altre cache
         setCachedData(CACHE_DATA_KEY, data);
         setCachedData(CACHE_HEADER_KEY, data.header?.descrizione);
         setCachedData(CACHE_SEGNALAZIONI_KEY, data.segnalazioni);
         setCachedVersion(data.header?.version);
-        // --- FINE LOGICA CACHE ---
       } else {
-        processFooterData(null); // Usa fallback
+        processFooterData(null);
       }
     } catch (error) {
       console.error("Errore nel caricamento dati footer:", error);
-      processFooterData(null); // Usa fallback
+      processFooterData(null);
     } finally {
       setIsLoading(false);
     }
@@ -201,10 +203,7 @@ const Footer: React.FC = () => {
           type: "success",
           text: "Contatti aggiornati con successo!",
         });
-
-        // --- LOGICA CACHE ---
-        invalidateHomepageCache(); // Invalida tutta la cache
-        // --- FINE LOGICA CACHE ---
+        invalidateHomepageCache();
       } else {
         throw new Error(data.error || "Errore nel salvataggio");
       }
@@ -226,27 +225,20 @@ const Footer: React.FC = () => {
       currentUser.level === 2);
 
   const renderEditModal = () => {
-    // ...il resto del tuo JSX (invariato) ...
     if (!isEditing) return null;
 
     return (
       <div className="footer-edit-modal-overlay" onClick={handleCancel}>
-               {" "}
         <div className="footer-edit-modal" onClick={(e) => e.stopPropagation()}>
-                   {" "}
           <div className="modal-header">
-                        <h3>Modifica Contatti</h3>           {" "}
+            <h3>Modifica Contatti</h3>
             <button className="close-button" onClick={handleCancel}>
               ×
             </button>
-                     {" "}
           </div>
-                             {" "}
           <div className="modal-body">
-                       {" "}
             <div className="form-group">
-                            <label htmlFor="email">Email</label>
-                           {" "}
+              <label htmlFor="email">Email</label>
               <input
                 id="email"
                 type="email"
@@ -257,12 +249,9 @@ const Footer: React.FC = () => {
                 placeholder="associazione@example.com"
                 disabled={isSaving}
               />
-                         {" "}
             </div>
-                                   {" "}
             <div className="form-group">
-                            <label htmlFor="telegram">Link Telegram</label>
-                           {" "}
+              <label htmlFor="telegram">Link Telegram</label>
               <input
                 id="telegram"
                 type="url"
@@ -273,12 +262,9 @@ const Footer: React.FC = () => {
                 placeholder="https://t.me/nomecanale"
                 disabled={isSaving}
               />
-                         {" "}
             </div>
-                                   {" "}
             <div className="form-group">
-                            <label htmlFor="instagram">Link Instagram</label>
-                           {" "}
+              <label htmlFor="instagram">Link Instagram</label>
               <input
                 id="instagram"
                 type="url"
@@ -289,12 +275,9 @@ const Footer: React.FC = () => {
                 placeholder="https://www.instagram.com/nomeprofilo/"
                 disabled={isSaving}
               />
-                         {" "}
             </div>
-                                   {" "}
             <div className="form-group">
-                            <label htmlFor="facebook">Link Facebook</label>
-                           {" "}
+              <label htmlFor="facebook">Link Facebook</label>
               <input
                 id="facebook"
                 type="url"
@@ -305,136 +288,117 @@ const Footer: React.FC = () => {
                 placeholder="https://www.facebook.com/nomepagina"
                 disabled={isSaving}
               />
-                         {" "}
             </div>
-                     {" "}
           </div>
-                             {" "}
           <div className="modal-actions">
-                       {" "}
             <button
               className="cancel-button"
               onClick={handleCancel}
               disabled={isSaving}
             >
-                            Annulla            {" "}
+              Annulla
             </button>
-                       {" "}
             <button
               className="save-button"
               onClick={handleSave}
               disabled={isSaving}
             >
-                          {isSaving ? "Salvando..." : "Salva"}           {" "}
+              {isSaving ? "Salvando..." : "Salva"}
             </button>
-                     {" "}
           </div>
-                 {" "}
         </div>
-             {" "}
       </div>
     );
   };
 
   if (isLoading) {
-    // ...il resto del tuo JSX (invariato) ...
     return (
       <footer className="footer-container">
-               {" "}
         <div className="footer-content">
-                   {" "}
           <div className="loading-state">
-                        <p>Caricamento contatti...</p>         {" "}
+            <p>Caricamento contatti...</p>
           </div>
-                 {" "}
         </div>
-             {" "}
       </footer>
     );
   }
 
+  const iconSize = 20;
+
   return (
-    // ...il resto del tuo JSX (invariato) ...
     <footer className="footer-container">
-           {" "}
       <div className="footer-content">
-               {" "}
         <div className="footer-header">
-                  <h3>Contatti</h3>       {" "}
+          <h3>Contatti</h3>
           {canEdit && (
             <button className="edit-footer-button" onClick={handleEdit}>
-                      <Edit size={16} />        Modifica        {" "}
+              {/* Icona Modifica generica */}
+              <FaEdit size={16} style={{ marginRight: "5px" }} /> Modifica
             </button>
           )}
-                 {" "}
         </div>
-               {" "}
         {message && (
           <div className={`footer-message ${message.type}`}>
-                    <span>{message.text}</span>       {" "}
-            <button onClick={() => setMessage(null)}>×</button>       {" "}
+            <span>{message.text}</span>
+            <button onClick={() => setMessage(null)}>×</button>
           </div>
         )}
-                       {" "}
         <div className="contact-info">
-                 {" "}
-          <p>
-                   {" "}
-            <a href={`mailto:${footerData.email}`}>
-                      {footerData.email}       {" "}
-            </a>
-                   {" "}
+          <p
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+            }}
+          >
+            {/* Icona Email arancione/dorata o bianca */}
+            <FaEnvelope size={iconSize} color="#f0ad4e" />
+            <a href={`mailto:${footerData.email}`}>{footerData.email}</a>
           </p>
-                 {" "}
         </div>
-                       {" "}
         <div className="social-links">
-                 {" "}
           {footerData.link_telegram && (
             <a
               href={footerData.link_telegram}
               target="_blank"
               rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-                      <span className="social-icon">📨</span> Telegram      
-               {" "}
+              {/* Telegram: Azzurro ufficiale */}
+              <FaTelegram size={iconSize} color="#0088cc" /> Telegram
             </a>
           )}
-                 {" "}
           {footerData.link_instagram && (
             <a
               href={footerData.link_instagram}
               target="_blank"
               rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-                      <span className="social-icon">📷</span> Instagram      
-               {" "}
+              {/* Instagram: Fucsia ufficiale */}
+              <FaInstagram size={iconSize} color="#E4405F" /> Instagram
             </a>
           )}
-                 {" "}
           {footerData.link_facebook && (
             <a
               href={footerData.link_facebook}
               target="_blank"
               rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-                      <span className="social-icon">👍</span> Facebook      
-               {" "}
+              {/* Facebook: Blu ufficiale */}
+              <FaFacebook size={iconSize} color="#1877F2" /> Facebook
             </a>
           )}
-                 {" "}
         </div>
-                       {" "}
         <div className="copyright">
-                 {" "}
           <p>
             © {new Date().getFullYear()} FORO ETS. Tutti i diritti riservati.
           </p>
-                 {" "}
         </div>
-             {" "}
       </div>
-            {renderEditModal()}   {" "}
+      {renderEditModal()}
     </footer>
   );
 };
