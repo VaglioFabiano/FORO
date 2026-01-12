@@ -237,9 +237,11 @@ async function createUser(req, res) {
     const salt = username.trim();
     const passwordHash = hashPassword(password, salt);
 
+    const sqlQuery =
+      "INSERT INTO users (name, surname, username, tel, level, password_hash, salt) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, name, surname, username, tel, level, created_at";
+
     const result = await client.execute({
-      sql: `INSERT INTO users (name, surname, username, tel, level, password_hash, salt)
-            VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, name, surname, username, tel, level, created_at`,
+      sql: sqlQuery,
       args: [
         name.trim(),
         surname.trim(),
