@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+// Importazione dei componenti originali
 import CreaUtenti from "./CreaUtenti";
 import ModificaOrari from "./ModificaOrari";
 import TelegramSender from "./TelegramSender";
@@ -11,6 +12,21 @@ import GestioneTurno from "./GestioneTurno";
 import AiutoAbbinamenti from "./AiutoAbbinamenti";
 import "../style/homeDash.css";
 
+// Importazione delle icone da react-icons (FontAwesome 5)
+import {
+  FaCalendarAlt,
+  FaUserCheck,
+  FaClock,
+  FaUserPlus,
+  FaUsers,
+  FaCalendarDay,
+  FaPalette,
+  FaTelegramPlane,
+  FaHome,
+  FaLifeRing,
+  FaUserCircle,
+} from "react-icons/fa";
+
 interface HomeDashProps {
   onLogout: () => void;
   onBackToHome: () => void;
@@ -20,7 +36,7 @@ interface DashboardItem {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode; // Cambiato da string a ReactNode per supportare i componenti SVG
   component?: React.ComponentType<any>;
   minLevel?: number;
   isHomepageLink?: boolean;
@@ -34,12 +50,15 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   );
   const [userLevel, setUserLevel] = useState<number>(-1);
 
+  // Configurazione dimensione icone
+  const iconSize = 32;
+
   const dashboardItems: DashboardItem[] = [
     {
       id: "turni",
       title: "Turni Aula Studio",
       description: "Form di gestione turni",
-      icon: "📅",
+      icon: <FaCalendarAlt size={iconSize} />,
       component: Turni,
       minLevel: 4,
     },
@@ -47,7 +66,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "presenze",
       title: "Presenze Aula Studio",
       description: "Form di gestione delle presenze",
-      icon: "🙋",
+      icon: <FaUserCheck size={iconSize} />,
       component: Presenze,
       minLevel: 4,
     },
@@ -55,7 +74,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "modifica-orari",
       title: "Modifica Orari",
       description: "Gestisci gli orari di apertura",
-      icon: "🕒",
+      icon: <FaClock size={iconSize} />,
       component: ModificaOrari,
       minLevel: 2,
     },
@@ -63,7 +82,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "crea-utenti",
       title: "Crea Utenti",
       description: "Gestisci e crea nuovi utenti",
-      icon: "👥",
+      icon: <FaUserPlus size={iconSize} />,
       component: CreaUtenti,
       minLevel: 1,
     },
@@ -71,7 +90,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "visualizza-utenti",
       title: "Visualizza Utenti",
       description: "Visualizza tutti gli utenti registrati",
-      icon: "👀",
+      icon: <FaUsers size={iconSize} />,
       component: VisualizzaUtenti,
       minLevel: 1,
     },
@@ -79,7 +98,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "gestisci-eventi",
       title: "Gestisci Eventi",
       description: "Crea e gestisci eventi e prenotazioni",
-      icon: "🎉",
+      icon: <FaCalendarDay size={iconSize} />,
       component: GestisciEventi,
       minLevel: 2,
     },
@@ -87,7 +106,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "aiuto-abbinamenti",
       title: "Aiuto Heidis",
       description: "Strumento per abbinare i colori per i daltonici",
-      icon: "🎨",
+      icon: <FaPalette size={iconSize} />,
       component: AiutoAbbinamenti,
       minLevel: 2,
     },
@@ -95,7 +114,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "telegram-sender",
       title: "Messaggi Telegram",
       description: "Invia messaggi via Telegram",
-      icon: "📱",
+      icon: <FaTelegramPlane size={iconSize} />,
       component: TelegramSender,
       minLevel: 0,
     },
@@ -103,7 +122,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "homepage",
       title: "Modifica Homepage",
       description: "Modifica la homepage del sito",
-      icon: "✏️🏠📄",
+      icon: <FaHome size={iconSize} />,
       minLevel: 2,
       isHomepageLink: true,
     },
@@ -111,7 +130,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "gestione-turno",
       title: "Gestione Turno",
       description: "Gestisci i turni degli utenti",
-      icon: "🆘",
+      icon: <FaLifeRing size={iconSize} />,
       component: GestioneTurno,
       minLevel: 4,
     },
@@ -119,7 +138,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "profilo-utente",
       title: "Il Mio Profilo",
       description: "Modifica le tue informazioni personali",
-      icon: "👤",
+      icon: <FaUserCircle size={iconSize} />,
       component: ProfiloUtente,
       minLevel: 4,
     },
@@ -247,6 +266,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
               onClick={() => handleCardClick(item)}
               style={{ cursor: "pointer" }}
             >
+              {/* Qui viene renderizzato il componente icona */}
               <div className="homedashcss_card-icon">{item.icon}</div>
               <h3 className="homedashcss_card-title">{item.title}</h3>
               <p className="homedashcss_card-description">{item.description}</p>
