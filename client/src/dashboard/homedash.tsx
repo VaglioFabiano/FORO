@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// Importazione dei componenti originali
 import CreaUtenti from "./CreaUtenti";
 import ModificaOrari from "./ModificaOrari";
 import TelegramSender from "./TelegramSender";
@@ -12,20 +11,19 @@ import GestioneTurno from "./GestioneTurno";
 import AiutoAbbinamenti from "./AiutoAbbinamenti";
 import "../style/homeDash.css";
 
-// Importazione delle icone da react-icons (FontAwesome 5)
+import { FaTelegram } from "react-icons/fa";
 import {
-  FaCalendarAlt,
-  FaUserCheck,
-  FaClock,
-  FaUserPlus,
-  FaUsers,
-  FaCalendarDay,
-  FaPalette,
-  FaTelegramPlane,
-  FaHome,
-  FaLifeRing,
-  FaUserCircle,
-} from "react-icons/fa";
+  FcCalendar,
+  FcTodoList,
+  FcClock,
+  FcInvite,
+  FcConferenceCall,
+  FcPlanner,
+  FcLandscape,
+  FcHome,
+  FcHighPriority,
+  FcBusinessman,
+} from "react-icons/fc";
 
 interface HomeDashProps {
   onLogout: () => void;
@@ -36,7 +34,7 @@ interface DashboardItem {
   id: string;
   title: string;
   description: string;
-  icon: React.ReactNode; // Cambiato da string a ReactNode per supportare i componenti SVG
+  icon: React.ReactNode;
   component?: React.ComponentType<any>;
   minLevel?: number;
   isHomepageLink?: boolean;
@@ -50,15 +48,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   );
   const [userLevel, setUserLevel] = useState<number>(-1);
 
-  // Configurazione dimensione icone
-  const iconSize = 32;
+  const iconSize = 35;
 
   const dashboardItems: DashboardItem[] = [
     {
       id: "turni",
       title: "Turni Aula Studio",
       description: "Form di gestione turni",
-      icon: <FaCalendarAlt size={iconSize} />,
+      icon: <FcCalendar size={iconSize} />,
       component: Turni,
       minLevel: 4,
     },
@@ -66,7 +63,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "presenze",
       title: "Presenze Aula Studio",
       description: "Form di gestione delle presenze",
-      icon: <FaUserCheck size={iconSize} />,
+      icon: <FcTodoList size={iconSize} />,
       component: Presenze,
       minLevel: 4,
     },
@@ -74,7 +71,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "modifica-orari",
       title: "Modifica Orari",
       description: "Gestisci gli orari di apertura",
-      icon: <FaClock size={iconSize} />,
+      icon: <FcClock size={iconSize} />,
       component: ModificaOrari,
       minLevel: 2,
     },
@@ -82,7 +79,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "crea-utenti",
       title: "Crea Utenti",
       description: "Gestisci e crea nuovi utenti",
-      icon: <FaUserPlus size={iconSize} />,
+      icon: <FcInvite size={iconSize} />,
       component: CreaUtenti,
       minLevel: 1,
     },
@@ -90,7 +87,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "visualizza-utenti",
       title: "Visualizza Utenti",
       description: "Visualizza tutti gli utenti registrati",
-      icon: <FaUsers size={iconSize} />,
+      icon: <FcConferenceCall size={iconSize} />,
       component: VisualizzaUtenti,
       minLevel: 1,
     },
@@ -98,7 +95,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "gestisci-eventi",
       title: "Gestisci Eventi",
       description: "Crea e gestisci eventi e prenotazioni",
-      icon: <FaCalendarDay size={iconSize} />,
+      icon: <FcPlanner size={iconSize} />,
       component: GestisciEventi,
       minLevel: 2,
     },
@@ -106,7 +103,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "aiuto-abbinamenti",
       title: "Aiuto Heidis",
       description: "Strumento per abbinare i colori per i daltonici",
-      icon: <FaPalette size={iconSize} />,
+      icon: <FcLandscape size={iconSize} />,
       component: AiutoAbbinamenti,
       minLevel: 2,
     },
@@ -114,7 +111,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "telegram-sender",
       title: "Messaggi Telegram",
       description: "Invia messaggi via Telegram",
-      icon: <FaTelegramPlane size={iconSize} />,
+      icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: TelegramSender,
       minLevel: 0,
     },
@@ -122,7 +119,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "homepage",
       title: "Modifica Homepage",
       description: "Modifica la homepage del sito",
-      icon: <FaHome size={iconSize} />,
+      icon: <FcHome size={iconSize} />,
       minLevel: 2,
       isHomepageLink: true,
     },
@@ -130,7 +127,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "gestione-turno",
       title: "Gestione Turno",
       description: "Gestisci i turni degli utenti",
-      icon: <FaLifeRing size={iconSize} />,
+      icon: <FcHighPriority size={iconSize} />,
       component: GestioneTurno,
       minLevel: 4,
     },
@@ -138,7 +135,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "profilo-utente",
       title: "Il Mio Profilo",
       description: "Modifica le tue informazioni personali",
-      icon: <FaUserCircle size={iconSize} />,
+      icon: <FcBusinessman size={iconSize} />,
       component: ProfiloUtente,
       minLevel: 4,
     },
@@ -188,7 +185,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   );
 
   const handleCardClick = (item: DashboardItem) => {
-    console.log("Card clicked:", item.id);
     if (item.isHomepageLink) {
       onBackToHome();
       setTimeout(() => {
@@ -200,13 +196,11 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       return;
     }
     if (item.component) {
-      console.log("Setting selected component:", item.id);
       setSelectedComponent(item.id);
     }
   };
 
   const handleBackToDashboard = () => {
-    console.log("Back to dashboard");
     setSelectedComponent(null);
   };
 
@@ -228,11 +222,9 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     return null;
   }
 
-  // Rendering del componente selezionato
   if (selectedComponent) {
     const SelectedComponent = getSelectedComponent();
     if (!SelectedComponent) {
-      console.error("Componente non trovato:", selectedComponent);
       setSelectedComponent(null);
       return null;
     }
@@ -254,7 +246,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     );
   }
 
-  // Rendering della dashboard principale
   return (
     <div className="homedashcss_dashboard-container">
       <div className="homedashcss_dashboard-grid">
@@ -266,7 +257,6 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
               onClick={() => handleCardClick(item)}
               style={{ cursor: "pointer" }}
             >
-              {/* Qui viene renderizzato il componente icona */}
               <div className="homedashcss_card-icon">{item.icon}</div>
               <h3 className="homedashcss_card-title">{item.title}</h3>
               <p className="homedashcss_card-description">{item.description}</p>
