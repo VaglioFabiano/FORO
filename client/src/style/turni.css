@@ -274,9 +274,22 @@
   margin-bottom: 1px;
   line-height: 1.2;
 }
+
 .turno-note {
-  display: none;
-} /* Note nascoste per risparmiare spazio */
+  display: block;
+  color: #555;
+  font-size: 10px;
+  font-style: italic;
+  margin-top: 3px;
+  line-height: 1.1;
+  font-weight: normal;
+
+  white-space: normal;
+  overflow: hidden;
+  max-height: 24px;
+  text-overflow: ellipsis;
+}
+/* Note nascoste per risparmiare spazio .turno-note {display: none;}*/
 .turno-nota-automatica {
   color: #ff9800;
   font-size: 8px;

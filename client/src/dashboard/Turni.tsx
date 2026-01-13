@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import '../style/turni.css';
+import React, { useState, useEffect } from "react";
+import "../style/turni.css";
 
 interface Turno {
   id: number | null;
@@ -29,11 +29,11 @@ interface User {
 }
 
 interface Message {
-  type: 'success' | 'error' | 'info';
+  type: "success" | "error" | "info";
   text: string;
 }
 
-type WeekType = 'corrente' | 'prossima' | 'plus2' | 'plus3';
+type WeekType = "corrente" | "prossima" | "plus2" | "plus3";
 
 const Turni: React.FC = () => {
   const [turniCorrente, setTurniCorrente] = useState<Turno[]>([]);
@@ -43,19 +43,32 @@ const Turni: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<Message | null>(null);
-  const [selectedWeek, setSelectedWeek] = useState<WeekType>('corrente');
+  const [selectedWeek, setSelectedWeek] = useState<WeekType>("corrente");
   const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState("");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isClosedOverride, setIsClosedOverride] = useState(false);
-  
-  // State for search bar
-  const [userSearchTerm, setUserSearchTerm] = useState('');
 
-  const giorni = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
-  const orariTemplate = ['09:00-13:00', '13:00-16:00', '16:00-19:30', '21:00-24:00'];
+  // State for search bar
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+
+  const giorni = [
+    "Lunedì",
+    "Martedì",
+    "Mercoledì",
+    "Giovedì",
+    "Venerdì",
+    "Sabato",
+    "Domenica",
+  ];
+  const orariTemplate = [
+    "09:00-13:00",
+    "13:00-16:00",
+    "16:00-19:30",
+    "21:00-24:00",
+  ];
 
   useEffect(() => {
     fetchAllTurni();
@@ -63,41 +76,39 @@ const Turni: React.FC = () => {
     getCurrentUser();
   }, []);
 
-  
-
   const getCurrentUser = () => {
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem("user");
     if (userData) {
       try {
         const user = JSON.parse(userData);
         setCurrentUser(user);
       } catch (error) {
-        console.error('Errore nel parsing user data:', error);
+        console.error("Errore nel parsing user data:", error);
       }
     }
   };
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/user');
+      const response = await fetch("/api/user");
       const data = await response.json();
-      
+
       if (data.success) {
         setUsers(data.users);
       }
     } catch (error) {
-      console.error('Errore nel caricamento utenti:', error);
+      console.error("Errore nel caricamento utenti:", error);
     }
   };
 
   const fetchAllTurni = async () => {
     setLoading(true);
     try {
-      const settimane: WeekType[] = ['corrente', 'prossima', 'plus2', 'plus3'];
-      const promises = settimane.map(settimana => 
+      const settimane: WeekType[] = ["corrente", "prossima", "plus2", "plus3"];
+      const promises = settimane.map((settimana) =>
         fetch(`/api/turni?settimana=${settimana}`)
-          .then(response => response.json())
-          .then(data => ({ settimana, data }))
+          .then((response) => response.json())
+          .then((data) => ({ settimana, data }))
       );
 
       const results = await Promise.all(promises);
@@ -105,33 +116,36 @@ const Turni: React.FC = () => {
       results.forEach(({ settimana, data }) => {
         if (data.success) {
           switch (settimana) {
-            case 'corrente':
+            case "corrente":
               setTurniCorrente(data.turni);
               break;
-            case 'prossima':
+            case "prossima":
               setTurniProssima(data.turni);
               break;
-            case 'plus2':
+            case "plus2":
               setTurniPlus2(data.turni);
               break;
-            case 'plus3':
+            case "plus3":
               setTurniPlus3(data.turni);
               break;
           }
         }
       });
-
     } catch (error) {
-      console.error('Errore nel caricamento turni:', error);
-      setMessage({ type: 'error', text: 'Errore nel caricamento dei turni' });
+      console.error("Errore nel caricamento turni:", error);
+      setMessage({ type: "error", text: "Errore nel caricamento dei turni" });
     } finally {
       setLoading(false);
     }
   };
 
   // Verifica se un turno DOVREBBE essere chiuso secondo le regole di default
-  const isSlotNaturallyClosed = (dayIndex: number, turnoIndex: number, weekType: WeekType): boolean => {
-    if (weekType === 'plus2' || weekType === 'plus3') {
+  const isSlotNaturallyClosed = (
+    dayIndex: number,
+    turnoIndex: number,
+    weekType: WeekType
+  ): boolean => {
+    if (weekType === "plus2" || weekType === "plus3") {
       if (turnoIndex === 3) return true; // 21:00-24:00
       if (dayIndex === 5 || dayIndex === 6) return true; // Weekend
     }
@@ -142,72 +156,88 @@ const Turni: React.FC = () => {
   const isTurnoStraordinario = (turno: Turno): boolean => {
     if (!turno.assegnato) return false;
     if (turno.is_closed_override === true) return true;
-    if (isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) return true;
+    if (isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek))
+      return true;
     return false;
   };
 
   // Crea pseudo-turno per celle vuote
   const createClosedTurno = (dayIndex: number, turnoIndex: number): Turno => {
-    const weekOffset = selectedWeek === 'corrente' ? 0 : 
-                     selectedWeek === 'prossima' ? 1 : 
-                     selectedWeek === 'plus2' ? 2 : 3;
-    
+    const weekOffset =
+      selectedWeek === "corrente"
+        ? 0
+        : selectedWeek === "prossima"
+          ? 1
+          : selectedWeek === "plus2"
+            ? 2
+            : 3;
+
     const now = new Date();
     const currentDay = now.getDay();
     const monday = new Date(now);
-    monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + (weekOffset * 7));
+    monday.setDate(
+      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+    );
     const targetDate = new Date(monday);
     targetDate.setDate(monday.getDate() + dayIndex);
-    
+
     const orari = [
-      { inizio: '09:00', fine: '13:00' },
-      { inizio: '13:00', fine: '16:00' },
-      { inizio: '16:00', fine: '19:30' },
-      { inizio: '21:00', fine: '24:00' }
+      { inizio: "09:00", fine: "13:00" },
+      { inizio: "13:00", fine: "16:00" },
+      { inizio: "16:00", fine: "19:30" },
+      { inizio: "21:00", fine: "24:00" },
     ];
-    
+
     return {
       id: null,
-      data: targetDate.toISOString().split('T')[0],
+      data: targetDate.toISOString().split("T")[0],
       turno_inizio: orari[turnoIndex].inizio,
       turno_fine: orari[turnoIndex].fine,
       fascia_id: 1,
       user_id: null,
-      note: '',
-      user_name: '',
-      user_surname: '',
-      user_username: '',
+      note: "",
+      user_name: "",
+      user_surname: "",
+      user_username: "",
       assegnato: false,
       day_index: dayIndex,
       turno_index: turnoIndex,
-      nota_automatica: '',
-      is_default: true
+      nota_automatica: "",
+      is_default: true,
     };
   };
 
   const handleTurnoClick = (turno: Turno, isCompletelyClosedCell = false) => {
     setSelectedTurno(turno);
     setSelectedUserId(turno.user_id || currentUser?.id || null);
-    setNote(turno.note || '');
-    setUserSearchTerm(''); // Reset search term when opening modal
-    
-    if (isCompletelyClosedCell || isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)) {
+    setNote(turno.note || "");
+    setUserSearchTerm(""); // Reset search term when opening modal
+
+    if (
+      isCompletelyClosedCell ||
+      isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)
+    ) {
       setIsClosedOverride(false);
     } else {
       setIsClosedOverride(false);
     }
-    
+
     setIsModalOpen(true);
   };
 
   const handleAssegnaTurno = async () => {
-    if (!selectedTurno || selectedUserId === null || selectedUserId === undefined) return;
+    if (
+      !selectedTurno ||
+      selectedUserId === null ||
+      selectedUserId === undefined
+    )
+      return;
 
     try {
-      const response = await fetch('/api/turni', {
-        method: 'POST',
+      const response = await fetch("/api/turni", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           data: selectedTurno.data,
@@ -217,35 +247,48 @@ const Turni: React.FC = () => {
           user_id: selectedUserId,
           note: note,
           is_closed_override: isClosedOverride,
-          current_user_id: currentUser?.id
+          current_user_id: currentUser?.id,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Turno assegnato con successo!' });
-        
+        setMessage({ type: "success", text: "Turno assegnato con successo!" });
+
         const newTurno: Turno = {
           ...selectedTurno,
           id: data.turno_id || data.turno?.id || Date.now(),
           user_id: selectedUserId,
           note: note,
           assegnato: true,
-          user_name: users.find(u => u.id === selectedUserId)?.name || '',
-          user_surname: users.find(u => u.id === selectedUserId)?.surname || '',
-          user_username: users.find(u => u.id === selectedUserId)?.username || '',
-          is_closed_override: isClosedOverride || isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek)
+          user_name: users.find((u) => u.id === selectedUserId)?.name || "",
+          user_surname:
+            users.find((u) => u.id === selectedUserId)?.surname || "",
+          user_username:
+            users.find((u) => u.id === selectedUserId)?.username || "",
+          is_closed_override:
+            isClosedOverride ||
+            isSlotNaturallyClosed(
+              selectedTurno.day_index,
+              selectedTurno.turno_index,
+              selectedWeek
+            ),
         };
 
-        const updateWeekState = (setter: React.Dispatch<React.SetStateAction<Turno[]>>) => {
-          setter(prev => {
-            const filtered = prev.filter(t => 
-              !(t.data === newTurno.data && 
-                t.turno_inizio === newTurno.turno_inizio && 
-                t.turno_fine === newTurno.turno_fine)
+        const updateWeekState = (
+          setter: React.Dispatch<React.SetStateAction<Turno[]>>
+        ) => {
+          setter((prev) => {
+            const filtered = prev.filter(
+              (t) =>
+                !(
+                  t.data === newTurno.data &&
+                  t.turno_inizio === newTurno.turno_inizio &&
+                  t.turno_fine === newTurno.turno_fine
+                )
             );
-            
+
             return [...filtered, newTurno].sort((a, b) => {
               if (a.data !== b.data) return a.data.localeCompare(b.data);
               if (a.day_index !== b.day_index) return a.day_index - b.day_index;
@@ -255,16 +298,16 @@ const Turni: React.FC = () => {
         };
 
         switch (selectedWeek) {
-          case 'corrente':
+          case "corrente":
             updateWeekState(setTurniCorrente);
             break;
-          case 'prossima':
+          case "prossima":
             updateWeekState(setTurniProssima);
             break;
-          case 'plus2':
+          case "plus2":
             updateWeekState(setTurniPlus2);
             break;
-          case 'plus3':
+          case "plus3":
             updateWeekState(setTurniPlus3);
             break;
         }
@@ -272,11 +315,14 @@ const Turni: React.FC = () => {
         closeModal();
         fetchAllTurni();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Errore nell\'assegnazione' });
+        setMessage({
+          type: "error",
+          text: data.error || "Errore nell'assegnazione",
+        });
       }
     } catch (error) {
-      console.error('Errore nell\'assegnazione turno:', error);
-      setMessage({ type: 'error', text: 'Errore di connessione' });
+      console.error("Errore nell'assegnazione turno:", error);
+      setMessage({ type: "error", text: "Errore di connessione" });
     }
   };
 
@@ -284,31 +330,34 @@ const Turni: React.FC = () => {
     if (!selectedTurno) return;
 
     try {
-      const response = await fetch('/api/turni', {
-        method: 'DELETE',
+      const response = await fetch("/api/turni", {
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           data: selectedTurno.data,
           turno_inizio: selectedTurno.turno_inizio,
           turno_fine: selectedTurno.turno_fine,
-          current_user_id: currentUser?.id
+          current_user_id: currentUser?.id,
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Turno rimosso con successo!' });
+        setMessage({ type: "success", text: "Turno rimosso con successo!" });
         fetchAllTurni();
         closeModal();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Errore nella rimozione' });
+        setMessage({
+          type: "error",
+          text: data.error || "Errore nella rimozione",
+        });
       }
     } catch (error) {
-      console.error('Errore nella rimozione turno:', error);
-      setMessage({ type: 'error', text: 'Errore di connessione' });
+      console.error("Errore nella rimozione turno:", error);
+      setMessage({ type: "error", text: "Errore di connessione" });
     }
   };
 
@@ -316,16 +365,16 @@ const Turni: React.FC = () => {
     setIsModalOpen(false);
     setSelectedTurno(null);
     setSelectedUserId(null);
-    setNote('');
+    setNote("");
     setIsClosedOverride(false);
-    setUserSearchTerm(''); // Reset search term when closing modal
+    setUserSearchTerm(""); // Reset search term when closing modal
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('it-IT', {
-      day: '2-digit',
-      month: '2-digit'
+    return date.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
     });
   };
 
@@ -333,11 +382,13 @@ const Turni: React.FC = () => {
     const now = new Date();
     const currentDay = now.getDay();
     const monday = new Date(now);
-    monday.setDate(now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + (weekOffset * 7));
+    monday.setDate(
+      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+    );
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    
-    return `${monday.getDate()}-${sunday.getDate()} ${monday.toLocaleDateString('it-IT', { month: 'long' })}`;
+
+    return `${monday.getDate()}-${sunday.getDate()} ${monday.toLocaleDateString("it-IT", { month: "long" })}`;
   };
 
   const getCurrentWeekRange = () => getWeekRange(0);
@@ -347,11 +398,11 @@ const Turni: React.FC = () => {
 
   const getCurrentTurni = (): Turno[] => {
     switch (selectedWeek) {
-      case 'prossima':
+      case "prossima":
         return turniProssima;
-      case 'plus2':
+      case "plus2":
         return turniPlus2;
-      case 'plus3':
+      case "plus3":
         return turniPlus3;
       default:
         return turniCorrente;
@@ -361,50 +412,50 @@ const Turni: React.FC = () => {
   // Organizza turni per rendering dinamico della griglia
   const organizeRenderingData = (turni: Turno[]) => {
     const turniPerGiorno: { [dayIndex: number]: { [key: string]: Turno } } = {};
-    
+
     // Inizializza struttura per ogni giorno
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       turniPerGiorno[dayIndex] = {};
     }
-    
+
     // Organizza turni esistenti
-    turni.forEach(turno => {
+    turni.forEach((turno) => {
       const key = `${turno.turno_inizio}-${turno.turno_fine}`;
       if (!turniPerGiorno[turno.day_index]) {
         turniPerGiorno[turno.day_index] = {};
       }
       turniPerGiorno[turno.day_index][key] = turno;
     });
-    
+
     return turniPerGiorno;
   };
 
   // Ottieni tutti gli orari unici per una settimana
   const getUniqueTimeSlots = (turni: Turno[]) => {
     const slotsSet = new Set<string>();
-    
+
     // Aggiungi slot standard come fallback
-    orariTemplate.forEach(slot => slotsSet.add(slot));
-    
+    orariTemplate.forEach((slot) => slotsSet.add(slot));
+
     // Aggiungi slot dai turni reali
-    turni.forEach(turno => {
+    turni.forEach((turno) => {
       const slot = `${turno.turno_inizio}-${turno.turno_fine}`;
       slotsSet.add(slot);
     });
-    
+
     const slots = Array.from(slotsSet).sort((a, b) => {
-      const [aStart] = a.split('-');
-      const [bStart] = b.split('-');
+      const [aStart] = a.split("-");
+      const [bStart] = b.split("-");
       return aStart.localeCompare(bStart);
     });
-    
+
     return slots;
   };
 
   const renderTurniGrid = (turni: Turno[]) => {
     const turniPerGiorno = organizeRenderingData(turni);
     const timeSlots = getUniqueTimeSlots(turni);
-    
+
     return (
       <div className="turni-grid">
         <div className="turni-header">
@@ -413,8 +464,9 @@ const Turni: React.FC = () => {
             <div key={index} className="turni-day-header">
               <div className="day-name">{giorno}</div>
               <div className="day-date">
-                {turni.find(t => t.day_index === index) ? 
-                  formatDate(turni.find(t => t.day_index === index)!.data) : ''}
+                {turni.find((t) => t.day_index === index)
+                  ? formatDate(turni.find((t) => t.day_index === index)!.data)
+                  : ""}
               </div>
             </div>
           ))}
@@ -426,29 +478,44 @@ const Turni: React.FC = () => {
               <div className="turni-time-cell">{timeSlot}</div>
               {giorni.map((_, dayIndex) => {
                 const turno = turniPerGiorno[dayIndex][timeSlot];
-                const [slotStart, slotEnd] = timeSlot.split('-');
-                
+                const [slotStart, slotEnd] = timeSlot.split("-");
+
                 // Trova turno_index per il mapping alla griglia standard
-                const standardSlotIndex = orariTemplate.findIndex(slot => slot === timeSlot);
-                const turnoIndex = standardSlotIndex !== -1 ? standardSlotIndex : slotIndex;
-                
-                const isSlotClosed = isSlotNaturallyClosed(dayIndex, turnoIndex, selectedWeek);
-                const isStraordinario = turno ? isTurnoStraordinario(turno) : false;
-                
+                const standardSlotIndex = orariTemplate.findIndex(
+                  (slot) => slot === timeSlot
+                );
+                const turnoIndex =
+                  standardSlotIndex !== -1 ? standardSlotIndex : slotIndex;
+
+                const isSlotClosed = isSlotNaturallyClosed(
+                  dayIndex,
+                  turnoIndex,
+                  selectedWeek
+                );
+                const isStraordinario = turno
+                  ? isTurnoStraordinario(turno)
+                  : false;
+
                 return (
                   <div
                     key={`${dayIndex}-${slotIndex}`}
                     className={`turni-cell ${
-                      turno?.assegnato ? 
-                        (isStraordinario ? 'assigned-extraordinary' : 'assigned') : 
-                      turno && !isSlotClosed ? 'available' : 
-                      'closed'
+                      turno?.assegnato
+                        ? isStraordinario
+                          ? "assigned-extraordinary"
+                          : "assigned"
+                        : turno && !isSlotClosed
+                          ? "available"
+                          : "closed"
                     }`}
                     onClick={() => {
                       if (turno) {
                         handleTurnoClick(turno);
                       } else {
-                        const pseudoTurno = createClosedTurno(dayIndex, turnoIndex);
+                        const pseudoTurno = createClosedTurno(
+                          dayIndex,
+                          turnoIndex
+                        );
                         pseudoTurno.turno_inizio = slotStart;
                         pseudoTurno.turno_fine = slotEnd;
                         handleTurnoClick(pseudoTurno, true);
@@ -456,39 +523,59 @@ const Turni: React.FC = () => {
                     }}
                   >
                     {turno?.assegnato ? (
-                      <div className={`turno-assigned ${isStraordinario ? 'straordinario' : ''}`}>
-                        <div className="user-name">{turno.user_name} {turno.user_surname}</div>
+                      <div
+                        className={`turno-assigned ${isStraordinario ? "straordinario" : ""}`}
+                      >
+                        <div className="user-name">
+                          {turno.user_name} {turno.user_surname}
+                        </div>
                         {isStraordinario && (
-                          <div className="turno-straordinario-badge">⚡ Straordinario</div>
+                          <div className="turno-straordinario-badge">
+                            ⚡ Straordinario
+                          </div>
                         )}
                         {turno.nota_automatica && (
-                          <div className="turno-nota-automatica">{turno.nota_automatica}</div>
+                          <div className="turno-nota-automatica">
+                            {turno.nota_automatica}
+                          </div>
                         )}
                         {turno.note && (
-                          <div className="turno-note">{turno.note}</div>
+                          <div className="turno-note" title={turno.note}>
+                            {turno.note}
+                          </div>
                         )}
                       </div>
                     ) : turno && !isSlotClosed ? (
                       <div className="turno-available">
                         <div>Disponibile</div>
                         {turno.nota_automatica && (
-                          <div className="turno-nota-automatica">{turno.nota_automatica}</div>
+                          <div className="turno-nota-automatica">
+                            {turno.nota_automatica}
+                          </div>
                         )}
                       </div>
                     ) : turno && isSlotClosed ? (
                       <div className="turno-closed">
                         <div>Chiuso</div>
                         {turno.nota_automatica && (
-                          <div className="turno-nota-automatica">{turno.nota_automatica}</div>
+                          <div className="turno-nota-automatica">
+                            {turno.nota_automatica}
+                          </div>
                         )}
-                        <div className="turno-nota-automatica" style={{fontSize: '9px', marginTop: '2px'}}>
+                        <div
+                          className="turno-nota-automatica"
+                          style={{ fontSize: "9px", marginTop: "2px" }}
+                        >
                           (Clicca per richiedere)
                         </div>
                       </div>
                     ) : (
                       <div className="turno-closed">
                         <div>Chiuso</div>
-                        <div className="turno-nota-automatica" style={{fontSize: '9px', marginTop: '2px'}}>
+                        <div
+                          className="turno-nota-automatica"
+                          style={{ fontSize: "9px", marginTop: "2px" }}
+                        >
                           (Clicca per richiedere)
                         </div>
                       </div>
@@ -503,21 +590,32 @@ const Turni: React.FC = () => {
     );
   };
 
-  const filteredUsers = users.filter(user => 
-    `${user.name} ${user.surname}`.toLowerCase().includes(userSearchTerm.toLowerCase()) || 
-    user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      `${user.name} ${user.surname}`
+        .toLowerCase()
+        .includes(userSearchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
   );
 
   useEffect(() => {
-  // Auto-seleziona l'utente quando c'è un solo risultato filtrato
-  if (filteredUsers.length === 1 && userSearchTerm !== '' && !selectedUserId) {
-    setSelectedUserId(filteredUsers[0].id);
-  }
-  // Deseleziona se l'utente selezionato non è più nei risultati filtrati
-  if (selectedUserId && filteredUsers.length > 0 && !filteredUsers.some(user => user.id === selectedUserId)) {
-    setSelectedUserId(null);
-  }
-}, [filteredUsers, userSearchTerm, selectedUserId]);
+    // Auto-seleziona l'utente quando c'è un solo risultato filtrato
+    if (
+      filteredUsers.length === 1 &&
+      userSearchTerm !== "" &&
+      !selectedUserId
+    ) {
+      setSelectedUserId(filteredUsers[0].id);
+    }
+    // Deseleziona se l'utente selezionato non è più nei risultati filtrati
+    if (
+      selectedUserId &&
+      filteredUsers.length > 0 &&
+      !filteredUsers.some((user) => user.id === selectedUserId)
+    ) {
+      setSelectedUserId(null);
+    }
+  }, [filteredUsers, userSearchTerm, selectedUserId]);
 
   if (loading) {
     return (
@@ -534,29 +632,29 @@ const Turni: React.FC = () => {
     <div className="turni-container">
       <div className="turni-header-section">
         <h1>📅 Gestione Turni</h1>
-        
+
         <div className="week-selector">
           <button
-            className={`week-button ${selectedWeek === 'corrente' ? 'active' : ''}`}
-            onClick={() => setSelectedWeek('corrente')}
+            className={`week-button ${selectedWeek === "corrente" ? "active" : ""}`}
+            onClick={() => setSelectedWeek("corrente")}
           >
             Settimana Corrente ({getCurrentWeekRange()})
           </button>
           <button
-            className={`week-button ${selectedWeek === 'prossima' ? 'active' : ''}`}
-            onClick={() => setSelectedWeek('prossima')}
+            className={`week-button ${selectedWeek === "prossima" ? "active" : ""}`}
+            onClick={() => setSelectedWeek("prossima")}
           >
             Prossima Settimana ({getNextWeekRange()})
           </button>
           <button
-            className={`week-button ${selectedWeek === 'plus2' ? 'active' : ''}`}
-            onClick={() => setSelectedWeek('plus2')}
+            className={`week-button ${selectedWeek === "plus2" ? "active" : ""}`}
+            onClick={() => setSelectedWeek("plus2")}
           >
             Settimana ({getPlus2WeekRange()})
           </button>
           <button
-            className={`week-button ${selectedWeek === 'plus3' ? 'active' : ''}`}
-            onClick={() => setSelectedWeek('plus3')}
+            className={`week-button ${selectedWeek === "plus3" ? "active" : ""}`}
+            onClick={() => setSelectedWeek("plus3")}
           >
             Settimana ({getPlus3WeekRange()})
           </button>
@@ -570,57 +668,80 @@ const Turni: React.FC = () => {
       {message && (
         <div className={`turni-message ${message.type}`}>
           <div className="message-icon">
-            {message.type === 'success' ? '✅' : message.type === 'error' ? '❌' : 'ℹ️'}
+            {message.type === "success"
+              ? "✅"
+              : message.type === "error"
+                ? "❌"
+                : "ℹ️"}
           </div>
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="close-message">×</button>
+          <button onClick={() => setMessage(null)} className="close-message">
+            ×
+          </button>
         </div>
       )}
 
-      <div className="turni-content">
-        {renderTurniGrid(getCurrentTurni())}
-      </div>
+      <div className="turni-content">{renderTurniGrid(getCurrentTurni())}</div>
 
       {isModalOpen && selectedTurno && (
         <div className="turno-modal-overlay" onClick={closeModal}>
-          <div className="turno-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="turno-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="turno-modal-header">
               <h3>
-                {(isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
-                  !getCurrentTurni().find(t => 
-                    t.data === selectedTurno.data && 
-                    t.turno_inizio === selectedTurno.turno_inizio && 
-                    t.turno_fine === selectedTurno.turno_fine
-                  )) && !selectedTurno.assegnato ? 
-                  '⚠️ Richiesta Turno Straordinario' : 
-                  'Gestisci Turno'
-                }
+                {(isSlotNaturallyClosed(
+                  selectedTurno.day_index,
+                  selectedTurno.turno_index,
+                  selectedWeek
+                ) ||
+                  !getCurrentTurni().find(
+                    (t) =>
+                      t.data === selectedTurno.data &&
+                      t.turno_inizio === selectedTurno.turno_inizio &&
+                      t.turno_fine === selectedTurno.turno_fine
+                  )) &&
+                !selectedTurno.assegnato
+                  ? "⚠️ Richiesta Turno Straordinario"
+                  : "Gestisci Turno"}
               </h3>
-              <button onClick={closeModal} className="close-button">✕</button>
+              <button onClick={closeModal} className="close-button">
+                ✕
+              </button>
             </div>
 
             <div className="turno-modal-body">
               <div className="turno-info">
-                <p><strong>Data:</strong> {formatDate(selectedTurno.data)}</p>
-                <p><strong>Orario:</strong> {selectedTurno.turno_inizio} - {selectedTurno.turno_fine}</p>
-                {(isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
-                  !getCurrentTurni().find(t => 
-                    t.data === selectedTurno.data && 
-                    t.turno_inizio === selectedTurno.turno_inizio && 
-                    t.turno_fine === selectedTurno.turno_fine
+                <p>
+                  <strong>Data:</strong> {formatDate(selectedTurno.data)}
+                </p>
+                <p>
+                  <strong>Orario:</strong> {selectedTurno.turno_inizio} -{" "}
+                  {selectedTurno.turno_fine}
+                </p>
+                {(isSlotNaturallyClosed(
+                  selectedTurno.day_index,
+                  selectedTurno.turno_index,
+                  selectedWeek
+                ) ||
+                  !getCurrentTurni().find(
+                    (t) =>
+                      t.data === selectedTurno.data &&
+                      t.turno_inizio === selectedTurno.turno_inizio &&
+                      t.turno_fine === selectedTurno.turno_fine
                   )) && (
-                  <p style={{color: '#ff9800', fontWeight: 'bold'}}>
+                  <p style={{ color: "#ff9800", fontWeight: "bold" }}>
                     ⚠️ Questo è normalmente un turno chiuso
                   </p>
                 )}
                 {selectedTurno.is_default && (
-                  <p style={{color: '#666', fontSize: '12px'}}>
+                  <p style={{ color: "#666", fontSize: "12px" }}>
                     📋 Turno con orari di default
                   </p>
                 )}
               </div>
 
-              
               <div className="form-group">
                 <label htmlFor="user-select">Seleziona Utente:</label>
                 <input
@@ -632,28 +753,26 @@ const Turni: React.FC = () => {
                 />
                 <select
                   id="user-select"
-                  value={selectedUserId || ''}
+                  value={selectedUserId || ""}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
                   size={Math.min(Math.max(filteredUsers.length + 1, 3), 10)} // +1 per l'opzione "Seleziona un utente"
                 >
                   {/* Mostra l'opzione "Seleziona un utente" solo se non c'è ricerca attiva o ci sono più risultati */}
-                  {(userSearchTerm === '' || filteredUsers.length !== 1) && (
+                  {(userSearchTerm === "" || filteredUsers.length !== 1) && (
                     <option value="">Seleziona un utente</option>
                   )}
-                  
-                  {filteredUsers.map(user => (
+
+                  {filteredUsers.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.name} {user.surname} ({user.username})
                     </option>
                   ))}
-                  
-                  {filteredUsers.length === 0 && userSearchTerm !== '' && (
+
+                  {filteredUsers.length === 0 && userSearchTerm !== "" && (
                     <option disabled>Nessun utente trovato</option>
                   )}
                 </select>
               </div>
-
-
 
               <div className="form-group">
                 <label htmlFor="note-input">Note (opzionale):</label>
@@ -663,36 +782,47 @@ const Turni: React.FC = () => {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder={
-                    (isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
-                     !getCurrentTurni().find(t => 
-                       t.data === selectedTurno.data && 
-                       t.turno_inizio === selectedTurno.turno_inizio && 
-                       t.turno_fine === selectedTurno.turno_fine
-                     )) ? 
-                    "Motivo della richiesta..." : 
-                    "Aggiungi una nota..."
+                    isSlotNaturallyClosed(
+                      selectedTurno.day_index,
+                      selectedTurno.turno_index,
+                      selectedWeek
+                    ) ||
+                    !getCurrentTurni().find(
+                      (t) =>
+                        t.data === selectedTurno.data &&
+                        t.turno_inizio === selectedTurno.turno_inizio &&
+                        t.turno_fine === selectedTurno.turno_fine
+                    )
+                      ? "Motivo della richiesta..."
+                      : "Aggiungi una nota..."
                   }
                 />
               </div>
 
-              {(isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
-                !getCurrentTurni().find(t => 
-                  t.data === selectedTurno.data && 
-                  t.turno_inizio === selectedTurno.turno_inizio && 
-                  t.turno_fine === selectedTurno.turno_fine
-                )) && !selectedTurno.assegnato && (
-                <div className="form-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={isClosedOverride}
-                      onChange={(e) => setIsClosedOverride(e.target.checked)}
-                      style={{marginRight: '8px'}}
-                    />
-                    Confermo di voler richiedere questo turno straordinario
-                  </label>
-                </div>
-              )}
+              {(isSlotNaturallyClosed(
+                selectedTurno.day_index,
+                selectedTurno.turno_index,
+                selectedWeek
+              ) ||
+                !getCurrentTurni().find(
+                  (t) =>
+                    t.data === selectedTurno.data &&
+                    t.turno_inizio === selectedTurno.turno_inizio &&
+                    t.turno_fine === selectedTurno.turno_fine
+                )) &&
+                !selectedTurno.assegnato && (
+                  <div className="form-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={isClosedOverride}
+                        onChange={(e) => setIsClosedOverride(e.target.checked)}
+                        style={{ marginRight: "8px" }}
+                      />
+                      Confermo di voler richiedere questo turno straordinario
+                    </label>
+                  </div>
+                )}
             </div>
 
             <div className="turno-modal-actions">
@@ -704,27 +834,43 @@ const Turni: React.FC = () => {
               <button onClick={closeModal} className="cancel-button">
                 Annulla
               </button>
-              <button 
-                onClick={handleAssegnaTurno} 
+              <button
+                onClick={handleAssegnaTurno}
                 className="assign-button"
                 disabled={
-                  selectedUserId === null || 
-                  selectedUserId === undefined || 
-                  ((isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
-                    !getCurrentTurni().find(t => 
-                      t.data === selectedTurno.data && 
-                      t.turno_inizio === selectedTurno.turno_inizio && 
-                      t.turno_fine === selectedTurno.turno_fine
-                    )) && !selectedTurno.assegnato && !isClosedOverride)
+                  selectedUserId === null ||
+                  selectedUserId === undefined ||
+                  ((isSlotNaturallyClosed(
+                    selectedTurno.day_index,
+                    selectedTurno.turno_index,
+                    selectedWeek
+                  ) ||
+                    !getCurrentTurni().find(
+                      (t) =>
+                        t.data === selectedTurno.data &&
+                        t.turno_inizio === selectedTurno.turno_inizio &&
+                        t.turno_fine === selectedTurno.turno_fine
+                    )) &&
+                    !selectedTurno.assegnato &&
+                    !isClosedOverride)
                 }
               >
-                {selectedTurno.assegnato ? 'Modifica' : 
-                 (isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) || 
-                  !getCurrentTurni().find(t => 
-                    t.data === selectedTurno.data && 
-                    t.turno_inizio === selectedTurno.turno_inizio && 
-                    t.turno_fine === selectedTurno.turno_fine
-                  )) ? 'Richiedi' : 'Assegna'} Turno
+                {selectedTurno.assegnato
+                  ? "Modifica"
+                  : isSlotNaturallyClosed(
+                        selectedTurno.day_index,
+                        selectedTurno.turno_index,
+                        selectedWeek
+                      ) ||
+                      !getCurrentTurni().find(
+                        (t) =>
+                          t.data === selectedTurno.data &&
+                          t.turno_inizio === selectedTurno.turno_inizio &&
+                          t.turno_fine === selectedTurno.turno_fine
+                      )
+                    ? "Richiedi"
+                    : "Assegna"}{" "}
+                Turno
               </button>
             </div>
           </div>
