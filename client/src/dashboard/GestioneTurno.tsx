@@ -348,7 +348,7 @@ const GestioneTurno: React.FC = () => {
               <h3>📞 Contatti e Community</h3>
 
               <div className="contacts-grid">
-                <div className="contact-card main-community">
+                <div className="contact-card ordinary">
                   <h4>📱 Community WhatsApp FORO</h4>
                   <p>Il punto centrale per tutte le comunicazioni.</p>
                   <a
@@ -372,7 +372,7 @@ const GestioneTurno: React.FC = () => {
                   </ul>
                 </div>
 
-                <div className="contact-card info">
+                <div className="contact-card ordinary">
                   <h4>🐈‍⬛ Soci e Volontari FORO</h4>
                   <p>
                     <strong>Assemblea:</strong> Organizzazione ODG e
@@ -380,7 +380,7 @@ const GestioneTurno: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="contact-card informal">
+                <div className="contact-card ordinary">
                   <h4>🐅 Mucchio di Mici</h4>
                   <p>
                     <strong>Informale:</strong> Eventi esterni, feste e tempo
