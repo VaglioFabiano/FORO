@@ -452,24 +452,45 @@ const Turni: React.FC = () => {
     return slots;
   };
 
-  const renderTurniGrid = (turni: Turno[]) => {
+ const renderTurniGrid = (turni: Turno[]) => {
     const turniPerGiorno = organizeRenderingData(turni);
     const timeSlots = getUniqueTimeSlots(turni);
+
+    // Calcolo del lunedì della settimana selezionata
+    const weekOffset =
+      selectedWeek === "corrente" ? 0 : 
+      selectedWeek === "prossima" ? 1 : 
+      selectedWeek === "plus2" ? 2 : 3;
+
+    const now = new Date();
+    const currentDay = now.getDay();
+    const monday = new Date(now);
+    // Riporta al lunedì e aggiunge l'offset
+    monday.setDate(
+      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+    );
 
     return (
       <div className="turni-grid">
         <div className="turni-header">
           <div className="turni-time-column">Orari</div>
-          {giorni.map((giorno, index) => (
-            <div key={index} className="turni-day-header">
-              <div className="day-name">{giorno}</div>
-              <div className="day-date">
-                {turni.find((t) => t.day_index === index)
-                  ? formatDate(turni.find((t) => t.day_index === index)!.data)
-                  : ""}
+          {giorni.map((giorno, index) => {
+            // Calcola la data esatta per ogni colonna (Lunedì + index giorni)
+            const dateForColumn = new Date(monday);
+            dateForColumn.setDate(monday.getDate() + index);
+            
+            return (
+              <div key={index} className="turni-day-header">
+                <div className="day-name">{giorno}</div>
+                <div className="day-date">
+                  {dateForColumn.toLocaleDateString("it-IT", {
+                    day: "2-digit",
+                    month: "2-digit",
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="turni-body">
@@ -480,7 +501,6 @@ const Turni: React.FC = () => {
                 const turno = turniPerGiorno[dayIndex][timeSlot];
                 const [slotStart, slotEnd] = timeSlot.split("-");
 
-                // Trova turno_index per il mapping alla griglia standard
                 const standardSlotIndex = orariTemplate.findIndex(
                   (slot) => slot === timeSlot
                 );
@@ -492,9 +512,7 @@ const Turni: React.FC = () => {
                   turnoIndex,
                   selectedWeek
                 );
-                const isStraordinario = turno
-                  ? isTurnoStraordinario(turno)
-                  : false;
+                const isStraordinario = turno ? isTurnoStraordinario(turno) : false;
 
                 return (
                   <div
@@ -512,10 +530,7 @@ const Turni: React.FC = () => {
                       if (turno) {
                         handleTurnoClick(turno);
                       } else {
-                        const pseudoTurno = createClosedTurno(
-                          dayIndex,
-                          turnoIndex
-                        );
+                        const pseudoTurno = createClosedTurno(dayIndex, turnoIndex);
                         pseudoTurno.turno_inizio = slotStart;
                         pseudoTurno.turno_fine = slotEnd;
                         handleTurnoClick(pseudoTurno, true);
@@ -523,21 +538,12 @@ const Turni: React.FC = () => {
                     }}
                   >
                     {turno?.assegnato ? (
-                      <div
-                        className={`turno-assigned ${isStraordinario ? "straordinario" : ""}`}
-                      >
+                      <div className={`turno-assigned ${isStraordinario ? "straordinario" : ""}`}>
                         <div className="user-name">
                           {turno.user_name} {turno.user_surname}
                         </div>
                         {isStraordinario && (
-                          <div className="turno-straordinario-badge">
-                            ⚡ Straordinario
-                          </div>
-                        )}
-                        {turno.nota_automatica && (
-                          <div className="turno-nota-automatica">
-                            {turno.nota_automatica}
-                          </div>
+                          <div className="turno-straordinario-badge">⚡ Straordinario</div>
                         )}
                         {turno.note && (
                           <div className="turno-note" title={turno.note}>
@@ -545,39 +551,10 @@ const Turni: React.FC = () => {
                           </div>
                         )}
                       </div>
-                    ) : turno && !isSlotClosed ? (
-                      <div className="turno-available">
-                        <div>Disponibile</div>
-                        {turno.nota_automatica && (
-                          <div className="turno-nota-automatica">
-                            {turno.nota_automatica}
-                          </div>
-                        )}
-                      </div>
-                    ) : turno && isSlotClosed ? (
-                      <div className="turno-closed">
-                        <div>Chiuso</div>
-                        {turno.nota_automatica && (
-                          <div className="turno-nota-automatica">
-                            {turno.nota_automatica}
-                          </div>
-                        )}
-                        <div
-                          className="turno-nota-automatica"
-                          style={{ fontSize: "9px", marginTop: "2px" }}
-                        >
-                          (Clicca per richiedere)
-                        </div>
-                      </div>
                     ) : (
                       <div className="turno-closed">
-                        <div>Chiuso</div>
-                        <div
-                          className="turno-nota-automatica"
-                          style={{ fontSize: "9px", marginTop: "2px" }}
-                        >
-                          (Clicca per richiedere)
-                        </div>
+                        <div>{isSlotClosed ? "Chiuso" : "Disponibile"}</div>
+                        <div style={{ fontSize: "9px" }}>(Clicca per gestire)</div>
                       </div>
                     )}
                   </div>
@@ -668,85 +645,41 @@ const Turni: React.FC = () => {
       {message && (
         <div className={`turni-message ${message.type}`}>
           <div className="message-icon">
-            {message.type === "success"
-              ? "✅"
-              : message.type === "error"
-                ? "❌"
-                : "ℹ️"}
+            {message.type === "success" ? "✅" : message.type === "error" ? "❌" : "ℹ️"}
           </div>
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="close-message">
-            ×
-          </button>
+          <button onClick={() => setMessage(null)} className="close-message">×</button>
         </div>
       )}
 
-      <div className="turni-content">{renderTurniGrid(getCurrentTurni())}</div>
+      {/* Richiamo della funzione corretta qui */}
+      <div className="turni-content">
+        {renderTurniGrid(getCurrentTurni())}
+      </div>
 
       {isModalOpen && selectedTurno && (
         <div className="turno-modal-overlay" onClick={closeModal}>
-          <div
-            className="turno-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="turno-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="turno-modal-header">
               <h3>
-                {(isSlotNaturallyClosed(
-                  selectedTurno.day_index,
-                  selectedTurno.turno_index,
-                  selectedWeek
-                ) ||
-                  !getCurrentTurni().find(
-                    (t) =>
-                      t.data === selectedTurno.data &&
-                      t.turno_inizio === selectedTurno.turno_inizio &&
-                      t.turno_fine === selectedTurno.turno_fine
-                  )) &&
-                !selectedTurno.assegnato
+                {isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) && !selectedTurno.assegnato
                   ? "⚠️ Richiesta Turno Straordinario"
                   : "Gestisci Turno"}
               </h3>
-              <button onClick={closeModal} className="close-button">
-                ✕
-              </button>
+              <button onClick={closeModal} className="close-button">✕</button>
             </div>
 
             <div className="turno-modal-body">
               <div className="turno-info">
-                <p>
-                  <strong>Data:</strong> {formatDate(selectedTurno.data)}
-                </p>
-                <p>
-                  <strong>Orario:</strong> {selectedTurno.turno_inizio} -{" "}
-                  {selectedTurno.turno_fine}
-                </p>
-                {(isSlotNaturallyClosed(
-                  selectedTurno.day_index,
-                  selectedTurno.turno_index,
-                  selectedWeek
-                ) ||
-                  !getCurrentTurni().find(
-                    (t) =>
-                      t.data === selectedTurno.data &&
-                      t.turno_inizio === selectedTurno.turno_inizio &&
-                      t.turno_fine === selectedTurno.turno_fine
-                  )) && (
-                  <p style={{ color: "#ff9800", fontWeight: "bold" }}>
-                    ⚠️ Questo è normalmente un turno chiuso
-                  </p>
-                )}
-                {selectedTurno.is_default && (
-                  <p style={{ color: "#666", fontSize: "12px" }}>
-                    📋 Turno con orari di default
-                  </p>
-                )}
+                <p><strong>Data:</strong> {formatDate(selectedTurno.data)}</p>
+                <p><strong>Orario:</strong> {selectedTurno.turno_inizio} - {selectedTurno.turno_fine}</p>
               </div>
 
               <div className="form-group">
                 <label htmlFor="user-select">Seleziona Utente:</label>
                 <input
                   type="text"
-                  placeholder="Cerca per nome o cognome..."
+                  placeholder="Cerca utente..."
                   value={userSearchTerm}
                   onChange={(e) => setUserSearchTerm(e.target.value)}
                   className="user-search-input"
@@ -755,22 +688,14 @@ const Turni: React.FC = () => {
                   id="user-select"
                   value={selectedUserId || ""}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                  size={Math.min(Math.max(filteredUsers.length + 1, 3), 10)} // +1 per l'opzione "Seleziona un utente"
+                  size={5}
                 >
-                  {/* Mostra l'opzione "Seleziona un utente" solo se non c'è ricerca attiva o ci sono più risultati */}
-                  {(userSearchTerm === "" || filteredUsers.length !== 1) && (
-                    <option value="">Seleziona un utente</option>
-                  )}
-
+                  <option value="">Seleziona un utente</option>
                   {filteredUsers.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.name} {user.surname} ({user.username})
                     </option>
                   ))}
-
-                  {filteredUsers.length === 0 && userSearchTerm !== "" && (
-                    <option disabled>Nessun utente trovato</option>
-                  )}
                 </select>
               </div>
 
@@ -781,48 +706,9 @@ const Turni: React.FC = () => {
                   id="note-input"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder={
-                    isSlotNaturallyClosed(
-                      selectedTurno.day_index,
-                      selectedTurno.turno_index,
-                      selectedWeek
-                    ) ||
-                    !getCurrentTurni().find(
-                      (t) =>
-                        t.data === selectedTurno.data &&
-                        t.turno_inizio === selectedTurno.turno_inizio &&
-                        t.turno_fine === selectedTurno.turno_fine
-                    )
-                      ? "Motivo della richiesta..."
-                      : "Aggiungi una nota..."
-                  }
+                  placeholder="Aggiungi una nota..."
                 />
               </div>
-
-              {(isSlotNaturallyClosed(
-                selectedTurno.day_index,
-                selectedTurno.turno_index,
-                selectedWeek
-              ) ||
-                !getCurrentTurni().find(
-                  (t) =>
-                    t.data === selectedTurno.data &&
-                    t.turno_inizio === selectedTurno.turno_inizio &&
-                    t.turno_fine === selectedTurno.turno_fine
-                )) &&
-                !selectedTurno.assegnato && (
-                  <div className="form-group">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={isClosedOverride}
-                        onChange={(e) => setIsClosedOverride(e.target.checked)}
-                        style={{ marginRight: "8px" }}
-                      />
-                      Confermo di voler richiedere questo turno straordinario
-                    </label>
-                  </div>
-                )}
             </div>
 
             <div className="turno-modal-actions">
@@ -831,46 +717,13 @@ const Turni: React.FC = () => {
                   Rimuovi Assegnazione
                 </button>
               )}
-              <button onClick={closeModal} className="cancel-button">
-                Annulla
-              </button>
+              <button onClick={closeModal} className="cancel-button">Annulla</button>
               <button
                 onClick={handleAssegnaTurno}
                 className="assign-button"
-                disabled={
-                  selectedUserId === null ||
-                  selectedUserId === undefined ||
-                  ((isSlotNaturallyClosed(
-                    selectedTurno.day_index,
-                    selectedTurno.turno_index,
-                    selectedWeek
-                  ) ||
-                    !getCurrentTurni().find(
-                      (t) =>
-                        t.data === selectedTurno.data &&
-                        t.turno_inizio === selectedTurno.turno_inizio &&
-                        t.turno_fine === selectedTurno.turno_fine
-                    )) &&
-                    !selectedTurno.assegnato &&
-                    !isClosedOverride)
-                }
+                disabled={!selectedUserId}
               >
-                {selectedTurno.assegnato
-                  ? "Modifica"
-                  : isSlotNaturallyClosed(
-                        selectedTurno.day_index,
-                        selectedTurno.turno_index,
-                        selectedWeek
-                      ) ||
-                      !getCurrentTurni().find(
-                        (t) =>
-                          t.data === selectedTurno.data &&
-                          t.turno_inizio === selectedTurno.turno_inizio &&
-                          t.turno_fine === selectedTurno.turno_fine
-                      )
-                    ? "Richiedi"
-                    : "Assegna"}{" "}
-                Turno
+                {selectedTurno.assegnato ? "Modifica" : "Assegna"} Turno
               </button>
             </div>
           </div>
