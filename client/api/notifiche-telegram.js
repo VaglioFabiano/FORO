@@ -38,7 +38,7 @@ async function verifyUser(tempToken) {
 
 async function addNotifica(userId, tipo) {
   return await client.execute({
-    sql: `INSERT INTO notifiche_turni (user_id, tipo_notifica) VALUES (?, ?) 
+    sql: `INSERT INTO notifiche (user_id, tipo_notifica) VALUES (?, ?) 
           ON CONFLICT(user_id, tipo_notifica) DO UPDATE SET attiva = 1`,
     args: [userId, tipo || "promemoria"],
   });
@@ -46,14 +46,14 @@ async function addNotifica(userId, tipo) {
 
 async function removeNotifica(userId, tipo) {
   return await client.execute({
-    sql: `DELETE FROM notifiche_turni WHERE user_id = ? AND tipo_notifica = ?`,
+    sql: `DELETE FROM notifiche WHERE user_id = ? AND tipo_notifica = ?`,
     args: [userId, tipo],
   });
 }
 
 async function getNotificheUtente(userId) {
   const result = await client.execute({
-    sql: `SELECT * FROM notifiche_turni WHERE user_id = ?`,
+    sql: `SELECT * FROM notifiche WHERE user_id = ?`,
     args: [userId],
   });
   return result.rows;
