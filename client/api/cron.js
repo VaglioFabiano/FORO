@@ -12,7 +12,7 @@ if (config.url && config.authToken) {
   db = createClient(config);
 } else {
   console.warn(
-    "⚠️ Database config mancante, alcune funzioni potrebbero non funzionare"
+    "⚠️ Database config mancante, alcune funzioni potrebbero non funzionare",
   );
 }
 
@@ -34,7 +34,7 @@ function getItalianTime() {
 
   // Crea un oggetto Date per il fuso orario italiano
   const italianTime = new Date(
-    now.toLocaleString("en-US", { timeZone: "Europe/Rome" })
+    now.toLocaleString("en-US", { timeZone: "Europe/Rome" }),
   );
 
   return {
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
   } = italianTime;
 
   console.log(
-    `🕐 Cron job eseguito alle ${currentHour}:${currentMinute.toString().padStart(2, "0")} del ${getDayName(currentDay)} (orario italiano)`
+    `🕐 Cron job eseguito alle ${currentHour}:${currentMinute.toString().padStart(2, "0")} del ${getDayName(currentDay)} (orario italiano)`,
   );
 
   try {
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
     console.error("❌ Errore nel cron job:", error);
 
     await logExecution("error_task", now, "error", error.message).catch(
-      () => {}
+      () => {},
     );
 
     return res.status(500).json({
@@ -112,7 +112,7 @@ export default async function handler(req, res) {
 
 function determineTaskType(hour, minute, day) {
   console.log(
-    `🔍 CRON DEBUG: hour=${hour}, minute=${minute}, day=${day} (${getDayName(day)})`
+    `🔍 CRON DEBUG: hour=${hour}, minute=${minute}, day=${day} (${getDayName(day)})`,
   );
 
   // PROMEMORIA TURNI
@@ -169,7 +169,7 @@ function determineTaskType(hour, minute, day) {
 async function handleTask(taskType, timestamp) {
   const italianTime = getItalianTime();
   console.log(
-    `🚀 Eseguendo task: ${taskType} alle ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)`
+    `🚀 Eseguendo task: ${taskType} alle ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)`,
   );
 
   switch (taskType) {
@@ -202,7 +202,7 @@ async function handleTask(taskType, timestamp) {
         "16-19:30",
         "16:00",
         "19:30",
-        timestamp
+        timestamp,
       );
       break;
 
@@ -235,7 +235,7 @@ function getWeekDatesForOffset(weekOffset = 0) {
   const currentDay = now.getDay();
   const monday = new Date(now);
   monday.setDate(
-    now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+    now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7,
   );
 
   const weekDates = [];
@@ -284,7 +284,7 @@ async function sendTurnoReminders(turnoInizio, turnoFine, timestamp) {
       console.log("⚠️ Database non disponibile, invio messaggio di test");
       await sendTelegramMessage(
         TEST_CHAT_ID,
-        `🔔 Test Promemoria Turni ${turnoInizio}-${turnoFine}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)`
+        `🔔 Test Promemoria Turni ${turnoInizio}-${turnoFine}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)`,
       );
       return;
     }
@@ -294,7 +294,7 @@ async function sendTurnoReminders(turnoInizio, turnoFine, timestamp) {
     const today = italianTime.dateString;
 
     console.log(
-      `📋 Cercando turni per oggi ${today} dalle ${turnoInizio} alle ${turnoFine}`
+      `📋 Cercando turni per oggi ${today} dalle ${turnoInizio} alle ${turnoFine}`,
     );
 
     // Query per ottenere tutti i turni di oggi per questa fascia oraria
@@ -310,12 +310,12 @@ async function sendTurnoReminders(turnoInizio, turnoFine, timestamp) {
 
     const turni = result.rows;
     console.log(
-      `📊 Trovati ${turni.length} turni per la fascia ${turnoInizio}-${turnoFine}`
+      `📊 Trovati ${turni.length} turni per la fascia ${turnoInizio}-${turnoFine}`,
     );
 
     if (turni.length === 0) {
       console.log(
-        `📋 Nessun turno trovato per la fascia ${turnoInizio}-${turnoFine}`
+        `📋 Nessun turno trovato per la fascia ${turnoInizio}-${turnoFine}`,
       );
       return;
     }
@@ -340,7 +340,7 @@ Buono Studio! 💪`;
       } catch (error) {
         console.error(
           `❌ Errore invio promemoria a ${turno.name} ${turno.surname}:`,
-          error
+          error,
         );
       }
     }
@@ -354,7 +354,7 @@ async function sendPresenzeReminderToShifts(
   fasciaOraria,
   turnoInizio,
   turnoFine,
-  timestamp
+  timestamp,
 ) {
   try {
     if (!db) {
@@ -362,7 +362,7 @@ async function sendPresenzeReminderToShifts(
       console.log("⚠️ Database non disponibile, invio messaggio di test");
       await sendTelegramMessage(
         TEST_CHAT_ID,
-        `📊 Test Promemoria Presenze ${fasciaOraria}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)\n\n📋 Accedi al Google Sheets: ${GOOGLE_SHEETS_LINK}`
+        `📊 Test Promemoria Presenze ${fasciaOraria}\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)\n\n📋 Accedi al Google Sheets: ${GOOGLE_SHEETS_LINK}`,
       );
       return;
     }
@@ -372,7 +372,7 @@ async function sendPresenzeReminderToShifts(
     const today = italianTime.dateString;
 
     console.log(
-      `📊 Promemoria presenze per la fascia ${fasciaOraria} del ${today}`
+      `📊 Promemoria presenze per la fascia ${fasciaOraria} del ${today}`,
     );
 
     // Verifica se le presenze per oggi sono già state inserite
@@ -394,12 +394,12 @@ async function sendPresenzeReminderToShifts(
 
     const utentiInTurno = turniResult.rows;
     console.log(
-      `👥 Trovati ${utentiInTurno.length} utenti di turno da notificare`
+      `👥 Trovati ${utentiInTurno.length} utenti di turno da notificare`,
     );
 
     if (utentiInTurno.length === 0) {
       console.log(
-        `📊 Nessun utente di turno trovato per promemoria presenze ${fasciaOraria}`
+        `📊 Nessun utente di turno trovato per promemoria presenze ${fasciaOraria}`,
       );
       return;
     }
@@ -449,7 +449,7 @@ ${
       } catch (error) {
         console.error(
           `❌ Errore invio promemoria presenze a ${utente.name} ${utente.surname}:`,
-          error
+          error,
         );
       }
     }
@@ -465,14 +465,14 @@ async function weeklyEmptyShiftsReport(timestamp) {
       const italianTime = getItalianTime();
       await sendTelegramMessage(
         TEST_CHAT_ID,
-        `📋 Test Report Turni Vuoti\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)`
+        `📋 Test Report Turni Vuoti\n⏰ ${italianTime.hour}:${italianTime.minute.toString().padStart(2, "0")} (orario italiano)`,
       );
       return;
     }
 
     const italianTime = getItalianTime();
     console.log(
-      `📋 Generando report turni vuoti (OTTIMIZZATO) per la prossima settimana`
+      `📋 Generando report turni vuoti (OTTIMIZZATO) per la prossima settimana`,
     );
     const orariTemplate = [
       { inizio: "09:00", fine: "13:00", index: 0 }, // turno_index 0
@@ -499,7 +499,7 @@ async function weeklyEmptyShiftsReport(timestamp) {
     }; // <--- MODIFICA: Esegui UNA SOLA QUERY per tutti i turni
 
     console.log(
-      `⚡ Eseguo query singola per tutti i turni dal ${prossimaSettimana[0]} al ${prossimaSettimana[6]}`
+      `⚡ Eseguo query singola per tutti i turni dal ${prossimaSettimana[0]} al ${prossimaSettimana[6]}`,
     );
     const turniEsistentiResult = await db.execute({
       sql: `SELECT data, turno_inizio, turno_fine 
@@ -513,7 +513,7 @@ async function weeklyEmptyShiftsReport(timestamp) {
       turniOccupati.add(`${t.data}_${t.turno_inizio}_${t.turno_fine}`);
     });
     console.log(
-      `📊 Trovati ${turniOccupati.size} turni occupati nella prossima settimana`
+      `📊 Trovati ${turniOccupati.size} turni occupati nella prossima settimana`,
     ); // Array per raccogliere i risultati
 
     let turniTeorici = [];
@@ -677,13 +677,13 @@ async function weeklyEmptyShiftsReport(timestamp) {
       } catch (error) {
         console.error(
           `❌ Errore invio report a ${user.name} ${user.surname}:`,
-          error
+          error,
         );
       }
     }
 
     console.log(
-      `📋 Report turni vuoti inviato a ${adminsAndModerators.length} utenti unici (admin/moderatori)`
+      `📋 Report turni vuoti inviato a ${adminsAndModerators.length} utenti unici (admin/moderatori)`,
     );
     console.log(`📊 Statistiche report (ottimizzato):
     - Turni teorici totali: ${turniTeorici.length}
@@ -694,7 +694,7 @@ async function weeklyEmptyShiftsReport(timestamp) {
     console.error("❌ Errore nel report turni vuoti (ottimizzato):", error);
     await sendTelegramMessage(
       TEST_CHAT_ID,
-      `❌ Errore nel report turni vuoti (ottimizzato): ${error.message}`
+      `❌ Errore nel report turni vuoti (ottimizzato): ${error.message}`,
     );
   }
 }
@@ -704,7 +704,7 @@ async function weeklyEmptyShiftsReport(timestamp) {
 async function sundayEndTask(timestamp) {
   const italianTime = getItalianTime();
   console.log(
-    `📊 Task fine domenica (23:59 orario italiano) - Avvio cambio settimana con TRANSAZIONE`
+    `📊 Task fine domenica (23:59 orario italiano) - Avvio cambio settimana con TRANSAZIONE`,
   );
 
   let deleteTurniCorrente = { rowsAffected: 0 };
@@ -722,7 +722,7 @@ async function sundayEndTask(timestamp) {
     if (!db) {
       await sendTelegramMessage(
         TEST_CHAT_ID,
-        "⚠️ Database non disponibile per cambio settimana"
+        "⚠️ Database non disponibile per cambio settimana",
       );
       return;
     }
@@ -736,7 +736,7 @@ async function sundayEndTask(timestamp) {
 
     console.log(`\n🗓️ === CALCOLO DATE ===`);
     console.log(
-      `🗑️ Settimana da eliminare: ${settimanaCorrente[0]} - ${settimanaCorrente[6]}`
+      `🗑️ Settimana da eliminare: ${settimanaCorrente[0]} - ${settimanaCorrente[6]}`,
     );
     console.log(`📅 Nuova corrente: ${settimana1[0]} - ${settimana1[6]}`);
     console.log(`📅 Nuova prossima: ${settimana2[0]} - ${settimana2[6]}`);
@@ -782,14 +782,29 @@ async function sundayEndTask(timestamp) {
       // 1. Sgancia i turni
       await tx.execute({ sql: `UPDATE turni SET fascia_id = NULL`, args: [] });
 
-      // 2. ARCHIVIAZIONE PRESENZE (Evita errore Foreign Key)
+      // 2. ARCHIVIAZIONE PRESENZE
       await tx.execute({
         sql: `INSERT INTO presenze_storico (data, giorno, orario, numero_presenze, note)
-              SELECT p.data, f.giorno, (f.ora_inizio || ' - ' || f.ora_fine), p.numero_presenze, p.note
-              FROM presenze p JOIN fasce_orarie f ON p.fascia_oraria = f.id`,
+              SELECT 
+                p.data, 
+                CASE strftime('%w', p.data)
+                  WHEN '0' THEN 'domenica'
+                  WHEN '1' THEN 'lunedì'
+                  WHEN '2' THEN 'martedì'
+                  WHEN '3' THEN 'mercoledì'
+                  WHEN '4' THEN 'giovedì'
+                  WHEN '5' THEN 'venerdì'
+                  WHEN '6' THEN 'sabato'
+                END as giorno,
+                p.fascia_oraria as orario, -- Usa direttamente il valore "9-13", "13-16", ecc.
+                p.numero_presenze, 
+                p.note
+              FROM presenze p`,
         args: [],
       });
-      console.log(`✅ Presenze archiviate nello storico`);
+      console.log(
+        `✅ Presenze archiviate correttamente usando le fasce originali`,
+      );
 
       // 3. Svuota presenze operative
       await tx.execute({ sql: `DELETE FROM presenze`, args: [] });
@@ -965,13 +980,14 @@ async function sundayEndTask(timestamp) {
       try {
         await sendTelegramMessage(
           TEST_CHAT_ID,
-          `❌ Errore Cambio Settimana:\n${error.message}`
+          `❌ Errore Cambio Settimana:\n${error.message}`,
         );
       } catch (e) {}
     }
     throw error;
   }
 }
+
 // Task generale per test e chiamate non programmate
 async function generalTask(timestamp) {
   const italianTime = getItalianTime();
