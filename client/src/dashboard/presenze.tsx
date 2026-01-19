@@ -48,7 +48,6 @@ interface Statistiche {
   totale_mese: number;
   media_giornaliera: string;
   month_info: MonthInfo;
-  // Nuova proprietà per il giorno record
   giorno_record?: {
     data: string;
     totale: number;
@@ -94,7 +93,6 @@ const Presenze: React.FC = () => {
   ];
 
   // --- NUOVA LOGICA CALCOLO TOTALE ---
-  // Formula: 9-13 + MAX(13-16, 16-19) + 21-24
   const calcolaTotaleGiorno = (dayPresenze: Presenza[]) => {
     const p9_13 =
       dayPresenze.find((p) => p.fascia_oraria === "9-13")?.numero_presenze || 0;
@@ -174,33 +172,24 @@ const Presenze: React.FC = () => {
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
-        const user = JSON.parse(userData);
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Errore user data:", error);
+        setCurrentUser(JSON.parse(userData));
+      } catch (e) {
+        console.error(e);
       }
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.getDate().toString();
-  };
-
-  const getDayName = (dateString: string) => {
-    const date = new Date(dateString);
-    return giorni[date.getDay()];
-  };
-
+  const formatDate = (dateString: string) =>
+    new Date(dateString).getDate().toString();
+  const getDayName = (dateString: string) =>
+    giorni[new Date(dateString).getDay()];
   const isWeekend = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDay();
+    const day = new Date(dateString).getDay();
     return day === 0 || day === 6;
   };
 
-  const canDownloadPdf = () => {
-    return currentUser && (currentUser.level === 0 || currentUser.level === 1);
-  };
+  const canDownloadPdf = () =>
+    currentUser && (currentUser.level === 0 || currentUser.level === 1);
 
   // --- API CALLS ---
   const fetchPresenze = async () => {
@@ -213,10 +202,8 @@ const Presenze: React.FC = () => {
         1,
       );
       const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
-
       const response = await fetch(`/api/presenze?mese=${monthString}`);
       const data = await response.json();
-
       if (data.success) {
         setPresenze(data.presenze);
         setMonthInfo(data.month_info);
@@ -224,7 +211,6 @@ const Presenze: React.FC = () => {
         setMessage({ type: "error", text: data.error || "Errore dati" });
       }
     } catch (error) {
-      console.error(error);
       setMessage({ type: "error", text: "Errore connessione" });
     } finally {
       setLoading(false);
@@ -245,13 +231,11 @@ const Presenze: React.FC = () => {
       );
       const data = await response.json();
       if (data.success) {
-        // Calcolo il giorno record localmente usando la nuova formula
         const presenzeMap: Record<string, Presenza[]> = {};
         presenze.forEach((p) => {
           if (!presenzeMap[p.data]) presenzeMap[p.data] = [];
           presenzeMap[p.data].push(p);
         });
-
         let maxTotale = -1;
         let dataRecord = "";
         Object.keys(presenzeMap).forEach((d) => {
@@ -261,7 +245,6 @@ const Presenze: React.FC = () => {
             dataRecord = d;
           }
         });
-
         setStatistiche({
           ...data.statistiche,
           giorno_record:
@@ -274,9 +257,8 @@ const Presenze: React.FC = () => {
   };
 
   // --- GESTIONE CELLE E MODALE ---
-  const getPresenza = (data: string, colonna: string): Presenza | undefined => {
-    return presenze.find((p) => p.data === data && p.fascia_oraria === colonna);
-  };
+  const getPresenza = (data: string, colonna: string): Presenza | undefined =>
+    presenze.find((p) => p.data === data && p.fascia_oraria === colonna);
 
   const handleCellClick = (data: string, colonna: string) => {
     const presenza = getPresenza(data, colonna);
@@ -288,12 +270,6 @@ const Presenze: React.FC = () => {
 
   const handleSalvaPresenza = async () => {
     if (!selectedCell) return;
-    const numeroPresenze = parseInt(editValue) || 0;
-    if (numeroPresenze < 0) {
-      setMessage({ type: "error", text: "Numero non valido" });
-      return;
-    }
-
     try {
       const response = await fetch("/api/presenze", {
         method: "POST",
@@ -301,22 +277,18 @@ const Presenze: React.FC = () => {
         body: JSON.stringify({
           data: selectedCell.data,
           fascia_oraria: selectedCell.fascia,
-          numero_presenze: numeroPresenze,
+          numero_presenze: parseInt(editValue) || 0,
           note: editNote,
           current_user_id: currentUser?.id,
         }),
       });
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: "success", text: "Salvato!" });
         fetchPresenze();
         closeModal();
-      } else {
-        setMessage({ type: "error", text: data.error || "Errore salvataggio" });
       }
     } catch (error) {
       console.error(error);
-      setMessage({ type: "error", text: "Errore rete" });
     }
   };
 
@@ -334,61 +306,54 @@ const Presenze: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: "success", text: "Eliminato!" });
         fetchPresenze();
         closeModal();
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Errore eliminazione",
-        });
       }
     } catch (error) {
       console.error(error);
-      setMessage({ type: "error", text: "Errore rete" });
     }
   };
 
   // --- PDF EXPORT ---
   const handleDownloadPdf = async () => {
-    if (selectedMonths.length === 0) {
-      setMessage({ type: "error", text: "Seleziona un mese" });
-      return;
-    }
+    if (selectedMonths.length === 0) return;
     try {
       setMessage({ type: "info", text: "Raccolta dati..." });
-      const pdfData = await collectPdfData();
-      if (pdfData.length === 0) {
-        setMessage({ type: "error", text: "Nessun dato trovato" });
-        return;
+
+      // ORDINAMENTO CRONOLOGICO (es. 2025-12 prima di 2026-01)
+      const sortedMonths = [...selectedMonths].sort((a, b) =>
+        a.localeCompare(b),
+      );
+
+      const pdfData = [];
+      for (const m of sortedMonths) {
+        const [resP, resS] = await Promise.all([
+          fetch(`/api/presenze?mese=${m}`),
+          fetch(`/api/presenze?mese=${m}&stats=true`),
+        ]);
+        const dataP = await resP.json();
+        const dataS = await resS.json();
+
+        if (dataP.success) {
+          pdfData.push({
+            monthInfo: dataP.month_info,
+            presenze: dataP.presenze,
+            stats: dataS.success ? dataS.statistiche : null,
+          });
+        }
       }
+
       setMessage({ type: "info", text: "Generazione PDF..." });
       await generateAndDownloadPdf(pdfData);
       setMessage({ type: "success", text: "PDF scaricato!" });
       closePdfModal();
     } catch (error) {
       console.error(error);
-      setMessage({ type: "error", text: "Errore PDF" });
+      setMessage({
+        type: "error",
+        text: "Errore durante la creazione del PDF",
+      });
     }
-  };
-
-  const collectPdfData = async () => {
-    const pdfData = [];
-    for (const monthString of selectedMonths) {
-      try {
-        const response = await fetch(`/api/presenze?mese=${monthString}`);
-        const data = await response.json();
-        if (data.success) {
-          pdfData.push({
-            monthInfo: data.month_info,
-            presenze: data.presenze,
-          });
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    }
-    return pdfData;
   };
 
   const generateAndDownloadPdf = async (pdfData: any[]) => {
@@ -409,15 +374,15 @@ const Presenze: React.FC = () => {
       pdfData.forEach((monthData: any, monthIndex: number) => {
         if (monthIndex > 0) doc.addPage();
 
-        let yPosition = 20;
+        let y = 20;
         doc.setFontSize(16);
         doc.text(
           `REPORT PRESENZE - ${monthData.monthInfo.monthName.toUpperCase()}`,
           105,
-          yPosition,
+          y,
           { align: "center" },
         );
-        yPosition += 15;
+        y += 15;
 
         const presenzeMap: Record<string, Presenza[]> = {};
         monthData.presenze.forEach((p: any) => {
@@ -426,7 +391,7 @@ const Presenze: React.FC = () => {
         });
 
         doc.setFontSize(8);
-        const colWidths = [15, 15, 25, 25, 25, 25, 25];
+        const colW = [15, 15, 25, 25, 25, 25, 25];
         const headers = [
           "Data",
           "Giorno",
@@ -436,72 +401,101 @@ const Presenze: React.FC = () => {
           "21-24",
           "Tot*",
         ];
-
-        let xPos = margin;
+        let x = margin;
         headers.forEach((h, i) => {
-          doc.text(h, xPos, yPosition);
-          xPos += colWidths[i];
+          doc.text(h, x, y);
+          x += colW[i];
         });
-        yPosition += 4;
-        doc.line(margin, yPosition, 195, yPosition);
-        yPosition += 6;
+        y += 4;
+        doc.line(margin, y, 195, y);
+        y += 6;
 
         let maxMonthTot = -1;
         let maxMonthData = "";
 
-        monthData.monthInfo.dates.forEach((data: string) => {
-          const dayRecords = presenzeMap[data] || [];
+        monthData.monthInfo.dates.forEach((dStr: string) => {
+          const dayRecords = presenzeMap[dStr] || [];
           const totalDay = calcolaTotaleGiorno(dayRecords);
-
           if (totalDay > maxMonthTot) {
             maxMonthTot = totalDay;
-            maxMonthData = data;
+            maxMonthData = dStr;
           }
 
           if (totalDay > 0) {
-            if (yPosition > 270) {
+            if (y > 200) {
               doc.addPage();
-              yPosition = 20;
+              y = 20;
             }
-            xPos = margin;
-            const dateObj = new Date(data);
-            doc.text(dateObj.getDate().toString(), xPos, yPosition);
-            xPos += colWidths[0];
-            doc.text(giorni[dateObj.getDay()], xPos, yPosition);
-            xPos += colWidths[1];
-
+            x = margin;
+            const dObj = new Date(dStr);
+            doc.text(dObj.getDate().toString(), x, y);
+            x += colW[0];
+            doc.text(giorni[dObj.getDay()], x, y);
+            x += colW[1];
             fasceStandard.forEach((f, i) => {
-              const p = dayRecords.find((r) => r.fascia_oraria === f);
-              const num = p?.numero_presenze || 0;
-              doc.text(num > 0 ? num.toString() : "-", xPos, yPosition);
-              xPos += colWidths[i + 2];
+              const val =
+                dayRecords.find((r) => r.fascia_oraria === f)
+                  ?.numero_presenze || 0;
+              doc.text(val > 0 ? val.toString() : "-", x, y);
+              x += colW[i + 2];
             });
-
             doc.setFont(undefined, "bold");
-            doc.text(totalDay.toString(), xPos, yPosition);
+            doc.text(totalDay.toString(), x, y);
             doc.setFont(undefined, "normal");
-            yPosition += 5;
+            y += 5;
           }
         });
 
-        // Footer del mese
-        yPosition += 10;
-        doc.line(margin, yPosition, 195, yPosition);
-        yPosition += 7;
-        doc.setFontSize(10);
+        // SEZIONE STATISTICHE COMPLETE NEL PDF
+        y = Math.max(y + 10, 220);
+        doc.line(margin, y, 195, y);
+        y += 7;
+        doc.setFontSize(11);
+        doc.setFont(undefined, "bold");
+        doc.text(`STATISTICHE MENSILI`, margin, y);
+        doc.setFont(undefined, "normal");
+        y += 7;
+
+        doc.setFontSize(9);
+        doc.text(
+          `Totale Mese: ${monthData.stats?.totale_mese || 0}`,
+          margin,
+          y,
+        );
+        doc.text(
+          `Media Giornaliera: ${monthData.stats?.media_giornaliera || 0}`,
+          80,
+          y,
+        );
         if (maxMonthTot > 0) {
           doc.text(
-            `GIORNO RECORD: ${new Date(maxMonthData).toLocaleDateString("it-IT")} con ${maxMonthTot} presenze`,
-            margin,
-            yPosition,
+            `Record: ${maxMonthTot} (${new Date(maxMonthData).toLocaleDateString("it-IT")})`,
+            140,
+            y,
           );
-          yPosition += 6;
         }
+        y += 8;
+
+        if (monthData.stats?.per_fascia) {
+          doc.setFontSize(8);
+          let statX = margin;
+          monthData.stats.per_fascia.forEach((s: any) => {
+            doc.text(`${s.fascia_oraria}`, statX, y);
+            doc.text(
+              `Tot: ${s.totale_presenze} | Max: ${s.max_presenze}`,
+              statX,
+              y + 4,
+            );
+            statX += 45;
+          });
+        }
+
+        y += 12;
         doc.setFontSize(7);
         doc.text(
           "* Formula Totale: (9-13) + Max(13-16, 16-19) + (21-24)",
           margin,
-          yPosition,
+          y,
         );
       });
 
@@ -537,7 +531,6 @@ const Presenze: React.FC = () => {
   // --- RENDER COMPONENTI ---
   const renderCalendarGrid = () => {
     if (!monthInfo) return null;
-
     const presenzeMap: Record<string, Presenza[]> = {};
     presenze.forEach((p) => {
       if (!presenzeMap[p.data]) presenzeMap[p.data] = [];
@@ -558,44 +551,32 @@ const Presenze: React.FC = () => {
         <div className="calendar-body">
           {monthInfo.dates.map((data) => {
             const isWknd = isWeekend(data);
-            const dayNum = formatDate(data);
-            const dayName = getDayName(data);
-
             const dayPresenze = presenzeMap[data] || [];
             const totaleDiario = calcolaTotaleGiorno(dayPresenze);
-
             return (
               <div
                 key={data}
                 className={`calendar-row ${isWknd ? "weekend" : ""}`}
               >
                 <div className="date-cell">
-                  <div className="day-number">{dayNum}</div>
-                  <div className="day-name">{dayName}</div>
+                  <div className="day-number">{formatDate(data)}</div>
+                  <div className="day-name">{getDayName(data)}</div>
                 </div>
-
                 {fasceStandard.map((f) => {
-                  const presenza = dayPresenze.find(
-                    (p) => p.fascia_oraria === f,
-                  );
-                  const numero = presenza?.numero_presenze || 0;
-                  const isHistory = presenza?.is_history;
+                  const p = dayPresenze.find((p) => p.fascia_oraria === f);
                   return (
                     <div
                       key={`${data}-${f}`}
-                      className={`presenza-cell ${numero > 0 ? "has-presenze" : "empty"} ${isWknd ? "weekend" : ""} ${isHistory ? "is-history" : ""}`}
+                      className={`presenza-cell ${p?.numero_presenze ? "has-presenze" : "empty"} ${isWknd ? "weekend" : ""} ${p?.is_history ? "is-history" : ""}`}
                       onClick={() => handleCellClick(data, f)}
                     >
                       <div className="numero-presenze">
-                        {numero > 0 ? numero : "-"}
+                        {p?.numero_presenze || "-"}
                       </div>
-                      {presenza?.note && (
-                        <div className="presenza-note">📝</div>
-                      )}
+                      {p?.note && <div className="presenza-note">📝</div>}
                     </div>
                   );
                 })}
-
                 <div
                   className={`total-cell ${totaleDiario > 0 ? "has-total" : ""}`}
                 >
@@ -615,8 +596,7 @@ const Presenze: React.FC = () => {
     for (let i = -12; i <= 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const n = `${mesi[d.getMonth()]} ${d.getFullYear()}`;
-      list.push({ key: k, name: n });
+      list.push({ key: k, name: `${mesi[d.getMonth()]} ${d.getFullYear()}` });
     }
     return (
       <div className="months-grid">
@@ -640,10 +620,6 @@ const Presenze: React.FC = () => {
         <div className="presenze-loading">Caricamento...</div>
       </div>
     );
-
-  const currentCellIsHistory = selectedCell
-    ? getPresenza(selectedCell.data, selectedCell.fascia)?.is_history
-    : false;
 
   return (
     <div className="presenze-container">
@@ -745,7 +721,11 @@ const Presenze: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="presenza-modal-header">
-              <h3>{currentCellIsHistory ? "🔒 Storico" : "Modifica"}</h3>
+              <h3>
+                {getPresenza(selectedCell.data, selectedCell.fascia)?.is_history
+                  ? "🔒 Storico"
+                  : "Modifica"}
+              </h3>
               <button className="close-button" onClick={closeModal}>
                 ×
               </button>
@@ -758,7 +738,6 @@ const Presenze: React.FC = () => {
               <p>
                 <strong>Fascia:</strong> {selectedCell.fascia}
               </p>
-
               <div className="form-group">
                 <label>Numero</label>
                 <input
@@ -766,7 +745,10 @@ const Presenze: React.FC = () => {
                   min="0"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  disabled={currentCellIsHistory}
+                  disabled={
+                    getPresenza(selectedCell.data, selectedCell.fascia)
+                      ?.is_history
+                  }
                 />
               </div>
               <div className="form-group">
@@ -775,15 +757,19 @@ const Presenze: React.FC = () => {
                   type="text"
                   value={editNote}
                   onChange={(e) => setEditNote(e.target.value)}
-                  disabled={currentCellIsHistory}
+                  disabled={
+                    getPresenza(selectedCell.data, selectedCell.fascia)
+                      ?.is_history
+                  }
                 />
               </div>
             </div>
             <div className="presenza-modal-actions">
               <button className="cancel-button" onClick={closeModal}>
-                {currentCellIsHistory ? "Chiudi" : "Annulla"}
+                Annulla
               </button>
-              {!currentCellIsHistory && selectedCell.fascia && (
+              {!getPresenza(selectedCell.data, selectedCell.fascia)
+                ?.is_history && (
                 <>
                   <button
                     className="delete-button"
