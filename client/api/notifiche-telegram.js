@@ -1,4 +1,4 @@
-// /api/telegram-debug.js
+// /api/notifiche-telegram.js
 import { createClient } from "@libsql/client/web";
 
 const config = {
@@ -14,11 +14,14 @@ async function verifyUser(tempToken) {
   try {
     const decoded = JSON.parse(atob(tempToken));
     const { userId, tel, timestamp } = decoded;
+
     const now = new Date().getTime();
     const tokenAge = now - parseInt(timestamp);
     const maxAge = 60 * 60 * 1000;
 
-    if (tokenAge > maxAge) return null;
+    if (tokenAge > maxAge) {
+      return null;
+    }
 
     const result = await client.execute({
       sql: `SELECT id, level, name, surname, tel FROM users WHERE id = ? AND tel = ?`,
@@ -31,7 +34,7 @@ async function verifyUser(tempToken) {
   }
 }
 
-// --- NUOVE FUNZIONI PER NOTIFICHE ---
+// --- FUNZIONI PER TABELLA NOTIFICHE ---
 
 async function addNotifica(userId, tipo) {
   return await client.execute({
@@ -63,14 +66,21 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
   try {
     const tempToken = req.headers.authorization?.replace("Bearer ", "");
-    if (!tempToken) return res.status(401).json({ error: "Token richiesto" });
+
+    if (!tempToken) {
+      return res.status(401).json({ error: "Token richiesto" });
+    }
 
     const user = await verifyUser(tempToken);
-    if (!user) return res.status(401).json({ error: "Token non valido" });
+    if (!user) {
+      return res.status(401).json({ error: "Token non valido" });
+    }
 
     // --- GESTIONE AZIONI NOTIFICHE (POST) ---
     if (req.method === "POST") {
@@ -93,27 +103,36 @@ export default async function handler(req, res) {
 
     // --- LOGICA DEBUG ORIGINALE (GET) ---
     if (req.method === "GET") {
+      // Ottieni info bot
       const botInfoResponse = await fetch(`${TELEGRAM_API_URL}/getMe`);
       const botInfo = await botInfoResponse.json();
 
+      // Ottieni aggiornamenti recenti
       const updatesResponse = await fetch(
         `${TELEGRAM_API_URL}/getUpdates?limit=10&offset=-10`,
       );
       const updatesData = await updatesResponse.json();
 
+      // Cerca chat_id salvato nel DB
       const cachedResult = await client.execute({
         sql: `SELECT telegram_chat_id FROM users WHERE tel = ?`,
         args: [user.tel],
       });
 
-      // Recupera le notifiche attive per il debug
+      // Recupera configurazione notifiche per il debug
       const notificheAttive = await getNotificheUtente(user.id);
 
       const debugInfo = {
-        user: { ...user },
-        notifiche: notificheAttive,
+        user: {
+          id: user.id,
+          name: user.name,
+          surname: user.surname,
+          tel: user.tel,
+          level: user.level,
+        },
+        notifiche_attive: notificheAttive,
         bot: {
-          info: botInfo.ok ? botInfo.result : "Errore bot",
+          info: botInfo.ok ? botInfo.result : "Errore nel recuperare info bot",
           username: botInfo.ok ? botInfo.result.username : null,
         },
         database: {
@@ -122,11 +141,28 @@ export default async function handler(req, res) {
         telegram: {
           updatesCount: updatesData.ok ? updatesData.result.length : 0,
           lastUpdates: updatesData.ok
-            ? updatesData.result.map((u) => ({
-                chatId: u.message?.chat?.id,
-                text: u.message?.text,
-                date: u.message?.date
-                  ? new Date(u.message.date * 1000).toISOString()
+            ? updatesData.result.map((update) => ({
+                updateId: update.update_id,
+                messageId: update.message?.message_id,
+                chatType: update.message?.chat?.type,
+                chatId: update.message?.chat?.id,
+                from: {
+                  id: update.message?.from?.id,
+                  firstName: update.message?.from?.first_name,
+                  lastName: update.message?.from?.last_name,
+                  username: update.message?.from?.username,
+                },
+                messageType: update.message?.contact
+                  ? "contact"
+                  : update.message?.text
+                    ? "text"
+                    : update.message?.photo
+                      ? "photo"
+                      : "other",
+                contactPhone: update.message?.contact?.phone_number,
+                text: update.message?.text?.substring(0, 100),
+                date: update.message?.date
+                  ? new Date(update.message.date * 1000).toISOString()
                   : null,
               }))
             : [],
@@ -138,9 +174,10 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error("Error:", error);
-    return res
-      .status(500)
-      .json({ error: "Errore interno", details: error.message });
+    console.error("Debug error:", error);
+    return res.status(500).json({
+      error: "Errore interno",
+      details: error.message,
+    });
   }
 }

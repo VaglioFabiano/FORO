@@ -155,7 +155,7 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
     setIsLoading(true);
     try {
       const tempToken = generateTempToken(currentUser);
-      const response = await fetch("/api/notify-telegram", {
+      const response = await fetch("/api/notifiche-telegram", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${tempToken}`,
