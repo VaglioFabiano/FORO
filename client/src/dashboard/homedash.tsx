@@ -44,7 +44,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(
-    null
+    null,
   );
   const [userLevel, setUserLevel] = useState<number>(-1);
 
@@ -109,7 +109,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     },
     {
       id: "telegram-sender",
-      title: "Messaggi Telegram",
+      title: "ChatId di Telegram",
       description: "Invia messaggi via Telegram",
       icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: TelegramSender,
@@ -181,7 +181,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
   }, [onLogout]);
 
   const visibleItems = dashboardItems.filter(
-    (item) => item.minLevel === undefined || userLevel <= item.minLevel
+    (item) => item.minLevel === undefined || userLevel <= item.minLevel,
   );
 
   const handleCardClick = (item: DashboardItem) => {

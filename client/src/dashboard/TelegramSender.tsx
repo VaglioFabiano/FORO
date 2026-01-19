@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 interface TelegramSenderProps {}
 
 interface SendResult {
   id: number;
-  type: 'success' | 'error';
+  type: "success" | "error";
   message: string;
   messageId?: number;
   timestamp: string;
@@ -20,7 +20,7 @@ interface UserData {
 
 const TelegramSender: React.FC<TelegramSenderProps> = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [sendResults, setSendResults] = useState<SendResult[]>([]);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
@@ -29,33 +29,39 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
   // Template messaggi predefiniti
   const messageTemplates = [
     {
-      name: 'Promemoria Appuntamento',
-      template: 'Ciao {name}, ti ricordiamo il tuo appuntamento previsto per oggi. A presto!'
+      name: "Promemoria Appuntamento",
+      template:
+        "Ciao {name}, ti ricordiamo il tuo appuntamento previsto per oggi. A presto!",
     },
     {
-      name: 'Messaggio di Benvenuto',
-      template: 'Benvenuto {name} {surname}! Grazie per esserti registrato al nostro servizio.'
+      name: "Messaggio di Benvenuto",
+      template:
+        "Benvenuto {name} {surname}! Grazie per esserti registrato al nostro servizio.",
     },
     {
-      name: 'Notifica Importante',
-      template: 'Gentile {name}, abbiamo una comunicazione importante per te. Contattaci al più presto.'
-    }
+      name: "Notifica Importante",
+      template:
+        "Gentile {name}, abbiamo una comunicazione importante per te. Contattaci al più presto.",
+    },
   ];
 
   useEffect(() => {
     // Recupera dati utente loggato
-    const userData = localStorage.getItem('user');
+    const userData = localStorage.getItem("user");
     if (userData) {
       try {
         const user = JSON.parse(userData);
         setCurrentUser(user);
       } catch (error) {
-        console.error('Errore nel parsing dei dati utente:', error);
+        console.error("Errore nel parsing dei dati utente:", error);
       }
     }
   }, []);
 
-  const replaceTemplateVariables = (template: string, user: UserData): string => {
+  const replaceTemplateVariables = (
+    template: string,
+    user: UserData,
+  ): string => {
     return template
       .replace(/{name}/g, user.name)
       .replace(/{surname}/g, user.surname)
@@ -64,12 +70,12 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
 
   const sendTelegramMessage = async () => {
     if (!currentUser) {
-      addResult('error', 'Utente non autenticato');
+      addResult("error", "Utente non autenticato");
       return;
     }
 
     if (!message.trim()) {
-      addResult('error', 'Il messaggio non può essere vuoto');
+      addResult("error", "Il messaggio non può essere vuoto");
       return;
     }
 
@@ -78,30 +84,34 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
     try {
       // Ottieni il token temporaneo per l'autenticazione
       const tempToken = generateTempToken(currentUser);
-      
-      const response = await fetch('/api/send-telegram', {
-        method: 'POST',
+
+      const response = await fetch("/api/send-telegram", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tempToken}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tempToken}`,
         },
         body: JSON.stringify({
           phoneNumber: currentUser.tel,
-          message: replaceTemplateVariables(message, currentUser)
-        })
+          message: replaceTemplateVariables(message, currentUser),
+        }),
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        addResult('success', `Messaggio inviato con successo a ${currentUser.tel}`, result.messageId);
-        setMessage('');
+        addResult(
+          "success",
+          `Messaggio inviato con successo a ${currentUser.tel}`,
+          result.messageId,
+        );
+        setMessage("");
       } else {
-        addResult('error', result.error || 'Errore nell\'invio del messaggio');
+        addResult("error", result.error || "Errore nell'invio del messaggio");
       }
     } catch (error) {
-      console.error('Errore nell\'invio:', error);
-      addResult('error', 'Errore di connessione');
+      console.error("Errore nell'invio:", error);
+      addResult("error", "Errore di connessione");
     } finally {
       setIsLoading(false);
     }
@@ -111,20 +121,24 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
     const tokenData = {
       userId: user.id,
       tel: user.tel,
-      timestamp: new Date().getTime().toString()
+      timestamp: new Date().getTime().toString(),
     };
     return btoa(JSON.stringify(tokenData));
   };
 
-  const addResult = (type: 'success' | 'error', message: string, messageId?: number) => {
+  const addResult = (
+    type: "success" | "error",
+    message: string,
+    messageId?: number,
+  ) => {
     const result: SendResult = {
       id: Date.now(),
       type,
       message,
       messageId,
-      timestamp: new Date().toLocaleString('it-IT')
+      timestamp: new Date().toLocaleString("it-IT"),
     };
-    setSendResults(prev => [result, ...prev]);
+    setSendResults((prev) => [result, ...prev]);
   };
 
   const loadTemplate = (template: string) => {
@@ -137,23 +151,23 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
 
   const fetchDebugInfo = async () => {
     if (!currentUser) return;
-    
+
     setIsLoading(true);
     try {
       const tempToken = generateTempToken(currentUser);
-      const response = await fetch('/api/telegram-debug', {
-        method: 'GET',
+      const response = await fetch("/api/notify-telegram", {
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${tempToken}`
-        }
+          Authorization: `Bearer ${tempToken}`,
+        },
       });
-      
+
       const data = await response.json();
       setDebugInfo(data);
       setShowDebug(true);
     } catch (error) {
-      console.error('Errore debug:', error);
-      addResult('error', 'Errore nel recuperare le informazioni di debug');
+      console.error("Errore debug:", error);
+      addResult("error", "Errore nel recuperare le informazioni di debug");
     } finally {
       setIsLoading(false);
     }
@@ -161,34 +175,38 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
 
   const resetChatId = async () => {
     if (!currentUser) return;
-    
-    if (!confirm('Sei sicuro di voler cancellare il Chat ID salvato? Dovrai condividere nuovamente il tuo contatto con il bot.')) {
+
+    if (
+      !confirm(
+        "Sei sicuro di voler cancellare il Chat ID salvato? Dovrai condividere nuovamente il tuo contatto con il bot.",
+      )
+    ) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const tempToken = generateTempToken(currentUser);
-      const response = await fetch('/api/telegram-reset-chatid', {
-        method: 'DELETE',
+      const response = await fetch("/api/telegram-reset-chatid", {
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${tempToken}`
-        }
+          Authorization: `Bearer ${tempToken}`,
+        },
       });
-      
+
       const data = await response.json();
       if (response.ok) {
-        addResult('success', data.message);
+        addResult("success", data.message);
         // Aggiorna le info di debug se sono visualizzate
         if (showDebug) {
           await fetchDebugInfo();
         }
       } else {
-        addResult('error', data.error);
+        addResult("error", data.error);
       }
     } catch (error) {
-      console.error('Errore reset:', error);
-      addResult('error', 'Errore nel reset del Chat ID');
+      console.error("Errore reset:", error);
+      addResult("error", "Errore nel reset del Chat ID");
     } finally {
       setIsLoading(false);
     }
@@ -210,7 +228,8 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
       <div className="user-info-card">
         <h2>📱 Invio Messaggio Telegram</h2>
         <div className="current-user">
-          <strong>Utente loggato:</strong> {currentUser.name} {currentUser.surname}
+          <strong>Utente loggato:</strong> {currentUser.name}{" "}
+          {currentUser.surname}
           <br />
           <strong>Telefono:</strong> {currentUser.tel}
           <br />
@@ -246,7 +265,7 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
             disabled={isLoading}
           />
           <small className="helper-text">
-            Variabili disponibili: {'{name}'}, {'{surname}'}, {'{tel}'}
+            Variabili disponibili: {"{name}"}, {"{surname}"}, {"{tel}"}
           </small>
         </div>
 
@@ -256,9 +275,9 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
             onClick={sendTelegramMessage}
             disabled={isLoading || !message.trim()}
           >
-            {isLoading ? '📤 Invio in corso...' : '📨 Invia Messaggio'}
+            {isLoading ? "📤 Invio in corso..." : "📨 Invia Messaggio"}
           </button>
-          
+
           <button
             className="debug-button"
             onClick={fetchDebugInfo}
@@ -290,56 +309,161 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
         <div className="debug-section">
           <div className="debug-header">
             <h3>🔧 Informazioni Debug</h3>
-            <button 
-              className="close-debug-button" 
+            <button
+              className="close-debug-button"
               onClick={() => setShowDebug(false)}
             >
               ✕
             </button>
           </div>
-          
+
           <div className="debug-content">
             <div className="debug-item">
               <h4>👤 Utente Corrente</h4>
               <pre>{JSON.stringify(debugInfo.user, null, 2)}</pre>
             </div>
-            
+
             <div className="debug-item">
               <h4>🤖 Bot Telegram</h4>
               <pre>{JSON.stringify(debugInfo.bot, null, 2)}</pre>
             </div>
-            
+
             <div className="debug-item">
               <h4>💾 Database</h4>
               <pre>{JSON.stringify(debugInfo.database, null, 2)}</pre>
             </div>
-            
+
             <div className="debug-item">
               <h4>📱 Ultimi Messaggi Telegram</h4>
               <div className="telegram-updates">
                 {debugInfo.telegram.lastUpdates.length > 0 ? (
-                  debugInfo.telegram.lastUpdates.map((update: { chatId: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; chatType: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; from: { firstName: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; lastName: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; username: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }; messageType: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; contactPhone: any; text: any; date: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }, index: React.Key | null | undefined) => (
-                    <div key={index} className="update-item">
-                      <strong>Chat ID:</strong> {update.chatId}<br/>
-                      <strong>Tipo:</strong> {update.chatType}<br/>
-                      <strong>Da:</strong> {update.from.firstName} {update.from.lastName} (@{update.from.username})<br/>
-                      <strong>Tipo Messaggio:</strong> {update.messageType}<br/>
-                      {update.contactPhone && (
-                        <>
-                          <strong>Telefono Contatto:</strong> {update.contactPhone}<br/>
-                        </>
-                      )}
-                      {update.text && (
-                        <>
-                          <strong>Testo:</strong> {update.text}<br/>
-                        </>
-                      )}
-                      <strong>Data:</strong> {update.date}<br/>
-                      <hr/>
-                    </div>
-                  ))
+                  debugInfo.telegram.lastUpdates.map(
+                    (
+                      update: {
+                        chatId:
+                          | string
+                          | number
+                          | boolean
+                          | React.ReactElement<
+                              any,
+                              string | React.JSXElementConstructor<any>
+                            >
+                          | Iterable<React.ReactNode>
+                          | React.ReactPortal
+                          | null
+                          | undefined;
+                        chatType:
+                          | string
+                          | number
+                          | boolean
+                          | React.ReactElement<
+                              any,
+                              string | React.JSXElementConstructor<any>
+                            >
+                          | Iterable<React.ReactNode>
+                          | React.ReactPortal
+                          | null
+                          | undefined;
+                        from: {
+                          firstName:
+                            | string
+                            | number
+                            | boolean
+                            | React.ReactElement<
+                                any,
+                                string | React.JSXElementConstructor<any>
+                              >
+                            | Iterable<React.ReactNode>
+                            | React.ReactPortal
+                            | null
+                            | undefined;
+                          lastName:
+                            | string
+                            | number
+                            | boolean
+                            | React.ReactElement<
+                                any,
+                                string | React.JSXElementConstructor<any>
+                              >
+                            | Iterable<React.ReactNode>
+                            | React.ReactPortal
+                            | null
+                            | undefined;
+                          username:
+                            | string
+                            | number
+                            | boolean
+                            | React.ReactElement<
+                                any,
+                                string | React.JSXElementConstructor<any>
+                              >
+                            | Iterable<React.ReactNode>
+                            | React.ReactPortal
+                            | null
+                            | undefined;
+                        };
+                        messageType:
+                          | string
+                          | number
+                          | boolean
+                          | React.ReactElement<
+                              any,
+                              string | React.JSXElementConstructor<any>
+                            >
+                          | Iterable<React.ReactNode>
+                          | React.ReactPortal
+                          | null
+                          | undefined;
+                        contactPhone: any;
+                        text: any;
+                        date:
+                          | string
+                          | number
+                          | boolean
+                          | React.ReactElement<
+                              any,
+                              string | React.JSXElementConstructor<any>
+                            >
+                          | Iterable<React.ReactNode>
+                          | React.ReactPortal
+                          | null
+                          | undefined;
+                      },
+                      index: React.Key | null | undefined,
+                    ) => (
+                      <div key={index} className="update-item">
+                        <strong>Chat ID:</strong> {update.chatId}
+                        <br />
+                        <strong>Tipo:</strong> {update.chatType}
+                        <br />
+                        <strong>Da:</strong> {update.from.firstName}{" "}
+                        {update.from.lastName} (@{update.from.username})<br />
+                        <strong>Tipo Messaggio:</strong> {update.messageType}
+                        <br />
+                        {update.contactPhone && (
+                          <>
+                            <strong>Telefono Contatto:</strong>{" "}
+                            {update.contactPhone}
+                            <br />
+                          </>
+                        )}
+                        {update.text && (
+                          <>
+                            <strong>Testo:</strong> {update.text}
+                            <br />
+                          </>
+                        )}
+                        <strong>Data:</strong> {update.date}
+                        <br />
+                        <hr />
+                      </div>
+                    ),
+                  )
                 ) : (
-                  <p>Nessun messaggio trovato. Assicurati di aver scritto al bot di recente.</p>
+                  <p>
+                    Nessun messaggio trovato. Assicurati di aver scritto al bot
+                    di recente.
+                  </p>
                 )}
               </div>
             </div>
@@ -356,31 +480,28 @@ const TelegramSender: React.FC<TelegramSenderProps> = () => {
             </button>
           )}
         </div>
-        
+
         <div className="results-list">
           {sendResults.map((result) => (
-            <div
-              key={result.id}
-              className={`result-item ${result.type}`}
-            >
+            <div key={result.id} className={`result-item ${result.type}`}>
               <div className="result-icon">
-                {result.type === 'success' ? '✅' : '❌'}
+                {result.type === "success" ? "✅" : "❌"}
               </div>
               <div className="result-content">
                 <div className="result-message">{result.message}</div>
                 <div className="result-timestamp">{result.timestamp}</div>
                 {result.messageId && (
-                  <div className="result-id">ID Messaggio: {result.messageId}</div>
+                  <div className="result-id">
+                    ID Messaggio: {result.messageId}
+                  </div>
                 )}
               </div>
             </div>
           ))}
         </div>
-        
+
         {sendResults.length === 0 && (
-          <div className="no-results">
-            Nessun messaggio inviato ancora
-          </div>
+          <div className="no-results">Nessun messaggio inviato ancora</div>
         )}
       </div>
 
