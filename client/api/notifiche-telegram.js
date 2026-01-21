@@ -34,10 +34,9 @@ async function verifyUser(tempToken) {
 // --- FUNZIONI DB ---
 
 async function addNotifica(userId, tipo) {
-  // Richiede che la tabella abbia il vincolo UNIQUE(user_id, tipo_notifica)
+  // Se la riga esiste già, la ignora. Se non esiste, la crea.
   return await client.execute({
-    sql: `INSERT INTO notifiche (user_id, tipo_notifica) VALUES (?, ?) 
-          ON CONFLICT(user_id, tipo_notifica) DO UPDATE SET attiva = 1`,
+    sql: `INSERT OR IGNORE INTO notifiche (user_id, tipo_notifica) VALUES (?, ?)`,
     args: [userId, tipo || "promemoria"],
   });
 }
@@ -53,10 +52,9 @@ async function removeNotifica(userId, tipo) {
 async function getTutteNotifiche() {
   const result = await client.execute({
     sql: `
-      SELECT n.id, n.user_id, n.tipo_notifica, n.attiva, u.name, u.surname 
+      SELECT n.id, n.user_id, n.tipo_notifica, u.name, u.surname 
       FROM notifiche n
       LEFT JOIN users u ON n.user_id = u.id
-      WHERE n.attiva = 1
       ORDER BY n.tipo_notifica, u.surname
     `,
     args: [],
