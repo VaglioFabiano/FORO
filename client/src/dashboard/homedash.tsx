@@ -109,17 +109,17 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       minLevel: 2,
     },
     {
-      id: "telegram-sender",
-      title: "Debug Telegram ",
+      id: "telegram-debug",
+      title: "Debug Telegram",
       description: "Per i chat ID Telegram livello 0",
       icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: TelegramSender,
       minLevel: 0,
     },
     {
-      id: "telegram-sender",
-      title: "Notifiche Telegram ",
-      description: "In sviluppo",
+      id: "notifiche-telegram",
+      title: "Notifiche Telegram",
+      description: "Configura le tue classi di notifica",
       icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: NotificheTelegram,
       minLevel: 0,
@@ -259,9 +259,9 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     <div className="homedashcss_dashboard-container">
       <div className="homedashcss_dashboard-grid">
         {visibleItems.length > 0 ? (
-          visibleItems.map((item) => (
+          visibleItems.map((item, index) => (
             <div
-              key={item.id}
+              key={`${item.id}-${index}`}
               className="homedashcss_dashboard-card"
               onClick={() => handleCardClick(item)}
               style={{ cursor: "pointer" }}
