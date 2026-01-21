@@ -72,18 +72,18 @@ async function sendGroupNotification(
     if (action === "add") {
       if (currentUserId === recipientId) {
         // Auto-iscrizione
-        message = `✅ Ti sei iscritto al gruppo di notifica: *${classeName}*`;
+        message = `✅ Ti sei iscritto al gruppo di notifica: "${classeName}"`;
       } else {
         // Admin aggiunge utente
-        message = `📋 *${currentUserInfo.name} ${currentUserInfo.surname}* ti ha aggiunto al gruppo di notifica: *${classeName}*`;
+        message = `📋 ${currentUserInfo.name} ${currentUserInfo.surname} ti ha aggiunto al gruppo di notifica: "${classeName}"`;
       }
     } else if (action === "remove") {
       if (currentUserId === recipientId) {
         // Auto-rimozione
-        message = `❌ Ti sei disiscritto dal gruppo di notifica: *${classeName}*`;
+        message = `❌ Ti sei disiscritto dal gruppo di notifica: "${classeName}"`;
       } else {
         // Admin rimuove utente
-        message = `🗑️ *${currentUserInfo.name} ${currentUserInfo.surname}* ti ha rimosso dal gruppo di notifica: *${classeName}*`;
+        message = `🗑️ ${currentUserInfo.name} ${currentUserInfo.surname} ti ha rimosso dal gruppo di notifica: "${classeName}"`;
       }
     }
 
