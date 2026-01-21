@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import CreaUtenti from "./CreaUtenti";
 import ModificaOrari from "./ModificaOrari";
 import TelegramSender from "./TelegramSender";
+import NotificheTelegram from "./NotificheTelegram";
 import VisualizzaUtenti from "./VisualizzaUtenti";
 import ProfiloUtente from "./ProfiloUtente";
 import Turni from "./Turni";
@@ -109,10 +110,18 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     },
     {
       id: "telegram-sender",
-      title: "ChatId di Telegram",
-      description: "Invia messaggi via Telegram",
+      title: "Debug Telegram ",
+      description: "Per i chat ID Telegram livello 0",
       icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: TelegramSender,
+      minLevel: 0,
+    },
+    {
+      id: "telegram-sender",
+      title: "Notifiche Telegram ",
+      description: "In sviluppo",
+      icon: <FaTelegram size={iconSize} color="#0088cc" />,
+      component: NotificheTelegram,
       minLevel: 0,
     },
     {

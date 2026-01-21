@@ -1,0 +1,185 @@
+/* ../style/notificheTelegram.css */
+
+.nt-container {
+  padding: 2rem;
+  color: #1f2937;
+  min-height: 400px;
+}
+
+.nt-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+  padding-bottom: 1rem;
+}
+
+.nt-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #0c495b;
+}
+
+.nt-status-banner {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  animation: nt-fade-in 0.3s ease;
+}
+
+.nt-status-banner.success {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #34d399;
+}
+
+.nt-status-banner.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+.nt-input-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 2.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+}
+
+.nt-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 2px solid #e5e7eb;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.nt-input:focus {
+  border-color: #0088cc;
+}
+
+.nt-add-button {
+  background-color: #0088cc;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.nt-add-button:hover:not(:disabled) {
+  background-color: #0077b5;
+  transform: translateY(-1px);
+}
+
+.nt-add-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.nt-list-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.nt-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s;
+}
+
+.nt-card:hover {
+  transform: scale(1.02);
+}
+
+.nt-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nt-type-label {
+  font-weight: 600;
+  text-transform: capitalize;
+  font-size: 0.95rem;
+}
+
+.nt-bell {
+  color: #f59e0b;
+}
+
+.nt-delete-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.nt-delete-btn:hover {
+  background-color: #fee2e2;
+}
+
+.nt-empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 0.5rem;
+}
+
+@keyframes nt-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .nt-input-section {
+    flex-direction: column;
+  }
+
+  .nt-add-button {
+    justify-content: center;
+  }
+}
