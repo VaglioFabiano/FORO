@@ -119,7 +119,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     {
       id: "notifiche-telegram",
       title: "Notifiche Telegram",
-      description: "Configura le tue classi di notifica",
+      description: "Gestisci le tue classi di notifica",
       icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: NotificheTelegram,
       minLevel: 0,
@@ -259,9 +259,9 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
     <div className="homedashcss_dashboard-container">
       <div className="homedashcss_dashboard-grid">
         {visibleItems.length > 0 ? (
-          visibleItems.map((item, index) => (
+          visibleItems.map((item) => (
             <div
-              key={`${item.id}-${index}`}
+              key={item.id}
               className="homedashcss_dashboard-card"
               onClick={() => handleCardClick(item)}
               style={{ cursor: "pointer" }}
