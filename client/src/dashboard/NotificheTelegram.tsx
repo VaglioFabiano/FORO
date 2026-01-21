@@ -8,12 +8,13 @@ import {
   FaUserPlus,
 } from "react-icons/fa";
 import "../style/notificheTelegram.css";
-import "../style/turni.css"; // Importiamo stile turni per la modale
+import "../style/turni.css";
 
 interface Notifica {
   id: number;
   user_id: number;
   tipo_notifica: string;
+  descrizione?: string; // Nuova colonna
   name?: string;
   surname?: string;
 }
@@ -31,12 +32,11 @@ const NotificheTelegram: React.FC = () => {
   const [tuttiUtenti, setTuttiUtenti] = useState<Utente[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Input per il nome della nuova classe
+  // Input per la creazione
   const [nuovaNotifica, setNuovaNotifica] = useState("");
+  const [nuovaDescrizione, setNuovaDescrizione] = useState(""); // Nuovo stato descrizione
 
-  // Classe attualmente selezionata (o quella che stiamo creando)
   const [selectedClasse, setSelectedClasse] = useState<string | null>(null);
-
   const [status, setStatus] = useState({ text: "", isError: false });
 
   // Stati Modale
@@ -46,7 +46,6 @@ const NotificheTelegram: React.FC = () => {
     null,
   );
 
-  // Flag per capire se stiamo creando una classe nuova o aggiungendo a una esistente
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
   const getAuthToken = () => {
@@ -104,6 +103,19 @@ const NotificheTelegram: React.FC = () => {
 
     try {
       const token = getAuthToken();
+      // Se stiamo creando, usiamo la descrizione inserita, altrimenti cerchiamo quella esistente
+      let descrizioneToSend = "";
+
+      if (action === "add_notifica") {
+        if (isCreatingNew) {
+          descrizioneToSend = nuovaDescrizione;
+        } else {
+          // Cerchiamo la descrizione esistente per questa classe
+          const existing = iscritti.find((n) => n.tipo_notifica === tipo);
+          descrizioneToSend = existing?.descrizione || "";
+        }
+      }
+
       const res = await fetch("/api/notifiche-telegram", {
         method: "POST",
         headers: {
@@ -113,7 +125,8 @@ const NotificheTelegram: React.FC = () => {
         body: JSON.stringify({
           action,
           tipo_notifica: tipo.toLowerCase().trim(),
-          userIdOverride: targetUserId, // Qui passiamo l'ID scelto, mai quello di default
+          descrizione: descrizioneToSend, // Inviamo la descrizione al backend
+          userIdOverride: targetUserId,
         }),
       });
 
@@ -121,9 +134,9 @@ const NotificheTelegram: React.FC = () => {
       if (result.success) {
         setStatus({ text: result.message, isError: false });
 
-        // Se abbiamo creato una nuova classe, puliamo l'input
         if (isCreatingNew) {
           setNuovaNotifica("");
+          setNuovaDescrizione("");
           setIsCreatingNew(false);
         }
 
@@ -136,26 +149,26 @@ const NotificheTelegram: React.FC = () => {
     setTimeout(() => setStatus({ text: "", isError: false }), 3000);
   };
 
-  // Handler per il bottone "Crea" (Nuova Classe)
   const handleStartCreateClass = () => {
     if (!nuovaNotifica.trim()) return;
-
-    // Impostiamo la nuova classe come selezionata temporaneamente
     setSelectedClasse(nuovaNotifica.trim());
-    setIsCreatingNew(true); // Modalità creazione
-    openModal(); // Apriamo subito la modale per scegliere il primo utente
+    setIsCreatingNew(true);
+    openModal();
   };
 
-  // Handler per il bottone "Aggiungi Iscritto" (Classe Esistente)
   const handleStartAddUser = () => {
     if (!selectedClasse) return;
-    setIsCreatingNew(false); // Modalità aggiunta
+    setIsCreatingNew(false);
     openModal();
   };
 
   const utentiInClasse = iscritti.filter(
     (n) => n.tipo_notifica === selectedClasse,
   );
+
+  // Recupera la descrizione della classe selezionata (dal primo utente trovato)
+  const currentDescription =
+    utentiInClasse.length > 0 ? utentiInClasse[0].descrizione : "";
 
   // --- LOGICA MODALE ---
   const openModal = () => {
@@ -168,17 +181,11 @@ const NotificheTelegram: React.FC = () => {
     setIsModalOpen(false);
     setUserSearchTerm("");
     setSelectedUserIdToAdd(null);
-    // Se stavamo creando una classe ma abbiamo annullato, resettiamo la selezione
     if (isCreatingNew) {
-      // Opzionale: se si vuole tornare alla selezione precedente o a null
-      // setSelectedClasse(null);
       setIsCreatingNew(false);
     }
   };
 
-  // Utenti disponibili:
-  // Se stiamo creando una classe nuova (che non esiste ancora nei dati), tutti sono disponibili.
-  // Se è una classe esistente, filtriamo chi è già dentro.
   const utentiDisponibili = isCreatingNew
     ? tuttiUtenti
     : tuttiUtenti.filter(
@@ -228,12 +235,18 @@ const NotificheTelegram: React.FC = () => {
           <div className="nt-input-group">
             <input
               type="text"
-              className="nt-input"
-              placeholder="Nome classe..."
+              className="nt-input nt-input-name"
+              placeholder="Nome classe (es. sviluppatori)..."
               value={nuovaNotifica}
               onChange={(e) => setNuovaNotifica(e.target.value)}
             />
-            {/* Il bottone ora apre la modale, non chiama API diretta */}
+            <input
+              type="text"
+              className="nt-input nt-input-desc"
+              placeholder="Descrizione (opzionale)..."
+              value={nuovaDescrizione}
+              onChange={(e) => setNuovaDescrizione(e.target.value)}
+            />
             <button
               className="nt-add-button"
               onClick={handleStartCreateClass}
@@ -257,7 +270,8 @@ const NotificheTelegram: React.FC = () => {
                   onClick={() => {
                     setSelectedClasse(classe);
                     setIsCreatingNew(false);
-                    setNuovaNotifica(""); // Pulisce input nuova classe se cambi selezione
+                    setNuovaNotifica("");
+                    setNuovaDescrizione("");
                   }}
                 >
                   <span>{classe}</span>
@@ -286,7 +300,6 @@ const NotificheTelegram: React.FC = () => {
                     : `Iscritti a: ${selectedClasse}`}
                 </h3>
 
-                {/* Mostra il pulsante aggiungi solo se la classe esiste già (non in creazione) */}
                 {!isCreatingNew && (
                   <button
                     className="nt-add-button"
@@ -303,6 +316,19 @@ const NotificheTelegram: React.FC = () => {
                 )}
               </div>
 
+              {/* Box Descrizione */}
+              {!isCreatingNew && currentDescription && (
+                <div className="nt-group-description">{currentDescription}</div>
+              )}
+              {!isCreatingNew && !currentDescription && (
+                <div
+                  className="nt-group-description"
+                  style={{ color: "#9ca3af", fontStyle: "italic" }}
+                >
+                  Nessuna descrizione per questo gruppo.
+                </div>
+              )}
+
               <div className="nt-user-management">
                 <div className="nt-members-grid">
                   {utentiInClasse.length === 0 && !isCreatingNew && (
@@ -315,7 +341,6 @@ const NotificheTelegram: React.FC = () => {
                     </p>
                   )}
 
-                  {/* Lista utenti esistenti */}
                   {utentiInClasse.map((m) => {
                     const info = tuttiUtenti.find((u) => u.id === m.user_id);
                     return (
@@ -354,7 +379,6 @@ const NotificheTelegram: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MODALE UNIFICATA (Creazione o Aggiunta) --- */}
       {isModalOpen && selectedClasse && (
         <div className="turno-modal-overlay" onClick={closeModal}>
           <div
@@ -374,16 +398,25 @@ const NotificheTelegram: React.FC = () => {
 
             <div className="turno-modal-body">
               {isCreatingNew && (
-                <p
+                <div
                   style={{
                     marginBottom: "15px",
                     fontSize: "0.9em",
                     color: "#666",
                   }}
                 >
-                  Stai creando la classe <strong>"{selectedClasse}"</strong>. È
-                  obbligatorio selezionare almeno un utente iniziale.
-                </p>
+                  <p>
+                    Stai creando la classe <strong>"{selectedClasse}"</strong>.
+                  </p>
+                  {nuovaDescrizione && (
+                    <p>
+                      <em>Descrizione: {nuovaDescrizione}</em>
+                    </p>
+                  )}
+                  <p style={{ marginTop: "5px" }}>
+                    È obbligatorio selezionare almeno un utente iniziale.
+                  </p>
+                </div>
               )}
 
               <div className="form-group">

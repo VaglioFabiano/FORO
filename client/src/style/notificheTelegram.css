@@ -45,7 +45,7 @@
 /* Layout Principale Desktop */
 .nt-main-layout {
   display: grid;
-  grid-template-columns: 1fr 1.5fr; /* Sinistra più piccola, Destra più grande */
+  grid-template-columns: 1fr 1.5fr;
   gap: 2rem;
   margin-top: 1rem;
 }
@@ -55,27 +55,38 @@
   padding: 1.5rem;
   border-radius: 1rem;
   min-height: 400px;
-  /* Aggiunto per contenere il contenuto se scrolla */
   display: flex;
   flex-direction: column;
 }
 
+/* Modificato per gestire più input */
 .nt-input-group {
   display: flex;
   gap: 10px;
   margin-bottom: 2rem;
+  align-items: stretch;
 }
 
 .nt-input {
-  flex: 1;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   border: 2px solid #e5e7eb;
   font-size: 1rem;
   outline: none;
   transition: border-color 0.2s;
-  /* Evita zoom su mobile iOS */
   max-width: 100%;
+}
+
+/* Input nome classe: prende spazio ma non troppo */
+.nt-input-name {
+  flex: 1;
+  min-width: 150px;
+}
+
+/* Input descrizione: prende più spazio */
+.nt-input-desc {
+  flex: 2;
+  min-width: 200px;
 }
 
 .nt-input:focus {
@@ -93,7 +104,7 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  white-space: nowrap; /* Evita che il testo vada a capo */
+  white-space: nowrap;
   transition: all 0.2s;
 }
 
@@ -143,9 +154,22 @@
   font-weight: bold;
 }
 
+/* Descrizione del gruppo selezionato */
+.nt-group-description {
+  background-color: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+  border-left: 4px solid #0088cc;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 /* Lista Membri */
 .nt-user-management {
-  flex: 1; /* Occupa lo spazio rimanente */
+  flex: 1;
 }
 
 .nt-members-grid {
@@ -167,7 +191,7 @@
 
 .nt-member-card span {
   font-size: 0.95rem;
-  word-break: break-word; /* Se i nomi sono lunghi */
+  word-break: break-word;
 }
 
 .nt-remove-btn {
@@ -215,16 +239,23 @@
 
 @media (max-width: 900px) {
   .nt-container {
-    padding: 1rem; /* Meno padding sui bordi */
+    padding: 1rem;
   }
 
   .nt-main-layout {
-    grid-template-columns: 1fr; /* Una sola colonna */
+    grid-template-columns: 1fr;
     gap: 1.5rem;
   }
 
-  .nt-section {
-    min-height: auto; /* Togli altezza minima fissa su mobile */
+  /* Su tablet/mobile gli input vanno a capo */
+  .nt-input-group {
+    flex-direction: column;
+  }
+
+  .nt-input-name,
+  .nt-input-desc {
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 
@@ -239,30 +270,17 @@
     font-size: 1.25rem;
   }
 
-  /* Impila input e bottone "Crea" */
-  .nt-input-group {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .nt-input {
-    width: 100%;
-    box-sizing: border-box; /* Assicura che il padding non rompa la larghezza */
-  }
-
   .nt-add-button {
     width: 100%;
-    justify-content: center; /* Centra testo e icona */
+    justify-content: center;
   }
 
-  /* Nella sezione destra (iscritti), metti il titolo sopra e il bottone sotto */
   .nt-section > div:first-child {
     flex-direction: column;
     align-items: flex-start !important;
     gap: 10px;
   }
 
-  /* Correzione specifica per il bottone "Aggiungi Iscritto" su mobile */
   .nt-section > div:first-child button {
     width: 100%;
     justify-content: center;
@@ -270,18 +288,14 @@
 
   /* Override CSS Modale Turni per mobile */
   .turno-modal-content {
-    width: 95% !important; /* Occupa quasi tutto lo schermo */
+    width: 95% !important;
     max-height: 90vh;
     margin: 10px;
     padding: 15px !important;
   }
 
-  .turno-modal-header h3 {
-    font-size: 1.1rem;
-  }
-
   .turno-modal-actions {
-    flex-direction: column-reverse; /* Bottoni uno sopra l'altro, conferma in alto */
+    flex-direction: column-reverse;
     gap: 10px;
   }
 
