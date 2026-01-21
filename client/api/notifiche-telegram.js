@@ -127,11 +127,11 @@ async function verifyUser(tempToken) {
   }
 }
 
-async function addNotifica(userId, tipo) {
-  // Usa INSERT OR IGNORE come da ultime modifiche
+// MODIFICA: Aggiunto parametro 'descrizione' e colonna nella query
+async function addNotifica(userId, tipo, descrizione) {
   return await client.execute({
-    sql: `INSERT OR IGNORE INTO notifiche (user_id, tipo_notifica) VALUES (?, ?)`,
-    args: [userId, tipo || "promemoria"],
+    sql: `INSERT OR IGNORE INTO notifiche (user_id, tipo_notifica, descrizione) VALUES (?, ?, ?)`,
+    args: [userId, tipo || "promemoria", descrizione || ""],
   });
 }
 
@@ -142,11 +142,11 @@ async function removeNotifica(userId, tipo) {
   });
 }
 
-// Recupera TUTTE le notifiche con i nomi degli utenti (per la Dashboard Admin)
+// MODIFICA: Aggiunto 'n.descrizione' alla SELECT
 async function getTutteNotifiche() {
   const result = await client.execute({
     sql: `
-      SELECT n.id, n.user_id, n.tipo_notifica, u.name, u.surname 
+      SELECT n.id, n.user_id, n.tipo_notifica, n.descrizione, u.name, u.surname 
       FROM notifiche n
       LEFT JOIN users u ON n.user_id = u.id
       ORDER BY n.tipo_notifica, u.surname
@@ -176,7 +176,8 @@ export default async function handler(req, res) {
 
     // --- GESTIONE AZIONI (POST) ---
     if (req.method === "POST") {
-      const { action, tipo_notifica, userIdOverride } = req.body;
+      // MODIFICA: Estrazione di 'descrizione' dal body
+      const { action, tipo_notifica, descrizione, userIdOverride } = req.body;
 
       // Se c'è un override (l'admin aggiunge qualcun altro), usiamo quello, altrimenti l'utente corrente
       const targetUserId = userIdOverride ? parseInt(userIdOverride) : user.id;
@@ -185,10 +186,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Tipo notifica mancante" });
 
       if (action === "add_notifica") {
-        await addNotifica(targetUserId, tipo_notifica);
+        // MODIFICA: Passaggio di 'descrizione' alla funzione DB
+        await addNotifica(targetUserId, tipo_notifica, descrizione);
 
         // --- INVIO NOTIFICA ---
-        // Passiamo: azione, nome_classe, chi_fa_l_azione, destinatario
         await sendGroupNotification(
           "add",
           tipo_notifica,
