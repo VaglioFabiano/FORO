@@ -42,13 +42,28 @@
   border: 1px solid #f87171;
 }
 
-.nt-input-section {
+/* Layout Principale Desktop */
+.nt-main-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr; /* Sinistra più piccola, Destra più grande */
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.nt-section {
+  background: rgba(255, 255, 255, 0.4);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  min-height: 400px;
+  /* Aggiunto per contenere il contenuto se scrolla */
+  display: flex;
+  flex-direction: column;
+}
+
+.nt-input-group {
   display: flex;
   gap: 10px;
-  margin-bottom: 2.5rem;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 1.5rem;
-  border-radius: 0.75rem;
+  margin-bottom: 2rem;
 }
 
 .nt-input {
@@ -59,6 +74,8 @@
   font-size: 1rem;
   outline: none;
   transition: border-color 0.2s;
+  /* Evita zoom su mobile iOS */
+  max-width: 100%;
 }
 
 .nt-input:focus {
@@ -76,6 +93,7 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
+  white-space: nowrap; /* Evita che il testo vada a capo */
   transition: all 0.2s;
 }
 
@@ -89,119 +107,15 @@
   cursor: not-allowed;
 }
 
-.nt-list-section h3 {
+/* Lista Classi */
+.nt-class-list h3,
+.nt-section h3 {
   font-size: 1.1rem;
   margin-bottom: 1rem;
   color: #4b5563;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.nt-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.nt-card {
-  background: white;
-  padding: 1rem;
-  border-radius: 0.6rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
-}
-
-.nt-card:hover {
-  transform: scale(1.02);
-}
-
-.nt-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.nt-type-label {
-  font-weight: 600;
-  text-transform: capitalize;
-  font-size: 0.95rem;
-}
-
-.nt-bell {
-  color: #f59e0b;
-}
-
-.nt-delete-btn {
-  background: transparent;
-  border: none;
-  color: #ef4444;
-  padding: 0.5rem;
-  cursor: pointer;
-  border-radius: 0.375rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.nt-delete-btn:hover {
-  background-color: #fee2e2;
-}
-
-.nt-empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: #6b7280;
-  font-style: italic;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 0.5rem;
-}
-
-@keyframes nt-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Mobile responsive */
-@media (max-width: 600px) {
-  .nt-input-section {
-    flex-direction: column;
-  }
-
-  .nt-add-button {
-    justify-content: center;
-  }
-}
-
-.nt-main-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 2rem;
-  margin-top: 1rem;
-}
-
-.nt-section {
-  background: rgba(255, 255, 255, 0.4);
-  padding: 1.5rem;
-  border-radius: 1rem;
-  min-height: 400px;
-}
-
-.nt-input-group {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 2rem;
 }
 
 .nt-class-item {
@@ -215,15 +129,23 @@
   cursor: pointer;
   transition: all 0.2s;
   border: 2px solid transparent;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .nt-class-item:hover {
   transform: translateX(5px);
+  border-color: #b3e0ff;
 }
 
 .nt-class-item.active {
   border-color: #0088cc;
   background: #e6f7ff;
+  font-weight: bold;
+}
+
+/* Lista Membri */
+.nt-user-management {
+  flex: 1; /* Occupa lo spazio rimanente */
 }
 
 .nt-members-grid {
@@ -243,13 +165,26 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.nt-member-card span {
+  font-size: 0.95rem;
+  word-break: break-word; /* Se i nomi sono lunghi */
+}
+
 .nt-remove-btn {
   background: #fee2e2;
   color: #ef4444;
   border: none;
-  padding: 0.4rem;
+  padding: 0.5rem;
   border-radius: 0.4rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.nt-remove-btn:hover {
+  background: #fecaca;
 }
 
 .nt-placeholder {
@@ -260,10 +195,97 @@
   color: #6b7280;
   font-style: italic;
   text-align: center;
+  padding: 2rem;
 }
 
-@media (max-width: 768px) {
+@keyframes nt-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================
+   RESPONSIVE (MOBILE & TABLET)
+   ========================================= */
+
+@media (max-width: 900px) {
+  .nt-container {
+    padding: 1rem; /* Meno padding sui bordi */
+  }
+
   .nt-main-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Una sola colonna */
+    gap: 1.5rem;
+  }
+
+  .nt-section {
+    min-height: auto; /* Togli altezza minima fissa su mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .nt-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .nt-header h2 {
+    font-size: 1.25rem;
+  }
+
+  /* Impila input e bottone "Crea" */
+  .nt-input-group {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .nt-input {
+    width: 100%;
+    box-sizing: border-box; /* Assicura che il padding non rompa la larghezza */
+  }
+
+  .nt-add-button {
+    width: 100%;
+    justify-content: center; /* Centra testo e icona */
+  }
+
+  /* Nella sezione destra (iscritti), metti il titolo sopra e il bottone sotto */
+  .nt-section > div:first-child {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+
+  /* Correzione specifica per il bottone "Aggiungi Iscritto" su mobile */
+  .nt-section > div:first-child button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Override CSS Modale Turni per mobile */
+  .turno-modal-content {
+    width: 95% !important; /* Occupa quasi tutto lo schermo */
+    max-height: 90vh;
+    margin: 10px;
+    padding: 15px !important;
+  }
+
+  .turno-modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .turno-modal-actions {
+    flex-direction: column-reverse; /* Bottoni uno sopra l'altro, conferma in alto */
+    gap: 10px;
+  }
+
+  .turno-modal-actions button {
+    width: 100%;
   }
 }
