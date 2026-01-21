@@ -9,6 +9,102 @@ const client = createClient(config);
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
+// --- FUNZIONI DI SUPPORTO (Helpers) ---
+
+async function getUserInfo(userId) {
+  try {
+    const result = await client.execute({
+      sql: "SELECT name, surname FROM users WHERE id = ?",
+      args: [userId],
+    });
+    return result.rows[0] || null;
+  } catch (e) {
+    console.error("Errore recupero info utente:", e);
+    return null;
+  }
+}
+
+async function getUserTelegramChatId(userId) {
+  try {
+    const result = await client.execute({
+      sql: "SELECT telegram_chat_id FROM users WHERE id = ?",
+      args: [userId],
+    });
+    return result.rows[0]?.telegram_chat_id || null;
+  } catch (e) {
+    console.error("Errore recupero chat ID:", e);
+    return null;
+  }
+}
+
+async function sendTelegramMessage(chatId, text) {
+  try {
+    await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: text }),
+    });
+  } catch (e) {
+    console.error("Errore invio Telegram:", e);
+  }
+}
+
+// --- NUOVA FUNZIONE NOTIFICA GRUPPO ---
+
+async function sendGroupNotification(
+  action,
+  classeName,
+  currentUserId,
+  targetUserId,
+) {
+  try {
+    // Se non c'è targetUserId, assumiamo sia l'utente corrente
+    const recipientId = targetUserId || currentUserId;
+
+    // Recupera info di chi sta compiendo l'azione (l'admin/current user)
+    const currentUserInfo = await getUserInfo(currentUserId);
+
+    if (!currentUserInfo) return;
+
+    let message = "";
+
+    // Logica messaggi
+    if (action === "add") {
+      if (currentUserId === recipientId) {
+        // Auto-iscrizione
+        message = `✅ Ti sei iscritto al gruppo di notifica: *${classeName}*`;
+      } else {
+        // Admin aggiunge utente
+        message = `📋 *${currentUserInfo.name} ${currentUserInfo.surname}* ti ha aggiunto al gruppo di notifica: *${classeName}*`;
+      }
+    } else if (action === "remove") {
+      if (currentUserId === recipientId) {
+        // Auto-rimozione
+        message = `❌ Ti sei disiscritto dal gruppo di notifica: *${classeName}*`;
+      } else {
+        // Admin rimuove utente
+        message = `🗑️ *${currentUserInfo.name} ${currentUserInfo.surname}* ti ha rimosso dal gruppo di notifica: *${classeName}*`;
+      }
+    }
+
+    if (!message) return;
+
+    // Recupera Chat ID del destinatario
+    const chatId = await getUserTelegramChatId(recipientId);
+
+    if (chatId) {
+      await sendTelegramMessage(chatId, message);
+      console.log(`Notifica gruppo inviata a ${recipientId}`);
+    } else {
+      console.log(`Chat ID non trovato per utente ${recipientId}`);
+    }
+  } catch (error) {
+    console.error("Errore sendGroupNotification:", error);
+  }
+}
+
+// --- FUNZIONI DB & AUTH ---
+
 async function verifyUser(tempToken) {
   try {
     const decoded = JSON.parse(atob(tempToken));
@@ -31,10 +127,8 @@ async function verifyUser(tempToken) {
   }
 }
 
-// --- FUNZIONI DB ---
-
 async function addNotifica(userId, tipo) {
-  // Se la riga esiste già, la ignora. Se non esiste, la crea.
+  // Usa INSERT OR IGNORE come da ultime modifiche
   return await client.execute({
     sql: `INSERT OR IGNORE INTO notifiche (user_id, tipo_notifica) VALUES (?, ?)`,
     args: [userId, tipo || "promemoria"],
@@ -48,7 +142,7 @@ async function removeNotifica(userId, tipo) {
   });
 }
 
-// MODIFICA: Recupera TUTTE le notifiche con i nomi degli utenti (per la Dashboard Admin)
+// Recupera TUTTE le notifiche con i nomi degli utenti (per la Dashboard Admin)
 async function getTutteNotifiche() {
   const result = await client.execute({
     sql: `
@@ -92,6 +186,16 @@ export default async function handler(req, res) {
 
       if (action === "add_notifica") {
         await addNotifica(targetUserId, tipo_notifica);
+
+        // --- INVIO NOTIFICA ---
+        // Passiamo: azione, nome_classe, chi_fa_l_azione, destinatario
+        await sendGroupNotification(
+          "add",
+          tipo_notifica,
+          user.id,
+          targetUserId,
+        );
+
         return res
           .status(200)
           .json({ success: true, message: "Utente aggiunto alla classe" });
@@ -99,6 +203,15 @@ export default async function handler(req, res) {
 
       if (action === "remove_notifica") {
         await removeNotifica(targetUserId, tipo_notifica);
+
+        // --- INVIO NOTIFICA ---
+        await sendGroupNotification(
+          "remove",
+          tipo_notifica,
+          user.id,
+          targetUserId,
+        );
+
         return res
           .status(200)
           .json({ success: true, message: "Utente rimosso dalla classe" });
@@ -138,7 +251,7 @@ export default async function handler(req, res) {
 
       const debugInfo = {
         user: { ...user },
-        notifiche_attive: notificheAttive, // Ora contiene TUTTI gli utenti
+        notifiche_attive: notificheAttive,
         bot: {
           info: botInfo.ok ? botInfo.result : "Errore API Telegram",
           username: botInfo.ok ? botInfo.result.username : null,
@@ -150,7 +263,6 @@ export default async function handler(req, res) {
           updatesCount: updatesData.ok ? updatesData.result.length : 0,
           lastUpdates: updatesData.ok
             ? updatesData.result.map((update) => ({
-                // Mapping semplificato per evitare crash se mancano campi
                 updateId: update.update_id,
                 messageId: update.message?.message_id,
                 chatId: update.message?.chat?.id,

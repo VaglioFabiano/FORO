@@ -8,8 +8,7 @@ import {
   FaUserPlus,
 } from "react-icons/fa";
 import "../style/notificheTelegram.css";
-// Importiamo anche lo stile dei turni per avere la stessa grafica della modale
-import "../style/turni.css";
+import "../style/turni.css"; // Importiamo stile turni per la modale
 
 interface Notifica {
   id: number;
@@ -23,7 +22,7 @@ interface Utente {
   id: number;
   name: string;
   surname: string;
-  username: string; // Aggiunto username per la ricerca come nei turni
+  username: string;
 }
 
 const NotificheTelegram: React.FC = () => {
@@ -31,16 +30,24 @@ const NotificheTelegram: React.FC = () => {
   const [iscritti, setIscritti] = useState<Notifica[]>([]);
   const [tuttiUtenti, setTuttiUtenti] = useState<Utente[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Input per il nome della nuova classe
   const [nuovaNotifica, setNuovaNotifica] = useState("");
+
+  // Classe attualmente selezionata (o quella che stiamo creando)
   const [selectedClasse, setSelectedClasse] = useState<string | null>(null);
+
   const [status, setStatus] = useState({ text: "", isError: false });
 
-  // Stati per la Modale (stile Turni)
+  // Stati Modale
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [selectedUserIdToAdd, setSelectedUserIdToAdd] = useState<number | null>(
     null,
   );
+
+  // Flag per capire se stiamo creando una classe nuova o aggiungendo a una esistente
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
 
   const getAuthToken = () => {
     const userStr = localStorage.getItem("user");
@@ -106,23 +113,44 @@ const NotificheTelegram: React.FC = () => {
         body: JSON.stringify({
           action,
           tipo_notifica: tipo.toLowerCase().trim(),
-          userIdOverride: targetUserId,
+          userIdOverride: targetUserId, // Qui passiamo l'ID scelto, mai quello di default
         }),
       });
 
       const result = await res.json();
       if (result.success) {
         setStatus({ text: result.message, isError: false });
-        if (action === "add_notifica") {
+
+        // Se abbiamo creato una nuova classe, puliamo l'input
+        if (isCreatingNew) {
           setNuovaNotifica("");
-          closeModal(); // Chiudi modale dopo aggiunta
+          setIsCreatingNew(false);
         }
+
+        closeModal();
         fetchData();
       }
     } catch (err) {
       setStatus({ text: "Errore operazione", isError: true });
     }
     setTimeout(() => setStatus({ text: "", isError: false }), 3000);
+  };
+
+  // Handler per il bottone "Crea" (Nuova Classe)
+  const handleStartCreateClass = () => {
+    if (!nuovaNotifica.trim()) return;
+
+    // Impostiamo la nuova classe come selezionata temporaneamente
+    setSelectedClasse(nuovaNotifica.trim());
+    setIsCreatingNew(true); // Modalità creazione
+    openModal(); // Apriamo subito la modale per scegliere il primo utente
+  };
+
+  // Handler per il bottone "Aggiungi Iscritto" (Classe Esistente)
+  const handleStartAddUser = () => {
+    if (!selectedClasse) return;
+    setIsCreatingNew(false); // Modalità aggiunta
+    openModal();
   };
 
   const utentiInClasse = iscritti.filter(
@@ -140,14 +168,23 @@ const NotificheTelegram: React.FC = () => {
     setIsModalOpen(false);
     setUserSearchTerm("");
     setSelectedUserIdToAdd(null);
+    // Se stavamo creando una classe ma abbiamo annullato, resettiamo la selezione
+    if (isCreatingNew) {
+      // Opzionale: se si vuole tornare alla selezione precedente o a null
+      // setSelectedClasse(null);
+      setIsCreatingNew(false);
+    }
   };
 
-  // Filtra utenti non ancora iscritti alla classe corrente
-  const utentiDisponibili = tuttiUtenti.filter(
-    (u) => !utentiInClasse.some((i) => i.user_id === u.id),
-  );
+  // Utenti disponibili:
+  // Se stiamo creando una classe nuova (che non esiste ancora nei dati), tutti sono disponibili.
+  // Se è una classe esistente, filtriamo chi è già dentro.
+  const utentiDisponibili = isCreatingNew
+    ? tuttiUtenti
+    : tuttiUtenti.filter(
+        (u) => !utentiInClasse.some((i) => i.user_id === u.id),
+      );
 
-  // Filtra ulteriormente in base alla ricerca nella modale
   const filteredUsersForModal = utentiDisponibili.filter(
     (user) =>
       `${user.name} ${user.surname}`
@@ -157,7 +194,6 @@ const NotificheTelegram: React.FC = () => {
         user.username.toLowerCase().includes(userSearchTerm.toLowerCase())),
   );
 
-  // Auto-selezione nella modale se c'è un solo risultato
   useEffect(() => {
     if (
       isModalOpen &&
@@ -197,9 +233,10 @@ const NotificheTelegram: React.FC = () => {
               value={nuovaNotifica}
               onChange={(e) => setNuovaNotifica(e.target.value)}
             />
+            {/* Il bottone ora apre la modale, non chiama API diretta */}
             <button
               className="nt-add-button"
-              onClick={() => handleAction("add_notifica", nuovaNotifica)}
+              onClick={handleStartCreateClass}
               disabled={!nuovaNotifica.trim()}
             >
               Crea
@@ -216,8 +253,12 @@ const NotificheTelegram: React.FC = () => {
               classiUniche.map((classe) => (
                 <div
                   key={classe}
-                  className={`nt-class-item ${selectedClasse === classe ? "active" : ""}`}
-                  onClick={() => setSelectedClasse(classe)}
+                  className={`nt-class-item ${selectedClasse === classe && !isCreatingNew ? "active" : ""}`}
+                  onClick={() => {
+                    setSelectedClasse(classe);
+                    setIsCreatingNew(false);
+                    setNuovaNotifica(""); // Pulisce input nuova classe se cambi selezione
+                  }}
                 >
                   <span>{classe}</span>
                   <FaUsers size={16} />
@@ -239,30 +280,42 @@ const NotificheTelegram: React.FC = () => {
                 }}
               >
                 <h3>
-                  <FaUsers size={14} /> Iscritti a: {selectedClasse}
+                  <FaUsers size={14} />
+                  {isCreatingNew
+                    ? `Nuova Classe: ${selectedClasse}`
+                    : `Iscritti a: ${selectedClasse}`}
                 </h3>
-                {/* Pulsante per aprire la modale stile Turni */}
-                <button
-                  className="nt-add-button"
-                  onClick={openModal}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    padding: "8px 15px",
-                  }}
-                >
-                  <FaUserPlus /> Aggiungi Iscritto
-                </button>
+
+                {/* Mostra il pulsante aggiungi solo se la classe esiste già (non in creazione) */}
+                {!isCreatingNew && (
+                  <button
+                    className="nt-add-button"
+                    onClick={handleStartAddUser}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "8px 15px",
+                    }}
+                  >
+                    <FaUserPlus /> Aggiungi Iscritto
+                  </button>
+                )}
               </div>
 
               <div className="nt-user-management">
-                {/* Rimossa la vecchia select row, ora c'è il bottone sopra */}
-
                 <div className="nt-members-grid">
-                  {utentiInClasse.length === 0 && (
+                  {utentiInClasse.length === 0 && !isCreatingNew && (
                     <p>Nessun iscritto in questa classe.</p>
                   )}
+                  {isCreatingNew && (
+                    <p>
+                      Seleziona il primo utente dalla finestra per creare la
+                      classe.
+                    </p>
+                  )}
+
+                  {/* Lista utenti esistenti */}
                   {utentiInClasse.map((m) => {
                     const info = tuttiUtenti.find((u) => u.id === m.user_id);
                     return (
@@ -301,7 +354,7 @@ const NotificheTelegram: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MODALE STILE TURNI --- */}
+      {/* --- MODALE UNIFICATA (Creazione o Aggiunta) --- */}
       {isModalOpen && selectedClasse && (
         <div className="turno-modal-overlay" onClick={closeModal}>
           <div
@@ -309,13 +362,30 @@ const NotificheTelegram: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="turno-modal-header">
-              <h3>Aggiungi a: {selectedClasse}</h3>
+              <h3>
+                {isCreatingNew
+                  ? "Crea Classe e Aggiungi Primo Utente"
+                  : `Aggiungi a: ${selectedClasse}`}
+              </h3>
               <button onClick={closeModal} className="close-button">
                 ✕
               </button>
             </div>
 
             <div className="turno-modal-body">
+              {isCreatingNew && (
+                <p
+                  style={{
+                    marginBottom: "15px",
+                    fontSize: "0.9em",
+                    color: "#666",
+                  }}
+                >
+                  Stai creando la classe <strong>"{selectedClasse}"</strong>. È
+                  obbligatorio selezionare almeno un utente iniziale.
+                </p>
+              )}
+
               <div className="form-group">
                 <label htmlFor="user-select">Cerca e Seleziona Utente:</label>
                 <input
@@ -332,7 +402,7 @@ const NotificheTelegram: React.FC = () => {
                   onChange={(e) =>
                     setSelectedUserIdToAdd(Number(e.target.value))
                   }
-                  size={5} // Mostra 5 righe come nei turni
+                  size={5}
                   style={{ width: "100%", marginTop: "10px", padding: "8px" }}
                 >
                   <option value="" disabled>
@@ -348,8 +418,6 @@ const NotificheTelegram: React.FC = () => {
                   ))}
                 </select>
               </div>
-
-              {/* Note rimosse come richiesto */}
             </div>
 
             <div className="turno-modal-actions">
@@ -369,7 +437,7 @@ const NotificheTelegram: React.FC = () => {
                 className="assign-button"
                 disabled={!selectedUserIdToAdd}
               >
-                Aggiungi
+                {isCreatingNew ? "Crea e Aggiungi" : "Aggiungi Utente"}
               </button>
             </div>
           </div>
