@@ -183,3 +183,87 @@
     justify-content: center;
   }
 }
+
+.nt-main-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.nt-section {
+  background: rgba(255, 255, 255, 0.4);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  min-height: 400px;
+}
+
+.nt-input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 2rem;
+}
+
+.nt-class-item {
+  background: white;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.nt-class-item:hover {
+  transform: translateX(5px);
+}
+
+.nt-class-item.active {
+  border-color: #0088cc;
+  background: #e6f7ff;
+}
+
+.nt-members-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.nt-member-card {
+  background: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nt-remove-btn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  padding: 0.4rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.nt-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .nt-main-layout {
+    grid-template-columns: 1fr;
+  }
+}

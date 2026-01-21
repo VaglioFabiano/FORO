@@ -84,20 +84,21 @@ export default async function handler(req, res) {
 
     // --- GESTIONE AZIONI NOTIFICHE (POST) ---
     if (req.method === "POST") {
-      const { action, tipo_notifica } = req.body;
+      const { action, tipo_notifica, userIdOverride } = req.body;
+      const targetUserId = userIdOverride || user.id;
 
       if (action === "add_notifica") {
-        await addNotifica(user.id, tipo_notifica);
+        await addNotifica(targetUserId, tipo_notifica);
         return res
           .status(200)
-          .json({ success: true, message: "Notifica aggiunta" });
+          .json({ success: true, message: "Membro aggiunto" });
       }
 
       if (action === "remove_notifica") {
-        await removeNotifica(user.id, tipo_notifica);
+        await removeNotifica(targetUserId, tipo_notifica);
         return res
           .status(200)
-          .json({ success: true, message: "Notifica rimossa" });
+          .json({ success: true, message: "Membro rimosso" });
       }
     }
 
