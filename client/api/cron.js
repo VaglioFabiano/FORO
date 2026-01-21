@@ -483,21 +483,8 @@ async function weeklyEmptyShiftsReport(timestamp) {
 
     const weekOffset = 1; // prossima settimana
     const prossimaSettimana = getWeekDatesForOffset(weekOffset); // Calcola il lunedì della prossima settimana
-    const monday = new Date(prossimaSettimana[0]); // <--- MODIFICA: Funzione di logica corretta
-    // Riflette la logica della sundayEndTask (Lun-Ven, 09:00-19:30)
 
-    const isSlotNaturallyClosed = (dayIndex, turnoIndex) => {
-      // Sabato (5) o Domenica (6)
-      // (dayIndex è 0-based: 0=Lunedì, 5=Sabato, 6=Domenica)
-      if (dayIndex === 5 || dayIndex === 6) {
-        return true;
-      } // Turno serale (21:00-24:00, index 3)
-      if (turnoIndex === 3) {
-        return true;
-      }
-      return false;
-    }; // <--- MODIFICA: Esegui UNA SOLA QUERY per tutti i turni
-
+    // <--- MODIFICA: Esegui UNA SOLA QUERY per tutti i turni
     console.log(
       `⚡ Eseguo query singola per tutti i turni dal ${prossimaSettimana[0]} al ${prossimaSettimana[6]}`,
     );
@@ -520,6 +507,14 @@ async function weeklyEmptyShiftsReport(timestamp) {
     let turniVuoti = [];
     let turniStraordinari = [];
     let totaleTurniOccupati = 0; // <--- MODIFICA: Elabora i dati IN MEMORIA (molto più veloce)
+
+    const isSlotNaturallyClosed = (dayIndex, turnoIndex) => {
+      // Sabato (5) o Domenica (6)
+      if (dayIndex === 5 || dayIndex === 6) return true;
+      // Turno serale (21:00-24:00, index 3)
+      if (turnoIndex === 3) return true;
+      return false;
+    };
 
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const dataGiorno = prossimaSettimana[dayIndex];
@@ -569,24 +564,30 @@ async function weeklyEmptyShiftsReport(timestamp) {
           }
         }
       }
-    } // <--- MODIFICA: Query per admin e moderatori con GROUP BY
-    // Questo RISOLVE IL PROBLEMA DEI MESSAGGI DOPPI
+    }
 
-    const adminResult = await db.execute({
-      sql: `SELECT id, name, surname, telegram_chat_id, level
-            FROM users 
-            WHERE telegram_chat_id IS NOT NULL AND (level = 0 OR level = 1)
-            GROUP BY telegram_chat_id`,
+    // <--- MODIFICA IMPORTANTE: Query basata sulla tabella 'notifiche'
+    // Seleziona solo gli utenti che hanno sottoscritto 'gestione_turni'
+    const recipientsResult = await db.execute({
+      sql: `SELECT u.id, u.name, u.surname, u.telegram_chat_id
+            FROM users u
+            JOIN notifiche n ON u.id = n.user_id
+            WHERE n.tipo_notifica = 'gestione_turni' 
+              AND u.telegram_chat_id IS NOT NULL
+            GROUP BY u.telegram_chat_id`,
       args: [],
     });
 
-    const adminsAndModerators = adminResult.rows;
+    const subscribedUsers = recipientsResult.rows;
 
-    if (adminsAndModerators.length === 0) {
-      console.log("📋 Nessun admin o moderatore trovato per il report");
+    if (subscribedUsers.length === 0) {
+      console.log(
+        "📋 Nessun utente iscritto a 'gestione_turni' trovato per il report",
+      );
       return;
-    } // Genera il messaggio del report
+    }
 
+    // Genera il messaggio del report
     let reportMessage = `📋 <b>Report Settimanale Turni Vuoti</b>
 
 📅 Settimana: ${formatDate(prossimaSettimana[0])} - ${formatDate(prossimaSettimana[6])}
@@ -630,7 +631,7 @@ async function weeklyEmptyShiftsReport(timestamp) {
           turniPerGiorno[giorno]
             .sort((a, b) => a.turno_index - b.turno_index)
             .forEach((turno) => {
-              reportMessage += `   • ${turno.turno_inizio} - ${turno.turno_fine}\n`;
+              reportMessage += `   • ${turno.turno_inizio} - ${turno.turno_fine}\n`;
             });
           reportMessage += `\n`;
         }
@@ -663,14 +664,15 @@ async function weeklyEmptyShiftsReport(timestamp) {
           straordinariPerGiorno[giorno]
             .sort((a, b) => a.turno_index - b.turno_index)
             .forEach((turno) => {
-              reportMessage += `   ⭐ ${turno.turno_inizio} - ${turno.turno_fine}\n`;
+              reportMessage += `   ⭐ ${turno.turno_inizio} - ${turno.turno_fine}\n`;
             });
           reportMessage += `\n`;
         }
       }
-    } // Invia il report (ora a utenti unici)
+    }
 
-    for (const user of adminsAndModerators) {
+    // Invia il report (ora agli utenti iscritti alla notifica)
+    for (const user of subscribedUsers) {
       try {
         await sendTelegramMessage(user.telegram_chat_id, reportMessage);
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -683,13 +685,13 @@ async function weeklyEmptyShiftsReport(timestamp) {
     }
 
     console.log(
-      `📋 Report turni vuoti inviato a ${adminsAndModerators.length} utenti unici (admin/moderatori)`,
+      `📋 Report turni vuoti inviato a ${subscribedUsers.length} utenti iscritti a 'gestione_turni'`,
     );
     console.log(`📊 Statistiche report (ottimizzato):
-    - Turni teorici totali: ${turniTeorici.length}
-    - Turni vuoti: ${turniVuoti.length}  
-    - Turni occupati (teorici): ${totaleTurniOccupati - turniStraordinari.length}
-    - Turni straordinari: ${turniStraordinari.length}`);
+    - Turni teorici totali: ${turniTeorici.length}
+    - Turni vuoti: ${turniVuoti.length}  
+    - Turni occupati (teorici): ${totaleTurniOccupati - turniStraordinari.length}
+    - Turni straordinari: ${turniStraordinari.length}`);
   } catch (error) {
     console.error("❌ Errore nel report turni vuoti (ottimizzato):", error);
     await sendTelegramMessage(

@@ -122,7 +122,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: "Gestisci le tue classi di notifica",
       icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: NotificheTelegram,
-      minLevel: 0,
+      minLevel: 2,
     },
     {
       id: "homepage",
