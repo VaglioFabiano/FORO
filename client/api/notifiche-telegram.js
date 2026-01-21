@@ -1,4 +1,3 @@
-// /api/notifiche-telegram.js
 import { createClient } from "@libsql/client/web";
 
 const config = {
@@ -17,11 +16,9 @@ async function verifyUser(tempToken) {
 
     const now = new Date().getTime();
     const tokenAge = now - parseInt(timestamp);
-    const maxAge = 60 * 60 * 1000;
+    const maxAge = 60 * 60 * 1000; // 1 ora
 
-    if (tokenAge > maxAge) {
-      return null;
-    }
+    if (tokenAge > maxAge) return null;
 
     const result = await client.execute({
       sql: `SELECT id, level, name, surname, tel FROM users WHERE id = ? AND tel = ?`,
@@ -34,9 +31,10 @@ async function verifyUser(tempToken) {
   }
 }
 
-// --- FUNZIONI PER TABELLA NOTIFICHE ---
+// --- FUNZIONI DB ---
 
 async function addNotifica(userId, tipo) {
+  // Richiede che la tabella abbia il vincolo UNIQUE(user_id, tipo_notifica)
   return await client.execute({
     sql: `INSERT INTO notifiche (user_id, tipo_notifica) VALUES (?, ?) 
           ON CONFLICT(user_id, tipo_notifica) DO UPDATE SET attiva = 1`,
@@ -51,10 +49,17 @@ async function removeNotifica(userId, tipo) {
   });
 }
 
-async function getNotificheUtente(userId) {
+// MODIFICA: Recupera TUTTE le notifiche con i nomi degli utenti (per la Dashboard Admin)
+async function getTutteNotifiche() {
   const result = await client.execute({
-    sql: `SELECT * FROM notifiche WHERE user_id = ?`,
-    args: [userId],
+    sql: `
+      SELECT n.id, n.user_id, n.tipo_notifica, n.attiva, u.name, u.surname 
+      FROM notifiche n
+      LEFT JOIN users u ON n.user_id = u.id
+      WHERE n.attiva = 1
+      ORDER BY n.tipo_notifica, u.surname
+    `,
+    args: [],
   });
   return result.rows;
 }
@@ -72,68 +77,72 @@ export default async function handler(req, res) {
 
   try {
     const tempToken = req.headers.authorization?.replace("Bearer ", "");
-
-    if (!tempToken) {
-      return res.status(401).json({ error: "Token richiesto" });
-    }
+    if (!tempToken) return res.status(401).json({ error: "Token richiesto" });
 
     const user = await verifyUser(tempToken);
-    if (!user) {
-      return res.status(401).json({ error: "Token non valido" });
-    }
+    if (!user) return res.status(401).json({ error: "Token non valido" });
 
-    // --- GESTIONE AZIONI NOTIFICHE (POST) ---
+    // --- GESTIONE AZIONI (POST) ---
     if (req.method === "POST") {
       const { action, tipo_notifica, userIdOverride } = req.body;
-      const targetUserId = userIdOverride || user.id;
+
+      // Se c'è un override (l'admin aggiunge qualcun altro), usiamo quello, altrimenti l'utente corrente
+      const targetUserId = userIdOverride ? parseInt(userIdOverride) : user.id;
+
+      if (!tipo_notifica)
+        return res.status(400).json({ error: "Tipo notifica mancante" });
 
       if (action === "add_notifica") {
         await addNotifica(targetUserId, tipo_notifica);
         return res
           .status(200)
-          .json({ success: true, message: "Membro aggiunto" });
+          .json({ success: true, message: "Utente aggiunto alla classe" });
       }
 
       if (action === "remove_notifica") {
         await removeNotifica(targetUserId, tipo_notifica);
         return res
           .status(200)
-          .json({ success: true, message: "Membro rimosso" });
+          .json({ success: true, message: "Utente rimosso dalla classe" });
       }
     }
 
-    // --- LOGICA DEBUG ORIGINALE (GET) ---
+    // --- GESTIONE VISUALIZZAZIONE (GET) ---
     if (req.method === "GET") {
-      // Ottieni info bot
-      const botInfoResponse = await fetch(`${TELEGRAM_API_URL}/getMe`);
-      const botInfo = await botInfoResponse.json();
+      // 1. Info Bot Telegram
+      let botInfo = { ok: false };
+      try {
+        const botInfoResponse = await fetch(`${TELEGRAM_API_URL}/getMe`);
+        botInfo = await botInfoResponse.json();
+      } catch (e) {
+        console.error("Telegram API Error:", e);
+      }
 
-      // Ottieni aggiornamenti recenti
-      const updatesResponse = await fetch(
-        `${TELEGRAM_API_URL}/getUpdates?limit=10&offset=-10`,
-      );
-      const updatesData = await updatesResponse.json();
+      // 2. Ultimi messaggi (Update)
+      let updatesData = { ok: false, result: [] };
+      try {
+        const updatesResponse = await fetch(
+          `${TELEGRAM_API_URL}/getUpdates?limit=10&offset=-10`,
+        );
+        updatesData = await updatesResponse.json();
+      } catch (e) {
+        console.error("Telegram Updates Error:", e);
+      }
 
-      // Cerca chat_id salvato nel DB
+      // 3. Info Database Utente
       const cachedResult = await client.execute({
         sql: `SELECT telegram_chat_id FROM users WHERE tel = ?`,
         args: [user.tel],
       });
 
-      // Recupera configurazione notifiche per il debug
-      const notificheAttive = await getNotificheUtente(user.id);
+      // 4. Elenco COMPLETO notifiche (per popolare la dashboard)
+      const notificheAttive = await getTutteNotifiche();
 
       const debugInfo = {
-        user: {
-          id: user.id,
-          name: user.name,
-          surname: user.surname,
-          tel: user.tel,
-          level: user.level,
-        },
-        notifiche_attive: notificheAttive,
+        user: { ...user },
+        notifiche_attive: notificheAttive, // Ora contiene TUTTI gli utenti
         bot: {
-          info: botInfo.ok ? botInfo.result : "Errore nel recuperare info bot",
+          info: botInfo.ok ? botInfo.result : "Errore API Telegram",
           username: botInfo.ok ? botInfo.result.username : null,
         },
         database: {
@@ -143,25 +152,15 @@ export default async function handler(req, res) {
           updatesCount: updatesData.ok ? updatesData.result.length : 0,
           lastUpdates: updatesData.ok
             ? updatesData.result.map((update) => ({
+                // Mapping semplificato per evitare crash se mancano campi
                 updateId: update.update_id,
                 messageId: update.message?.message_id,
-                chatType: update.message?.chat?.type,
                 chatId: update.message?.chat?.id,
-                from: {
-                  id: update.message?.from?.id,
-                  firstName: update.message?.from?.first_name,
-                  lastName: update.message?.from?.last_name,
-                  username: update.message?.from?.username,
-                },
-                messageType: update.message?.contact
-                  ? "contact"
-                  : update.message?.text
-                    ? "text"
-                    : update.message?.photo
-                      ? "photo"
-                      : "other",
-                contactPhone: update.message?.contact?.phone_number,
-                text: update.message?.text?.substring(0, 100),
+                chatType: update.message?.chat?.type,
+                text:
+                  update.message?.text ||
+                  (update.message?.contact ? "Contact" : "Media"),
+                from: update.message?.from || {},
                 date: update.message?.date
                   ? new Date(update.message.date * 1000).toISOString()
                   : null,
@@ -175,9 +174,9 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error("Debug error:", error);
+    console.error("API Error:", error);
     return res.status(500).json({
-      error: "Errore interno",
+      error: "Errore interno server",
       details: error.message,
     });
   }
