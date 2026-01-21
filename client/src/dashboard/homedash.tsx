@@ -112,7 +112,11 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "telegram-debug",
       title: "Debug Telegram",
       description: "Per i chat ID Telegram livello 0",
-      icon: <FaTelegram size={iconSize} color="#0088cc" />,
+      icon: (
+        <>
+          <FaTelegram size={iconSize} color="#0088cc" /> ⚙️
+        </>
+      ),
       component: TelegramSender,
       minLevel: 0,
     },

@@ -944,9 +944,13 @@ async function sundayEndTask(timestamp) {
     // ========================================
     // FASE 9: NOTIFICHE
     // ========================================
-    // ... (Codice notifiche invariato) ...
-    const adminResult = await db.execute({
-      sql: `SELECT telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL AND level = 0`,
+    const recipientsResult = await db.execute({
+      sql: `SELECT u.telegram_chat_id
+            FROM users u
+            JOIN notifiche n ON u.id = n.user_id
+            WHERE n.tipo_notifica = 'sviluppatori'
+              AND u.telegram_chat_id IS NOT NULL
+            GROUP BY u.telegram_chat_id`,
       args: [],
     });
 
@@ -957,11 +961,12 @@ async function sundayEndTask(timestamp) {
 ✅ Fasce ruotate
 ✅ Turni rigenerati: ${turniCorrente} (corr) + ${turniProssima} (pros)`;
 
-    for (const admin of adminResult.rows) {
+    // Invio notifica a tutti gli sviluppatori
+    for (const user of recipientsResult.rows) {
       try {
-        await sendTelegramMessage(admin.telegram_chat_id, summary);
+        await sendTelegramMessage(user.telegram_chat_id, summary);
       } catch (e) {
-        console.error(e);
+        console.error("Errore invio notifica cambio settimana:", e);
       }
     }
 
@@ -978,14 +983,44 @@ async function sundayEndTask(timestamp) {
       .catch(console.error);
   } catch (error) {
     console.error("❌ ERRORE CRITICO:", error);
+
+    // <--- MODIFICA: Tenta di notificare gli sviluppatori anche dell'errore
     if (db) {
       try {
+        const devResult = await db.execute({
+          sql: `SELECT u.telegram_chat_id
+                  FROM users u
+                  JOIN notifiche n ON u.id = n.user_id
+                  WHERE n.tipo_notifica = 'sviluppatori'
+                    AND u.telegram_chat_id IS NOT NULL
+                  GROUP BY u.telegram_chat_id`,
+          args: [],
+        });
+
+        const errorMsg = `❌ Errore Cambio Settimana:\n${error.message}`;
+
+        if (devResult.rows.length > 0) {
+          for (const user of devResult.rows) {
+            await sendTelegramMessage(user.telegram_chat_id, errorMsg);
+          }
+        } else {
+          // Fallback se non ci sono sviluppatori
+          await sendTelegramMessage(TEST_CHAT_ID, errorMsg);
+        }
+      } catch (e) {
+        // Se fallisce anche la query, usa il fallback
         await sendTelegramMessage(
           TEST_CHAT_ID,
-          `❌ Errore Cambio Settimana:\n${error.message}`,
+          `❌ Errore Cambio Settimana (Fallback):\n${error.message}`,
         );
-      } catch (e) {}
+      }
+    } else {
+      await sendTelegramMessage(
+        TEST_CHAT_ID,
+        `❌ Errore Cambio Settimana (DB Offline):\n${error.message}`,
+      );
     }
+
     throw error;
   }
 }
