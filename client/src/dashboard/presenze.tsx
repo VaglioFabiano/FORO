@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "../style/presenze.css";
 
 // --- INTERFACCE ---
@@ -75,6 +75,7 @@ const Presenze: React.FC = () => {
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
   // --- CONFIGURAZIONE ---
+  // Queste sono le fasce che vogliamo SEMPRE vedere, anche se vuote
   const fasceStandard = ["9-13", "13-16", "16-19", "21-24"];
   const giorni = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
   const mesi = [
@@ -92,8 +93,31 @@ const Presenze: React.FC = () => {
     "Dicembre",
   ];
 
-  // --- NUOVA LOGICA CALCOLO TOTALE ---
+  // --- LOGICA DINAMICA FASCE ---
+  // Calcola tutte le fasce presenti nei dati attuali + quelle standard
+  const dynamicFasce = useMemo(() => {
+    const foundFasce = new Set(presenze.map((p) => p.fascia_oraria));
+    // Aggiungi le standard per assicurarti che ci siano sempre
+    fasceStandard.forEach((f) => foundFasce.add(f));
+
+    // Converti in array
+    const allFasce = Array.from(foundFasce);
+
+    // Ordina: Prima le standard nell'ordine prefissato, poi le altre (extra) in ordine alfabetico/numerico
+    return allFasce.sort((a, b) => {
+      const idxA = fasceStandard.indexOf(a);
+      const idxB = fasceStandard.indexOf(b);
+
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB; // Entrambe standard
+      if (idxA !== -1) return -1; // A è standard, viene prima
+      if (idxB !== -1) return 1; // B è standard, viene prima
+      return a.localeCompare(b, undefined, { numeric: true }); // Entrambe extra, ordine naturale
+    });
+  }, [presenze]);
+
+  // --- NUOVA LOGICA CALCOLO TOTALE (Adattiva) ---
   const calcolaTotaleGiorno = (dayPresenze: Presenza[]) => {
+    // 1. Gestione logica specifica per le fasce standard
     const p9_13 =
       dayPresenze.find((p) => p.fascia_oraria === "9-13")?.numero_presenze || 0;
     const p13_16 =
@@ -106,8 +130,15 @@ const Presenze: React.FC = () => {
       dayPresenze.find((p) => p.fascia_oraria === "21-24")?.numero_presenze ||
       0;
 
-    const maxPomeriggio = Math.max(p13_16, p16_19);
-    return p9_13 + maxPomeriggio + p21_24;
+    // Regola del Max tra i pomeriggi
+    const coreTotal = p9_13 + Math.max(p13_16, p16_19) + p21_24;
+
+    // 2. Aggiungi QUALSIASI altra fascia non standard (es. "6.0", "Extra", etc.)
+    const extraTotal = dayPresenze
+      .filter((p) => !fasceStandard.includes(p.fascia_oraria))
+      .reduce((acc, curr) => acc + (curr.numero_presenze || 0), 0);
+
+    return coreTotal + extraTotal;
   };
 
   // --- EFFETTI ---
@@ -314,13 +345,13 @@ const Presenze: React.FC = () => {
     }
   };
 
-  // --- PDF EXPORT ---
+  // --- PDF EXPORT (Adattato per colonne dinamiche) ---
   const handleDownloadPdf = async () => {
     if (selectedMonths.length === 0) return;
     try {
       setMessage({ type: "info", text: "Raccolta dati..." });
 
-      // ORDINAMENTO CRONOLOGICO (es. 2025-12 prima di 2026-01)
+      // ORDINAMENTO CRONOLOGICO
       const sortedMonths = [...selectedMonths].sort((a, b) =>
         a.localeCompare(b),
       );
@@ -335,10 +366,28 @@ const Presenze: React.FC = () => {
         const dataS = await resS.json();
 
         if (dataP.success) {
+          // Calcola le fasce dinamiche per questo mese specifico
+          const monthFasceSet = new Set<string>();
+          fasceStandard.forEach((f) => monthFasceSet.add(f));
+          dataP.presenze.forEach((p: any) =>
+            monthFasceSet.add(p.fascia_oraria),
+          );
+
+          // Ordina
+          const sortedMonthFasce = Array.from(monthFasceSet).sort((a, b) => {
+            const idxA = fasceStandard.indexOf(a);
+            const idxB = fasceStandard.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b, undefined, { numeric: true });
+          });
+
           pdfData.push({
             monthInfo: dataP.month_info,
             presenze: dataP.presenze,
             stats: dataS.success ? dataS.statistiche : null,
+            columns: sortedMonthFasce, // Passiamo le colonne rilevate per questo mese
           });
         }
       }
@@ -368,8 +417,8 @@ const Presenze: React.FC = () => {
       });
 
       const { jsPDF } = (window as any).jspdf;
-      const doc = new jsPDF();
-      const margin = 15;
+      const doc = new jsPDF("l"); // 'l' = Landscape (Orizzontale) per far stare più colonne
+      const margin = 10;
 
       pdfData.forEach((monthData: any, monthIndex: number) => {
         if (monthIndex > 0) doc.addPage();
@@ -378,7 +427,7 @@ const Presenze: React.FC = () => {
         doc.setFontSize(16);
         doc.text(
           `REPORT PRESENZE - ${monthData.monthInfo.monthName.toUpperCase()}`,
-          105,
+          148, // Centro A4 Landscape
           y,
           { align: "center" },
         );
@@ -390,24 +439,29 @@ const Presenze: React.FC = () => {
           presenzeMap[p.data].push(p);
         });
 
+        // Configurazione Colonne Dinamica
+        const columns = monthData.columns || fasceStandard;
+        const colWidth = Math.min(25, 230 / (columns.length + 2)); // Adatta larghezza
+        const dateWidth = 20;
+        const dayWidth = 20;
+
         doc.setFontSize(8);
-        const colW = [15, 15, 25, 25, 25, 25, 25];
-        const headers = [
-          "Data",
-          "Giorno",
-          "9-13",
-          "13-16",
-          "16-19",
-          "21-24",
-          "Tot*",
-        ];
+
+        // Header
         let x = margin;
-        headers.forEach((h, i) => {
-          doc.text(h, x, y);
-          x += colW[i];
+        doc.text("Data", x, y);
+        x += dateWidth;
+        doc.text("Giorno", x, y);
+        x += dayWidth;
+
+        columns.forEach((colName: string) => {
+          doc.text(colName, x, y);
+          x += colWidth;
         });
+        doc.text("Tot*", x, y);
+
         y += 4;
-        doc.line(margin, y, 195, y);
+        doc.line(margin, y, 285, y); // Linea orizzontale più lunga per Landscape
         y += 6;
 
         let maxMonthTot = -1;
@@ -415,30 +469,37 @@ const Presenze: React.FC = () => {
 
         monthData.monthInfo.dates.forEach((dStr: string) => {
           const dayRecords = presenzeMap[dStr] || [];
+          // Usiamo la stessa logica di calcolo del componente
           const totalDay = calcolaTotaleGiorno(dayRecords);
+
           if (totalDay > maxMonthTot) {
             maxMonthTot = totalDay;
             maxMonthData = dStr;
           }
 
+          // Stampa riga se > 0
           if (totalDay > 0) {
-            if (y > 200) {
+            if (y > 180) {
+              // Limite pagina Landscape
               doc.addPage();
               y = 20;
             }
+
             x = margin;
             const dObj = new Date(dStr);
             doc.text(dObj.getDate().toString(), x, y);
-            x += colW[0];
+            x += dateWidth;
             doc.text(giorni[dObj.getDay()], x, y);
-            x += colW[1];
-            fasceStandard.forEach((f, i) => {
+            x += dayWidth;
+
+            columns.forEach((colName: string) => {
               const val =
-                dayRecords.find((r) => r.fascia_oraria === f)
+                dayRecords.find((r: any) => r.fascia_oraria === colName)
                   ?.numero_presenze || 0;
               doc.text(val > 0 ? val.toString() : "-", x, y);
-              x += colW[i + 2];
+              x += colWidth;
             });
+
             doc.setFont(undefined, "bold");
             doc.text(totalDay.toString(), x, y);
             doc.setFont(undefined, "normal");
@@ -447,8 +508,8 @@ const Presenze: React.FC = () => {
         });
 
         // SEZIONE STATISTICHE COMPLETE NEL PDF
-        y = Math.max(y + 10, 220);
-        doc.line(margin, y, 195, y);
+        y = Math.max(y + 10, 190);
+        doc.line(margin, y, 285, y);
         y += 7;
         doc.setFontSize(11);
         doc.setFont(undefined, "bold");
@@ -464,13 +525,13 @@ const Presenze: React.FC = () => {
         );
         doc.text(
           `Media Giornaliera: ${monthData.stats?.media_giornaliera || 0}`,
-          80,
+          margin + 60,
           y,
         );
         if (maxMonthTot > 0) {
           doc.text(
             `Record: ${maxMonthTot} (${new Date(maxMonthData).toLocaleDateString("it-IT")})`,
-            140,
+            margin + 120,
             y,
           );
         }
@@ -480,23 +541,20 @@ const Presenze: React.FC = () => {
           doc.setFontSize(8);
           let statX = margin;
           monthData.stats.per_fascia.forEach((s: any) => {
-            doc.text(`${s.fascia_oraria}`, statX, y);
+            // Mostra stats solo per colonne effettivamente usate
             doc.text(
-              `Tot: ${s.totale_presenze} | Max: ${s.max_presenze}`,
+              `${s.fascia_oraria}: ${s.totale_presenze} (Max ${s.max_presenze})`,
               statX,
-              y + 4,
+              y,
             );
-            statX += 45;
+            statX += 50;
+            if (statX > 250) {
+              // A capo se finisce spazio
+              statX = margin;
+              y += 5;
+            }
           });
         }
-
-        y += 12;
-        doc.setFontSize(7);
-        doc.text(
-          "* Formula Totale: (9-13) + Max(13-16, 16-19) + (21-24)",
-          margin,
-          y,
-        );
       });
 
       doc.save(`report_presenze.pdf`);
@@ -541,8 +599,16 @@ const Presenze: React.FC = () => {
       <div className="presenze-calendar compact">
         <div className="calendar-header">
           <div className="date-column">Data</div>
-          {fasceStandard.map((f) => (
-            <div key={f} className="fascia-header">
+          {dynamicFasce.map((f) => (
+            <div
+              key={f}
+              className={`fascia-header ${!fasceStandard.includes(f) ? "extra-fascia" : ""}`}
+              title={
+                !fasceStandard.includes(f)
+                  ? "Fascia extra rilevata dai dati"
+                  : ""
+              }
+            >
               {f}
             </div>
           ))}
@@ -553,6 +619,7 @@ const Presenze: React.FC = () => {
             const isWknd = isWeekend(data);
             const dayPresenze = presenzeMap[data] || [];
             const totaleDiario = calcolaTotaleGiorno(dayPresenze);
+
             return (
               <div
                 key={data}
@@ -562,7 +629,7 @@ const Presenze: React.FC = () => {
                   <div className="day-number">{formatDate(data)}</div>
                   <div className="day-name">{getDayName(data)}</div>
                 </div>
-                {fasceStandard.map((f) => {
+                {dynamicFasce.map((f) => {
                   const p = dayPresenze.find((p) => p.fascia_oraria === f);
                   return (
                     <div

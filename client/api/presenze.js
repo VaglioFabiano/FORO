@@ -23,7 +23,7 @@ function getMonthDates(monthOffset = 0) {
   const targetDate = new Date(
     now.getFullYear(),
     now.getMonth() + monthOffset,
-    1
+    1,
   );
   const year = targetDate.getFullYear();
   const month = targetDate.getMonth();
@@ -76,30 +76,40 @@ function getNextMonth() {
 }
 
 // --- NORMALIZZAZIONE INTELLIGENTE (FORZATURA) ---
+// Nel file backend (api/presenze.js o ts)
+
 function normalizzaFascia(inputFascia) {
   if (!inputFascia) return "";
   let s = String(inputFascia).trim();
 
-  // 1. Pulizia formati numerici (es. "5.0" -> "5")
+  // 1. Pulizia formati numerici
   if (s.endsWith(".0")) s = s.replace(".0", "");
 
-  // 2. Se è già una fascia standard, la ritorniamo subito
+  // 2. Se è standard, ok
   if (FASCE_ORARIE.includes(s)) return s;
 
-  // 3. Analisi euristica: Cerca l'ora di inizio
+  // 3. Analisi euristica estesa
   const match = s.match(/^0?(\d{1,2})/);
 
   if (match) {
     const hour = parseInt(match[1], 10);
 
-    // Mappatura forzata alle fasce standard in base all'ora di inizio
-    if (hour >= 8 && hour < 13) return "9-13";
+    // Mappatura ESTESA per coprire tutte le 24 ore
+    // Mattina estesa: dalle 05:00 alle 12:59 -> 9-13
+    if (hour >= 5 && hour < 13) return "9-13";
+
+    // Pomeriggio 1: dalle 13:00 alle 15:59 -> 13-16
     if (hour >= 13 && hour < 16) return "13-16";
+
+    // Pomeriggio 2: dalle 16:00 alle 19:59 -> 16-19
+    // (Esteso fino alle 20 per catturare chi timbra tardi)
     if (hour >= 16 && hour < 20) return "16-19";
+
+    // Sera/Notte: dalle 20:00 alle 04:59 -> 21-24
     if (hour >= 20 || hour < 5) return "21-24";
   }
 
-  // Se non riusciamo a decifrarlo, ritorniamo la stringa originale
+  // Se è proprio testo strano, lo ritorniamo, ma il frontend dovrà gestirlo
   return s;
 }
 
@@ -109,16 +119,25 @@ async function fetchUnifiedData(startDate, endDate) {
 
   // FIX: CAST e COALESCE per leggere sia ID numerici che stringhe di fallback
   const activeQuery = `
-        SELECT p.id, p.data, 
-               COALESCE(f.ora_inizio || '-' || f.ora_fine, CAST(p.fascia_oraria AS TEXT)) as fascia_raw,
-               p.numero_presenze, p.note, p.user_id,
-               u.name, u.surname, u.username, 
-               0 as is_history
-        FROM presenze p
-        LEFT JOIN fasce_orarie f ON CAST(p.fascia_oraria AS INTEGER) = f.id
-        LEFT JOIN users u ON p.user_id = u.id
-        WHERE p.data >= ? AND p.data <= ?
-    `;
+    SELECT p.id, p.data, 
+           CASE 
+               -- SE contiene un trattino, usa il valore originale (è già formattato)
+               WHEN p.fascia_oraria LIKE '%-%' THEN CAST(p.fascia_oraria AS TEXT)
+               -- ALTRIMENTI prova a cercare l'orario nella tabella fasce_orarie
+               ELSE COALESCE(f.ora_inizio || '-' || f.ora_fine, CAST(p.fascia_oraria AS TEXT))
+           END as fascia_raw,
+           p.numero_presenze, p.note, p.user_id,
+           u.name, u.surname, u.username, 
+           0 as is_history
+    FROM presenze p
+    LEFT JOIN fasce_orarie f ON (
+        -- Unisci SOLO se NON sembra una stringa di orario (nessun trattino)
+        p.fascia_oraria NOT LIKE '%-%' 
+        AND CAST(p.fascia_oraria AS INTEGER) = f.id
+    )
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE p.data >= ? AND p.data <= ?
+`;
 
   const historyQuery = `
         SELECT id, data, orario as fascia_raw, numero_presenze, note, 
@@ -172,7 +191,7 @@ async function logPresenzeChange(
   oldValue,
   newValue,
   userId,
-  action
+  action,
 ) {
   try {
     await client.execute({
@@ -262,7 +281,7 @@ async function generatePDF(presenzeData, monthsInfo) {
         const dayRecords = presenze.filter((p) => p.data === data);
         const totaleGiorno = dayRecords.reduce(
           (sum, p) => sum + p.numero_presenze,
-          0
+          0,
         );
 
         html += `
@@ -361,7 +380,7 @@ async function downloadPDF(req, res) {
         const monthInfo = getMonthDataFromString(monthString);
         const rows = await fetchUnifiedData(
           monthInfo.dates[0],
-          monthInfo.dates[monthInfo.dates.length - 1]
+          monthInfo.dates[monthInfo.dates.length - 1],
         );
 
         rows.sort((a, b) => {
@@ -403,7 +422,7 @@ async function getPresenze(req, res) {
 
     const rows = await fetchUnifiedData(
       monthData.dates[0],
-      monthData.dates[monthData.dates.length - 1]
+      monthData.dates[monthData.dates.length - 1],
     );
 
     const presenzeComplete = rows.map((row) => ({
@@ -421,14 +440,12 @@ async function getPresenze(req, res) {
       is_history: row.is_history === 1,
     }));
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        presenze: presenzeComplete,
-        month_info: monthData,
-        mese: mese || "corrente",
-      });
+    return res.status(200).json({
+      success: true,
+      presenze: presenzeComplete,
+      month_info: monthData,
+      mese: mese || "corrente",
+    });
   } catch (error) {
     return res
       .status(500)
@@ -486,7 +503,7 @@ async function aggiornaPresenze(req, res) {
     // 2. FALLBACK: Se non trova l'ID, salva la stringa raw (Fix per "fascia non attiva")
     if (!fasciaDaSalvare) {
       console.warn(
-        `[WARN] ID fascia non trovato per ${giornoTarget} ${fascia_oraria}. Uso fallback.`
+        `[WARN] ID fascia non trovato per ${giornoTarget} ${fascia_oraria}. Uso fallback.`,
       );
       fasciaDaSalvare = fascia_oraria;
     }
@@ -513,7 +530,7 @@ async function aggiornaPresenze(req, res) {
         check.rows[0].numero_presenze,
         numero_presenze,
         current_user_id,
-        action
+        action,
       );
     } else {
       // INSERT
@@ -535,7 +552,7 @@ async function aggiornaPresenze(req, res) {
         null,
         numero_presenze,
         current_user_id,
-        action
+        action,
       );
     }
 
@@ -602,7 +619,7 @@ async function eliminaPresenza(req, res) {
           check.rows[0].numero_presenze,
           null,
           current_user_id,
-          "DELETE"
+          "DELETE",
         );
       }
       return res.status(200).json({ success: true, deleted: true });
@@ -628,7 +645,7 @@ async function getStatistiche(req, res) {
 
     const rows = await fetchUnifiedData(
       monthData.dates[0],
-      monthData.dates[monthData.dates.length - 1]
+      monthData.dates[monthData.dates.length - 1],
     );
     const validRows = rows.filter((r) => r.numero_presenze > 0);
     const totalMese = validRows.reduce((sum, r) => sum + r.numero_presenze, 0);
@@ -659,7 +676,7 @@ async function getStatistiche(req, res) {
       .sort(
         (a, b) =>
           FASCE_ORARIE.indexOf(a.fascia_oraria) -
-          FASCE_ORARIE.indexOf(b.fascia_oraria)
+          FASCE_ORARIE.indexOf(b.fascia_oraria),
       );
 
     return res.status(200).json({
