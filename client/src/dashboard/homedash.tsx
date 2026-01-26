@@ -10,6 +10,7 @@ import Presenze from "./presenze";
 import GestisciEventi from "./GestisciEventi";
 import GestioneTurno from "./GestioneTurno";
 import AiutoAbbinamenti from "./AiutoAbbinamenti";
+import VerbaliAssemblea from "./VerbaliAssemblea";
 import "../style/homeDash.css";
 
 import { FaTelegram } from "react-icons/fa";
@@ -24,6 +25,7 @@ import {
   FcHome,
   FcHighPriority,
   FcReading,
+  FcDocument,
 } from "react-icons/fc";
 
 interface HomeDashProps {
@@ -135,6 +137,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       icon: <FcHome size={iconSize} />,
       minLevel: 2,
       isHomepageLink: true,
+    },
+    {
+      id: "verbali-assemblea",
+      title: "Verbali Assemblea",
+      description: "Archivio e gestione verbali riunioni",
+      icon: <FcDocument size={iconSize} />,
+      component: VerbaliAssemblea,
+      minLevel: 0,
     },
     {
       id: "gestione-turno",
