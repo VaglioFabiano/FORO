@@ -74,7 +74,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: "Gestisci gli orari di apertura",
       icon: <FcClock size={iconSize} />,
       component: ModificaOrari,
-      minLevel: 2,
+      minLevel: 3,
     },
     {
       id: "crea-utenti",
