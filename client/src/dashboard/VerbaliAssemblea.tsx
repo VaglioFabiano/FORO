@@ -3,7 +3,9 @@ import "../style/verbaliassemblea.css";
 import { FcFolder, FcBrokenLink } from "react-icons/fc";
 
 const VerbaliAssemblea: React.FC = () => {
-  const driveLink = process.env.GOOGLE_DRIVE_VERBALI || "";
+  // 1. In Vite si usa import.meta.env
+  // La variabile DEVE iniziare con VITE_
+  const driveLink = import.meta.env.VITE_GOOGLE_DRIVE_VERBALI || "";
 
   // 2. Estrai l'ID della cartella dall'URL in modo sicuro
   const folderId = useMemo(() => {
@@ -26,8 +28,9 @@ const VerbaliAssemblea: React.FC = () => {
         <FcBrokenLink size={50} />
         <h3 className="verbali_title">Configurazione Mancante</h3>
         <p className="verbali_description">
-          L'URL della cartella Drive non è stato configurato correttamente nelle
-          variabili d'ambiente.
+          L'URL della cartella Drive non è stato configurato correttamente.
+          Assicurati di aver impostato la variabile d'ambiente{" "}
+          <b>VITE_GOOGLE_DRIVE_VERBALI</b> su Vercel.
         </p>
       </div>
     );
