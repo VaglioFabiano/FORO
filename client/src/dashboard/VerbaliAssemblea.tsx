@@ -13,6 +13,7 @@ import { SiGoogledocs } from "react-icons/si";
 import { IoClose, IoReload, IoOpenOutline } from "react-icons/io5";
 
 interface VerbaliProps {
+  // Lasciamo la prop opzionale ma la ignoriamo a favore del LocalStorage per sicurezza
   userLevel?: number;
 }
 
@@ -23,22 +24,41 @@ interface DriveFile {
   webViewLink: string;
 }
 
-// MODIFICA IMPORTANTE: Default a 99 (sicurezza), non 1 (admin)
-const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
-  // --- CONFIGURAZIONE ---
+const VerbaliAssemblea: React.FC<VerbaliProps> = () => {
+  // --- 1. CONFIGURAZIONE ---
   const apiKey = import.meta.env.VITE_GOOGLE_CLOUD;
   const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
   const rootDriveLink = import.meta.env.VITE_GOOGLE_DRIVE_VERBALI || "";
   const appSecret = import.meta.env.VITE_APP_SECRET || "ASSOCIAZIONE_FORO_2026";
 
-  // LOGICA PERMESSI: Livelli 0, 1 e 2 possono creare.
-  // Assicuriamoci che sia un numero per evitare errori di stringhe
-  const canCreate = Number(userLevel) <= 2;
+  // --- 2. GESTIONE LIVELLO UTENTE (SICURA) ---
+  // Inizializziamo a 99 (livello alto/ospite) per non mostrare pulsanti per sbaglio all'avvio
+  const [safeUserLevel, setSafeUserLevel] = useState<number>(99);
 
-  // Debug: Puoi vedere in console che livello sta leggendo
-  // console.log("VerbaliAssemblea - User Level:", userLevel, "Can Create:", canCreate);
+  useEffect(() => {
+    try {
+      // Leggiamo direttamente la fonte di verità: LocalStorage
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const userData = JSON.parse(userStr);
 
-  // --- STATI ---
+        // Controllo rigoroso: accettiamo 0 come valore valido!
+        // "!==" controlla che non sia null o undefined, ma lascia passare lo 0.
+        if (userData.level !== undefined && userData.level !== null) {
+          setSafeUserLevel(Number(userData.level));
+        }
+      }
+    } catch (e) {
+      console.error("Errore lettura livello utente in VerbaliAssemblea", e);
+    }
+  }, []);
+
+  // LOGICA PERMESSI RICHIESTA:
+  // "Se è minore di 3 vedi i verbali e puoi crearli" (0, 1, 2)
+  // "Se è maggiore uguale a 3 puoi solo vederli" (3, 4, 5...)
+  const canCreate = safeUserLevel < 3;
+
+  // --- 3. STATI DRIVE ---
   const rootFolderId = useMemo(() => {
     if (!rootDriveLink) return null;
     const match = rootDriveLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
@@ -55,8 +75,8 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
   const [error, setError] = useState<string | null>(null);
 
   // Modali
-  const [showCreateModal, setShowCreateModal] = useState(false); // Popup Creazione
-  const [previewFile, setPreviewFile] = useState<DriveFile | null>(null); // Popup Anteprima
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
 
   // --- FETCH DATI ---
   const fetchFiles = async () => {
@@ -93,11 +113,9 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
   // --- NAVIGAZIONE ---
   const handleItemClick = (file: DriveFile) => {
     if (file.mimeType === "application/vnd.google-apps.folder") {
-      // Naviga nella cartella
       setFolderHistory((prev) => [...prev, currentFolderId!]);
       setCurrentFolderId(file.id);
     } else {
-      // APRI ANTEPRIMA (non uscire dal sito)
       setPreviewFile(file);
     }
   };
@@ -133,9 +151,7 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
       const data = await response.json();
 
       if (data.url) {
-        // Apri il file appena creato per modificarlo
         window.open(data.url, "_blank");
-        // Aggiorna la lista
         setTimeout(() => fetchFiles(), 2500);
       } else {
         throw new Error(data.error || "Errore sconosciuto");
@@ -196,7 +212,8 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
             >
               <IoReload />
             </button>
-            {/* IL BOTTONE APPARE SOLO SE canCreate È TRUE */}
+
+            {/* BOTTONE VISIBILE SOLO SE LIVELLO < 3 (quindi 0, 1, 2) */}
             {canCreate && (
               <button
                 onClick={() => setShowCreateModal(true)}
@@ -249,7 +266,7 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
       </div>
 
       <div className="verbali_footer">
-        {!canCreate && <p>Modalità sola lettura</p>}
+        {!canCreate && <p>Modalità sola lettura (Livello {safeUserLevel})</p>}
       </div>
 
       {/* 2. MODALE CREAZIONE */}
@@ -320,7 +337,7 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
         </div>
       )}
 
-      {/* 3. MODALE ANTEPRIMA (Visualizzatore) */}
+      {/* 3. MODALE ANTEPRIMA */}
       {previewFile && (
         <div
           className="verbali_preview-overlay"
@@ -337,7 +354,6 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
                 <span className="preview-title">{previewFile.name}</span>
               </div>
               <div className="preview-actions">
-                {/* Tasto per aprire esternamente se serve */}
                 <a
                   href={previewFile.webViewLink}
                   target="_blank"
