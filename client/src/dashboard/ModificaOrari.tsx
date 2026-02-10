@@ -35,7 +35,7 @@ const GIORNI_SETTIMANA = [
 ];
 
 // ID del gruppo Telegram
-const TELEGRAM_CHAT_ID = "-1001544887312";
+const TELEGRAM_CHAT_ID = "@aulastudioforo";
 
 const getCurrentWeek = (): string => {
   const now = new Date();
