@@ -37,7 +37,7 @@ interface User {
   level: number;
 }
 
-interface Statistiche {
+interface StatisticheServer {
   per_fascia: Array<{
     fascia_oraria: string;
     totale_presenze: number;
@@ -47,12 +47,7 @@ interface Statistiche {
   }>;
   totale_mese: number;
   media_giornaliera: string;
-  max_contemporanee?: number; // NUOVO CAMPO
   month_info: MonthInfo;
-  giorno_record?: {
-    data: string;
-    totale: number;
-  };
 }
 
 const Presenze: React.FC = () => {
@@ -70,8 +65,12 @@ const Presenze: React.FC = () => {
   const [editValue, setEditValue] = useState<string>("");
   const [editNote, setEditNote] = useState<string>("");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // STATO STATISTICHE
   const [showStats, setShowStats] = useState(false);
-  const [statistiche, setStatistiche] = useState<Statistiche | null>(null);
+  const [statisticheServer, setStatisticheServer] =
+    useState<StatisticheServer | null>(null);
+
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
 
@@ -108,7 +107,7 @@ const Presenze: React.FC = () => {
     });
   }, [presenze]);
 
-  // --- NUOVA LOGICA CALCOLO TOTALE (Adattiva) ---
+  // --- FUNZIONE CALCOLO TOTALE GIORNO ---
   const calcolaTotaleGiorno = (dayPresenze: Presenza[]) => {
     const p9_13 =
       dayPresenze.find((p) => p.fascia_oraria === "9-13")?.numero_presenze || 0;
@@ -130,20 +129,70 @@ const Presenze: React.FC = () => {
     return coreTotal + extraTotal;
   };
 
+  // --- CALCOLO STATISTICHE DERIVATE (CLIENT SIDE) ---
+  // Questo useMemo garantisce che questi dati siano SEMPRE sincronizzati con la griglia visualizzata
+  const derivedStats = useMemo(() => {
+    if (presenze.length === 0) return null;
+
+    let maxContemporanee = 0;
+    let maxTotaleGiorno = -1;
+    let dataRecord = "";
+
+    // Mappa per raggruppare per giorno
+    const presenzeMap: Record<string, Presenza[]> = {};
+
+    presenze.forEach((p) => {
+      // 1. Calcolo Max Contemporanee (cella singola più alta)
+      if (p.numero_presenze > maxContemporanee) {
+        maxContemporanee = p.numero_presenze;
+      }
+
+      // Raggruppamento
+      if (!presenzeMap[p.data]) presenzeMap[p.data] = [];
+      presenzeMap[p.data].push(p);
+    });
+
+    // 2. Calcolo Giorno Record
+    Object.keys(presenzeMap).forEach((d) => {
+      const tot = calcolaTotaleGiorno(presenzeMap[d]);
+      if (tot > maxTotaleGiorno) {
+        maxTotaleGiorno = tot;
+        dataRecord = d;
+      }
+    });
+
+    return {
+      max_contemporanee: maxContemporanee,
+      giorno_record:
+        maxTotaleGiorno > 0
+          ? { data: dataRecord, totale: maxTotaleGiorno }
+          : null,
+    };
+  }, [presenze]);
+
   // --- EFFETTI ---
+
+  // Caricamento Dati al cambio mese
   useEffect(() => {
-    fetchPresenze();
+    const loadData = async () => {
+      setLoading(true);
+      // Se cambiamo mese, resettiamo momentaneamente le stats server per evitare di vedere dati vecchi
+      setStatisticheServer(null);
+
+      await fetchPresenze(); // Carica griglia
+
+      // Se il pannello stats è aperto, ricarica anche i dati server del nuovo mese
+      if (showStats) {
+        fetchStatisticheServer();
+      }
+      setLoading(false);
+    };
+
+    loadData();
     getCurrentUser();
   }, [currentMonthOffset]);
 
-  // Aggiorna le statistiche automaticamente quando i dati delle presenze cambiano (es. cambio mese)
-  // ma solo se il pannello statistiche è aperto.
-  useEffect(() => {
-    if (showStats && !loading && presenze.length > 0) {
-      fetchStatistiche();
-    }
-  }, [presenze]);
-
+  // Gestione messaggi
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => setMessage(null), 5000);
@@ -151,6 +200,7 @@ const Presenze: React.FC = () => {
     }
   }, [message]);
 
+  // Navigazione tastiera
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (
@@ -221,7 +271,6 @@ const Presenze: React.FC = () => {
 
   // --- API CALLS ---
   const fetchPresenze = async () => {
-    setLoading(true);
     try {
       const now = new Date();
       const targetDate = new Date(
@@ -230,8 +279,10 @@ const Presenze: React.FC = () => {
         1,
       );
       const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
+
       const response = await fetch(`/api/presenze?mese=${monthString}`);
       const data = await response.json();
+
       if (data.success) {
         setPresenze(data.presenze);
         setMonthInfo(data.month_info);
@@ -240,12 +291,10 @@ const Presenze: React.FC = () => {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Errore connessione" });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const fetchStatistiche = async () => {
+  const fetchStatisticheServer = async () => {
     try {
       const now = new Date();
       const targetDate = new Date(
@@ -254,43 +303,14 @@ const Presenze: React.FC = () => {
         1,
       );
       const monthString = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
+
       const response = await fetch(
         `/api/presenze?mese=${monthString}&stats=true`,
       );
       const data = await response.json();
+
       if (data.success) {
-        // Logica per giorno record
-        const presenzeMap: Record<string, Presenza[]> = {};
-        presenze.forEach((p) => {
-          if (!presenzeMap[p.data]) presenzeMap[p.data] = [];
-          presenzeMap[p.data].push(p);
-        });
-
-        let maxTotale = -1;
-        let dataRecord = "";
-
-        Object.keys(presenzeMap).forEach((d) => {
-          const tot = calcolaTotaleGiorno(presenzeMap[d]);
-          if (tot > maxTotale) {
-            maxTotale = tot;
-            dataRecord = d;
-          }
-        });
-
-        // Logica per Max Contemporanee (calcolata sul frontend per sicurezza)
-        let maxContemporanee = 0;
-        presenze.forEach((p) => {
-          if (p.numero_presenze > maxContemporanee) {
-            maxContemporanee = p.numero_presenze;
-          }
-        });
-
-        setStatistiche({
-          ...data.statistiche,
-          max_contemporanee: maxContemporanee, // Aggiunto allo stato
-          giorno_record:
-            maxTotale > 0 ? { data: dataRecord, totale: maxTotale } : undefined,
-        });
+        setStatisticheServer(data.statistiche);
       }
     } catch (error) {
       console.error(error);
@@ -311,9 +331,7 @@ const Presenze: React.FC = () => {
 
   const handleSalvaPresenza = async () => {
     if (!selectedCell) return;
-
     const fasciaPulita = String(selectedCell.fascia).trim();
-
     try {
       const response = await fetch("/api/presenze", {
         method: "POST",
@@ -328,7 +346,9 @@ const Presenze: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        fetchPresenze();
+        fetchPresenze(); // Ricarica presenze
+        // Se le stats sono aperte, le ricarica perché i totali sono cambiati
+        if (showStats) fetchStatisticheServer();
         closeModal();
       }
     } catch (error) {
@@ -351,6 +371,7 @@ const Presenze: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         fetchPresenze();
+        if (showStats) fetchStatisticheServer();
         closeModal();
       }
     } catch (error) {
@@ -358,19 +379,17 @@ const Presenze: React.FC = () => {
     }
   };
 
-  // --- PDF EXPORT (Fix statistiche) ---
+  // --- PDF EXPORT ---
   const handleDownloadPdf = async () => {
     if (selectedMonths.length === 0) return;
     try {
       setMessage({ type: "info", text: "Raccolta dati..." });
-
       const sortedMonths = [...selectedMonths].sort((a, b) =>
         a.localeCompare(b),
       );
-
       const pdfData = [];
+
       for (const m of sortedMonths) {
-        // Fetchiamo solo i dati grezzi, le stats le ricalcoliamo noi per sicurezza
         const resP = await fetch(`/api/presenze?mese=${m}`);
         const dataP = await resP.json();
 
@@ -390,8 +409,6 @@ const Presenze: React.FC = () => {
             return a.localeCompare(b, undefined, { numeric: true });
           });
 
-          // RICALCOLO STATISTICHE LATO CLIENT PER IL PDF
-          // Questo assicura che le stats nel PDF corrispondano esattamente ai dati scaricati
           const calculatedStats = calculateStatsForPdf(
             dataP.presenze,
             sortedMonthFasce,
@@ -401,7 +418,7 @@ const Presenze: React.FC = () => {
           pdfData.push({
             monthInfo: dataP.month_info,
             presenze: dataP.presenze,
-            stats: calculatedStats, // Usiamo le stats calcolate localmente
+            stats: calculatedStats,
             columns: sortedMonthFasce,
           });
         }
@@ -420,7 +437,6 @@ const Presenze: React.FC = () => {
     }
   };
 
-  // Funzione helper per calcolare stats al volo per il PDF
   const calculateStatsForPdf = (
     presenzeList: Presenza[],
     columns: string[],
@@ -433,20 +449,16 @@ const Presenze: React.FC = () => {
     let maxGiornoTot = 0;
     let maxGiornoData = "";
 
-    // Raggruppa per data
     presenzeList.forEach((p) => {
       if (!presenzeMap[p.data]) presenzeMap[p.data] = [];
       presenzeMap[p.data].push(p);
-      // Calcolo Max Contemporanee
       if (p.numero_presenze > maxContemporanee)
         maxContemporanee = p.numero_presenze;
     });
 
-    // Itera su tutti i giorni del mese
     dates.forEach((d) => {
       const dayPresenze = presenzeMap[d] || [];
       const dayTot = calcolaTotaleGiorno(dayPresenze);
-
       if (dayTot > 0) {
         totaleMese += dayTot;
         giorniConPresenze++;
@@ -460,7 +472,6 @@ const Presenze: React.FC = () => {
     const media =
       giorniConPresenze > 0 ? (totaleMese / giorniConPresenze).toFixed(1) : "0";
 
-    // Calcolo per fascia
     const per_fascia = columns.map((col) => {
       const presenzeFascia = presenzeList.filter(
         (p) => p.fascia_oraria === col,
@@ -509,7 +520,6 @@ const Presenze: React.FC = () => {
 
       pdfData.forEach((monthData: any, monthIndex: number) => {
         if (monthIndex > 0) doc.addPage();
-
         let y = 20;
         doc.setFontSize(16);
         doc.text(
@@ -532,14 +542,11 @@ const Presenze: React.FC = () => {
         const dayWidth = 20;
 
         doc.setFontSize(8);
-
-        // Header Tabella
         let x = margin;
         doc.text("Data", x, y);
         x += dateWidth;
         doc.text("Giorno", x, y);
         x += dayWidth;
-
         columns.forEach((colName: string) => {
           doc.text(colName, x, y);
           x += colWidth;
@@ -553,20 +560,17 @@ const Presenze: React.FC = () => {
         monthData.monthInfo.dates.forEach((dStr: string) => {
           const dayRecords = presenzeMap[dStr] || [];
           const totalDay = calcolaTotaleGiorno(dayRecords);
-
           if (totalDay > 0) {
             if (y > 180) {
               doc.addPage();
               y = 20;
             }
-
             x = margin;
             const dObj = new Date(dStr);
             doc.text(dObj.getDate().toString(), x, y);
             x += dateWidth;
             doc.text(giorni[dObj.getDay()], x, y);
             x += dayWidth;
-
             columns.forEach((colName: string) => {
               const val =
                 dayRecords.find((r: any) => r.fascia_oraria === colName)
@@ -574,7 +578,6 @@ const Presenze: React.FC = () => {
               doc.text(val > 0 ? val.toString() : "-", x, y);
               x += colWidth;
             });
-
             doc.setFont(undefined, "bold");
             doc.text(totalDay.toString(), x, y);
             doc.setFont(undefined, "normal");
@@ -582,7 +585,6 @@ const Presenze: React.FC = () => {
           }
         });
 
-        // SEZIONE STATISTICHE NEL PDF (Aggiornata con nuovi campi)
         y = Math.max(y + 10, 190);
         doc.line(margin, y, 285, y);
         y += 7;
@@ -603,7 +605,6 @@ const Presenze: React.FC = () => {
           margin + 50,
           y,
         );
-        // NUOVO CAMPO NEL PDF
         doc.text(
           `Max Contemporanee: ${monthData.stats?.max_contemporanee || 0}`,
           margin + 100,
@@ -636,7 +637,6 @@ const Presenze: React.FC = () => {
           });
         }
       });
-
       doc.save(`report_presenze.pdf`);
       document.head.removeChild(script);
     } catch (e) {
@@ -661,13 +661,12 @@ const Presenze: React.FC = () => {
       prev.includes(key) ? prev.filter((m) => m !== key) : [...prev, key],
     );
   };
+
   const toggleStats = () => {
-    // Se stiamo aprendo, forziamo il refresh
-    if (!showStats) fetchStatistiche();
+    if (!showStats) fetchStatisticheServer();
     setShowStats(!showStats);
   };
 
-  // --- RENDER COMPONENTI ---
   const renderCalendarGrid = () => {
     if (!monthInfo) return null;
     const presenzeMap: Record<string, Presenza[]> = {};
@@ -700,7 +699,6 @@ const Presenze: React.FC = () => {
             const isWknd = isWeekend(data);
             const dayPresenze = presenzeMap[data] || [];
             const totaleDiario = calcolaTotaleGiorno(dayPresenze);
-
             return (
               <div
                 key={data}
@@ -805,7 +803,13 @@ const Presenze: React.FC = () => {
           <button onClick={toggleStats} className="stats-button">
             {showStats ? "Nascondi" : "Stats"}
           </button>
-          <button onClick={fetchPresenze} className="refresh-button">
+          <button
+            onClick={async () => {
+              await fetchPresenze();
+              if (showStats) fetchStatisticheServer();
+            }}
+            className="refresh-button"
+          >
             🔄
           </button>
         </div>
@@ -820,34 +824,32 @@ const Presenze: React.FC = () => {
         </div>
       )}
 
-      {showStats && statistiche && (
+      {showStats && statisticheServer && derivedStats && (
         <div className="statistiche-panel">
-          <h3>📊 Statistiche {statistiche.month_info.monthName}</h3>
+          <h3>📊 Statistiche {statisticheServer.month_info.monthName}</h3>
           <div className="stats-summary">
             <div className="stat-card">
               <div className="stat-label">Totale Mese</div>
-              <div className="stat-value">{statistiche.totale_mese}</div>
+              <div className="stat-value">{statisticheServer.totale_mese}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Media Giornaliera</div>
-              <div className="stat-value">{statistiche.media_giornaliera}</div>
-            </div>
-            {/* NUOVO BLOCCO STATISTICA */}
-            <div className="stat-card">
-              <div className="stat-label">Max Contemporanee</div>
               <div className="stat-value">
-                {statistiche.max_contemporanee || 0}
+                {statisticheServer.media_giornaliera}
               </div>
             </div>
-
-            {statistiche.giorno_record && (
+            <div className="stat-card">
+              <div className="stat-label">Max Contemporanee</div>
+              <div className="stat-value">{derivedStats.max_contemporanee}</div>
+            </div>
+            {derivedStats.giorno_record && (
               <div className="stat-card highlight">
                 <div className="stat-label">Giorno Record</div>
                 <div className="stat-value">
-                  {statistiche.giorno_record.totale}
+                  {derivedStats.giorno_record.totale}
                 </div>
                 <div className="stat-sub">
-                  {new Date(statistiche.giorno_record.data).toLocaleDateString(
+                  {new Date(derivedStats.giorno_record.data).toLocaleDateString(
                     "it-IT",
                   )}
                 </div>
@@ -855,7 +857,7 @@ const Presenze: React.FC = () => {
             )}
           </div>
           <div className="stats-per-fascia">
-            {statistiche.per_fascia.map((stat) => (
+            {statisticheServer.per_fascia.map((stat) => (
               <div key={stat.fascia_oraria} className="fascia-stat">
                 <div className="fascia-label">{stat.fascia_oraria}</div>
                 <div className="fascia-values">
