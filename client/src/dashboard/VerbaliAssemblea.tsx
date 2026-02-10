@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../style/verbaliassemblea.css";
-import { FcFolder, FcFile, FcLeft, FcBrokenLink } from "react-icons/fc";
+import {
+  FcFolder,
+  FcFile,
+  FcLeft,
+  FcBrokenLink,
+  FcOpenedFolder,
+} from "react-icons/fc";
 
-// Interfaccia per i file restituiti da Google Drive API
 interface DriveFile {
   id: string;
   name: string;
@@ -11,34 +16,27 @@ interface DriveFile {
 }
 
 const VerbaliAssemblea: React.FC = () => {
-  // 1. Recupero le variabili d'ambiente
-  // La tua chiave API (rinominata con VITE_)
   const apiKey = import.meta.env.VITE_GOOGLE_CLOUD;
-  // Il link alla cartella root (che avevi già)
   const rootDriveLink = import.meta.env.VITE_GOOGLE_DRIVE_VERBALI || "";
 
-  // 2. Estraggo l'ID della cartella Root
   const rootFolderId = useMemo(() => {
     if (!rootDriveLink) return null;
     const match = rootDriveLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
     return match ? match[1] : null;
   }, [rootDriveLink]);
 
-  // Stato per la navigazione
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [folderHistory, setFolderHistory] = useState<string[]>([]);
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Imposta la cartella iniziale quando viene caricato l'ID root
   useEffect(() => {
     if (rootFolderId && !currentFolderId) {
       setCurrentFolderId(rootFolderId);
     }
   }, [rootFolderId]);
 
-  // Fetch dei file da Google Drive API
   useEffect(() => {
     if (!currentFolderId || !apiKey) return;
 
@@ -46,10 +44,7 @@ const VerbaliAssemblea: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // Query: file dentro la cartella corrente, non nel cestino
         const query = `'${currentFolderId}' in parents and trashed=false`;
-
-        // URL API: chiediamo solo id, nome, tipo e link per risparmiare banda
         const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
           query,
         )}&key=${apiKey}&fields=files(id,name,mimeType,webViewLink)&orderBy=folder,name`;
@@ -57,15 +52,12 @@ const VerbaliAssemblea: React.FC = () => {
         const response = await fetch(url);
         const data = await response.json();
 
-        if (data.error) {
-          throw new Error(data.error.message);
-        }
-
+        if (data.error) throw new Error(data.error.message);
         setFiles(data.files || []);
       } catch (err: any) {
         console.error("Errore Drive API:", err);
         setError(
-          "Errore nel caricamento. Verifica la chiave API e i permessi della cartella.",
+          "Errore nel caricamento. Verifica la chiave API e i permessi.",
         );
       } finally {
         setLoading(false);
@@ -75,19 +67,15 @@ const VerbaliAssemblea: React.FC = () => {
     fetchFiles();
   }, [currentFolderId, apiKey]);
 
-  // Gestione click: Entra in cartella o apre file
   const handleItemClick = (file: DriveFile) => {
     if (file.mimeType === "application/vnd.google-apps.folder") {
-      // Se è una cartella, aggiungi l'ID corrente alla storia e entra nella nuova
       setFolderHistory((prev) => [...prev, currentFolderId!]);
       setCurrentFolderId(file.id);
     } else {
-      // Se è un file, aprilo in una nuova scheda
       window.open(file.webViewLink, "_blank");
     }
   };
 
-  // Torna alla cartella precedente
   const handleBack = () => {
     if (folderHistory.length === 0) return;
     const previousId = folderHistory[folderHistory.length - 1];
@@ -95,16 +83,12 @@ const VerbaliAssemblea: React.FC = () => {
     setCurrentFolderId(previousId);
   };
 
-  // Se mancano le configurazioni
   if (!apiKey || !rootFolderId) {
     return (
-      <div className="verbali_container">
-        <FcBrokenLink size={50} />
+      <div className="verbali_container error-state">
+        <FcBrokenLink size={60} />
         <h3>Configurazione Mancante</h3>
-        <p>
-          Assicurati di avere VITE_GOOGLE_CLOUD e VITE_GOOGLE_DRIVE_VERBALI
-          impostati.
-        </p>
+        <p>Verifica VITE_GOOGLE_CLOUD e VITE_GOOGLE_DRIVE_VERBALI.</p>
       </div>
     );
   }
@@ -112,91 +96,76 @@ const VerbaliAssemblea: React.FC = () => {
   return (
     <div className="verbali_container">
       <div className="verbali_header">
-        <FcFolder size={40} />
-        <h2 className="verbali_title">Archivio Verbali Assemblea</h2>
+        <div className="icon-wrapper">
+          <FcFolder size={40} />
+        </div>
+        <h2 className="verbali_title">Archivio Verbali</h2>
       </div>
 
-      <div className="verbali_content">
+      <div className="verbali_card">
         {/* Barra di navigazione */}
-        <div
-          className="verbali_actions"
-          style={{ marginBottom: "15px", display: "flex", gap: "10px" }}
-        >
+        <div className="verbali_nav">
           <button
             onClick={handleBack}
             disabled={folderHistory.length === 0}
-            className="verbali_button_back"
-            style={{
-              opacity: folderHistory.length === 0 ? 0.5 : 1,
-              cursor: folderHistory.length === 0 ? "default" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-            }}
+            className={`verbali_back-btn ${folderHistory.length === 0 ? "disabled" : ""}`}
           >
-            <FcLeft /> Indietro
+            <FcLeft size={20} />
+            <span>Indietro</span>
           </button>
 
-          {folderHistory.length === 0 && (
-            <span
-              style={{ alignSelf: "center", fontSize: "0.9em", color: "#666" }}
-            >
-              Cartella Principale
-            </span>
-          )}
+          <span className="verbali_path">
+            {folderHistory.length === 0
+              ? "Cartella Principale"
+              : "Sottocartella"}
+          </span>
         </div>
 
-        {/* Lista File */}
-        {loading ? (
-          <div className="verbali_loading">Caricamento in corso...</div>
-        ) : error ? (
-          <div className="verbali_error" style={{ color: "red" }}>
-            {error}
-          </div>
-        ) : (
-          <div className="verbali_list">
-            {files.length === 0 && <p>Questa cartella è vuota.</p>}
+        {/* Contenuto Lista */}
+        <div className="verbali_list-container">
+          {loading ? (
+            <div className="verbali_loading">
+              <div className="spinner"></div>
+              <p>Caricamento documenti...</p>
+            </div>
+          ) : error ? (
+            <div className="verbali_error">{error}</div>
+          ) : files.length === 0 ? (
+            <div className="verbali_empty">
+              <FcOpenedFolder size={40} style={{ opacity: 0.5 }} />
+              <p>Questa cartella è vuota.</p>
+            </div>
+          ) : (
+            <div className="verbali_list">
+              {files.map((file) => {
+                const isFolder = file.mimeType.includes("folder");
+                return (
+                  <div
+                    key={file.id}
+                    onClick={() => handleItemClick(file)}
+                    className={`verbali_item ${isFolder ? "is-folder" : "is-file"}`}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="verbali_item-icon">
+                      {isFolder ? <FcFolder size={28} /> : <FcFile size={28} />}
+                    </div>
 
-            {files.map((file) => (
-              <div
-                key={file.id}
-                onClick={() => handleItemClick(file)}
-                className="verbali_item"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "12px",
-                  borderBottom: "1px solid #eee",
-                  cursor: "pointer",
-                  transition: "background 0.2s",
-                }}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#f9f9f9")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
-              >
-                {file.mimeType.includes("folder") ? (
-                  <FcFolder size={24} />
-                ) : (
-                  <FcFile size={24} />
-                )}
+                    <div className="verbali_item-info">
+                      <span className="verbali_item-name">{file.name}</span>
+                      <span className="verbali_item-type">
+                        {isFolder ? "Cartella" : "Documento"}
+                      </span>
+                    </div>
 
-                <span
-                  style={{
-                    fontWeight: file.mimeType.includes("folder")
-                      ? "600"
-                      : "400",
-                  }}
-                >
-                  {file.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+                    {/* Freccetta solo per le cartelle */}
+                    {isFolder && <div className="verbali_chevron">›</div>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="verbali_footer">
@@ -204,9 +173,9 @@ const VerbaliAssemblea: React.FC = () => {
           href={rootDriveLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="verbali_button"
+          className="verbali_drive-link"
         >
-          Apri su Google Drive ↗
+          Apri cartella originale su Drive ↗
         </a>
       </div>
     </div>
