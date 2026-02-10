@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import '../style/modificaOrari.css';
+import React, { useState, useEffect } from "react";
+import "../style/modificaOrari.css";
 
 interface FasciaOraria {
   id: number;
@@ -21,11 +21,16 @@ interface ApiResponse {
   error?: string;
 }
 
-type WeekType = 'current' | 'next';
+type WeekType = "current" | "next";
 
 const GIORNI_SETTIMANA = [
-  'lunedì', 'martedì', 'mercoledì', 'giovedì',
-  'venerdì', 'sabato', 'domenica'
+  "lunedì",
+  "martedì",
+  "mercoledì",
+  "giovedì",
+  "venerdì",
+  "sabato",
+  "domenica",
 ];
 
 const getCurrentWeek = (): string => {
@@ -36,12 +41,14 @@ const getCurrentWeek = (): string => {
   monday.setDate(now.getDate() - daysToMonday);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  const monthName = monday.toLocaleDateString('it-IT', { month: 'long' });
-  
+  const monthName = monday.toLocaleDateString("it-IT", { month: "long" });
+
   if (monday.getMonth() === sunday.getMonth()) {
     return `${monday.getDate()}-${sunday.getDate()} ${monthName}`;
   } else {
-    const sundayMonthName = sunday.toLocaleDateString('it-IT', { month: 'long' });
+    const sundayMonthName = sunday.toLocaleDateString("it-IT", {
+      month: "long",
+    });
     return `${monday.getDate()} ${monthName} - ${sunday.getDate()} ${sundayMonthName}`;
   }
 };
@@ -54,12 +61,14 @@ const getNextWeek = (): string => {
   nextMonday.setDate(now.getDate() - daysToMonday + 7);
   const nextSunday = new Date(nextMonday);
   nextSunday.setDate(nextMonday.getDate() + 6);
-  const monthName = nextMonday.toLocaleDateString('it-IT', { month: 'long' });
-  
+  const monthName = nextMonday.toLocaleDateString("it-IT", { month: "long" });
+
   if (nextMonday.getMonth() === nextSunday.getMonth()) {
     return `${nextMonday.getDate()}-${nextSunday.getDate()} ${monthName}`;
   } else {
-    const sundayMonthName = nextSunday.toLocaleDateString('it-IT', { month: 'long' });
+    const sundayMonthName = nextSunday.toLocaleDateString("it-IT", {
+      month: "long",
+    });
     return `${nextMonday.getDate()} ${monthName} - ${nextSunday.getDate()} ${sundayMonthName}`;
   }
 };
@@ -70,20 +79,28 @@ const ModificaOrari: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  
-  const [nuoveFasce, setNuoveFasce] = useState<Record<string, Record<WeekType, NuovaFascia[]>>>({});
-  const [editingId, setEditingId] = useState<{id: number, week: WeekType} | null>(null);
+
+  const [nuoveFasce, setNuoveFasce] = useState<
+    Record<string, Record<WeekType, NuovaFascia[]>>
+  >({});
+  const [editingId, setEditingId] = useState<{
+    id: number;
+    week: WeekType;
+  } | null>(null);
   const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
   // Stato per il popup di Telegram
   const [showTelegramModal, setShowTelegramModal] = useState(false);
-  const [telegramMessage, setTelegramMessage] = useState('');
+  const [telegramMessage, setTelegramMessage] = useState("");
 
   useEffect(() => {
-    const initialExpanded = GIORNI_SETTIMANA.reduce((acc, giorno) => {
-      acc[giorno] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
+    const initialExpanded = GIORNI_SETTIMANA.reduce(
+      (acc, giorno) => {
+        acc[giorno] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
     setExpandedDays(initialExpanded);
   }, []);
 
@@ -95,53 +112,66 @@ const ModificaOrari: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const currentRes = await fetch('/api/orari_settimana');
-      
-      if (!currentRes.ok) {
-        throw new Error(`Errore nel caricamento orari corrente: ${currentRes.status}`);
-      }
-      
-      const currentData: ApiResponse = await currentRes.json();
-      
-      if (!currentData.success) {
-        throw new Error(currentData.error || 'Errore nel caricamento orari corrente');
-      }
-      
-      setOrariCorrente(currentData.data || []);
-      
-      const nextRes = await fetch('/api/orari_settimana?settimana=next');
-      
-      if (!nextRes.ok) {
-        throw new Error(`Errore nel caricamento orari prossima: ${nextRes.status}`);
-      }
-      
-      const nextData: ApiResponse = await nextRes.json();
-      
-      if (!nextData.success) {
-        throw new Error(nextData.error || 'Errore nel caricamento orari prossima');
-      }
-      
-      setOrariProssima(nextData.data || []);
 
+      const currentRes = await fetch("/api/orari_settimana");
+
+      if (!currentRes.ok) {
+        throw new Error(
+          `Errore nel caricamento orari corrente: ${currentRes.status}`,
+        );
+      }
+
+      const currentData: ApiResponse = await currentRes.json();
+
+      if (!currentData.success) {
+        throw new Error(
+          currentData.error || "Errore nel caricamento orari corrente",
+        );
+      }
+
+      setOrariCorrente(currentData.data || []);
+
+      const nextRes = await fetch("/api/orari_settimana?settimana=next");
+
+      if (!nextRes.ok) {
+        throw new Error(
+          `Errore nel caricamento orari prossima: ${nextRes.status}`,
+        );
+      }
+
+      const nextData: ApiResponse = await nextRes.json();
+
+      if (!nextData.success) {
+        throw new Error(
+          nextData.error || "Errore nel caricamento orari prossima",
+        );
+      }
+
+      setOrariProssima(nextData.data || []);
     } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+      console.error("Fetch error:", err);
+      setError(
+        err instanceof Error ? err.message : "Errore di connessione al server",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const groupByDay = (orari: FasciaOraria[]) => {
-    return GIORNI_SETTIMANA.reduce((acc, giorno) => {
-      acc[giorno] = orari.filter(o => o.giorno === giorno)
-                         .sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
-      return acc;
-    }, {} as Record<string, FasciaOraria[]>);
+    return GIORNI_SETTIMANA.reduce(
+      (acc, giorno) => {
+        acc[giorno] = orari
+          .filter((o) => o.giorno === giorno)
+          .sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
+        return acc;
+      },
+      {} as Record<string, FasciaOraria[]>,
+    );
   };
 
   const aggiungiNuovaFascia = (giorno: string, week: WeekType) => {
-    setNuoveFasce(prev => {
+    setNuoveFasce((prev) => {
       const existingDay = prev[giorno] || { current: [], next: [] };
       return {
         ...prev,
@@ -149,20 +179,29 @@ const ModificaOrari: React.FC = () => {
           ...existingDay,
           [week]: [
             ...existingDay[week],
-            { ora_inizio: '09:00', ora_fine: '19:30', note: '' }
-          ]
-        }
+            { ora_inizio: "09:00", ora_fine: "19:30", note: "" },
+          ],
+        },
       };
     });
   };
 
-  const rimuoviNuovaFascia = (giorno: string, week: WeekType, index: number) => {
-    setNuoveFasce(prev => {
+  const rimuoviNuovaFascia = (
+    giorno: string,
+    week: WeekType,
+    index: number,
+  ) => {
+    setNuoveFasce((prev) => {
       const updated = { ...prev };
       if (updated[giorno]?.[week]) {
-        updated[giorno][week] = updated[giorno][week].filter((_, i) => i !== index);
-        if (updated[giorno][week].length === 0 && 
-            (week === 'current' ? updated[giorno].next : updated[giorno].current).length === 0) {
+        updated[giorno][week] = updated[giorno][week].filter(
+          (_, i) => i !== index,
+        );
+        if (
+          updated[giorno][week].length === 0 &&
+          (week === "current" ? updated[giorno].next : updated[giorno].current)
+            .length === 0
+        ) {
           delete updated[giorno];
         }
       }
@@ -170,19 +209,32 @@ const ModificaOrari: React.FC = () => {
     });
   };
 
-  const aggiornaNuovaFascia = (giorno: string, week: WeekType, index: number, field: keyof NuovaFascia, value: string) => {
-    setNuoveFasce(prev => {
+  const aggiornaNuovaFascia = (
+    giorno: string,
+    week: WeekType,
+    index: number,
+    field: keyof NuovaFascia,
+    value: string,
+  ) => {
+    setNuoveFasce((prev) => {
       const updated = { ...prev };
       if (updated[giorno]?.[week]?.[index]) {
-        updated[giorno][week][index] = { ...updated[giorno][week][index], [field]: value };
+        updated[giorno][week][index] = {
+          ...updated[giorno][week][index],
+          [field]: value,
+        };
       }
       return updated;
     });
   };
 
-  const salvaFascia = async (giorno: string, fascia: NuovaFascia, week: WeekType) => {
+  const salvaFascia = async (
+    giorno: string,
+    fascia: NuovaFascia,
+    week: WeekType,
+  ) => {
     if (!fascia.ora_inizio || !fascia.ora_fine) {
-      setError('Ora inizio e ora fine sono obbligatorie');
+      setError("Ora inizio e ora fine sono obbligatorie");
       return false;
     }
 
@@ -192,13 +244,13 @@ const ModificaOrari: React.FC = () => {
         ora_inizio: fascia.ora_inizio,
         ora_fine: fascia.ora_fine,
         note: fascia.note || null,
-        settimana: week === 'next' ? 'next' : undefined
+        settimana: week === "next" ? "next" : undefined,
       };
 
-      const response = await fetch('/api/orari_settimana', {
-        method: 'POST',
+      const response = await fetch("/api/orari_settimana", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
       });
@@ -208,15 +260,17 @@ const ModificaOrari: React.FC = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         return true;
       } else {
-        throw new Error(data.error || 'Errore nel salvataggio');
+        throw new Error(data.error || "Errore nel salvataggio");
       }
     } catch (err) {
-      console.error('Save error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+      console.error("Save error:", err);
+      setError(
+        err instanceof Error ? err.message : "Errore di connessione al server",
+      );
       return false;
     }
   };
@@ -232,7 +286,7 @@ const ModificaOrari: React.FC = () => {
       const fasceGiorno = nuoveFasce[giorno];
       if (!fasceGiorno) continue;
 
-      for (const week of ['current', 'next'] as WeekType[]) {
+      for (const week of ["current", "next"] as WeekType[]) {
         for (const fascia of fasceGiorno[week] || []) {
           savePromises.push(salvaFascia(giorno, fascia, week));
         }
@@ -241,10 +295,10 @@ const ModificaOrari: React.FC = () => {
 
     try {
       const results = await Promise.all(savePromises);
-      tutteOk = results.every(r => r);
+      tutteOk = results.every((r) => r);
     } catch (err) {
-      console.error('Save all error:', err);
-      setError(err instanceof Error ? err.message : 'Errore nel salvataggio');
+      console.error("Save all error:", err);
+      setError(err instanceof Error ? err.message : "Errore nel salvataggio");
       tutteOk = false;
     }
 
@@ -252,7 +306,11 @@ const ModificaOrari: React.FC = () => {
       const allOrari = [...orariCorrente];
       for (const giorno in nuoveFasce) {
         if (nuoveFasce[giorno].current) {
-          allOrari.push(...nuoveFasce[giorno].current.map(f => ({ ...f, id: 0, giorno } as FasciaOraria)));
+          allOrari.push(
+            ...nuoveFasce[giorno].current.map(
+              (f) => ({ ...f, id: 0, giorno }) as FasciaOraria,
+            ),
+          );
         }
       }
 
@@ -265,57 +323,61 @@ const ModificaOrari: React.FC = () => {
     setLoading(false);
   };
 
-const eliminaFascia = async (id: number, week: WeekType) => {
-  if (!confirm('Sei sicuro di voler eliminare questa fascia oraria?')) {
-    return;
-  }
-
-  try {
-    console.log(`Eliminating fascia: ID=${id}, week=${week}`);
-    
-    const body = { 
-      id,
-      settimana: week === 'next' ? 'next' : 'current' // Cambiato da undefined a 'current'
-    };
-
-    console.log('Request body:', body);
-
-    const response = await fetch('/api/orari_settimana', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    console.log('Response status:', response.status);
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Error response:', errorData);
-      throw new Error(`HTTP error! status: ${response.status}, details: ${JSON.stringify(errorData)}`);
+  const eliminaFascia = async (id: number, week: WeekType) => {
+    if (!confirm("Sei sicuro di voler eliminare questa fascia oraria?")) {
+      return;
     }
 
-    const data = await response.json();
-    console.log('Success response:', data);
-    
-    if (data.success) {
-      await fetchOrari();
-    } else {
-      throw new Error(data.error || 'Errore nell\'eliminazione');
+    try {
+      console.log(`Eliminating fascia: ID=${id}, week=${week}`);
+
+      const body = {
+        id,
+        settimana: week === "next" ? "next" : "current", // Cambiato da undefined a 'current'
+      };
+
+      console.log("Request body:", body);
+
+      const response = await fetch("/api/orari_settimana", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Error response:", errorData);
+        throw new Error(
+          `HTTP error! status: ${response.status}, details: ${JSON.stringify(errorData)}`,
+        );
+      }
+
+      const data = await response.json();
+      console.log("Success response:", data);
+
+      if (data.success) {
+        await fetchOrari();
+      } else {
+        throw new Error(data.error || "Errore nell'eliminazione");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError(
+        err instanceof Error ? err.message : "Errore di connessione al server",
+      );
     }
-  } catch (err) {
-    console.error('Delete error:', err);
-    setError(err instanceof Error ? err.message : 'Errore di connessione al server');
-  }
-};
+  };
 
   const iniziaModifica = (fascia: FasciaOraria, week: WeekType) => {
     setEditingId({ id: fascia.id, week });
     setEditData({
       ora_inizio: fascia.ora_inizio,
       ora_fine: fascia.ora_fine,
-      note: fascia.note || ''
+      note: fascia.note || "",
     });
   };
 
@@ -326,7 +388,7 @@ const eliminaFascia = async (id: number, week: WeekType) => {
 
   const salvaModifica = async () => {
     if (!editingId || !editData.ora_inizio || !editData.ora_fine) {
-      setError('Ora inizio e ora fine sono obbligatorie');
+      setError("Ora inizio e ora fine sono obbligatorie");
       return;
     }
 
@@ -336,13 +398,13 @@ const eliminaFascia = async (id: number, week: WeekType) => {
         ora_inizio: editData.ora_inizio,
         ora_fine: editData.ora_fine,
         note: editData.note || null,
-        settimana: editingId.week === 'next' ? 'next' : undefined
+        settimana: editingId.week === "next" ? "next" : undefined,
       };
 
-      const response = await fetch('/api/orari_settimana', {
-        method: 'PUT',
+      const response = await fetch("/api/orari_settimana", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
       });
@@ -352,38 +414,40 @@ const eliminaFascia = async (id: number, week: WeekType) => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         await fetchOrari();
         setEditingId(null);
         setEditData({});
       } else {
-        throw new Error(data.error || 'Errore nell\'aggiornamento');
+        throw new Error(data.error || "Errore nell'aggiornamento");
       }
     } catch (err) {
-      console.error('Update error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione al server');
+      console.error("Update error:", err);
+      setError(
+        err instanceof Error ? err.message : "Errore di connessione al server",
+      );
     }
   };
 
   const formatTime = (time: string) => {
-    if (time.includes(':')) return time;
+    if (time.includes(":")) return time;
     const hours = Math.floor(parseFloat(time));
     const minutes = Math.round((parseFloat(time) - hours) * 60);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
   };
 
   const toggleDay = (giorno: string) => {
-    setExpandedDays(prev => ({
+    setExpandedDays((prev) => ({
       ...prev,
-      [giorno]: !prev[giorno]
+      [giorno]: !prev[giorno],
     }));
   };
 
   const hasPendingChanges = () => {
-    return Object.values(nuoveFasce).some(dayFasce => 
-      (dayFasce.current?.length || 0) > 0 || 
-      (dayFasce.next?.length || 0) > 0
+    return Object.values(nuoveFasce).some(
+      (dayFasce) =>
+        (dayFasce.current?.length || 0) > 0 || (dayFasce.next?.length || 0) > 0,
     );
   };
 
@@ -391,74 +455,85 @@ const eliminaFascia = async (id: number, week: WeekType) => {
   const generateTelegramMessage = (orari: FasciaOraria[]): string => {
     const groupedOrari = groupByDay(orari);
     const weekRange = getCurrentWeek();
-  
+
     let message = `<b>ECCO GLI ORARI DELL’AULA STUDIO E DELL’AULA AGORÀ DELLA SETTIMANA:</b>\n`;
     message += `${weekRange}\n\n`;
-  
-    GIORNI_SETTIMANA.forEach(giorno => {
+
+    GIORNI_SETTIMANA.forEach((giorno) => {
       const dayOrari = groupedOrari[giorno];
       if (dayOrari && dayOrari.length > 0) {
-        const orariString = dayOrari.map(o => {
-          const timeRange = `${formatTime(o.ora_inizio)}-${formatTime(o.ora_fine)}`;
-          const note = o.note ? `*${o.note}` : '';
-          return `${timeRange}${note}`;
-        }).join(', ');
-        
+        const orariString = dayOrari
+          .map((o) => {
+            const timeRange = `${formatTime(o.ora_inizio)}-${formatTime(o.ora_fine)}`;
+            const note = o.note ? `*${o.note}` : "";
+            return `${timeRange}${note}`;
+          })
+          .join(", ");
+
         message += `${giorno.charAt(0).toUpperCase() + giorno.slice(1)}. ${orariString}\n`;
       }
     });
-  
+
     message += `\nDisponibili le pagode per studiare all’aperto :)\n\n`;
     message += `Rimanete collegatə per tutti gli aggiornamenti`;
-  
+
     return message;
   };
 
-  // Funzioni per la gestione del modale di Telegram
   const handleSendTelegram = async () => {
-  const chatId = '-1002271075098'; // ID del gruppo
-  try {
-    const response = await fetch('/api/send-telegram-group', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chatId,
-        message: telegramMessage,
-      }),
-    });
+    const chatId = "-1002271075098";
+    try {
+      // IMPORTANTE: Punta a /api/send-telegram, non a -group
+      const response = await fetch("/api/send-telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId: chatId, // Il backend ora userà questa chiave per capire che è un gruppo
+          message: telegramMessage,
+        }),
+      });
 
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || 'Errore nell\'invio del messaggio');
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Errore nell'invio del messaggio");
+      }
+      alert("Messaggio inviato con successo al gruppo!");
+    } catch (err) {
+      console.error("Errore invio Telegram:", err);
+      setError(
+        err instanceof Error ? err.message : "Errore di connessione al server",
+      );
+    } finally {
+      setShowTelegramModal(false);
+      fetchOrari();
     }
-    alert('Messaggio inviato con successo al gruppo!');
-  } catch (err) {
-    console.error('Errore invio Telegram:', err);
-    setError(err instanceof Error ? err.message : 'Errore di connessione al server');
-  } finally {
-    setShowTelegramModal(false);
-    fetchOrari();
-  }
-};
-  
+  };
+
   const handleDismissTelegram = () => {
     setShowTelegramModal(false);
     fetchOrari(); // Ricarica anche se l'utente non vuole inviare il messaggio
   };
 
-  const renderWeekSection = (title: string, orari: FasciaOraria[], week: WeekType, className: string) => {
+  const renderWeekSection = (
+    title: string,
+    orari: FasciaOraria[],
+    week: WeekType,
+    className: string,
+  ) => {
     const orariGruppi = groupByDay(orari);
-    
+
     return (
       <div className={className}>
         <h2 className="week-title">{title}</h2>
         <div className="orari-list">
-          {GIORNI_SETTIMANA.map(giorno => (
+          {GIORNI_SETTIMANA.map((giorno) => (
             <div key={`${week}-${giorno}`} className="day-section">
               <div className="day-header" onClick={() => toggleDay(giorno)}>
                 <h3 className="day-title">
                   {giorno.charAt(0).toUpperCase() + giorno.slice(1)}
-                  <span className="orari-count">({orariGruppi[giorno].length})</span>
+                  <span className="orari-count">
+                    ({orariGruppi[giorno].length})
+                  </span>
                 </h3>
                 <div className="day-actions">
                   <button
@@ -471,49 +546,83 @@ const eliminaFascia = async (id: number, week: WeekType) => {
                   >
                     + Aggiungi
                   </button>
-                  <span className={`expand-icon ${expandedDays[giorno] ? 'expanded' : ''}`}>
+                  <span
+                    className={`expand-icon ${expandedDays[giorno] ? "expanded" : ""}`}
+                  >
                     ▼
                   </span>
                 </div>
               </div>
-              
+
               {expandedDays[giorno] && (
                 <div className="day-content">
                   {orariGruppi[giorno].length > 0 && (
                     <div className="existing-orari">
                       <h4>Orari attuali:</h4>
-                      {orariGruppi[giorno].map(orario => (
+                      {orariGruppi[giorno].map((orario) => (
                         <div key={orario.id} className="orario-item">
-                          {editingId?.id === orario.id && editingId.week === week ? (
+                          {editingId?.id === orario.id &&
+                          editingId.week === week ? (
                             <div className="edit-form">
                               <input
                                 type="time"
-                                value={editData.ora_inizio || ''}
-                                onChange={(e) => setEditData({ ...editData, ora_inizio: e.target.value })}
+                                value={editData.ora_inizio || ""}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    ora_inizio: e.target.value,
+                                  })
+                                }
                               />
                               <span>-</span>
                               <input
                                 type="time"
-                                value={editData.ora_fine || ''}
-                                onChange={(e) => setEditData({ ...editData, ora_fine: e.target.value })}
+                                value={editData.ora_fine || ""}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    ora_fine: e.target.value,
+                                  })
+                                }
                               />
                               <input
                                 type="text"
                                 placeholder="Note"
-                                value={editData.note || ''}
-                                onChange={(e) => setEditData({ ...editData, note: e.target.value })}
+                                value={editData.note || ""}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    note: e.target.value,
+                                  })
+                                }
                               />
-                              <button onClick={salvaModifica} className="btn btn-success btn-small">✓</button>
-                              <button onClick={annullaModifica} className="btn btn-secondary btn-small">✗</button>
+                              <button
+                                onClick={salvaModifica}
+                                className="btn btn-success btn-small"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                onClick={annullaModifica}
+                                className="btn btn-secondary btn-small"
+                              >
+                                ✗
+                              </button>
                             </div>
                           ) : (
                             <div className="orario-display">
                               <div className="orario-time">
-                                <span className="time-badge">{formatTime(orario.ora_inizio)}</span>
+                                <span className="time-badge">
+                                  {formatTime(orario.ora_inizio)}
+                                </span>
                                 <span>-</span>
-                                <span className="time-badge">{formatTime(orario.ora_fine)}</span>
+                                <span className="time-badge">
+                                  {formatTime(orario.ora_fine)}
+                                </span>
                               </div>
-                              {orario.note && <div className="orario-note">{orario.note}</div>}
+                              {orario.note && (
+                                <div className="orario-note">{orario.note}</div>
+                              )}
                               <div className="orario-actions">
                                 <button
                                   onClick={(e) => {
@@ -551,24 +660,50 @@ const eliminaFascia = async (id: number, week: WeekType) => {
                           <input
                             type="time"
                             value={fascia.ora_inizio}
-                            onChange={(e) => aggiornaNuovaFascia(giorno, week, index, 'ora_inizio', e.target.value)}
+                            onChange={(e) =>
+                              aggiornaNuovaFascia(
+                                giorno,
+                                week,
+                                index,
+                                "ora_inizio",
+                                e.target.value,
+                              )
+                            }
                             placeholder="Inizio"
                           />
                           <span>-</span>
                           <input
                             type="time"
                             value={fascia.ora_fine}
-                            onChange={(e) => aggiornaNuovaFascia(giorno, week, index, 'ora_fine', e.target.value)}
+                            onChange={(e) =>
+                              aggiornaNuovaFascia(
+                                giorno,
+                                week,
+                                index,
+                                "ora_fine",
+                                e.target.value,
+                              )
+                            }
                             placeholder="Fine"
                           />
                           <input
                             type="text"
                             value={fascia.note}
-                            onChange={(e) => aggiornaNuovaFascia(giorno, week, index, 'note', e.target.value)}
+                            onChange={(e) =>
+                              aggiornaNuovaFascia(
+                                giorno,
+                                week,
+                                index,
+                                "note",
+                                e.target.value,
+                              )
+                            }
                             placeholder="Note (opzionale)"
                           />
                           <button
-                            onClick={() => rimuoviNuovaFascia(giorno, week, index)}
+                            onClick={() =>
+                              rimuoviNuovaFascia(giorno, week, index)
+                            }
                             className="btn btn-delete btn-small"
                             title="Rimuovi"
                           >
@@ -579,11 +714,13 @@ const eliminaFascia = async (id: number, week: WeekType) => {
                     </div>
                   )}
 
-                  {orariGruppi[giorno].length === 0 && (!nuoveFasce[giorno]?.[week] || nuoveFasce[giorno][week].length === 0) && (
-                    <div className="no-orari">
-                      Nessun orario impostato per questo giorno
-                    </div>
-                  )}
+                  {orariGruppi[giorno].length === 0 &&
+                    (!nuoveFasce[giorno]?.[week] ||
+                      nuoveFasce[giorno][week].length === 0) && (
+                      <div className="no-orari">
+                        Nessun orario impostato per questo giorno
+                      </div>
+                    )}
                 </div>
               )}
             </div>
@@ -610,15 +747,19 @@ const eliminaFascia = async (id: number, week: WeekType) => {
         <h1>Gestione Orari Settimanali</h1>
         <div className="header-actions">
           {hasPendingChanges() && (
-            <button 
-              onClick={salvaTuttiGliOrari} 
+            <button
+              onClick={salvaTuttiGliOrari}
               className="btn btn-success btn-large"
               disabled={loading}
             >
               💾 Salva Tutti gli Orari
             </button>
           )}
-          <button onClick={fetchOrari} className="btn btn-refresh" disabled={loading}>
+          <button
+            onClick={fetchOrari}
+            className="btn btn-refresh"
+            disabled={loading}
+          >
             🔄 Ricarica
           </button>
         </div>
@@ -627,30 +768,32 @@ const eliminaFascia = async (id: number, week: WeekType) => {
       {error && (
         <div className="error-message">
           {error}
-          <button onClick={() => setError(null)} className="close-error">×</button>
+          <button onClick={() => setError(null)} className="close-error">
+            ×
+          </button>
         </div>
       )}
 
       <div className="weeks-container">
         {renderWeekSection(
-          `Settimana Corrente (${getCurrentWeek()})`, 
-          orariCorrente, 
-          'current',
-          'week-section current-week'
+          `Settimana Corrente (${getCurrentWeek()})`,
+          orariCorrente,
+          "current",
+          "week-section current-week",
         )}
-        
+
         {renderWeekSection(
-          `Prossima Settimana (${getNextWeek()})`, 
-          orariProssima, 
-          'next',
-          'week-section next-week'
+          `Prossima Settimana (${getNextWeek()})`,
+          orariProssima,
+          "next",
+          "week-section next-week",
         )}
       </div>
 
       {hasPendingChanges() && (
         <div className="bottom-save-section">
-          <button 
-            onClick={salvaTuttiGliOrari} 
+          <button
+            onClick={salvaTuttiGliOrari}
             className="btn btn-success btn-large btn-bottom-save"
             disabled={loading}
           >
@@ -675,7 +818,10 @@ const eliminaFascia = async (id: number, week: WeekType) => {
               <button onClick={handleSendTelegram} className="btn btn-success">
                 Invia
               </button>
-              <button onClick={handleDismissTelegram} className="btn btn-secondary">
+              <button
+                onClick={handleDismissTelegram}
+                className="btn btn-secondary"
+              >
                 Salva e non inviare
               </button>
             </div>
