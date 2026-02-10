@@ -459,6 +459,7 @@ async function aggiornaPresenze(req, res) {
     const { data, fascia_oraria, numero_presenze, note, current_user_id } =
       req.body;
 
+    // 1. Validazione input
     if (
       !data ||
       !fascia_oraria ||
@@ -468,46 +469,13 @@ async function aggiornaPresenze(req, res) {
       return res.status(400).json({ success: false, error: "Dati mancanti" });
     }
 
-    // Mapping
-    const mapOrari = {
-      "9-13": "09:00",
-      "13-16": "13:00",
-      "16-19": "16:00",
-      "21-24": "21:00",
-    };
-    const targetStart = mapOrari[fascia_oraria];
-    const days = [
-      "domenica",
-      "lunedì",
-      "martedì",
-      "mercoledì",
-      "giovedì",
-      "venerdì",
-      "sabato",
-    ];
-    const giornoTarget = days[new Date(data).getDay()];
+    // 2. Normalizzazione della fascia (rimuove .0 e spazi)
+    // Questo impedisce che "9-13" diventi "1.0" o simili
+    const fasciaDaSalvare = String(fascia_oraria).replace(".0", "").trim();
+    const valorePresenze = parseInt(numero_presenze, 10) || 0;
 
-    let fasciaDaSalvare = null;
-
-    // 1. Tenta di trovare l'ID
-    if (targetStart) {
-      const fRes = await client.execute({
-        sql: `SELECT id FROM fasce_orarie WHERE giorno = ? AND ora_inizio = ?`,
-        args: [giornoTarget, targetStart],
-      });
-      if (fRes.rows.length > 0) {
-        fasciaDaSalvare = fRes.rows[0].id;
-      }
-    }
-
-    // 2. FALLBACK: Se non trova l'ID, salva la stringa raw (Fix per "fascia non attiva")
-    if (!fasciaDaSalvare) {
-      console.warn(
-        `[WARN] ID fascia non trovato per ${giornoTarget} ${fascia_oraria}. Uso fallback.`,
-      );
-      fasciaDaSalvare = fascia_oraria;
-    }
-
+    // 3. Controllo esistenza record
+    // Cerchiamo il record per data e stringa della fascia
     const check = await client.execute({
       sql: "SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?",
       args: [data, fasciaDaSalvare],
@@ -517,51 +485,74 @@ async function aggiornaPresenze(req, res) {
     let action;
 
     if (check.rows.length > 0) {
-      // UPDATE
+      // --- OPERAZIONE: UPDATE ---
+      const existingId = check.rows[0].id;
+      const oldVal = check.rows[0].numero_presenze;
+
       result = await client.execute({
-        sql: `UPDATE presenze SET numero_presenze = ?, note = ?, user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING id`,
-        args: [numero_presenze, note || "", current_user_id, check.rows[0].id],
+        sql: `UPDATE presenze 
+              SET numero_presenze = ?, 
+                  note = ?, 
+                  user_id = ?, 
+                  updated_at = CURRENT_TIMESTAMP 
+              WHERE id = ? 
+              RETURNING id`,
+        args: [valorePresenze, note || "", current_user_id, existingId],
       });
+
       action = "UPDATE";
+
+      // Log del cambiamento
       await logPresenzeChange(
-        check.rows[0].id,
+        existingId,
         data,
-        fascia_oraria,
-        check.rows[0].numero_presenze,
-        numero_presenze,
+        fasciaDaSalvare,
+        oldVal,
+        valorePresenze,
         current_user_id,
         action,
       );
     } else {
-      // INSERT
+      // --- OPERAZIONE: INSERT ---
       result = await client.execute({
-        sql: `INSERT INTO presenze (data, fascia_oraria, numero_presenze, note, user_id) VALUES (?, ?, ?, ?, ?) RETURNING id`,
+        sql: `INSERT INTO presenze (data, fascia_oraria, numero_presenze, note, user_id) 
+              VALUES (?, ?, ?, ?, ?) 
+              RETURNING id`,
         args: [
           data,
           fasciaDaSalvare,
-          numero_presenze,
+          valorePresenze,
           note || "",
           current_user_id,
         ],
       });
+
       action = "INSERT";
+
+      // Log del nuovo inserimento
       await logPresenzeChange(
         result.rows[0].id,
         data,
-        fascia_oraria,
+        fasciaDaSalvare,
         null,
-        numero_presenze,
+        valorePresenze,
         current_user_id,
         action,
       );
     }
 
-    return res
-      .status(200)
-      .json({ success: true, presenza: result.rows[0], action });
+    return res.status(200).json({
+      success: true,
+      presenza: result.rows[0],
+      action,
+      normalizedFascia: fasciaDaSalvare,
+    });
   } catch (error) {
-    console.error("Errore aggiornamento:", error);
-    return res.status(500).json({ success: false, error: error.message });
+    console.error("[API AggiornaPresenze] Errore critico:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Errore interno durante il salvataggio",
+    });
   }
 }
 

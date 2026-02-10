@@ -301,14 +301,17 @@ const Presenze: React.FC = () => {
 
   const handleSalvaPresenza = async () => {
     if (!selectedCell) return;
+
+    const fasciaPulita = String(selectedCell.fascia).trim();
+
     try {
       const response = await fetch("/api/presenze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: selectedCell.data,
-          fascia_oraria: selectedCell.fascia,
-          numero_presenze: parseInt(editValue) || 0,
+          fascia_oraria: fasciaPulita, // Invio stringa pulita
+          numero_presenze: parseInt(editValue, 10) || 0,
           note: editNote,
           current_user_id: currentUser?.id,
         }),
