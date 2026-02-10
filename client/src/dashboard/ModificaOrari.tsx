@@ -22,6 +22,7 @@ interface ApiResponse {
 }
 
 type WeekType = "current" | "next";
+type TemplateType = "settimana" | "weekend" | "straordinaria";
 
 const GIORNI_SETTIMANA = [
   "lunedì",
@@ -32,6 +33,9 @@ const GIORNI_SETTIMANA = [
   "sabato",
   "domenica",
 ];
+
+// ID del gruppo Telegram
+const TELEGRAM_CHAT_ID = "-1001544887312";
 
 const getCurrentWeek = (): string => {
   const now = new Date();
@@ -74,12 +78,14 @@ const getNextWeek = (): string => {
 };
 
 const ModificaOrari: React.FC = () => {
+  // Stati Dati
   const [orariCorrente, setOrariCorrente] = useState<FasciaOraria[]>([]);
   const [orariProssima, setOrariProssima] = useState<FasciaOraria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
+  // Stati Modifica/Nuovi
   const [nuoveFasce, setNuoveFasce] = useState<
     Record<string, Record<WeekType, NuovaFascia[]>>
   >({});
@@ -89,9 +95,12 @@ const ModificaOrari: React.FC = () => {
   } | null>(null);
   const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
-  // Stato per il popup di Telegram
+  // Stati Telegram e Selezione Messaggio
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [telegramMessage, setTelegramMessage] = useState("");
+  const [selectedOrariIds, setSelectedOrariIds] = useState<number[]>([]);
+  const [activeTemplate, setActiveTemplate] =
+    useState<TemplateType>("settimana");
 
   useEffect(() => {
     const initialExpanded = GIORNI_SETTIMANA.reduce(
@@ -108,124 +117,26 @@ const ModificaOrari: React.FC = () => {
     fetchOrari();
   }, []);
 
+  // --- API CALLS ---
+
   const fetchOrari = async () => {
     try {
       setLoading(true);
       setError(null);
 
       const currentRes = await fetch("/api/orari_settimana");
-
-      if (!currentRes.ok) {
-        throw new Error(
-          `Errore nel caricamento orari corrente: ${currentRes.status}`,
-        );
-      }
-
       const currentData: ApiResponse = await currentRes.json();
-
-      if (!currentData.success) {
-        throw new Error(
-          currentData.error || "Errore nel caricamento orari corrente",
-        );
-      }
-
-      setOrariCorrente(currentData.data || []);
+      if (currentData.success) setOrariCorrente(currentData.data || []);
 
       const nextRes = await fetch("/api/orari_settimana?settimana=next");
-
-      if (!nextRes.ok) {
-        throw new Error(
-          `Errore nel caricamento orari prossima: ${nextRes.status}`,
-        );
-      }
-
       const nextData: ApiResponse = await nextRes.json();
-
-      if (!nextData.success) {
-        throw new Error(
-          nextData.error || "Errore nel caricamento orari prossima",
-        );
-      }
-
-      setOrariProssima(nextData.data || []);
+      if (nextData.success) setOrariProssima(nextData.data || []);
     } catch (err) {
       console.error("Fetch error:", err);
-      setError(
-        err instanceof Error ? err.message : "Errore di connessione al server",
-      );
+      setError("Errore di connessione al server");
     } finally {
       setLoading(false);
     }
-  };
-
-  const groupByDay = (orari: FasciaOraria[]) => {
-    return GIORNI_SETTIMANA.reduce(
-      (acc, giorno) => {
-        acc[giorno] = orari
-          .filter((o) => o.giorno === giorno)
-          .sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
-        return acc;
-      },
-      {} as Record<string, FasciaOraria[]>,
-    );
-  };
-
-  const aggiungiNuovaFascia = (giorno: string, week: WeekType) => {
-    setNuoveFasce((prev) => {
-      const existingDay = prev[giorno] || { current: [], next: [] };
-      return {
-        ...prev,
-        [giorno]: {
-          ...existingDay,
-          [week]: [
-            ...existingDay[week],
-            { ora_inizio: "09:00", ora_fine: "19:30", note: "" },
-          ],
-        },
-      };
-    });
-  };
-
-  const rimuoviNuovaFascia = (
-    giorno: string,
-    week: WeekType,
-    index: number,
-  ) => {
-    setNuoveFasce((prev) => {
-      const updated = { ...prev };
-      if (updated[giorno]?.[week]) {
-        updated[giorno][week] = updated[giorno][week].filter(
-          (_, i) => i !== index,
-        );
-        if (
-          updated[giorno][week].length === 0 &&
-          (week === "current" ? updated[giorno].next : updated[giorno].current)
-            .length === 0
-        ) {
-          delete updated[giorno];
-        }
-      }
-      return updated;
-    });
-  };
-
-  const aggiornaNuovaFascia = (
-    giorno: string,
-    week: WeekType,
-    index: number,
-    field: keyof NuovaFascia,
-    value: string,
-  ) => {
-    setNuoveFasce((prev) => {
-      const updated = { ...prev };
-      if (updated[giorno]?.[week]?.[index]) {
-        updated[giorno][week][index] = {
-          ...updated[giorno][week][index],
-          [field]: value,
-        };
-      }
-      return updated;
-    });
   };
 
   const salvaFascia = async (
@@ -237,7 +148,6 @@ const ModificaOrari: React.FC = () => {
       setError("Ora inizio e ora fine sono obbligatorie");
       return false;
     }
-
     try {
       const body = {
         giorno,
@@ -246,131 +156,60 @@ const ModificaOrari: React.FC = () => {
         note: fascia.note || null,
         settimana: week === "next" ? "next" : undefined,
       };
-
       const response = await fetch("/api/orari_settimana", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const data = await response.json();
-
-      if (data.success) {
-        return true;
-      } else {
-        throw new Error(data.error || "Errore nel salvataggio");
-      }
+      if (!data.success) throw new Error(data.error);
+      return true;
     } catch (err) {
-      console.error("Save error:", err);
-      setError(
-        err instanceof Error ? err.message : "Errore di connessione al server",
-      );
+      setError("Errore nel salvataggio");
       return false;
     }
   };
 
   const salvaTuttiGliOrari = async () => {
     setLoading(true);
-    setError(null);
-    let tutteOk = true;
-
-    const savePromises: Promise<boolean>[] = [];
+    const promises: Promise<boolean>[] = [];
 
     for (const giorno of GIORNI_SETTIMANA) {
-      const fasceGiorno = nuoveFasce[giorno];
-      if (!fasceGiorno) continue;
-
-      for (const week of ["current", "next"] as WeekType[]) {
-        for (const fascia of fasceGiorno[week] || []) {
-          savePromises.push(salvaFascia(giorno, fascia, week));
+      if (nuoveFasce[giorno]) {
+        for (const week of ["current", "next"] as WeekType[]) {
+          if (nuoveFasce[giorno][week]) {
+            nuoveFasce[giorno][week].forEach((f) =>
+              promises.push(salvaFascia(giorno, f, week)),
+            );
+          }
         }
       }
     }
 
-    try {
-      const results = await Promise.all(savePromises);
-      tutteOk = results.every((r) => r);
-    } catch (err) {
-      console.error("Save all error:", err);
-      setError(err instanceof Error ? err.message : "Errore nel salvataggio");
-      tutteOk = false;
-    }
-
-    if (tutteOk) {
-      const allOrari = [...orariCorrente];
-      for (const giorno in nuoveFasce) {
-        if (nuoveFasce[giorno].current) {
-          allOrari.push(
-            ...nuoveFasce[giorno].current.map(
-              (f) => ({ ...f, id: 0, giorno }) as FasciaOraria,
-            ),
-          );
-        }
-      }
-
-      const message = generateTelegramMessage(allOrari);
-      setTelegramMessage(message);
-      setNuoveFasce({});
-      setShowTelegramModal(true);
-    }
-
+    await Promise.all(promises);
+    setNuoveFasce({});
+    fetchOrari();
     setLoading(false);
   };
 
   const eliminaFascia = async (id: number, week: WeekType) => {
-    if (!confirm("Sei sicuro di voler eliminare questa fascia oraria?")) {
-      return;
-    }
-
+    if (!confirm("Sei sicuro di voler eliminare questa fascia oraria?")) return;
     try {
-      console.log(`Eliminating fascia: ID=${id}, week=${week}`);
-
-      const body = {
-        id,
-        settimana: week === "next" ? "next" : "current", // Cambiato da undefined a 'current'
-      };
-
-      console.log("Request body:", body);
-
+      const body = { id, settimana: week === "next" ? "next" : "current" };
       const response = await fetch("/api/orari_settimana", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
-      console.log("Response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Error response:", errorData);
-        throw new Error(
-          `HTTP error! status: ${response.status}, details: ${JSON.stringify(errorData)}`,
-        );
-      }
-
       const data = await response.json();
-      console.log("Success response:", data);
-
-      if (data.success) {
-        await fetchOrari();
-      } else {
-        throw new Error(data.error || "Errore nell'eliminazione");
-      }
+      if (data.success) fetchOrari();
+      else throw new Error(data.error);
     } catch (err) {
-      console.error("Delete error:", err);
-      setError(
-        err instanceof Error ? err.message : "Errore di connessione al server",
-      );
+      setError("Errore nell'eliminazione");
     }
   };
+
+  // --- FUNZIONI DI MODIFICA (Mancavano queste due!) ---
 
   const iniziaModifica = (fascia: FasciaOraria, week: WeekType) => {
     setEditingId({ id: fascia.id, week });
@@ -387,47 +226,41 @@ const ModificaOrari: React.FC = () => {
   };
 
   const salvaModifica = async () => {
-    if (!editingId || !editData.ora_inizio || !editData.ora_fine) {
-      setError("Ora inizio e ora fine sono obbligatorie");
-      return;
-    }
-
+    if (!editingId) return;
     try {
       const body = {
         id: editingId.id,
-        ora_inizio: editData.ora_inizio,
-        ora_fine: editData.ora_fine,
-        note: editData.note || null,
+        ...editData,
         settimana: editingId.week === "next" ? "next" : undefined,
       };
-
       const response = await fetch("/api/orari_settimana", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       const data = await response.json();
-
       if (data.success) {
-        await fetchOrari();
+        fetchOrari();
         setEditingId(null);
         setEditData({});
-      } else {
-        throw new Error(data.error || "Errore nell'aggiornamento");
       }
     } catch (err) {
-      console.error("Update error:", err);
-      setError(
-        err instanceof Error ? err.message : "Errore di connessione al server",
-      );
+      setError("Errore nell'aggiornamento");
     }
+  };
+
+  // --- LOGICA UTILS ---
+
+  const groupByDay = (orari: FasciaOraria[]) => {
+    return GIORNI_SETTIMANA.reduce(
+      (acc, giorno) => {
+        acc[giorno] = orari
+          .filter((o) => o.giorno === giorno)
+          .sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
+        return acc;
+      },
+      {} as Record<string, FasciaOraria[]>,
+    );
   };
 
   const formatTime = (time: string) => {
@@ -437,82 +270,153 @@ const ModificaOrari: React.FC = () => {
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
   };
 
-  const toggleDay = (giorno: string) => {
-    setExpandedDays((prev) => ({
-      ...prev,
-      [giorno]: !prev[giorno],
-    }));
+  // --- LOGICA NUOVE FASCE ---
+
+  const aggiungiNuovaFascia = (giorno: string, week: WeekType) => {
+    setNuoveFasce((prev) => {
+      const existing = prev[giorno] || { current: [], next: [] };
+      return {
+        ...prev,
+        [giorno]: {
+          ...existing,
+          [week]: [
+            ...existing[week],
+            { ora_inizio: "09:00", ora_fine: "19:30", note: "" },
+          ],
+        },
+      };
+    });
   };
 
-  const hasPendingChanges = () => {
-    return Object.values(nuoveFasce).some(
-      (dayFasce) =>
-        (dayFasce.current?.length || 0) > 0 || (dayFasce.next?.length || 0) > 0,
+  const aggiornaNuovaFascia = (
+    giorno: string,
+    week: WeekType,
+    index: number,
+    field: keyof NuovaFascia,
+    value: string,
+  ) => {
+    setNuoveFasce((prev) => {
+      const updated = { ...prev };
+      updated[giorno][week][index] = {
+        ...updated[giorno][week][index],
+        [field]: value,
+      };
+      return updated;
+    });
+  };
+
+  const rimuoviNuovaFascia = (
+    giorno: string,
+    week: WeekType,
+    index: number,
+  ) => {
+    setNuoveFasce((prev) => {
+      const updated = { ...prev };
+      updated[giorno][week] = updated[giorno][week].filter(
+        (_, i) => i !== index,
+      );
+      if (
+        updated[giorno].current.length === 0 &&
+        updated[giorno].next.length === 0
+      )
+        delete updated[giorno];
+      return updated;
+    });
+  };
+
+  // --- TELEGRAM LOGIC ---
+
+  const toggleSelectOrario = (id: number) => {
+    setSelectedOrariIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
-  // Funzione per generare il messaggio Telegram
-  const generateTelegramMessage = (orari: FasciaOraria[]): string => {
-    const groupedOrari = groupByDay(orari);
-    const weekRange = getCurrentWeek();
+  const generateMessageText = (selectedIds: number[], type: TemplateType) => {
+    // Uniamo tutti gli orari disponibili per cercare quelli selezionati
+    const allOrari = [...orariCorrente, ...orariProssima];
+    const filtered = allOrari.filter((o) => selectedIds.includes(o.id));
+    const grouped = groupByDay(filtered);
 
-    let message = `<b>ECCO GLI ORARI DELL’AULA STUDIO E DELL’AULA AGORÀ DELLA SETTIMANA:</b>\n`;
-    message += `${weekRange}\n\n`;
+    // Footer Standard
+    const footer = `\nC'è sempre bisogno di una mano! \nPer aiutarci a tenere aperta l'Aula studio ed estendere gli orari di apertura entra in contatto con noi! www.foroets.com\nInstagram: @associazioneforo\nTelegram: @AAAdminForo`;
 
+    let text = "";
+
+    // Header in base al template
+    if (type === "settimana") {
+      text = `<b>ORARI DELLA SETTIMANA:</b>\n${getCurrentWeek()}\n\n`;
+    } else if (type === "weekend") {
+      text = `<b>ORARI DEL WEEKEND:</b>\n\n`;
+    } else {
+      text = `<b>APERTURE STRAORDINARIE:</b>\n\n`;
+    }
+
+    // Corpo del messaggio
     GIORNI_SETTIMANA.forEach((giorno) => {
-      const dayOrari = groupedOrari[giorno];
-      if (dayOrari && dayOrari.length > 0) {
-        const orariString = dayOrari
+      const fasce = grouped[giorno];
+      if (fasce && fasce.length > 0) {
+        // Formattazione: "Martedì 09:00-19:30" oppure unione con " e " se ci sono più fasce
+        const orariString = fasce
           .map((o) => {
-            const timeRange = `${formatTime(o.ora_inizio)}-${formatTime(o.ora_fine)}`;
-            const note = o.note ? `*${o.note}` : "";
-            return `${timeRange}${note}`;
+            const times = `${formatTime(o.ora_inizio)}-${formatTime(o.ora_fine)}`;
+            return o.note ? `${times} ${o.note}` : times;
           })
-          .join(", ");
+          .join(type === "settimana" ? " e " : ", "); // Nella settimana usiamo "e", nel weekend ","
 
-        message += `${giorno.charAt(0).toUpperCase() + giorno.slice(1)}. ${orariString}\n`;
+        // Aggiungi riga
+        text += `<b>${giorno.charAt(0).toUpperCase() + giorno.slice(1)}</b> \n${orariString}\n`;
       }
     });
 
-    message += `\nDisponibili le pagode per studiare all’aperto :)\n\n`;
-    message += `Rimanete collegatə per tutti gli aggiornamenti`;
+    // Info Mensa solo per settimanale
+    if (type === "settimana") {
+      text += `\nL'aula Agorà per lo studio ad alta voce potrà essere utilizzata come mensa nella fascia oraria 12.30 - 14.30\n`;
+    }
 
-    return message;
+    return text + footer;
+  };
+
+  const handleOpenTelegramModal = () => {
+    if (selectedOrariIds.length === 0) {
+      alert(
+        "Seleziona almeno una fascia oraria cliccando sulle caselle di controllo accanto agli orari.",
+      );
+      return;
+    }
+    const msg = generateMessageText(selectedOrariIds, activeTemplate);
+    setTelegramMessage(msg);
+    setShowTelegramModal(true);
+  };
+
+  const handleTemplateChange = (newType: TemplateType) => {
+    setActiveTemplate(newType);
+    const msg = generateMessageText(selectedOrariIds, newType);
+    setTelegramMessage(msg);
   };
 
   const handleSendTelegram = async () => {
-    const chatId = "-1002271075098";
     try {
-      // IMPORTANTE: Punta a /api/send-telegram, non a -group
       const response = await fetch("/api/send-telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chatId: chatId, // Il backend ora userà questa chiave per capire che è un gruppo
+          chatId: TELEGRAM_CHAT_ID,
           message: telegramMessage,
         }),
       });
 
       const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || "Errore nell'invio del messaggio");
-      }
+      if (!data.success) throw new Error(data.error);
       alert("Messaggio inviato con successo al gruppo!");
-    } catch (err) {
-      console.error("Errore invio Telegram:", err);
-      setError(
-        err instanceof Error ? err.message : "Errore di connessione al server",
-      );
-    } finally {
       setShowTelegramModal(false);
-      fetchOrari();
+    } catch (err) {
+      console.error("Errore Telegram:", err);
+      alert("Errore nell'invio del messaggio");
     }
   };
 
-  const handleDismissTelegram = () => {
-    setShowTelegramModal(false);
-    fetchOrari(); // Ricarica anche se l'utente non vuole inviare il messaggio
-  };
+  // --- RENDER ---
 
   const renderWeekSection = (
     title: string,
@@ -520,7 +424,7 @@ const ModificaOrari: React.FC = () => {
     week: WeekType,
     className: string,
   ) => {
-    const orariGruppi = groupByDay(orari);
+    const grouped = groupByDay(orari);
 
     return (
       <div className={className}>
@@ -528,11 +432,16 @@ const ModificaOrari: React.FC = () => {
         <div className="orari-list">
           {GIORNI_SETTIMANA.map((giorno) => (
             <div key={`${week}-${giorno}`} className="day-section">
-              <div className="day-header" onClick={() => toggleDay(giorno)}>
+              <div
+                className="day-header"
+                onClick={() =>
+                  setExpandedDays((p) => ({ ...p, [giorno]: !p[giorno] }))
+                }
+              >
                 <h3 className="day-title">
-                  {giorno.charAt(0).toUpperCase() + giorno.slice(1)}
+                  {giorno.charAt(0).toUpperCase() + giorno.slice(1)}{" "}
                   <span className="orari-count">
-                    ({orariGruppi[giorno].length})
+                    ({grouped[giorno].length})
                   </span>
                 </h3>
                 <div className="day-actions">
@@ -542,7 +451,6 @@ const ModificaOrari: React.FC = () => {
                       aggiungiNuovaFascia(giorno, week);
                     }}
                     className="btn btn-add"
-                    title="Aggiungi fascia oraria"
                   >
                     + Aggiungi
                   </button>
@@ -556,17 +464,36 @@ const ModificaOrari: React.FC = () => {
 
               {expandedDays[giorno] && (
                 <div className="day-content">
-                  {orariGruppi[giorno].length > 0 && (
+                  {grouped[giorno].length > 0 && (
                     <div className="existing-orari">
-                      <h4>Orari attuali:</h4>
-                      {orariGruppi[giorno].map((orario) => (
-                        <div key={orario.id} className="orario-item">
+                      {grouped[giorno].map((orario) => (
+                        <div
+                          key={orario.id}
+                          className="orario-item"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
+                          {/* CHECKBOX SELEZIONE */}
+                          <input
+                            type="checkbox"
+                            className="orario-checkbox"
+                            checked={selectedOrariIds.includes(orario.id)}
+                            onChange={() => toggleSelectOrario(orario.id)}
+                            style={{
+                              transform: "scale(1.5)",
+                              cursor: "pointer",
+                            }}
+                          />
+
                           {editingId?.id === orario.id &&
                           editingId.week === week ? (
                             <div className="edit-form">
                               <input
                                 type="time"
-                                value={editData.ora_inizio || ""}
+                                value={editData.ora_inizio}
                                 onChange={(e) =>
                                   setEditData({
                                     ...editData,
@@ -574,10 +501,9 @@ const ModificaOrari: React.FC = () => {
                                   })
                                 }
                               />
-                              <span>-</span>
                               <input
                                 type="time"
-                                value={editData.ora_fine || ""}
+                                value={editData.ora_fine}
                                 onChange={(e) =>
                                   setEditData({
                                     ...editData,
@@ -587,8 +513,7 @@ const ModificaOrari: React.FC = () => {
                               />
                               <input
                                 type="text"
-                                placeholder="Note"
-                                value={editData.note || ""}
+                                value={editData.note}
                                 onChange={(e) =>
                                   setEditData({
                                     ...editData,
@@ -610,7 +535,7 @@ const ModificaOrari: React.FC = () => {
                               </button>
                             </div>
                           ) : (
-                            <div className="orario-display">
+                            <div className="orario-display" style={{ flex: 1 }}>
                               <div className="orario-time">
                                 <span className="time-badge">
                                   {formatTime(orario.ora_inizio)}
@@ -625,22 +550,18 @@ const ModificaOrari: React.FC = () => {
                               )}
                               <div className="orario-actions">
                                 <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                                  onClick={() => {
                                     iniziaModifica(orario, week);
                                   }}
                                   className="btn btn-edit btn-small"
-                                  title="Modifica"
                                 >
                                   ✏️
                                 </button>
                                 <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                                  onClick={() => {
                                     eliminaFascia(orario.id, week);
                                   }}
                                   className="btn btn-delete btn-small"
-                                  title="Elimina"
                                 >
                                   🗑️
                                 </button>
@@ -652,74 +573,63 @@ const ModificaOrari: React.FC = () => {
                     </div>
                   )}
 
-                  {nuoveFasce[giorno]?.[week]?.length > 0 && (
-                    <div className="new-fasce">
-                      <h4>Nuove fasce da aggiungere:</h4>
-                      {nuoveFasce[giorno][week].map((fascia, index) => (
-                        <div key={index} className="new-fascia-form">
-                          <input
-                            type="time"
-                            value={fascia.ora_inizio}
-                            onChange={(e) =>
-                              aggiornaNuovaFascia(
-                                giorno,
-                                week,
-                                index,
-                                "ora_inizio",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Inizio"
-                          />
-                          <span>-</span>
-                          <input
-                            type="time"
-                            value={fascia.ora_fine}
-                            onChange={(e) =>
-                              aggiornaNuovaFascia(
-                                giorno,
-                                week,
-                                index,
-                                "ora_fine",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Fine"
-                          />
-                          <input
-                            type="text"
-                            value={fascia.note}
-                            onChange={(e) =>
-                              aggiornaNuovaFascia(
-                                giorno,
-                                week,
-                                index,
-                                "note",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Note (opzionale)"
-                          />
-                          <button
-                            onClick={() =>
-                              rimuoviNuovaFascia(giorno, week, index)
-                            }
-                            className="btn btn-delete btn-small"
-                            title="Rimuovi"
-                          >
-                            ✗
-                          </button>
-                        </div>
-                      ))}
+                  {/* FORM NUOVE FASCE */}
+                  {nuoveFasce[giorno]?.[week]?.map((fascia, index) => (
+                    <div key={index} className="new-fascia-form">
+                      <input
+                        type="time"
+                        value={fascia.ora_inizio}
+                        onChange={(e) =>
+                          aggiornaNuovaFascia(
+                            giorno,
+                            week,
+                            index,
+                            "ora_inizio",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <span>-</span>
+                      <input
+                        type="time"
+                        value={fascia.ora_fine}
+                        onChange={(e) =>
+                          aggiornaNuovaFascia(
+                            giorno,
+                            week,
+                            index,
+                            "ora_fine",
+                            e.target.value,
+                          )
+                        }
+                      />
+                      <input
+                        type="text"
+                        value={fascia.note}
+                        onChange={(e) =>
+                          aggiornaNuovaFascia(
+                            giorno,
+                            week,
+                            index,
+                            "note",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Note"
+                      />
+                      <button
+                        onClick={() => rimuoviNuovaFascia(giorno, week, index)}
+                        className="btn btn-delete btn-small"
+                      >
+                        ✗
+                      </button>
                     </div>
-                  )}
+                  ))}
 
-                  {orariGruppi[giorno].length === 0 &&
+                  {grouped[giorno].length === 0 &&
                     (!nuoveFasce[giorno]?.[week] ||
                       nuoveFasce[giorno][week].length === 0) && (
-                      <div className="no-orari">
-                        Nessun orario impostato per questo giorno
-                      </div>
+                      <div className="no-orari">Nessun orario impostato</div>
                     )}
                 </div>
               )}
@@ -735,7 +645,7 @@ const ModificaOrari: React.FC = () => {
       <div className="modifica-orari-container">
         <div className="loading">
           <div className="loading-spinner"></div>
-          <span>Caricamento orari...</span>
+          <span>Caricamento...</span>
         </div>
       </div>
     );
@@ -744,22 +654,23 @@ const ModificaOrari: React.FC = () => {
   return (
     <div className="modifica-orari-container">
       <div className="modifica-orari-header">
-        <h1>Gestione Orari Settimanali</h1>
+        <h1>Gestione Orari</h1>
         <div className="header-actions">
-          {hasPendingChanges() && (
-            <button
-              onClick={salvaTuttiGliOrari}
-              className="btn btn-success btn-large"
-              disabled={loading}
-            >
-              💾 Salva Tutti gli Orari
-            </button>
-          )}
           <button
-            onClick={fetchOrari}
-            className="btn btn-refresh"
-            disabled={loading}
+            onClick={handleOpenTelegramModal}
+            className="btn"
+            style={{
+              backgroundColor: "#0088cc",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+            }}
+            disabled={selectedOrariIds.length === 0}
           >
+            📢 Componi Telegram ({selectedOrariIds.length})
+          </button>
+          <button onClick={fetchOrari} className="btn btn-refresh">
             🔄 Ricarica
           </button>
         </div>
@@ -781,7 +692,6 @@ const ModificaOrari: React.FC = () => {
           "current",
           "week-section current-week",
         )}
-
         {renderWeekSection(
           `Prossima Settimana (${getNextWeek()})`,
           orariProssima,
@@ -790,39 +700,84 @@ const ModificaOrari: React.FC = () => {
         )}
       </div>
 
-      {hasPendingChanges() && (
+      {Object.keys(nuoveFasce).length > 0 && (
         <div className="bottom-save-section">
           <button
             onClick={salvaTuttiGliOrari}
-            className="btn btn-success btn-large btn-bottom-save"
-            disabled={loading}
+            className="btn btn-success btn-large"
           >
-            💾 Salva Tutti gli Orari
+            💾 Salva Nuovi Orari
           </button>
         </div>
       )}
 
-      {/* Popup di conferma Telegram */}
+      {/* MODALE TELEGRAM */}
       {showTelegramModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Vuoi inviare questo messaggio Telegram?</h2>
-            <p>Il messaggio verrà inviato al gruppo con ID -1002271075098.</p>
+          <div
+            className="modal-content"
+            style={{ maxWidth: "600px", width: "90%" }}
+          >
+            <h2>Configura Messaggio Telegram</h2>
+
+            <div
+              style={{
+                marginBottom: "15px",
+                padding: "10px",
+                backgroundColor: "#f5f5f5",
+                borderRadius: "5px",
+              }}
+            >
+              <label style={{ fontWeight: "bold", marginRight: "10px" }}>
+                Tipo messaggio:
+              </label>
+              <select
+                value={activeTemplate}
+                onChange={(e) =>
+                  handleTemplateChange(e.target.value as TemplateType)
+                }
+                style={{
+                  padding: "5px",
+                  fontSize: "16px",
+                  borderRadius: "4px",
+                }}
+              >
+                <option value="settimana">Settimanale Standard</option>
+                <option value="weekend">Orari Weekend</option>
+                <option value="straordinaria">Apertura Straordinaria</option>
+              </select>
+            </div>
+
             <textarea
               value={telegramMessage}
               onChange={(e) => setTelegramMessage(e.target.value)}
-              rows={10}
-              cols={50}
+              rows={15}
+              style={{
+                width: "100%",
+                fontFamily: "monospace",
+                padding: "10px",
+                fontSize: "14px",
+                lineHeight: "1.4",
+              }}
             />
-            <div className="modal-actions">
-              <button onClick={handleSendTelegram} className="btn btn-success">
-                Invia
-              </button>
+
+            <div
+              className="modal-actions"
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+                marginTop: "15px",
+              }}
+            >
               <button
-                onClick={handleDismissTelegram}
+                onClick={() => setShowTelegramModal(false)}
                 className="btn btn-secondary"
               >
-                Salva e non inviare
+                Annulla
+              </button>
+              <button onClick={handleSendTelegram} className="btn btn-success">
+                Invia al Gruppo ✈️
               </button>
             </div>
           </div>
