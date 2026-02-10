@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../style/verbaliassemblea.css";
-// Assicurati di aver installato queste icone: npm install react-icons
+// Assicurati di aver installato: npm install react-icons
 import {
   FcFolder,
   FcFile,
   FcLeft,
-  FcBrokenLink,
   FcOpenedFolder,
   FcDocument,
 } from "react-icons/fc";
 import { SiGoogledocs } from "react-icons/si";
-import { IoClose, IoReload } from "react-icons/io5";
+import { IoClose, IoReload, IoOpenOutline } from "react-icons/io5";
 
-// Puoi passare il livello utente come prop (es. 1=Admin, 5=Ospite)
 interface VerbaliProps {
   userLevel?: number;
 }
@@ -25,19 +23,16 @@ interface DriveFile {
 }
 
 const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
-  // --- 1. CONFIGURAZIONE ---
+  // --- CONFIGURAZIONE ---
   const apiKey = import.meta.env.VITE_GOOGLE_CLOUD;
-  const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL; // L'URL /exec dello script
+  const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
   const rootDriveLink = import.meta.env.VITE_GOOGLE_DRIVE_VERBALI || "";
-
-  // La password segreta condivisa con lo script
   const appSecret = import.meta.env.VITE_APP_SECRET || "ASSOCIAZIONE_FORO_2026";
 
-  // Chi può creare? Solo livello 1 e 2
+  // LOGICA PERMESSI: Livelli 0, 1 e 2 possono creare
   const canCreate = userLevel <= 2;
 
-  // --- 2. STATO ---
-  // Estrazione ID cartella root
+  // --- STATI ---
   const rootFolderId = useMemo(() => {
     if (!rootDriveLink) return null;
     const match = rootDriveLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
@@ -48,19 +43,21 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
   const [folderHistory, setFolderHistory] = useState<string[]>([]);
   const [files, setFiles] = useState<DriveFile[]>([]);
 
-  // Stati di caricamento e UI
-  const [loading, setLoading] = useState(false); // Caricamento lista file
-  const [creating, setCreating] = useState(false); // Overlay creazione in corso
+  // UI States
+  const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false); // Visibilità Popup
 
-  // --- 3. LOGICA DI CARICAMENTO FILE ---
+  // Modali
+  const [showCreateModal, setShowCreateModal] = useState(false); // Popup Creazione
+  const [previewFile, setPreviewFile] = useState<DriveFile | null>(null); // Popup Anteprima
+
+  // --- FETCH DATI ---
   const fetchFiles = async () => {
     if (!currentFolderId || !apiKey) return;
     setLoading(true);
     setError(null);
     try {
-      // Query: file dentro la cartella corrente, non cestinati
       const query = `'${currentFolderId}' in parents and trashed=false`;
       const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
         query,
@@ -79,23 +76,23 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
     }
   };
 
-  // Imposta cartella iniziale al caricamento
   useEffect(() => {
     if (rootFolderId && !currentFolderId) setCurrentFolderId(rootFolderId);
   }, [rootFolderId]);
 
-  // Ricarica i file quando cambia la cartella corrente
   useEffect(() => {
     fetchFiles();
   }, [currentFolderId, apiKey]);
 
-  // --- 4. LOGICA NAVIGAZIONE ---
+  // --- NAVIGAZIONE ---
   const handleItemClick = (file: DriveFile) => {
     if (file.mimeType === "application/vnd.google-apps.folder") {
+      // Naviga nella cartella
       setFolderHistory((prev) => [...prev, currentFolderId!]);
       setCurrentFolderId(file.id);
     } else {
-      window.open(file.webViewLink, "_blank");
+      // APRI ANTEPRIMA (non uscire dal sito)
+      setPreviewFile(file);
     }
   };
 
@@ -106,27 +103,22 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
     setCurrentFolderId(previousId);
   };
 
-  // --- 5. LOGICA CREAZIONE FILE (CHIAMATA ALLO SCRIPT) ---
-  // Ora accetta anche il parametro "subtype" opzionale
+  // --- CREAZIONE FILE (Script) ---
   const handleCreateRealDoc = async (
     type: "direttivo" | "assemblea",
     subtype?: "ordinaria" | "straordinaria",
   ) => {
-    if (!scriptUrl) {
-      alert("Errore: Manca VITE_GOOGLE_SCRIPT_URL nel file .env");
-      return;
-    }
+    if (!scriptUrl) return alert("Manca Script URL (.env)");
 
-    setCreating(true); // Attiva overlay "Attendere prego..."
-    setShowModal(false); // Chiude il modale
+    setCreating(true);
+    setShowCreateModal(false);
 
     try {
-      // Inviamo i dati al tuo Google Script
       const response = await fetch(scriptUrl, {
         method: "POST",
         body: JSON.stringify({
-          type: type, // "direttivo" o "assemblea"
-          subtype: subtype || "ordinaria", // default a ordinaria se non specificato
+          type,
+          subtype: subtype || "ordinaria",
           folderId: currentFolderId,
           secret: appSecret,
         }),
@@ -135,45 +127,35 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
       const data = await response.json();
 
       if (data.url) {
-        // Successo!
-        // 1. Apri il file appena creato in una nuova scheda
+        // Apri il file appena creato per modificarlo
         window.open(data.url, "_blank");
-
-        // 2. Ricarica la lista file dopo 2.5 secondi per far apparire il nuovo file
+        // Aggiorna la lista
         setTimeout(() => fetchFiles(), 2500);
-      } else if (data.error) {
-        throw new Error(data.error);
       } else {
-        throw new Error("Risposta sconosciuta dal server");
+        throw new Error(data.error || "Errore sconosciuto");
       }
     } catch (err) {
-      console.error("Errore creazione:", err);
-      alert(
-        "Errore durante la creazione. Controlla la console (F12) o verifica che lo script Google sia distribuito come 'Chiunque'.",
-      );
+      console.error(err);
+      alert("Errore creazione file.");
     } finally {
       setCreating(false);
     }
   };
 
-  // Se manca la configurazione base
   if (!apiKey || !rootFolderId)
     return (
       <div className="verbali_container error-state">
-        <FcBrokenLink size={50} />
-        <h3>Configurazione Mancante</h3>
-        <p>Controlla VITE_GOOGLE_CLOUD e VITE_GOOGLE_DRIVE_VERBALI</p>
+        Configurazione Mancante
       </div>
     );
 
   return (
     <div className="verbali_container">
-      {/* OVERLAY DI CARICAMENTO (Appare quando crei il file) */}
+      {/* 1. LOADING CREAZIONE */}
       {creating && (
         <div className="verbali_loading-overlay">
           <div className="spinner-large"></div>
-          <h3>Creazione documento in corso...</h3>
-          <p>Stiamo scrivendo il verbale e aprendo Google Drive.</p>
+          <h3>Creazione documento...</h3>
         </div>
       )}
 
@@ -183,15 +165,13 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
       </div>
 
       <div className="verbali_card">
-        {/* BARRA NAVIGAZIONE */}
+        {/* HEADER CARD */}
         <div className="verbali_nav">
           <div className="verbali_nav-left">
             <button
               onClick={handleBack}
               disabled={folderHistory.length === 0}
-              className={`verbali_back-btn ${
-                folderHistory.length === 0 ? "disabled" : ""
-              }`}
+              className={`verbali_back-btn ${folderHistory.length === 0 ? "disabled" : ""}`}
             >
               <FcLeft size={20} /> <span>Indietro</span>
             </button>
@@ -201,19 +181,16 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
           </div>
 
           <div style={{ display: "flex", gap: "10px" }}>
-            {/* Tasto Ricarica Manuale */}
             <button
               onClick={() => fetchFiles()}
               className="verbali_refresh-btn"
-              title="Aggiorna lista"
+              title="Ricarica"
             >
               <IoReload />
             </button>
-
-            {/* Tasto Nuovo Verbale (Solo se autorizzato) */}
             {canCreate && (
               <button
-                onClick={() => setShowModal(true)}
+                onClick={() => setShowCreateModal(true)}
                 className="verbali_create-btn"
               >
                 <SiGoogledocs size={16} /> <span>Nuovo Verbale</span>
@@ -236,19 +213,16 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
               {files.length === 0 && (
                 <div className="verbali_empty">
                   <FcOpenedFolder size={40} style={{ opacity: 0.5 }} />
-                  <p>Cartella vuota</p>
+                  <p>Nessun documento</p>
                 </div>
               )}
-
               {files.map((file) => {
                 const isFolder = file.mimeType.includes("folder");
                 return (
                   <div
                     key={file.id}
                     onClick={() => handleItemClick(file)}
-                    className={`verbali_item ${
-                      isFolder ? "is-folder" : "is-file"
-                    }`}
+                    className={`verbali_item ${isFolder ? "is-folder" : "is-file"}`}
                   >
                     <div className="verbali_item-icon">
                       {isFolder ? <FcFolder size={28} /> : <FcFile size={28} />}
@@ -266,29 +240,26 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
       </div>
 
       <div className="verbali_footer">
-        {!canCreate && <p>Accesso in sola lettura</p>}
+        {!canCreate && <p>Modalità sola lettura</p>}
       </div>
 
-      {/* MODALE DI SELEZIONE (Popup) */}
-      {showModal && (
+      {/* 2. MODALE CREAZIONE */}
+      {showCreateModal && (
         <div
           className="verbali_modal-overlay"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowModal(false);
+            if (e.target === e.currentTarget) setShowCreateModal(false);
           }}
         >
           <div className="verbali_modal">
             <button
               className="verbali_modal-close"
-              onClick={() => setShowModal(false)}
+              onClick={() => setShowCreateModal(false)}
             >
               <IoClose size={24} />
             </button>
-            <h3>Crea Nuovo Verbale</h3>
-            <p>Seleziona il modello da generare.</p>
-
+            <h3>Nuovo Verbale</h3>
             <div className="verbali_modal-actions">
-              {/* BOTTONE 1: CONSIGLIO DIRETTIVO */}
               <button
                 className="verbali_modal-btn direttivo"
                 onClick={() => handleCreateRealDoc("direttivo")}
@@ -297,12 +268,10 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
                   <FcDocument size={32} />
                 </div>
                 <div className="btn-text">
-                  <strong>Consiglio Direttivo</strong>
-                  <span>Verbale riunione standard</span>
+                  <strong>Direttivo</strong>
+                  <span>Verbale Standard</span>
                 </div>
               </button>
-
-              {/* Separatore visivo */}
               <hr
                 style={{
                   width: "100%",
@@ -311,8 +280,6 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
                   margin: "10px 0",
                 }}
               />
-
-              {/* BOTTONE 2: ASSEMBLEA ORDINARIA */}
               <button
                 className="verbali_modal-btn assemblea"
                 onClick={() => handleCreateRealDoc("assemblea", "ordinaria")}
@@ -321,12 +288,10 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
                   <FcDocument size={32} />
                 </div>
                 <div className="btn-text">
-                  <strong>Assemblea Ordinaria</strong>
-                  <span>Convocazione Soci Ordinaria</span>
+                  <strong>Assemblea Ordinaria [X]</strong>
+                  <span>Soci Ordinaria</span>
                 </div>
               </button>
-
-              {/* BOTTONE 3: ASSEMBLEA STRAORDINARIA */}
               <button
                 className="verbali_modal-btn assemblea"
                 onClick={() =>
@@ -337,10 +302,58 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
                   <FcDocument size={32} />
                 </div>
                 <div className="btn-text">
-                  <strong>Assemblea Straordinaria</strong>
-                  <span>Convocazione Soci Straordinaria</span>
+                  <strong>Assemblea Straordinaria [X]</strong>
+                  <span>Soci Straordinaria</span>
                 </div>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. MODALE ANTEPRIMA (Visualizzatore) */}
+      {previewFile && (
+        <div
+          className="verbali_preview-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPreviewFile(null);
+          }}
+        >
+          <div className="verbali_preview-box">
+            <div className="verbali_preview-header">
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
+                <FcFile size={24} />
+                <span className="preview-title">{previewFile.name}</span>
+              </div>
+              <div className="preview-actions">
+                {/* Tasto per aprire esternamente se serve */}
+                <a
+                  href={previewFile.webViewLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="preview-external-link"
+                  title="Apri su Drive"
+                >
+                  <IoOpenOutline size={20} />
+                </a>
+                <button
+                  className="preview-close"
+                  onClick={() => setPreviewFile(null)}
+                >
+                  <IoClose size={24} />
+                </button>
+              </div>
+            </div>
+            <div className="verbali_preview-content">
+              <iframe
+                src={`https://drive.google.com/file/d/${previewFile.id}/preview`}
+                title="Anteprima"
+                width="100%"
+                height="100%"
+                allow="autoplay"
+              ></iframe>
             </div>
           </div>
         </div>

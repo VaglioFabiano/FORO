@@ -144,7 +144,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: "Archivio e gestione verbali riunioni",
       icon: <FcDocument size={iconSize} />,
       component: VerbaliAssemblea,
-      minLevel: 0,
+      minLevel: 4,
     },
     {
       id: "gestione-turno",
