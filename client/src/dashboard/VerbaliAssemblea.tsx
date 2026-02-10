@@ -1,12 +1,22 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "../style/verbaliassemblea.css";
+// Assicurati di aver installato queste icone: npm install react-icons
 import {
   FcFolder,
   FcFile,
   FcLeft,
   FcBrokenLink,
   FcOpenedFolder,
+  FcDocument,
 } from "react-icons/fc";
+import { SiGoogledocs } from "react-icons/si";
+import { IoClose, IoReload } from "react-icons/io5";
+
+// Puoi passare il livello utente come prop (es. 1=Admin, 5=Ospite)
+// Se non lo passi, di default è 1 (Admin) così puoi testarlo subito.
+interface VerbaliProps {
+  userLevel?: number;
+}
 
 interface DriveFile {
   id: string;
@@ -15,10 +25,20 @@ interface DriveFile {
   webViewLink: string;
 }
 
-const VerbaliAssemblea: React.FC = () => {
+const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
+  // --- 1. CONFIGURAZIONE ---
   const apiKey = import.meta.env.VITE_GOOGLE_CLOUD;
+  const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL; // L'URL /exec che hai appena creato
   const rootDriveLink = import.meta.env.VITE_GOOGLE_DRIVE_VERBALI || "";
 
+  // La password segreta che abbiamo messo nello script (ASSOCIAZIONE_FORO_2026)
+  // Puoi metterla in .env come VITE_APP_SECRET oppure lasciarla qui hardcoded per ora
+  const appSecret = import.meta.env.VITE_APP_SECRET || "ASSOCIAZIONE_FORO_2026";
+
+  // Chi può creare? Solo livello 1 e 2
+  const canCreate = userLevel <= 2;
+
+  // --- 2. STATO ---
   const rootFolderId = useMemo(() => {
     if (!rootDriveLink) return null;
     const match = rootDriveLink.match(/\/folders\/([a-zA-Z0-9_-]+)/);
@@ -28,45 +48,49 @@ const VerbaliAssemblea: React.FC = () => {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [folderHistory, setFolderHistory] = useState<string[]>([]);
   const [files, setFiles] = useState<DriveFile[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (rootFolderId && !currentFolderId) {
-      setCurrentFolderId(rootFolderId);
+  // Stati di caricamento
+  const [loading, setLoading] = useState(false); // Caricamento lista
+  const [creating, setCreating] = useState(false); // Caricamento creazione file (overlay)
+  const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false); // Mostra/Nascondi popup scelta
+
+  // --- 3. LOGICA DI CARICAMENTO FILE ---
+  const fetchFiles = async () => {
+    if (!currentFolderId || !apiKey) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // Query: file dentro la cartella corrente, non cestinati
+      const query = `'${currentFolderId}' in parents and trashed=false`;
+      const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+        query,
+      )}&key=${apiKey}&fields=files(id,name,mimeType,webViewLink)&orderBy=folder,name`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.error) throw new Error(data.error.message);
+      setFiles(data.files || []);
+    } catch (err: any) {
+      console.error("Errore Drive:", err);
+      setError("Impossibile caricare i file.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Imposta cartella iniziale
+  useEffect(() => {
+    if (rootFolderId && !currentFolderId) setCurrentFolderId(rootFolderId);
   }, [rootFolderId]);
 
+  // Ricarica quando cambia cartella
   useEffect(() => {
-    if (!currentFolderId || !apiKey) return;
-
-    const fetchFiles = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const query = `'${currentFolderId}' in parents and trashed=false`;
-        const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
-          query,
-        )}&key=${apiKey}&fields=files(id,name,mimeType,webViewLink)&orderBy=folder,name`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.error) throw new Error(data.error.message);
-        setFiles(data.files || []);
-      } catch (err: any) {
-        console.error("Errore Drive API:", err);
-        setError(
-          "Errore nel caricamento. Verifica la chiave API e i permessi.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchFiles();
   }, [currentFolderId, apiKey]);
 
+  // --- 4. LOGICA NAVIGAZIONE ---
   const handleItemClick = (file: DriveFile) => {
     if (file.mimeType === "application/vnd.google-apps.folder") {
       setFolderHistory((prev) => [...prev, currentFolderId!]);
@@ -83,60 +107,134 @@ const VerbaliAssemblea: React.FC = () => {
     setCurrentFolderId(previousId);
   };
 
-  if (!apiKey || !rootFolderId) {
+  // --- 5. LOGICA CREAZIONE FILE (CHIAMATA ALLO SCRIPT) ---
+  const handleCreateRealDoc = async (type: "direttivo" | "assemblea") => {
+    if (!scriptUrl) {
+      alert("Errore: Manca VITE_GOOGLE_SCRIPT_URL nel file .env");
+      return;
+    }
+
+    setCreating(true); // Attiva overlay "Attendere prego..."
+    setShowModal(false); // Chiude il modale
+
+    try {
+      // Inviamo i dati al tuo Google Script
+      // Usiamo 'no-cors' è rischioso per leggere la risposta, ma text/plain con POST standard funziona spesso meglio per Apps Script
+      const response = await fetch(scriptUrl, {
+        method: "POST",
+        body: JSON.stringify({
+          type: type, // "direttivo" o "assemblea"
+          folderId: currentFolderId,
+          secret: appSecret,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        // Successo!
+        // 1. Apri il file appena creato
+        window.open(data.url, "_blank");
+
+        // 2. Ricarica la lista file dopo 2 secondi per far apparire il nuovo file
+        setTimeout(() => fetchFiles(), 2500);
+      } else if (data.error) {
+        throw new Error(data.error);
+      } else {
+        throw new Error("Risposta sconosciuta dal server");
+      }
+    } catch (err) {
+      console.error("Errore creazione:", err);
+      alert(
+        "Errore durante la creazione. Controlla la console (F12) o verifica che lo script sia distribuito come 'Chiunque'.",
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // Se manca la configurazione base
+  if (!apiKey || !rootFolderId)
     return (
       <div className="verbali_container error-state">
-        <FcBrokenLink size={60} />
+        <FcBrokenLink size={50} />
         <h3>Configurazione Mancante</h3>
-        <p>Verifica VITE_GOOGLE_CLOUD e VITE_GOOGLE_DRIVE_VERBALI.</p>
+        <p>Controlla VITE_GOOGLE_CLOUD e VITE_GOOGLE_DRIVE_VERBALI</p>
       </div>
     );
-  }
 
   return (
     <div className="verbali_container">
-      <div className="verbali_header">
-        <div className="icon-wrapper">
-          <FcFolder size={40} />
+      {/* OVERLAY DI CARICAMENTO (Appare quando crei il file) */}
+      {creating && (
+        <div className="verbali_loading-overlay">
+          <div className="spinner-large"></div>
+          <h3>Creazione documento in corso...</h3>
+          <p>Stiamo scrivendo il verbale e aprendo Google Drive.</p>
         </div>
+      )}
+
+      <div className="verbali_header">
+        <FcFolder size={40} />
         <h2 className="verbali_title">Archivio Verbali</h2>
       </div>
 
       <div className="verbali_card">
-        {/* Barra di navigazione */}
+        {/* BARRA NAVIGAZIONE */}
         <div className="verbali_nav">
-          <button
-            onClick={handleBack}
-            disabled={folderHistory.length === 0}
-            className={`verbali_back-btn ${folderHistory.length === 0 ? "disabled" : ""}`}
-          >
-            <FcLeft size={20} />
-            <span>Indietro</span>
-          </button>
+          <div className="verbali_nav-left">
+            <button
+              onClick={handleBack}
+              disabled={folderHistory.length === 0}
+              className={`verbali_back-btn ${folderHistory.length === 0 ? "disabled" : ""}`}
+            >
+              <FcLeft size={20} /> <span>Indietro</span>
+            </button>
+            <span className="verbali_path">
+              {folderHistory.length === 0 ? "Home" : "Sottocartella"}
+            </span>
+          </div>
 
-          <span className="verbali_path">
-            {folderHistory.length === 0
-              ? "Cartella Principale"
-              : "Sottocartella"}
-          </span>
+          <div style={{ display: "flex", gap: "10px" }}>
+            {/* Tasto Ricarica Manuale */}
+            <button
+              onClick={() => fetchFiles()}
+              className="verbali_refresh-btn"
+              title="Aggiorna lista"
+            >
+              <IoReload />
+            </button>
+
+            {/* Tasto Nuovo Verbale (Solo se autorizzato) */}
+            {canCreate && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="verbali_create-btn"
+              >
+                <SiGoogledocs size={16} /> <span>Nuovo Verbale</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Contenuto Lista */}
+        {/* LISTA FILE */}
         <div className="verbali_list-container">
           {loading ? (
             <div className="verbali_loading">
               <div className="spinner"></div>
-              <p>Caricamento documenti...</p>
+              <p>Caricamento...</p>
             </div>
           ) : error ? (
             <div className="verbali_error">{error}</div>
-          ) : files.length === 0 ? (
-            <div className="verbali_empty">
-              <FcOpenedFolder size={40} style={{ opacity: 0.5 }} />
-              <p>Questa cartella è vuota.</p>
-            </div>
           ) : (
             <div className="verbali_list">
+              {files.length === 0 && (
+                <div className="verbali_empty">
+                  <FcOpenedFolder size={40} style={{ opacity: 0.5 }} />
+                  <p>Cartella vuota</p>
+                </div>
+              )}
+
               {files.map((file) => {
                 const isFolder = file.mimeType.includes("folder");
                 return (
@@ -144,21 +242,13 @@ const VerbaliAssemblea: React.FC = () => {
                     key={file.id}
                     onClick={() => handleItemClick(file)}
                     className={`verbali_item ${isFolder ? "is-folder" : "is-file"}`}
-                    role="button"
-                    tabIndex={0}
                   >
                     <div className="verbali_item-icon">
                       {isFolder ? <FcFolder size={28} /> : <FcFile size={28} />}
                     </div>
-
                     <div className="verbali_item-info">
                       <span className="verbali_item-name">{file.name}</span>
-                      <span className="verbali_item-type">
-                        {isFolder ? "Cartella" : "Documento"}
-                      </span>
                     </div>
-
-                    {/* Freccetta solo per le cartelle */}
                     {isFolder && <div className="verbali_chevron">›</div>}
                   </div>
                 );
@@ -169,15 +259,60 @@ const VerbaliAssemblea: React.FC = () => {
       </div>
 
       <div className="verbali_footer">
-        <a
-          href={rootDriveLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="verbali_drive-link"
-        >
-          Apri cartella originale su Drive ↗
-        </a>
+        {!canCreate && <p>Accesso in sola lettura</p>}
       </div>
+
+      {/* MODALE DI SELEZIONE (Popup) */}
+      {showModal && (
+        <div
+          className="verbali_modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+        >
+          <div className="verbali_modal">
+            <button
+              className="verbali_modal-close"
+              onClick={() => setShowModal(false)}
+            >
+              <IoClose size={24} />
+            </button>
+            <h3>Crea Nuovo Verbale</h3>
+            <p>
+              Seleziona il modello. Il sistema creerà un nuovo Google Doc nella
+              cartella corrente con la data di oggi.
+            </p>
+
+            <div className="verbali_modal-actions">
+              <button
+                className="verbali_modal-btn direttivo"
+                onClick={() => handleCreateRealDoc("direttivo")}
+              >
+                <div className="btn-icon">
+                  <FcDocument size={32} />
+                </div>
+                <div className="btn-text">
+                  <strong>Consiglio Direttivo</strong>
+                  <span>Modello con assenti/presenti</span>
+                </div>
+              </button>
+
+              <button
+                className="verbali_modal-btn assemblea"
+                onClick={() => handleCreateRealDoc("assemblea")}
+              >
+                <div className="btn-icon">
+                  <FcDocument size={32} />
+                </div>
+                <div className="btn-text">
+                  <strong>Assemblea Soci</strong>
+                  <span>Ordinaria / Straordinaria</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

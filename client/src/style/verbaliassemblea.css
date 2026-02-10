@@ -1,167 +1,118 @@
-/* Variabili per coerenza */
-:root {
-  --primary-color: rgb(12, 73, 91);
-  --primary-light: rgba(12, 73, 91, 0.08);
-  --text-dark: #1f2937;
-  --text-gray: #6b7280;
-  --bg-hover: #f3f4f6;
-  --border-color: #e5e7eb;
-}
-
+/* Container principale */
 .verbali_container {
   padding: 2rem 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 900px; /* Larghezza massima per non disperdere l'occhio */
+  max-width: 900px;
   margin: 0 auto;
-  box-sizing: border-box;
-  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", sans-serif;
+  color: #333;
+}
+
+.verbali_container.error-state {
+  text-align: center;
+  margin-top: 3rem;
+  color: #666;
 }
 
 /* Header */
 .verbali_header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  text-align: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
 }
-
 .verbali_title {
   font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--primary-color);
+  color: rgb(12, 73, 91);
   margin: 0;
 }
 
-/* Card Principale */
+/* Card */
 .verbali_card {
-  width: 100%;
   background: white;
   border-radius: 12px;
-  box-shadow:
-    0 10px 25px -5px rgba(0, 0, 0, 0.1),
-    0 8px 10px -6px rgba(0, 0, 0, 0.01);
-  overflow: hidden; /* Per i bordi arrotondati */
-  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Barra di Navigazione interna alla card */
+/* Navigazione */
 .verbali_nav {
-  background-color: #f9fafb;
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.verbali_nav-left {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
 }
 
 .verbali_back-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 6px;
   background: white;
-  border: 1px solid var(--border-color);
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: var(--text-dark);
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
   font-weight: 500;
+  transition: all 0.2s;
 }
-
-.verbali_back-btn:not(.disabled):hover {
-  background-color: var(--bg-hover);
-  transform: translateX(-2px);
+.verbali_back-btn:hover:not(.disabled) {
+  background: #f3f4f6;
 }
-
 .verbali_back-btn.disabled {
   opacity: 0.5;
   cursor: default;
-  background-color: transparent;
-  border-color: transparent;
 }
 
-.verbali_path {
-  font-size: 0.85rem;
-  color: var(--text-gray);
+.verbali_create-btn {
+  background: #0f9d58; /* Verde Google */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.verbali_create-btn:hover {
+  background: #0b8043;
 }
 
-/* Lista e Items */
+.verbali_refresh-btn {
+  background: white;
+  border: 1px solid #ddd;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.verbali_refresh-btn:hover {
+  background: #f0f0f0;
+}
+
+/* Lista */
 .verbali_list-container {
-  min-height: 300px;
+  flex-grow: 1;
   position: relative;
 }
 
-.verbali_item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.verbali_item:last-child {
-  border-bottom: none;
-}
-
-.verbali_item:hover {
-  background-color: var(--primary-light);
-}
-
-/* Icone e Testi item */
-.verbali_item-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-.verbali_item-info {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.verbali_item-name {
-  font-size: 1rem;
-  color: var(--text-dark);
-  font-weight: 500;
-  /* Tronca testo troppo lungo con ... */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 50vw; /* Adatta su mobile */
-}
-
-.verbali_item-type {
-  font-size: 0.75rem;
-  color: var(--text-gray);
-  margin-top: 2px;
-}
-
-/* Icona freccia per cartelle */
-.verbali_chevron {
-  font-size: 1.5rem;
-  color: #d1d5db;
-  font-weight: 300;
-  padding-left: 0.5rem;
-}
-
-.verbali_item:hover .verbali_chevron {
-  color: var(--primary-color);
-}
-
-/* Stati: Loading, Empty, Error */
 .verbali_loading,
 .verbali_empty,
 .verbali_error {
@@ -170,26 +121,53 @@
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: var(--text-gray);
-  gap: 1rem;
+  color: #6b7280;
+  gap: 10px;
 }
 
-.verbali_error {
-  color: #ef4444;
-  text-align: center;
-  padding: 2rem;
+.verbali_item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.verbali_item:hover {
+  background: #f3f9fb;
 }
 
-/* Spinner animato CSS puro */
+.verbali_item-info {
+  flex-grow: 1;
+  margin-left: 12px;
+}
+.verbali_item-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.verbali_chevron {
+  color: #ccc;
+  font-size: 1.2rem;
+}
+
+/* Spinners */
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--primary-color);
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid rgb(12, 73, 91);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
-
+.spinner-large {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0f9d58;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -199,41 +177,100 @@
   }
 }
 
-/* Footer Link Esterno */
-.verbali_footer {
-  margin-top: 2rem;
+/* MODALE (Popup) */
+.verbali_modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
 }
 
-.verbali_drive-link {
-  color: var(--primary-color);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  border-bottom: 1px dashed var(--primary-color);
-  padding-bottom: 2px;
+.verbali_modal {
+  background: white;
+  width: 90%;
+  max-width: 450px;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.verbali_drive-link:hover {
-  color: #0a3d4d;
-  border-bottom-style: solid;
+.verbali_modal h3 {
+  margin-top: 0;
+  color: rgb(12, 73, 91);
+}
+.verbali_modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+}
+.verbali_modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+.verbali_modal-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+.verbali_modal-btn:hover {
+  border-color: rgb(12, 73, 91);
+  background: rgba(12, 73, 91, 0.05);
+  transform: translateY(-2px);
+}
+.verbali_modal-btn strong {
+  display: block;
+  color: #333;
+  font-size: 1rem;
+}
+.verbali_modal-btn span {
+  font-size: 0.85rem;
+  color: #666;
 }
 
-/* Mobile Adjustments */
-@media (max-width: 600px) {
-  .verbali_container {
-    padding: 1rem;
-  }
-
-  .verbali_title {
-    font-size: 1.5rem;
-  }
-
-  .verbali_item {
-    padding: 1rem; /* Hit area grande per il dito */
-  }
-
-  .verbali_item-name {
-    font-size: 0.95rem;
-    max-width: 60vw;
-  }
+/* LOADING OVERLAY (Bloccante) */
+.verbali_loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #333;
 }
