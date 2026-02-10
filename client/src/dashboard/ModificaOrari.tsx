@@ -83,6 +83,7 @@ const ModificaOrari: React.FC = () => {
   const [orariProssima, setOrariProssima] = useState<FasciaOraria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
 
   // Stati Modifica/Nuovi
@@ -95,21 +96,22 @@ const ModificaOrari: React.FC = () => {
   } | null>(null);
   const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
-  // Stati Telegram e Selezione Messaggio
+  // Stati Telegram
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [telegramMessage, setTelegramMessage] = useState("");
-  const [selectedOrariIds, setSelectedOrariIds] = useState<number[]>([]);
+
+  // SelectedOrari è una stringa combinata "week-id"
+  const [selectedOrariKeys, setSelectedOrariKeys] = useState<string[]>([]);
   const [activeTemplate, setActiveTemplate] =
     useState<TemplateType>("settimana");
 
   useEffect(() => {
-    const initialExpanded = GIORNI_SETTIMANA.reduce(
-      (acc, giorno) => {
-        acc[giorno] = true;
-        return acc;
-      },
-      {} as Record<string, boolean>,
-    );
+    // Inizializza tutte le tendine come aperte
+    const initialExpanded: Record<string, boolean> = {};
+    GIORNI_SETTIMANA.forEach((giorno) => {
+      initialExpanded[`current-${giorno}`] = true;
+      initialExpanded[`next-${giorno}`] = true;
+    });
     setExpandedDays(initialExpanded);
   }, []);
 
@@ -209,7 +211,7 @@ const ModificaOrari: React.FC = () => {
     }
   };
 
-  // --- FUNZIONI DI MODIFICA (Mancavano queste due!) ---
+  // --- FUNZIONI DI MODIFICA ---
 
   const iniziaModifica = (fascia: FasciaOraria, week: WeekType) => {
     setEditingId({ id: fascia.id, week });
@@ -270,6 +272,14 @@ const ModificaOrari: React.FC = () => {
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
   };
 
+  const toggleDay = (giorno: string, week: WeekType) => {
+    const key = `${week}-${giorno}`;
+    setExpandedDays((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
   // --- LOGICA NUOVE FASCE ---
 
   const aggiungiNuovaFascia = (giorno: string, week: WeekType) => {
@@ -326,50 +336,74 @@ const ModificaOrari: React.FC = () => {
 
   // --- TELEGRAM LOGIC ---
 
-  const toggleSelectOrario = (id: number) => {
-    setSelectedOrariIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+  const toggleSelectOrario = (id: number, week: WeekType) => {
+    const uniqueKey = `${week}-${id}`;
+    setSelectedOrariKeys((prev) =>
+      prev.includes(uniqueKey)
+        ? prev.filter((k) => k !== uniqueKey)
+        : [...prev, uniqueKey],
     );
   };
 
-  const generateMessageText = (selectedIds: number[], type: TemplateType) => {
-    // Uniamo tutti gli orari disponibili per cercare quelli selezionati
-    const allOrari = [...orariCorrente, ...orariProssima];
-    const filtered = allOrari.filter((o) => selectedIds.includes(o.id));
-    const grouped = groupByDay(filtered);
+  const generateMessageText = (selectedKeys: string[], type: TemplateType) => {
+    // 1. Determina quali orari sono stati selezionati
+    const selectedOrari: FasciaOraria[] = [];
 
-    // Footer Standard
+    // Contatori per capire se stiamo usando la settimana corrente o la prossima
+    let hasCurrent = false;
+    let hasNext = false;
+
+    selectedKeys.forEach((key) => {
+      const [week, idStr] = key.split("-");
+      const id = parseInt(idStr);
+
+      if (week === "current") hasCurrent = true;
+      if (week === "next") hasNext = true;
+
+      const sourceArray = week === "current" ? orariCorrente : orariProssima;
+      const found = sourceArray.find((o) => o.id === id);
+      if (found) selectedOrari.push(found);
+    });
+
+    const grouped = groupByDay(selectedOrari);
+
+    // 2. Determina la stringa della data
+    // Se ho selezionato SOLO cose della prossima settimana, usa la data della prossima.
+    // Altrimenti (solo corrente o misto), usa la data corrente.
+    let dateRangeString = getCurrentWeek();
+    if (hasNext && !hasCurrent) {
+      dateRangeString = getNextWeek();
+    }
+
+    // 3. Costruzione Messaggio
     const footer = `\nC'è sempre bisogno di una mano! \nPer aiutarci a tenere aperta l'Aula studio ed estendere gli orari di apertura entra in contatto con noi! www.foroets.com\nInstagram: @associazioneforo\nTelegram: @AAAdminForo`;
 
     let text = "";
 
-    // Header in base al template
+    // Header
     if (type === "settimana") {
-      text = `<b>ORARI DELLA SETTIMANA:</b>\n${getCurrentWeek()}\n\n`;
+      text = `<b>ORARI DELLA SETTIMANA ❄️:</b>\n${dateRangeString}\n\n`;
     } else if (type === "weekend") {
-      text = `<b>ORARI DEL WEEKEND:</b>\n\n`;
+      text = `<b>ORARI DEL WEEKEND ❄️:</b>\n\n`;
     } else {
-      text = `<b>APERTURE STRAORDINARIE:</b>\n\n`;
+      text = `<b>📍APERTURE STRAORDINARIE:</b>\n\n`;
     }
 
-    // Corpo del messaggio
+    // Corpo
     GIORNI_SETTIMANA.forEach((giorno) => {
       const fasce = grouped[giorno];
       if (fasce && fasce.length > 0) {
-        // Formattazione: "Martedì 09:00-19:30" oppure unione con " e " se ci sono più fasce
         const orariString = fasce
           .map((o) => {
             const times = `${formatTime(o.ora_inizio)}-${formatTime(o.ora_fine)}`;
             return o.note ? `${times} ${o.note}` : times;
           })
-          .join(type === "settimana" ? " e " : ", "); // Nella settimana usiamo "e", nel weekend ","
+          .join(type === "settimana" ? " e " : ", ");
 
-        // Aggiungi riga
         text += `<b>${giorno.charAt(0).toUpperCase() + giorno.slice(1)}</b> \n${orariString}\n`;
       }
     });
 
-    // Info Mensa solo per settimanale
     if (type === "settimana") {
       text += `\nL'aula Agorà per lo studio ad alta voce potrà essere utilizzata come mensa nella fascia oraria 12.30 - 14.30\n`;
     }
@@ -378,20 +412,18 @@ const ModificaOrari: React.FC = () => {
   };
 
   const handleOpenTelegramModal = () => {
-    if (selectedOrariIds.length === 0) {
-      alert(
-        "Seleziona almeno una fascia oraria cliccando sulle caselle di controllo accanto agli orari.",
-      );
+    if (selectedOrariKeys.length === 0) {
+      alert("Seleziona almeno una fascia oraria.");
       return;
     }
-    const msg = generateMessageText(selectedOrariIds, activeTemplate);
+    const msg = generateMessageText(selectedOrariKeys, activeTemplate);
     setTelegramMessage(msg);
     setShowTelegramModal(true);
   };
 
   const handleTemplateChange = (newType: TemplateType) => {
     setActiveTemplate(newType);
-    const msg = generateMessageText(selectedOrariIds, newType);
+    const msg = generateMessageText(selectedOrariKeys, newType);
     setTelegramMessage(msg);
   };
 
@@ -434,9 +466,7 @@ const ModificaOrari: React.FC = () => {
             <div key={`${week}-${giorno}`} className="day-section">
               <div
                 className="day-header"
-                onClick={() =>
-                  setExpandedDays((p) => ({ ...p, [giorno]: !p[giorno] }))
-                }
+                onClick={() => toggleDay(giorno, week)}
               >
                 <h3 className="day-title">
                   {giorno.charAt(0).toUpperCase() + giorno.slice(1)}{" "}
@@ -455,20 +485,20 @@ const ModificaOrari: React.FC = () => {
                     + Aggiungi
                   </button>
                   <span
-                    className={`expand-icon ${expandedDays[giorno] ? "expanded" : ""}`}
+                    className={`expand-icon ${expandedDays[`${week}-${giorno}`] ? "expanded" : ""}`}
                   >
                     ▼
                   </span>
                 </div>
               </div>
 
-              {expandedDays[giorno] && (
+              {expandedDays[`${week}-${giorno}`] && (
                 <div className="day-content">
                   {grouped[giorno].length > 0 && (
                     <div className="existing-orari">
                       {grouped[giorno].map((orario) => (
                         <div
-                          key={orario.id}
+                          key={`${week}-${orario.id}`}
                           className="orario-item"
                           style={{
                             display: "flex",
@@ -476,12 +506,14 @@ const ModificaOrari: React.FC = () => {
                             gap: "10px",
                           }}
                         >
-                          {/* CHECKBOX SELEZIONE */}
+                          {/* Checkbox usa chiave univoca composta */}
                           <input
                             type="checkbox"
                             className="orario-checkbox"
-                            checked={selectedOrariIds.includes(orario.id)}
-                            onChange={() => toggleSelectOrario(orario.id)}
+                            checked={selectedOrariKeys.includes(
+                              `${week}-${orario.id}`,
+                            )}
+                            onChange={() => toggleSelectOrario(orario.id, week)}
                             style={{
                               transform: "scale(1.5)",
                               cursor: "pointer",
@@ -666,9 +698,9 @@ const ModificaOrari: React.FC = () => {
               alignItems: "center",
               gap: "5px",
             }}
-            disabled={selectedOrariIds.length === 0}
+            disabled={selectedOrariKeys.length === 0}
           >
-            📢 Componi Telegram ({selectedOrariIds.length})
+            📢 Componi Telegram ({selectedOrariKeys.length})
           </button>
           <button onClick={fetchOrari} className="btn btn-refresh">
             🔄 Ricarica
