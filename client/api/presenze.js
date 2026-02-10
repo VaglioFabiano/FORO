@@ -556,65 +556,60 @@ async function aggiornaPresenze(req, res) {
   }
 }
 
-// DELETE - Elimina con FALLBACK
 async function eliminaPresenza(req, res) {
   try {
     const { data, fascia_oraria, current_user_id } = req.body;
-    if (!data || !fascia_oraria)
+
+    if (!data || !fascia_oraria) {
       return res.status(400).json({ success: false, error: "Dati mancanti" });
-
-    const mapOrari = {
-      "9-13": "09:00",
-      "13-16": "13:00",
-      "16-19": "16:00",
-      "21-24": "21:00",
-    };
-    const targetStart = mapOrari[fascia_oraria];
-    const days = [
-      "domenica",
-      "lunedì",
-      "martedì",
-      "mercoledì",
-      "giovedì",
-      "venerdì",
-      "sabato",
-    ];
-    const giornoTarget = days[new Date(data).getDay()];
-
-    let fasciaDaSalvare = null;
-    if (targetStart) {
-      const fRes = await client.execute({
-        sql: `SELECT id FROM fasce_orarie WHERE giorno = ? AND ora_inizio = ?`,
-        args: [giornoTarget, targetStart],
-      });
-      if (fRes.rows.length > 0) fasciaDaSalvare = fRes.rows[0].id;
     }
-    // Fallback
-    if (!fasciaDaSalvare) fasciaDaSalvare = fascia_oraria;
 
+    // 1. NORMALIZZAZIONE: Usiamo la stessa logica dell'aggiornamento
+    // Rimuoviamo eventuali ".0" e spazi, forzando il tipo String
+    let fasciaDaCancellare = String(fascia_oraria).replace(".0", "").trim();
+
+    // Fix retroattivo: se il frontend manda ancora numeri vecchi per errore
+    if (fasciaDaCancellare === "1") fasciaDaCancellare = "9-13";
+    if (fasciaDaCancellare === "2") fasciaDaCancellare = "13-16";
+    if (fasciaDaCancellare === "3") fasciaDaCancellare = "16-19";
+    if (fasciaDaCancellare === "4") fasciaDaCancellare = "21-24";
+
+    console.log(
+      `[DEBUG] Tentativo eliminazione: ${data} - ${fasciaDaCancellare}`,
+    );
+
+    // 2. Cerchiamo il record usando la stringa corretta
     const check = await client.execute({
       sql: "SELECT id, numero_presenze FROM presenze WHERE data = ? AND fascia_oraria = ?",
-      args: [data, fasciaDaSalvare],
+      args: [data, fasciaDaCancellare],
     });
 
     if (check.rows.length > 0) {
+      const idRecord = check.rows[0].id;
+      const presenzeVecchie = check.rows[0].numero_presenze;
+
+      // 3. Eseguiamo la cancellazione per ID
       const result = await client.execute({
         sql: "DELETE FROM presenze WHERE id = ?",
-        args: [check.rows[0].id],
+        args: [idRecord],
       });
+
       if (result.rowsAffected > 0) {
+        // Log dell'azione
         await logPresenzeChange(
-          check.rows[0].id,
+          idRecord,
           data,
-          fascia_oraria,
-          check.rows[0].numero_presenze,
-          null,
+          fasciaDaCancellare,
+          presenzeVecchie,
+          null, // Valore nuovo nullo per cancellazione
           current_user_id,
           "DELETE",
         );
       }
+
       return res.status(200).json({ success: true, deleted: true });
     } else {
+      console.warn("[WARN] Nessun record trovato da eliminare");
       return res
         .status(404)
         .json({ success: false, error: "Presenza non trovata" });
