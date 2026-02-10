@@ -314,7 +314,7 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = () => {
                   <FcDocument size={32} />
                 </div>
                 <div className="btn-text">
-                  <strong>Assemblea Ordinaria [X]</strong>
+                  <strong>Assemblea Ordinaria</strong>
                   <span>Soci Ordinaria</span>
                 </div>
               </button>
@@ -328,7 +328,7 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = () => {
                   <FcDocument size={32} />
                 </div>
                 <div className="btn-text">
-                  <strong>Assemblea Straordinaria [X]</strong>
+                  <strong>Assemblea Straordinaria</strong>
                   <span>Soci Straordinaria</span>
                 </div>
               </button>
