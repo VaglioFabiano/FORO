@@ -5,6 +5,7 @@ import {
   FcFolder,
   FcFile,
   FcLeft,
+  FcBrokenLink,
   FcOpenedFolder,
   FcDocument,
 } from "react-icons/fc";
@@ -22,15 +23,20 @@ interface DriveFile {
   webViewLink: string;
 }
 
-const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
+// MODIFICA IMPORTANTE: Default a 99 (sicurezza), non 1 (admin)
+const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 99 }) => {
   // --- CONFIGURAZIONE ---
   const apiKey = import.meta.env.VITE_GOOGLE_CLOUD;
   const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
   const rootDriveLink = import.meta.env.VITE_GOOGLE_DRIVE_VERBALI || "";
   const appSecret = import.meta.env.VITE_APP_SECRET || "ASSOCIAZIONE_FORO_2026";
 
-  // LOGICA PERMESSI: Livelli 0, 1 e 2 possono creare
-  const canCreate = userLevel <= 2;
+  // LOGICA PERMESSI: Livelli 0, 1 e 2 possono creare.
+  // Assicuriamoci che sia un numero per evitare errori di stringhe
+  const canCreate = Number(userLevel) <= 2;
+
+  // Debug: Puoi vedere in console che livello sta leggendo
+  // console.log("VerbaliAssemblea - User Level:", userLevel, "Can Create:", canCreate);
 
   // --- STATI ---
   const rootFolderId = useMemo(() => {
@@ -145,7 +151,9 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
   if (!apiKey || !rootFolderId)
     return (
       <div className="verbali_container error-state">
-        Configurazione Mancante
+        <FcBrokenLink size={50} />
+        <h3>Configurazione Mancante</h3>
+        <p>Controlla VITE_GOOGLE_CLOUD e VITE_GOOGLE_DRIVE_VERBALI</p>
       </div>
     );
 
@@ -188,6 +196,7 @@ const VerbaliAssemblea: React.FC<VerbaliProps> = ({ userLevel = 1 }) => {
             >
               <IoReload />
             </button>
+            {/* IL BOTTONE APPARE SOLO SE canCreate È TRUE */}
             {canCreate && (
               <button
                 onClick={() => setShowCreateModal(true)}
