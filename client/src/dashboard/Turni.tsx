@@ -12,10 +12,7 @@ interface Turno {
   user_name: string;
   user_surname: string;
   user_username: string;
-
-  // Campo corretto come da backend
   assigned: boolean;
-
   day_index: number;
   turno_index: number;
   nota_automatica?: string;
@@ -52,6 +49,7 @@ const Turni: React.FC = () => {
   const [message, setMessage] = useState<Message | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<WeekType>("corrente");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null); // NUOVO STATO ERRORE MODALE
 
   // --- Stati Form Modale ---
   const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
@@ -77,7 +75,6 @@ const Turni: React.FC = () => {
     "Domenica",
   ];
 
-  // Slot standard per riferimento visivo
   const standardSlots = [
     {
       index: 0,
@@ -105,7 +102,6 @@ const Turni: React.FC = () => {
     },
   ];
 
-  // --- EFFETTI INIZIALI ---
   useEffect(() => {
     fetchAllTurni();
     fetchUsers();
@@ -184,19 +180,18 @@ const Turni: React.FC = () => {
     }
   };
 
-  // --- LOGICA MODALE E GESTIONE TURNI ---
+  // --- LOGICA MODALE ---
 
-  // Apre il modale per MODIFICARE un turno esistente
   const handleTurnoClick = (turno: Turno) => {
     setSelectedTurno(turno);
     setSelectedUserId(turno.user_id || currentUser?.id || null);
     setNote(turno.note || "");
     setUserSearchTerm("");
+    setModalError(null); // Reset errore modale
 
     setCustomStartTime(turno.turno_inizio);
     setCustomEndTime(turno.turno_fine);
 
-    // Controlla se gli orari differiscono dallo standard
     const standardSlot = standardSlots.find(
       (s) => s.index === turno.turno_index,
     );
@@ -213,13 +208,13 @@ const Turni: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Apre il modale per AGGIUNGERE un NUOVO turno in uno slot specifico
   const handleAddTurnoClick = (
     dayIndex: number,
     slotIndex: number,
     e: React.MouseEvent,
   ) => {
     e.stopPropagation();
+    setModalError(null); // Reset errore modale
 
     const weekOffset =
       selectedWeek === "corrente"
@@ -278,40 +273,34 @@ const Turni: React.FC = () => {
   ): boolean => {
     const turniAttuali = getCurrentTurni();
 
-    // Filtra i turni validi dello stesso giorno
     const shiftsInDay = turniAttuali.filter(
       (t) =>
         t.day_index === dayIndex &&
         t.assigned &&
         !t.is_placeholder &&
-        t.id !== currentTurnoId, // Ignora se stesso durante la modifica
+        t.id !== currentTurnoId,
     );
 
     return shiftsInDay.some((existing) => {
-      // Logica sovrapposizione: (StartA < EndB) && (EndA > StartB)
-      // Usiamo confronto stringhe "HH:MM" che funziona correttamente per orari 24h
       return newStart < existing.turno_fine && newEnd > existing.turno_inizio;
     });
   };
 
   const handleAssegnaTurno = async () => {
     if (!selectedTurno || !selectedUserId) return;
+    setModalError(null); // Pulisci errori precedenti
 
     const finalStart = isPartialTurno
       ? customStartTime
       : selectedTurno.turno_inizio;
     const finalEnd = isPartialTurno ? customEndTime : selectedTurno.turno_fine;
 
-    // Validazione Oraria Base
+    // Validazioni Locali (mostrate nel modale)
     if (finalStart >= finalEnd) {
-      setMessage({
-        type: "error",
-        text: "L'orario di inizio deve essere precedente alla fine.",
-      });
+      setModalError("L'orario di inizio deve essere precedente alla fine.");
       return;
     }
 
-    // Validazione Sovrapposizioni
     const hasOverlap = checkOverlap(
       selectedTurno.day_index,
       finalStart,
@@ -319,10 +308,9 @@ const Turni: React.FC = () => {
       selectedTurno.id,
     );
     if (hasOverlap) {
-      setMessage({
-        type: "error",
-        text: "⚠️ Errore: L'orario selezionato si sovrappone a un altro turno già assegnato!",
-      });
+      setModalError(
+        "⚠️ L'orario selezionato si sovrappone a un altro turno già assegnato!",
+      );
       return;
     }
 
@@ -344,18 +332,16 @@ const Turni: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
+        // Successo: Chiudi modale e mostra messaggio globale
         setMessage({ type: "success", text: "Turno salvato con successo!" });
         closeModal();
         fetchAllTurni();
       } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Errore nell'assegnazione",
-        });
+        // Errore Server: Mostra nel modale
+        setModalError(data.error || "Errore durante il salvataggio.");
       }
     } catch (error) {
-      console.error("Errore assegnazione:", error);
-      setMessage({ type: "error", text: "Errore di connessione" });
+      setModalError("Errore di connessione al server.");
     }
   };
 
@@ -379,13 +365,10 @@ const Turni: React.FC = () => {
         fetchAllTurni();
         closeModal();
       } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Errore nella rimozione",
-        });
+        setModalError(data.error || "Errore nella rimozione.");
       }
     } catch (error) {
-      setMessage({ type: "error", text: "Errore di connessione" });
+      setModalError("Errore di connessione.");
     }
   };
 
@@ -393,13 +376,12 @@ const Turni: React.FC = () => {
     setIsModalOpen(false);
     setSelectedTurno(null);
     setIsPartialTurno(false);
+    setModalError(null);
   };
 
-  // --- UTILS DI VISUALIZZAZIONE ---
-
   const isSlotNaturallyClosed = (dayIndex: number, turnoIndex: number) => {
-    if (turnoIndex === 3) return true; // Sera
-    if (dayIndex === 5 || dayIndex === 6) return true; // Weekend
+    if (turnoIndex === 3) return true;
+    if (dayIndex === 5 || dayIndex === 6) return true;
     return false;
   };
 
@@ -423,7 +405,6 @@ const Turni: React.FC = () => {
     return `${monday.getDate()}-${sunday.getDate()} ${monday.toLocaleDateString("it-IT", { month: "long" })}`;
   };
 
-  // Logica di ricerca utenti nel modale
   const filteredUsers = users.filter(
     (user) =>
       `${user.name} ${user.surname}`
@@ -446,8 +427,6 @@ const Turni: React.FC = () => {
 
   const renderTurniGrid = () => {
     const turniAttuali = getCurrentTurni();
-
-    // Calcolo date intestazione
     const weekOffset =
       selectedWeek === "corrente"
         ? 0
@@ -465,9 +444,8 @@ const Turni: React.FC = () => {
 
     return (
       <div className="turni-grid">
-        {/* HEADER */}
         <div className="turni-header">
-          <div className="turni-time-column">Orari</div>
+          <div className="turni-time-column"></div>
           {giorni.map((giorno, index) => {
             const dateForColumn = new Date(monday);
             dateForColumn.setDate(monday.getDate() + index);
@@ -485,7 +463,6 @@ const Turni: React.FC = () => {
           })}
         </div>
 
-        {/* BODY */}
         <div className="turni-body">
           {standardSlots.map((slot) => (
             <div key={slot.index} className="turni-row">
@@ -497,10 +474,9 @@ const Turni: React.FC = () => {
                     t.day_index === dayIndex && t.turno_index === slot.index,
                 );
 
-                // Filtra turni reali, escludi placeholder, e ORDINA CRONOLOGICAMENTE
                 const realShifts = turniCella
                   .filter((t) => !t.is_placeholder && t.assigned)
-                  .sort((a, b) => a.turno_inizio.localeCompare(b.turno_inizio)); // Ordinamento cruciale
+                  .sort((a, b) => a.turno_inizio.localeCompare(b.turno_inizio));
 
                 const placeholder = turniCella.find((t) => t.is_placeholder);
                 const isClosed = isSlotNaturallyClosed(dayIndex, slot.index);
@@ -510,7 +486,6 @@ const Turni: React.FC = () => {
                     key={`${dayIndex}-${slot.index}`}
                     className={`turni-cell-container ${isClosed ? "closed-slot" : ""}`}
                   >
-                    {/* SCENARIO 1: Ci sono turni reali (Standard o Spezzati) */}
                     {realShifts.length > 0 ? (
                       <>
                         {realShifts.map((turno) => (
@@ -525,8 +500,6 @@ const Turni: React.FC = () => {
                             <div className="turno-card-user">
                               {turno.user_name} {turno.user_surname}
                             </div>
-
-                            {/* Nota visibile direttamente nella card */}
                             {turno.note && (
                               <div
                                 className="turno-card-note-text"
@@ -537,7 +510,6 @@ const Turni: React.FC = () => {
                             )}
                           </div>
                         ))}
-                        {/* Bottone + Mini per aggiungere turni extra/spezzati */}
                         <button
                           className="add-shift-btn-mini"
                           title="Aggiungi turno extra"
@@ -549,7 +521,6 @@ const Turni: React.FC = () => {
                         </button>
                       </>
                     ) : (
-                      /* SCENARIO 2: Slot vuoto (mostra placeholder) */
                       <div
                         className="turno-placeholder"
                         onClick={() =>
@@ -565,7 +536,6 @@ const Turni: React.FC = () => {
                         <span className="placeholder-text">
                           {isClosed ? "Chiuso" : "Disponibile"}
                         </span>
-                        {/* Bottone + Grande per slot vuoto */}
                         <button
                           className="add-shift-btn-large"
                           onClick={(e) =>
@@ -585,8 +555,6 @@ const Turni: React.FC = () => {
       </div>
     );
   };
-
-  // --- COMPONENT RETURN ---
 
   if (loading) {
     return (
@@ -647,7 +615,6 @@ const Turni: React.FC = () => {
 
       <div className="turni-content">{renderTurniGrid()}</div>
 
-      {/* MODALE */}
       {isModalOpen && selectedTurno && (
         <div className="turno-modal-overlay" onClick={closeModal}>
           <div
@@ -664,6 +631,11 @@ const Turni: React.FC = () => {
             </div>
 
             <div className="turno-modal-body">
+              {/* MESSAGGIO DI ERRORE MODALE (NUOVO POSIZIONAMENTO) */}
+              {modalError && (
+                <div className="modal-error-message">{modalError}</div>
+              )}
+
               <div className="turno-info">
                 <p>
                   <strong>Data:</strong> {formatDate(selectedTurno.data)}
