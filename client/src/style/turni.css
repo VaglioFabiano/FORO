@@ -84,6 +84,25 @@
   color: #721c24;
   border: 1px solid #f5c6cb;
 }
+.turni-message.info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.message-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+.close-message {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.6;
+}
 
 .turni-loading {
   display: flex;
@@ -100,29 +119,32 @@
   border-top: 3px solid #8b4513;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  margin-bottom: 10px;
 }
 
 /* =========================================
-   GRIGLIA TURNI (Layout Fisso)
+   GRIGLIA TURNI (Layout Fisso Mobile/Desktop)
    ========================================= */
 .turni-content {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  overflow: auto;
+  overflow: auto; /* Scroll in entrambe le direzioni */
   max-height: 75vh;
 }
 
 .turni-grid {
   display: flex;
   flex-direction: column;
-  min-width: 900px; /* Forza scroll orizzontale su schermi piccoli */
+  /* Forza una larghezza minima per attivare lo scroll orizzontale su mobile */
+  min-width: 1050px;
 }
 
 /* Header Giorni */
 .turni-header {
   display: grid;
-  grid-template-columns: 100px repeat(7, 1fr);
+  /* 80px orario, resto colonne fisse minime di 135px */
+  grid-template-columns: 80px repeat(7, minmax(135px, 1fr));
   background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
   color: white;
   position: sticky;
@@ -134,11 +156,14 @@
   padding: 8px 4px;
   text-align: center;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
 }
+
 .day-name {
-  font-size: 12px;
   font-weight: 700;
+  font-size: 12px;
   text-transform: uppercase;
+  margin-bottom: 2px;
 }
 .day-date {
   font-size: 11px;
@@ -153,7 +178,8 @@
 
 .turni-row {
   display: grid;
-  grid-template-columns: 100px repeat(7, 1fr);
+  /* Identico all'header per allineamento perfetto */
+  grid-template-columns: 80px repeat(7, minmax(135px, 1fr));
   border-bottom: 1px solid rgba(139, 69, 19, 0.1);
 }
 
@@ -179,7 +205,7 @@
   min-height: 70px;
   padding: 4px;
   display: flex;
-  flex-direction: column; /* Impila i turni verticalmente */
+  flex-direction: column; /* Impila le card verticalmente */
   gap: 4px;
   position: relative;
   transition: background 0.2s;
@@ -204,17 +230,25 @@
   cursor: pointer;
   min-height: 100%;
   position: relative;
+  flex-direction: column;
+}
+
+.placeholder-text {
+  margin-bottom: 5px;
 }
 
 /* Card Turno Assegnato */
 .turno-card {
   background: white;
-  border-left: 4px solid #2196f3; /* Default blue */
-  padding: 4px 6px;
+  border-left: 4px solid #2196f3;
+  padding: 6px;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .turno-card:hover {
@@ -223,7 +257,7 @@
 }
 
 .turno-card.extraordinary {
-  border-left-color: #ffc107; /* Giallo per straordinari */
+  border-left-color: #ffc107;
   background-color: #fffbf0;
 }
 
@@ -231,28 +265,48 @@
   font-size: 10px;
   font-weight: 700;
   color: #555;
+  margin-bottom: 1px;
 }
 
 .turno-card-user {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: #1565c0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.turno-card-note {
+/* Stile Note nella Card */
+.turno-card-note-text {
   font-size: 10px;
-  float: right;
-  margin-top: -15px;
+  color: #666;
+  font-style: italic;
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-top: 2px;
+  white-space: normal;
+  line-height: 1.1;
+  max-height: 32px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.turno-card-note {
+  /* Icona nota legacy - nascosta se usiamo il testo */
+  display: none;
 }
 
 /* =========================================
    BOTTONI "+" (AGGIUNGI)
    ========================================= */
 
-/* Bottone grande per slot completamente vuoti */
+/* Bottone grande per slot vuoti */
 .add-shift-btn-large {
   position: absolute;
   top: 0;
@@ -270,6 +324,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  z-index: 2;
 }
 
 /* Desktop: Mostra solo su hover */
@@ -278,37 +333,45 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Bottone mini per slot che hanno già turni (per riempire i buchi) */
+/* Bottone mini per slot con turni esistenti */
 .add-shift-btn-mini {
-  height: 18px;
+  height: 20px;
   background: transparent;
   border: 1px dashed #ccc;
-  color: #999;
-  font-size: 14px;
+  color: #888;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0; /* Invisibile di default */
+  opacity: 0;
   transition: opacity 0.2s;
-  margin-top: auto; /* Spinge in fondo */
+  margin-top: auto;
+  width: 100%;
 }
 
-/* Mostra su hover della cella */
+.add-shift-btn-mini:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #555;
+  border-color: #999;
+}
+
 .turni-cell-container:hover .add-shift-btn-mini {
   opacity: 1;
 }
 
 /* =========================================
-   MOBILE RESPONSIVENESS per i bottoni +
+   MOBILE RESPONSIVENESS (Pulsanti +)
    ========================================= */
 @media (hover: none) and (pointer: coarse) {
-  /* Su mobile, rendi i bottoni sempre un po' visibili perché non c'è hover */
+  /* Su mobile rendiamo i bottoni leggermente visibili ma non invadenti */
+
   .turni-cell-container .add-shift-btn-large {
-    color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.05);
   }
+
   .turni-cell-container .add-shift-btn-mini {
     opacity: 0.5;
     border-color: #eee;
@@ -340,6 +403,7 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
+  max-height: 90vh; /* Limita altezza su schermi piccoli */
 }
 
 .turno-modal-header {
@@ -364,7 +428,6 @@
 .turno-modal-body {
   padding: 15px;
   overflow-y: auto;
-  max-height: 60vh;
 }
 
 .turno-info {
