@@ -1,6 +1,9 @@
 import { createClient } from "@libsql/client/web";
 
-// Configurazione database (stesso del tuo file esistente)
+// ==========================================
+// 1. CONFIGURAZIONE E SETUP
+// ==========================================
+
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
   authToken: process.env.TURSO_AUTH_TOKEN?.trim(),
@@ -13,20 +16,22 @@ if (!config.url || !config.authToken) {
 
 const client = createClient(config);
 
-// Token bot Telegram
+// Configurazione Telegram
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-
-// Chat ID fisso per notifiche admin
 const ADMIN_CHAT_ID = "6008973822";
 
-// Funzione per ottenere i giorni di una settimana specifica
+// ==========================================
+// 2. FUNZIONI DI UTILITÀ (DATE E FORMATTAZIONE)
+// ==========================================
+
 function getWeekDates(weekOffset = 0) {
   const now = new Date();
-  const currentDay = now.getDay();
+  const currentDay = now.getDay(); // 0 = Domenica
   const monday = new Date(now);
+  // Calcola il lunedì della settimana corrente/offset
   monday.setDate(
-    now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+    now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7,
   );
 
   const weekDates = [];
@@ -38,41 +43,6 @@ function getWeekDates(weekOffset = 0) {
   return weekDates;
 }
 
-// Funzione per ottenere i giorni della settimana corrente
-function getCurrentWeekDates() {
-  return getWeekDates(0);
-}
-
-// Funzione per ottenere i giorni della prossima settimana
-function getNextWeekDates() {
-  return getWeekDates(1);
-}
-
-// Funzione per ottenere i giorni della settimana +2
-function getWeekPlus2Dates() {
-  return getWeekDates(2);
-}
-
-// Funzione per ottenere i giorni della settimana +3
-function getWeekPlus3Dates() {
-  return getWeekDates(3);
-}
-
-// Funzione per convertire nome giorno in numero
-function getDayNumber(dayName) {
-  const days = {
-    lunedì: 0,
-    martedì: 1,
-    mercoledì: 2,
-    giovedì: 3,
-    venerdì: 4,
-    sabato: 5,
-    domenica: 6,
-  };
-  return days[dayName.toLowerCase()];
-}
-
-// Funzione per ottenere il nome del giorno dalla data
 function getDayNameFromDate(dateString) {
   const date = new Date(dateString);
   const giorni = [
@@ -87,635 +57,265 @@ function getDayNameFromDate(dateString) {
   return giorni[date.getDay()];
 }
 
-// Funzione per formattare la data per i messaggi
 function formatDateForMessage(dateString) {
   const date = new Date(dateString);
   const dayName = getDayNameFromDate(dateString);
   return `${dayName} ${date.getDate()}/${date.getMonth() + 1}`;
 }
 
-// Funzione per inviare messaggio Telegram
+// Determina l'indice visivo (0-3) in base all'orario di inizio
+// Serve per capire dove posizionare il turno nella griglia
+function getVisualTurnoIndex(oraInizio) {
+  if (!oraInizio) return 0;
+  const start = parseInt(oraInizio.replace(":", ""));
+
+  if (start < 1300) return 0; // Mattina (prima delle 13:00)
+  if (start < 1600) return 1; // Pranzo (13:00 - 16:00)
+  if (start < 2100) return 2; // Pomeriggio + Gap (16:00 - 21:00)
+  return 3; // Sera (dopo le 21:00)
+}
+
+// ==========================================
+// 3. GESTIONE TELEGRAM
+// ==========================================
+
 async function sendTelegramMessage(chatId, message) {
   try {
     const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
         text: message,
         parse_mode: "HTML",
       }),
     });
-
-    const data = await response.json();
-
-    if (!data.ok) {
-      throw new Error(data.description || "Errore nell'invio del messaggio");
-    }
-
-    return data.result;
+    return await response.json();
   } catch (error) {
-    console.error("Errore invio messaggio Telegram:", error);
-    throw error;
+    console.error("Errore invio Telegram:", error);
   }
 }
 
-// Funzione per ottenere il chat_id di un utente dal database
-async function getUserTelegramChatId(userId) {
-  try {
-    const result = await client.execute({
-      sql: `SELECT telegram_chat_id FROM users WHERE id = ? AND telegram_chat_id IS NOT NULL`,
-      args: [userId],
-    });
-
-    return result.rows.length > 0 ? result.rows[0].telegram_chat_id : null;
-  } catch (error) {
-    console.error("Errore nel recupero chat_id:", error);
-    return null;
-  }
-}
-
-// Funzione per ottenere informazioni utente dal database
 async function getUserInfo(userId) {
   try {
     const result = await client.execute({
-      sql: `SELECT name, surname, username FROM users WHERE id = ?`,
+      sql: `SELECT name, surname, username, telegram_chat_id FROM users WHERE id = ?`,
       args: [userId],
     });
-
-    return result.rows.length > 0 ? result.rows[0] : null;
-  } catch (error) {
-    console.error("Errore nel recupero info utente:", error);
+    return result.rows[0];
+  } catch (e) {
     return null;
   }
 }
 
-// Funzione per inviare notifica Telegram
 async function sendTurnoNotification(
   action,
   turnoData,
   currentUserId,
-  targetUserId = null
+  targetUserId = null,
 ) {
   try {
-    // Determina chi deve ricevere la notifica
     let recipientUserId = null;
     let message = "";
-
-    // Ottieni informazioni sugli utenti coinvolti
     const currentUserInfo = await getUserInfo(currentUserId);
-    const targetUserInfo = targetUserId
-      ? await getUserInfo(targetUserId)
-      : null;
 
-    if (!currentUserInfo) {
-      console.error("Informazioni utente corrente non trovate");
-      return;
-    }
+    if (!currentUserInfo) return;
 
-    // Formatta data e orario per il messaggio
     const dayAndDate = formatDateForMessage(turnoData.data);
     const orario = `${turnoData.turno_inizio}-${turnoData.turno_fine}`;
 
     switch (action) {
       case "self_assigned":
-        // L'utente si è assegnato un turno
         recipientUserId = currentUserId;
         message = `✅ Ti sei aggiunto al turno di ${dayAndDate} delle ${orario}`;
         break;
-
       case "assigned":
-        // Un admin ha assegnato un turno a qualcuno
         if (targetUserId && targetUserId !== currentUserId) {
           recipientUserId = targetUserId;
           message = `📋 ${currentUserInfo.name} ${currentUserInfo.surname} ti ha aggiunto al turno di ${dayAndDate} delle ${orario}`;
         }
         break;
-
       case "self_removed":
-        // L'utente si è rimosso da un turno
         recipientUserId = currentUserId;
         message = `❌ Ti sei rimosso dal turno di ${dayAndDate} delle ${orario}`;
         break;
-
       case "removed":
-        // Un admin ha rimosso qualcuno da un turno
         if (targetUserId && targetUserId !== currentUserId) {
           recipientUserId = targetUserId;
           message = `🗑️ ${currentUserInfo.name} ${currentUserInfo.surname} ti ha rimosso dal turno di ${dayAndDate} delle ${orario}`;
         }
         break;
-
       case "closed_assigned":
-        // Utente si è assegnato a un turno chiuso (straordinario)
         recipientUserId = currentUserId;
-        message = `⚠️ Ti sei aggiunto al turno straordinario di ${dayAndDate} delle ${orario}`;
+        message = `⚠️ Ti sei aggiunto al turno STRAORDINARIO di ${dayAndDate} delle ${orario}`;
         break;
-
-      default:
-        console.log("Azione non riconosciuta per notifica:", action);
-        return;
     }
 
-    // Se non c'è un destinatario, non inviare nulla
-    if (!recipientUserId || !message) {
-      console.log("Nessuna notifica da inviare per questa azione");
-      return;
+    if (recipientUserId && message) {
+      const targetInfo =
+        recipientUserId === currentUserId
+          ? currentUserInfo
+          : await getUserInfo(recipientUserId);
+      if (targetInfo?.telegram_chat_id) {
+        await sendTelegramMessage(targetInfo.telegram_chat_id, message);
+      }
     }
-
-    // Ottieni il chat_id del destinatario
-    const chatId = await getUserTelegramChatId(recipientUserId);
-
-    if (!chatId) {
-      console.log(
-        `Chat ID non trovato per l'utente ${recipientUserId}, notifica non inviata`
-      );
-      return;
-    }
-
-    // Invia il messaggio
-    await sendTelegramMessage(chatId, message);
-    console.log(
-      `Notifica inviata con successo a utente ${recipientUserId}: ${message}`
-    );
-
-    // Log della notifica nel database (opzionale)
-    await client
-      .execute({
-        sql: `INSERT INTO telegram_messages (user_id, phone_number, message, success, created_at)
-            VALUES (?, '', ?, 1, datetime('now'))`,
-        args: [recipientUserId, message],
-      })
-      .catch((error) => {
-        console.error("Errore nel logging notifica:", error);
-      });
   } catch (error) {
-    console.error("Errore nell'invio notifica turno:", error);
+    console.error("Errore notifica:", error);
   }
 }
 
-// Handler per ripercussioni turni straordinari
 async function handleClosedTurnoRepercussions(turnoData, userId, note) {
-  console.log("Gestione ripercussioni turno straordinario", {
-    turnoData,
-    userId,
-    note,
-    timestamp: new Date().toISOString(),
-  });
-
   try {
-    // Ottieni informazioni dell'utente che ha fatto la richiesta
     const userInfo = await getUserInfo(userId);
-    if (!userInfo) {
-      console.error("Informazioni utente non trovate per notifica admin");
-      return;
-    }
-
-    // Formatta data e orario per il messaggio
     const dayAndDate = formatDateForMessage(turnoData.data);
-    const orario = `${turnoData.turno_inizio}-${turnoData.turno_fine}`;
-
-    // Crea messaggio per l'admin
     const adminMessage = `🚨 <b>Richiesta Turno Straordinario</b>
 
-👤 <b>Richiesto da:</b> ${userInfo.name} ${userInfo.surname} (${userInfo.username})
+👤 <b>Richiesto da:</b> ${userInfo.name} ${userInfo.surname}
 📅 <b>Data:</b> ${dayAndDate}
-⏰ <b>Orario:</b> ${orario}
+⏰ <b>Orario:</b> ${turnoData.turno_inizio}-${turnoData.turno_fine}
 ${note ? `📝 <b>Motivo:</b> ${note}` : ""}
 
-⚠️ Questo turno è normalmente chiuso e richiede approvazione.`;
+⚠️ Turno fuori standard o chiuso.`;
 
-    // Invia notifica al chat admin fisso
     await sendTelegramMessage(ADMIN_CHAT_ID, adminMessage);
-    console.log("Notifica admin inviata per turno straordinario");
   } catch (error) {
-    console.error(
-      "Errore nell'invio notifica admin turno straordinario:",
-      error
-    );
+    console.error("Errore notifica admin:", error);
   }
 }
 
-// Funzione per generare turni di default per settimane future
-function generateDefaultTurni(weekDates) {
-  const turni = [];
-  const turniTemplate = [
-    { inizio: "09:00", fine: "13:00", disponibile: true },
-    { inizio: "13:00", fine: "16:00", disponibile: true },
-    { inizio: "16:00", fine: "19:30", disponibile: true },
-    { inizio: "21:00", fine: "24:00", disponibile: false }, // Chiuso di default
+// ==========================================
+// 4. LOGICA GENERAZIONE TURNI (CORE)
+// ==========================================
+
+function generateStandardPlaceholders(weekDates) {
+  const placeholders = [];
+  const standardSlots = [
+    { index: 0, inizio: "09:00", fine: "13:00" },
+    { index: 1, inizio: "13:00", fine: "16:00" },
+    { index: 2, inizio: "16:00", fine: "19:30" },
+    { index: 3, inizio: "21:00", fine: "24:00" },
   ];
 
-  weekDates.forEach((data, dayIndex) => {
-    turniTemplate.forEach((turno, turnoIndex) => {
-      // Lunedì-Venerdì: primi 3 turni aperti, 4° chiuso
-      // Sabato-Domenica: tutti chiusi
+  weekDates.forEach((date, dayIndex) => {
+    standardSlots.forEach((slot) => {
+      // Logica base disponibilità placeholder
+      let disponibile = true;
       const isWeekend = dayIndex === 5 || dayIndex === 6; // Sabato o Domenica
-      const isAvailable = !isWeekend && turno.disponibile;
 
-      if (isAvailable) {
-        turni.push({
-          data,
-          turno_inizio: turno.inizio,
-          turno_fine: turno.fine,
-          fascia_id: 1, // ID di default, potresti volerlo parametrizzare
-          day_index: dayIndex,
-          turno_index: turnoIndex,
-          nota_automatica: "",
-          is_default: true,
-        });
-      }
-    });
-  });
-
-  return turni;
-}
-
-// Funzione per generare turni in base alle fasce orarie
-function generateTurniFromFasce(fasce, weekDates, isDefaultWeek = false) {
-  // Se è una settimana di default (settimana +2 o +3), usa turni di default
-  if (isDefaultWeek) {
-    return generateDefaultTurni(weekDates);
-  }
-
-  const turni = [];
-  const turniTemplate = [
-    { inizio: "09:00", fine: "13:00" },
-    { inizio: "13:00", fine: "16:00" },
-    { inizio: "16:00", fine: "19:30" },
-    { inizio: "21:00", fine: "24:00" },
-  ];
-
-  weekDates.forEach((data, dayIndex) => {
-    const dayName = [
-      "lunedì",
-      "martedì",
-      "mercoledì",
-      "giovedì",
-      "venerdì",
-      "sabato",
-      "domenica",
-    ][dayIndex];
-    const fascheGiorno = fasce.filter((f) => f.giorno === dayName);
-
-    if (fascheGiorno.length === 0) return;
-
-    // Trova gli orari effettivi di apertura per questo giorno
-    let orarioAperturaMinimo = 24 * 60; // Inizia con il massimo possibile
-    let orarioChiusuraMassimo = 0; // Inizia con il minimo possibile
-
-    fascheGiorno.forEach((fascia) => {
-      const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio
-        .split(":")
-        .map(Number);
-      const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine
-        .split(":")
-        .map(Number);
-      const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
-      let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
-
-      if (
-        fasciaFineOre === 24 ||
-        (fasciaFineOre === 0 && fasciaFineMin === 0)
-      ) {
-        fasciaFineMinuti = 24 * 60;
+      // Sabato e Domenica tutto chiuso di default
+      // Sera (index 3) chiusa di default
+      if (isWeekend || slot.index === 3) {
+        disponibile = false;
       }
 
-      orarioAperturaMinimo = Math.min(orarioAperturaMinimo, fasciaInizioMinuti);
-      orarioChiusuraMassimo = Math.max(orarioChiusuraMassimo, fasciaFineMinuti);
-    });
-
-    // Filtra i turni template per includere solo quelli che hanno almeno 30 minuti di sovrapposizione
-    const turniCompatibili = turniTemplate.filter((turno) => {
-      const [oreInizio, minutiInizio] = turno.inizio.split(":").map(Number);
-      const [oreFine, minutiFine] = turno.fine.split(":").map(Number);
-      const inizioMinuti = oreInizio * 60 + minutiInizio;
-      let fineMinuti = oreFine * 60 + minutiFine;
-
-      if (oreFine === 24) {
-        fineMinuti = 24 * 60;
-      }
-
-      // Calcola la sovrapposizione con gli orari di apertura
-      const sovrapposizioneInizio = Math.max(
-        inizioMinuti,
-        orarioAperturaMinimo
-      );
-      const sovrapposizioneFine = Math.min(fineMinuti, orarioChiusuraMassimo);
-      const durataSovrapposizione = Math.max(
-        0,
-        sovrapposizioneFine - sovrapposizioneInizio
-      );
-
-      // Il turno è compatibile se ha almeno 30 minuti di sovrapposizione
-      return durataSovrapposizione >= 30;
-    });
-
-    turniCompatibili.forEach((turno, turnoIndex) => {
-      const [oreInizio, minutiInizio] = turno.inizio.split(":").map(Number);
-      const [oreFine, minutiFine] = turno.fine.split(":").map(Number);
-      const inizioMinuti = oreInizio * 60 + minutiInizio;
-      let fineMinuti = oreFine * 60 + minutiFine;
-
-      if (oreFine === 24) {
-        fineMinuti = 24 * 60;
-      }
-
-      // Trova la fascia più appropriata per questo turno
-      // Una fascia è compatibile se ha almeno 30 minuti di sovrapposizione con il turno
-      const fasciaCompatibile = fascheGiorno.find((fascia) => {
-        const [fasciaInizioOre, fasciaInizioMin] = fascia.ora_inizio
-          .split(":")
-          .map(Number);
-        const [fasciaFineOre, fasciaFineMin] = fascia.ora_fine
-          .split(":")
-          .map(Number);
-        const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
-        let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
-
-        if (
-          fasciaFineOre === 24 ||
-          (fasciaFineOre === 0 && fasciaFineMin === 0)
-        ) {
-          fasciaFineMinuti = 24 * 60;
-        }
-
-        // Calcola la sovrapposizione tra turno e fascia
-        const sovrapposizioneInizio = Math.max(
-          inizioMinuti,
-          fasciaInizioMinuti
-        );
-        const sovrapposizioneFine = Math.min(fineMinuti, fasciaFineMinuti);
-        const durataSovrapposizione = Math.max(
-          0,
-          sovrapposizioneFine - sovrapposizioneInizio
-        );
-
-        // La fascia è compatibile se ha almeno 30 minuti di sovrapposizione
-        return durataSovrapposizione >= 30;
+      placeholders.push({
+        id: `ph_${date}_${slot.index}`, // ID univoco fittizio
+        data: date,
+        turno_inizio: slot.inizio,
+        turno_fine: slot.fine,
+        day_index: dayIndex,
+        turno_index: slot.index,
+        is_placeholder: true, // Flag importante per il frontend
+        disponibile: disponibile,
+        user_id: null,
+        fascia_id: null,
       });
-
-      if (fasciaCompatibile) {
-        const [fasciaInizioOre, fasciaInizioMin] = fasciaCompatibile.ora_inizio
-          .split(":")
-          .map(Number);
-        const [fasciaFineOre, fasciaFineMin] = fasciaCompatibile.ora_fine
-          .split(":")
-          .map(Number);
-        const fasciaInizioMinuti = fasciaInizioOre * 60 + fasciaInizioMin;
-        let fasciaFineMinuti = fasciaFineOre * 60 + fasciaFineMin;
-
-        if (
-          fasciaFineOre === 24 ||
-          (fasciaFineOre === 0 && fasciaFineMin === 0)
-        ) {
-          fasciaFineMinuti = 24 * 60;
-        }
-
-        // Calcola l'intersezione tra turno e fascia
-        const nuovoInizio = Math.max(inizioMinuti, fasciaInizioMinuti);
-        const nuovaFine = Math.min(fineMinuti, fasciaFineMinuti);
-
-        const nuovoInizioOre = Math.floor(nuovoInizio / 60);
-        const nuovoInizioMin = nuovoInizio % 60;
-        const nuovaFineOre = Math.floor(nuovaFine / 60);
-        const nuovaFineMin = nuovaFine % 60;
-
-        let turnoInizio = `${nuovoInizioOre.toString().padStart(2, "0")}:${nuovoInizioMin.toString().padStart(2, "0")}`;
-        let turnoFine = `${nuovaFineOre.toString().padStart(2, "0")}:${nuovaFineMin.toString().padStart(2, "0")}`;
-
-        if (nuovaFineOre === 24) {
-          turnoFine = "24:00";
-        }
-
-        // Genera note automatiche per modifiche agli orari
-        let nota = "";
-
-        // Controlla se la fascia contiene completamente il turno
-        const turnoCompletoInFascia =
-          fasciaInizioMinuti <= inizioMinuti && fasciaFineMinuti >= fineMinuti;
-
-        // SEMPRE mantieni gli orari originali del turno
-        turnoInizio = turno.inizio;
-        turnoFine = turno.fine;
-
-        if (!turnoCompletoInFascia) {
-          // Turno parzialmente compatibile - genera note informative
-          if (nuovoInizio > inizioMinuti) {
-            const orarioAperturaEffettivo = `${Math.floor(nuovoInizio / 60)
-              .toString()
-              .padStart(
-                2,
-                "0"
-              )}:${(nuovoInizio % 60).toString().padStart(2, "0")}`;
-            nota = `(apertura posticipata alle ${orarioAperturaEffettivo})`;
-          }
-          if (nuovaFine < fineMinuti) {
-            const orarioChiusuraEffettivo = `${Math.floor(nuovaFine / 60)
-              .toString()
-              .padStart(
-                2,
-                "0"
-              )}:${(nuovaFine % 60).toString().padStart(2, "0")}`;
-            if (nuovaFine === 24 * 60) {
-              orarioChiusuraEffettivo = "24:00";
-            }
-            const chiusuraText = `(chiusura anticipata alle ${orarioChiusuraEffettivo})`;
-            nota = nota ? nota + " " + chiusuraText : chiusuraText;
-          }
-        }
-
-        // Trova l'indice del turno originale nel template per mantenere la coerenza
-        const originalTurnoIndex = turniTemplate.findIndex(
-          (t) => t.inizio === turno.inizio && t.fine === turno.fine
-        );
-
-        turni.push({
-          data,
-          turno_inizio: turnoInizio,
-          turno_fine: turnoFine,
-          fascia_id: fasciaCompatibile.id,
-          day_index: dayIndex,
-          turno_index:
-            originalTurnoIndex !== -1 ? originalTurnoIndex : turnoIndex,
-          nota_automatica: nota,
-        });
-      }
     });
   });
-
-  return turni;
+  return placeholders;
 }
 
-// GET - Ottieni turni della settimana
+// ==========================================
+// 5. API HANDLERS
+// ==========================================
+
+// GET - Ottieni turni
 async function getTurni(req, res) {
   try {
-    const { settimana } = req.query; // 'corrente', 'prossima', 'plus2', 'plus3'
+    const { settimana } = req.query;
+    let weekOffset = 0;
 
-    let weekDates;
-    let isDefaultWeek = false;
+    if (settimana === "prossima") weekOffset = 1;
+    else if (settimana === "plus2") weekOffset = 2;
+    else if (settimana === "plus3") weekOffset = 3;
 
-    switch (settimana) {
-      case "prossima":
-        weekDates = getNextWeekDates();
-        break;
-      case "plus2":
-        weekDates = getWeekPlus2Dates();
-        isDefaultWeek = true;
-        break;
-      case "plus3":
-        weekDates = getWeekPlus3Dates();
-        isDefaultWeek = true;
-        break;
-      default:
-        weekDates = getCurrentWeekDates();
-        break;
-    }
+    const weekDates = getWeekDates(weekOffset);
 
-    let turniPossibili = [];
-
-    if (isDefaultWeek) {
-      // Per settimane +2 e +3, usa turni di default
-      turniPossibili = generateDefaultTurni(weekDates);
-    } else {
-      // Per settimana corrente e prossima, usa fasce orarie
-      let fascheQuery =
-        "SELECT id, giorno, ora_inizio, ora_fine, note FROM fasce_orarie";
-      if (settimana === "prossima") {
-        fascheQuery =
-          "SELECT id, giorno, ora_inizio, ora_fine, note FROM fasce_orarie_prossima";
-      }
-
-      const fascheResult = await client.execute(fascheQuery);
-      const fasce = fascheResult.rows;
-      turniPossibili = generateTurniFromFasce(fasce, weekDates);
-    }
-
-    // Ottieni TUTTI i turni già assegnati (inclusi quelli straordinari)
-    const turniAssegnati = await client.execute({
-      sql: `SELECT t.id, t.data, t.turno_inizio, t.turno_fine, t.fascia_id, t.user_id, t.note, t.is_closed_override,
-                   u.name, u.surname, u.username
-            FROM turni t
-            LEFT JOIN users u ON t.user_id = u.id
-            WHERE t.data >= ? AND t.data <= ?
+    // 1. Recupera TUTTI i turni reali dal DB per la settimana selezionata
+    // Ordiniamo per data e orario inizio
+    const dbTurni = await client.execute({
+      sql: `SELECT t.*, u.name, u.surname, u.username 
+            FROM turni t 
+            LEFT JOIN users u ON t.user_id = u.id 
+            WHERE t.data >= ? AND t.data <= ? 
             ORDER BY t.data, t.turno_inizio`,
       args: [weekDates[0], weekDates[6]],
     });
 
-    // Crea una mappa dei turni possibili per accesso rapido
-    const turniPossibiliMap = new Map();
-    turniPossibili.forEach((turno) => {
-      const key = `${turno.data}_${turno.turno_inizio}_${turno.turno_fine}`;
-      turniPossibiliMap.set(key, turno);
-    });
+    // 2. Genera i placeholder standard (le caselle vuote)
+    const placeholders = generateStandardPlaceholders(weekDates);
 
-    // Crea set per tracciare i turni già processati
-    const turniProcessati = new Set();
-    const turniCompleti = [];
+    // 3. MERGE INTELLIGENTE
+    // Creiamo una lista finale che contiene:
+    // - Tutti i turni reali
+    // - I placeholder SOLO SE lo slot visivo non è occupato da nessuno
 
-    // Prima, processa tutti i turni possibili (normali)
-    turniPossibili.forEach((turno) => {
-      const key = `${turno.data}_${turno.turno_inizio}_${turno.turno_fine}`;
-      const assegnato = turniAssegnati.rows.find(
-        (a) =>
-          a.data === turno.data &&
-          a.turno_inizio === turno.turno_inizio &&
-          a.turno_fine === turno.turno_fine
-      );
+    const finalTurni = [];
+    const coveredSlots = new Set(); // Per tracciare quali slot (0,1,2,3) hanno almeno un turno
 
-      turniCompleti.push({
-        ...turno,
-        id: assegnato?.id || null,
-        user_id: assegnato?.user_id !== undefined ? assegnato.user_id : null,
-        note: assegnato?.note || turno.nota_automatica || "",
-        user_name: assegnato?.name || "",
-        user_surname: assegnato?.surname || "",
-        user_username: assegnato?.username || "",
-        assegnato: !!assegnato,
-        nota_automatica: turno.nota_automatica || "",
-        is_default: turno.is_default || false,
-        is_closed_override: assegnato?.is_closed_override || false,
+    // Aggiungi i turni reali alla lista e segna gli slot coperti
+    dbTurni.rows.forEach((t) => {
+      const dateObj = new Date(t.data);
+      const dayOfWeek = dateObj.getDay();
+      const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+      // Calcola l'indice visivo (0=Mattina, 1=Pranzo, 2=Pomeriggio/Gap, 3=Sera)
+      const visualIndex = getVisualTurnoIndex(t.turno_inizio);
+
+      // Segniamo che questo slot per questo giorno ha "qualcosa"
+      coveredSlots.add(`${t.data}_${visualIndex}`);
+
+      finalTurni.push({
+        ...t,
+        day_index: dayIndex,
+        turno_index: visualIndex,
+        is_placeholder: false,
+        assigned: true,
+        // Normalizziamo i campi utente
+        user_name: t.name,
+        user_surname: t.surname,
+        user_username: t.username,
       });
-
-      turniProcessati.add(key);
     });
 
-    // Poi, aggiungi tutti i turni straordinari che non sono stati già processati
-    turniAssegnati.rows.forEach((assegnato) => {
-      const key = `${assegnato.data}_${assegnato.turno_inizio}_${assegnato.turno_fine}`;
-
-      if (!turniProcessati.has(key)) {
-        // Questo è un turno straordinario (non presente nei turni possibili)
-
-        // Calcola day_index e turno_index
-        const date = new Date(assegnato.data);
-        const dayOfWeek = date.getDay();
-        const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Converte domenica (0) in 6, lunedì (1) in 0, etc.
-
-        // Determina turno_index basandosi sull'orario
-        let turnoIndex = 0;
-        const orari = [
-          { inizio: "09:00", fine: "13:00" },
-          { inizio: "13:00", fine: "16:00" },
-          { inizio: "16:00", fine: "19:30" },
-          { inizio: "21:00", fine: "24:00" },
-        ];
-
-        orari.forEach((orario, index) => {
-          if (
-            assegnato.turno_inizio === orario.inizio &&
-            assegnato.turno_fine === orario.fine
-          ) {
-            turnoIndex = index;
-          }
-        });
-
-        turniCompleti.push({
-          id: assegnato.id,
-          data: assegnato.data,
-          turno_inizio: assegnato.turno_inizio,
-          turno_fine: assegnato.turno_fine,
-          fascia_id: assegnato.fascia_id,
-          user_id: assegnato.user_id,
-          note: assegnato.note || "",
-          user_name: assegnato.name || "",
-          user_surname: assegnato.surname || "",
-          user_username: assegnato.username || "",
-          assegnato: true,
-          day_index: dayIndex,
-          turno_index: turnoIndex,
-          nota_automatica: "",
-          is_default: false,
-          is_closed_override: assegnato.is_closed_override || true, // Se non è nei turni possibili, è straordinario
-        });
+    // Aggiungi i placeholder che non sono stati "toccati" dai turni reali
+    placeholders.forEach((ph) => {
+      const key = `${ph.data}_${ph.turno_index}`;
+      if (!coveredSlots.has(key)) {
+        finalTurni.push(ph);
       }
     });
 
-    // Ordina i turni per data e orario
-    turniCompleti.sort((a, b) => {
+    // Ordiniamo tutto per renderlo pulito (Data -> Orario)
+    finalTurni.sort((a, b) => {
       if (a.data !== b.data) return a.data.localeCompare(b.data);
-      if (a.day_index !== b.day_index) return a.day_index - b.day_index;
-      return a.turno_index - b.turno_index;
+      return a.turno_inizio.localeCompare(b.turno_inizio);
     });
 
     return res.status(200).json({
       success: true,
-      turni: turniCompleti,
+      turni: finalTurni,
       settimana: settimana || "corrente",
       date_range: { inizio: weekDates[0], fine: weekDates[6] },
     });
   } catch (error) {
-    console.error("Errore nel recupero turni:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-    });
+    console.error("Errore getTurni:", error);
+    return res.status(500).json({ success: false, error: "Errore server" });
   }
 }
 
-// Modifica nella funzione assegnaTurno - aggiungi questa logica prima dell'INSERT/UPDATE:
+// POST - Assegna o Modifica Turno
 async function assegnaTurno(req, res) {
   try {
     const {
@@ -728,61 +328,50 @@ async function assegnaTurno(req, res) {
       current_user_id,
     } = req.body;
 
-    if (
-      !data ||
-      !turno_inizio ||
-      !turno_fine ||
-      user_id === undefined ||
-      user_id === null
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: "Dati mancanti",
-      });
+    // Validazione base
+    if (!data || !turno_inizio || !turno_fine || !user_id) {
+      return res.status(400).json({ error: "Dati mancanti" });
     }
 
-    console.log(`DEBUG - Assegnazione turno per data ${data}, user ${user_id}`);
+    if (turno_inizio >= turno_fine) {
+      return res
+        .status(400)
+        .json({ error: "L'orario di fine deve essere successivo all'inizio" });
+    }
 
-    // Gestione ripercussioni turno chiuso
+    // Gestione notifica Admin per turni straordinari
     if (is_closed_override) {
       await handleClosedTurnoRepercussions(
-        {
-          data,
-          turno_inizio,
-          turno_fine,
-        },
+        { data, turno_inizio, turno_fine },
         user_id,
-        note
+        note,
       );
     }
 
-    // Verifica se esiste già un turno per questa combinazione
-    const esistente = await client.execute({
+    // Controlla se esiste già un turno IDENTICO (stessa data e orari precisi)
+    const existing = await client.execute({
       sql: "SELECT id, user_id FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?",
       args: [data, turno_inizio, turno_fine],
     });
 
     let action = "assigned";
-    let targetUserId = user_id;
     let turnoResult;
 
-    if (esistente.rows.length > 0) {
-      // UPDATE - Turno già esistente
-      const oldUserId = esistente.rows[0].user_id;
+    if (existing.rows.length > 0) {
+      // UPDATE: Il turno esiste già, aggiorniamo l'utente o le note
+      const oldUserId = existing.rows[0].user_id;
 
       if (current_user_id === user_id && current_user_id === oldUserId) {
         action = "self_modified";
       } else if (current_user_id === user_id) {
         action = is_closed_override ? "closed_assigned" : "self_assigned";
-      } else if (oldUserId !== user_id) {
-        action = "assigned";
       }
 
       const result = await client.execute({
         sql: `UPDATE turni 
-              SET user_id = ?, note = ?, fascia_id = NULL, is_closed_override = ? 
-              WHERE data = ? AND turno_inizio = ? AND turno_fine = ?
-              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
+              SET user_id = ?, note = ?, is_closed_override = ?, fascia_id = NULL 
+              WHERE data = ? AND turno_inizio = ? AND turno_fine = ? 
+              RETURNING *`,
         args: [
           user_id,
           note || "",
@@ -792,36 +381,17 @@ async function assegnaTurno(req, res) {
           turno_fine,
         ],
       });
-
       turnoResult = result.rows[0];
-
-      if (action !== "self_modified") {
-        await sendTurnoNotification(
-          action,
-          turnoResult,
-          current_user_id,
-          targetUserId
-        );
-      }
-
-      return res.status(200).json({
-        success: true,
-        turno: turnoResult,
-        turno_id: turnoResult.id,
-        action: "updated",
-      });
     } else {
-      // INSERT - Nuovo turno
+      // INSERT: Nuovo turno (Standard o Extra)
       if (current_user_id === user_id) {
         action = is_closed_override ? "closed_assigned" : "self_assigned";
-      } else {
-        action = "assigned";
       }
 
       const result = await client.execute({
-        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override)
-              VALUES (?, ?, ?, NULL, ?, ?, ?)
-              RETURNING id, data, turno_inizio, turno_fine, fascia_id, user_id, note, is_closed_override`,
+        sql: `INSERT INTO turni (data, turno_inizio, turno_fine, user_id, note, is_closed_override, fascia_id)
+              VALUES (?, ?, ?, ?, ?, ?, NULL) 
+              RETURNING *`,
         args: [
           data,
           turno_inizio,
@@ -831,101 +401,79 @@ async function assegnaTurno(req, res) {
           is_closed_override || false,
         ],
       });
-
       turnoResult = result.rows[0];
+    }
 
+    // Invia notifiche (se non è solo una modifica note personale)
+    if (action !== "self_modified") {
       await sendTurnoNotification(
         action,
         turnoResult,
         current_user_id,
-        targetUserId
+        user_id,
       );
-
-      return res.status(201).json({
-        success: true,
-        turno: turnoResult,
-        turno_id: turnoResult.id,
-        action: "created",
-      });
     }
+
+    return res.status(200).json({ success: true, turno: turnoResult });
   } catch (error) {
-    console.error("Errore nell'assegnazione turno:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-      details: error.message,
-    });
+    console.error("Errore assegnaTurno:", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 }
 
-// DELETE - Rimuovi assegnazione turno
+// DELETE - Rimuovi Turno
 async function rimuoviTurno(req, res) {
   try {
     const { data, turno_inizio, turno_fine, current_user_id } = req.body;
 
     if (!data || !turno_inizio || !turno_fine) {
-      return res.status(400).json({
-        success: false,
-        error: "Dati mancanti",
-      });
+      return res.status(400).json({ error: "Dati mancanti" });
     }
 
-    // Ottieni info del turno prima di rimuoverlo per le notifiche
-    const turnoInfo = await client.execute({
+    // Controlla se il turno esiste per sapere a chi notificare
+    const check = await client.execute({
       sql: "SELECT user_id FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?",
       args: [data, turno_inizio, turno_fine],
     });
 
-    if (turnoInfo.rows.length > 0) {
-      const removedUserId = turnoInfo.rows[0].user_id;
-
-      // Determina il tipo di azione
-      let action = "removed";
-      if (current_user_id === removedUserId) {
-        action = "self_removed";
-      }
-
-      const result = await client.execute({
-        sql: "DELETE FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?",
-        args: [data, turno_inizio, turno_fine],
-      });
-
-      // Invia notifica se il turno è stato effettivamente rimosso
-      if (result.rowsAffected > 0) {
-        await sendTurnoNotification(
-          action,
-          {
-            data,
-            turno_inizio,
-            turno_fine,
-          },
-          current_user_id,
-          removedUserId
-        );
-      }
-
-      return res.status(200).json({
-        success: true,
-        deleted: result.rowsAffected > 0,
-      });
-    } else {
-      return res.status(404).json({
-        success: false,
-        error: "Turno non trovato",
-      });
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: "Turno non trovato" });
     }
-  } catch (error) {
-    console.error("Errore nella rimozione turno:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
+
+    const removedUserId = check.rows[0].user_id;
+
+    // Esegui cancellazione
+    await client.execute({
+      sql: "DELETE FROM turni WHERE data = ? AND turno_inizio = ? AND turno_fine = ?",
+      args: [data, turno_inizio, turno_fine],
     });
+
+    // Gestione Notifica
+    let action = "removed";
+    if (current_user_id === removedUserId) {
+      action = "self_removed";
+    }
+
+    await sendTurnoNotification(
+      action,
+      { data, turno_inizio, turno_fine },
+      current_user_id,
+      removedUserId,
+    );
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Errore rimuoviTurno:", error);
+    return res.status(500).json({ success: false, error: "Errore server" });
   }
 }
 
-// Handler principale
+// ==========================================
+// 6. MAIN HANDLER (ENTRY POINT)
+// ==========================================
+
 export default async function handler(req, res) {
-  // CORS headers
+  // Configurazione CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -935,7 +483,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Test connessione DB
+    // Health check veloce DB
     await client.execute("SELECT 1");
 
     switch (req.method) {
@@ -946,16 +494,10 @@ export default async function handler(req, res) {
       case "DELETE":
         return await rimuoviTurno(req, res);
       default:
-        return res.status(405).json({
-          success: false,
-          error: "Metodo non supportato",
-        });
+        return res.status(405).json({ error: "Metodo non supportato" });
     }
   } catch (error) {
-    console.error("Errore API turni:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-    });
+    console.error("Errore critico API:", error);
+    return res.status(500).json({ error: "Errore interno del server" });
   }
 }

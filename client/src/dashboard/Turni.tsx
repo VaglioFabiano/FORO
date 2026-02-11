@@ -6,7 +6,7 @@ interface Turno {
   data: string;
   turno_inizio: string;
   turno_fine: string;
-  fascia_id: number;
+  fascia_id: number | null;
   user_id: number | null;
   note: string;
   user_name: string;
@@ -18,6 +18,7 @@ interface Turno {
   nota_automatica?: string;
   is_default?: boolean;
   is_closed_override?: boolean;
+  is_placeholder?: boolean; // Nuovo campo dal backend
 }
 
 interface User {
@@ -36,22 +37,31 @@ interface Message {
 type WeekType = "corrente" | "prossima" | "plus2" | "plus3";
 
 const Turni: React.FC = () => {
+  // Stati Dati
   const [turniCorrente, setTurniCorrente] = useState<Turno[]>([]);
   const [turniProssima, setTurniProssima] = useState<Turno[]>([]);
   const [turniPlus2, setTurniPlus2] = useState<Turno[]>([]);
   const [turniPlus3, setTurniPlus3] = useState<Turno[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+
+  // Stati UI
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<Message | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<WeekType>("corrente");
-  const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Stati Form Modale
+  const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [note, setNote] = useState("");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isClosedOverride, setIsClosedOverride] = useState(false);
 
-  // State for search bar
+  // Nuovi Stati per Turni Spezzati
+  const [isPartialTurno, setIsPartialTurno] = useState(false);
+  const [customStartTime, setCustomStartTime] = useState("");
+  const [customEndTime, setCustomEndTime] = useState("");
+
   const [userSearchTerm, setUserSearchTerm] = useState("");
 
   const giorni = [
@@ -63,11 +73,33 @@ const Turni: React.FC = () => {
     "Sabato",
     "Domenica",
   ];
-  const orariTemplate = [
-    "09:00-13:00",
-    "13:00-16:00",
-    "16:00-19:30",
-    "21:00-24:00",
+
+  // Definiamo gli slot visivi standard (0, 1, 2, 3)
+  const standardSlots = [
+    {
+      index: 0,
+      label: "09:00 - 13:00",
+      defaultStart: "09:00",
+      defaultEnd: "13:00",
+    },
+    {
+      index: 1,
+      label: "13:00 - 16:00",
+      defaultStart: "13:00",
+      defaultEnd: "16:00",
+    },
+    {
+      index: 2,
+      label: "16:00 - 19:30",
+      defaultStart: "16:00",
+      defaultEnd: "19:30",
+    },
+    {
+      index: 3,
+      label: "21:00 - 24:00",
+      defaultStart: "21:00",
+      defaultEnd: "24:00",
+    },
   ];
 
   useEffect(() => {
@@ -80,10 +112,9 @@ const Turni: React.FC = () => {
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
-        const user = JSON.parse(userData);
-        setCurrentUser(user);
+        setCurrentUser(JSON.parse(userData));
       } catch (error) {
-        console.error("Errore nel parsing user data:", error);
+        console.error("Errore parsing user data:", error);
       }
     }
   };
@@ -92,12 +123,9 @@ const Turni: React.FC = () => {
     try {
       const response = await fetch("/api/user");
       const data = await response.json();
-
-      if (data.success) {
-        setUsers(data.users);
-      }
+      if (data.success) setUsers(data.users);
     } catch (error) {
-      console.error("Errore nel caricamento utenti:", error);
+      console.error("Errore caricamento utenti:", error);
     }
   };
 
@@ -107,8 +135,8 @@ const Turni: React.FC = () => {
       const settimane: WeekType[] = ["corrente", "prossima", "plus2", "plus3"];
       const promises = settimane.map((settimana) =>
         fetch(`/api/turni?settimana=${settimana}`)
-          .then((response) => response.json())
-          .then((data) => ({ settimana, data }))
+          .then((res) => res.json())
+          .then((data) => ({ settimana, data })),
       );
 
       const results = await Promise.all(promises);
@@ -132,37 +160,65 @@ const Turni: React.FC = () => {
         }
       });
     } catch (error) {
-      console.error("Errore nel caricamento turni:", error);
+      console.error("Errore caricamento turni:", error);
       setMessage({ type: "error", text: "Errore nel caricamento dei turni" });
     } finally {
       setLoading(false);
     }
   };
 
-  // Verifica se un turno DOVREBBE essere chiuso secondo le regole di default
-  const isSlotNaturallyClosed = (
-    dayIndex: number,
-    turnoIndex: number,
-    weekType: WeekType
-  ): boolean => {
-    if (weekType === "plus2" || weekType === "plus3") {
-      if (turnoIndex === 3) return true; // 21:00-24:00
-      if (dayIndex === 5 || dayIndex === 6) return true; // Weekend
+  const getCurrentTurni = (): Turno[] => {
+    switch (selectedWeek) {
+      case "prossima":
+        return turniProssima;
+      case "plus2":
+        return turniPlus2;
+      case "plus3":
+        return turniPlus3;
+      default:
+        return turniCorrente;
     }
-    return false;
   };
 
-  // Verifica se un turno è straordinario
-  const isTurnoStraordinario = (turno: Turno): boolean => {
-    if (!turno.assegnato) return false;
-    if (turno.is_closed_override === true) return true;
-    if (isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek))
-      return true;
-    return false;
+  // --- LOGICA MODALE E INTERAZIONI ---
+
+  // Apre il modale per un turno esistente o un placeholder
+  const handleTurnoClick = (turno: Turno) => {
+    setSelectedTurno(turno);
+    setSelectedUserId(turno.user_id || currentUser?.id || null);
+    setNote(turno.note || "");
+    setUserSearchTerm("");
+
+    // Setup orari custom
+    setCustomStartTime(turno.turno_inizio);
+    setCustomEndTime(turno.turno_fine);
+
+    // Controlla se è un turno spezzato/custom
+    const standardSlot = standardSlots.find(
+      (s) => s.index === turno.turno_index,
+    );
+    if (standardSlot) {
+      const isCustomTime =
+        turno.turno_inizio !== standardSlot.defaultStart ||
+        turno.turno_fine !== standardSlot.defaultEnd;
+      setIsPartialTurno(isCustomTime);
+    } else {
+      setIsPartialTurno(false);
+    }
+
+    // Reset override flag
+    setIsClosedOverride(false);
+    setIsModalOpen(true);
   };
 
-  // Crea pseudo-turno per celle vuote
-  const createClosedTurno = (dayIndex: number, turnoIndex: number): Turno => {
+  // Apre il modale per AGGIUNGERE un nuovo turno in uno slot specifico
+  const handleAddTurnoClick = (
+    dayIndex: number,
+    slotIndex: number,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation(); // Evita di aprire il modale del placeholder sottostante se presente
+
     const weekOffset =
       selectedWeek === "corrente"
         ? 0
@@ -171,29 +227,25 @@ const Turni: React.FC = () => {
           : selectedWeek === "plus2"
             ? 2
             : 3;
-
     const now = new Date();
     const currentDay = now.getDay();
     const monday = new Date(now);
     monday.setDate(
-      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7,
     );
+
     const targetDate = new Date(monday);
     targetDate.setDate(monday.getDate() + dayIndex);
 
-    const orari = [
-      { inizio: "09:00", fine: "13:00" },
-      { inizio: "13:00", fine: "16:00" },
-      { inizio: "16:00", fine: "19:30" },
-      { inizio: "21:00", fine: "24:00" },
-    ];
+    const standardSlot = standardSlots.find((s) => s.index === slotIndex);
 
-    return {
+    // Crea un oggetto turno "nuovo"
+    const newTurno: Turno = {
       id: null,
       data: targetDate.toISOString().split("T")[0],
-      turno_inizio: orari[turnoIndex].inizio,
-      turno_fine: orari[turnoIndex].fine,
-      fascia_id: 1,
+      turno_inizio: standardSlot?.defaultStart || "00:00",
+      turno_fine: standardSlot?.defaultEnd || "00:00",
+      fascia_id: null,
       user_id: null,
       note: "",
       user_name: "",
@@ -201,49 +253,47 @@ const Turni: React.FC = () => {
       user_username: "",
       assegnato: false,
       day_index: dayIndex,
-      turno_index: turnoIndex,
-      nota_automatica: "",
-      is_default: true,
+      turno_index: slotIndex,
+      is_placeholder: false, // È un nuovo inserimento reale
     };
-  };
 
-  const handleTurnoClick = (turno: Turno, isCompletelyClosedCell = false) => {
-    setSelectedTurno(turno);
-    setSelectedUserId(turno.user_id || currentUser?.id || null);
-    setNote(turno.note || "");
-    setUserSearchTerm(""); // Reset search term when opening modal
-
-    if (
-      isCompletelyClosedCell ||
-      isSlotNaturallyClosed(turno.day_index, turno.turno_index, selectedWeek)
-    ) {
-      setIsClosedOverride(false);
-    } else {
-      setIsClosedOverride(false);
-    }
-
+    setSelectedTurno(newTurno);
+    setSelectedUserId(currentUser?.id || null);
+    setNote("");
+    setUserSearchTerm("");
+    setCustomStartTime(newTurno.turno_inizio);
+    setCustomEndTime(newTurno.turno_fine);
+    setIsPartialTurno(false); // Default standard, utente può attivare checkbox
+    setIsClosedOverride(false);
     setIsModalOpen(true);
   };
 
   const handleAssegnaTurno = async () => {
-    if (
-      !selectedTurno ||
-      selectedUserId === null ||
-      selectedUserId === undefined
-    )
+    if (!selectedTurno || !selectedUserId) return;
+
+    // Usa orari custom se la checkbox è attiva, altrimenti usa quelli standard/attuali
+    const finalStart = isPartialTurno
+      ? customStartTime
+      : selectedTurno.turno_inizio;
+    const finalEnd = isPartialTurno ? customEndTime : selectedTurno.turno_fine;
+
+    // Validazione base
+    if (finalStart >= finalEnd) {
+      setMessage({
+        type: "error",
+        text: "L'orario di inizio deve essere precedente alla fine.",
+      });
       return;
+    }
 
     try {
       const response = await fetch("/api/turni", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: selectedTurno.data,
-          turno_inizio: selectedTurno.turno_inizio,
-          turno_fine: selectedTurno.turno_fine,
-          fascia_id: selectedTurno.fascia_id,
+          turno_inizio: finalStart, // Invia i tempi potenzialmente modificati
+          turno_fine: finalEnd,
           user_id: selectedUserId,
           note: note,
           is_closed_override: isClosedOverride,
@@ -254,66 +304,9 @@ const Turni: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: "success", text: "Turno assegnato con successo!" });
-
-        const newTurno: Turno = {
-          ...selectedTurno,
-          id: data.turno_id || data.turno?.id || Date.now(),
-          user_id: selectedUserId,
-          note: note,
-          assegnato: true,
-          user_name: users.find((u) => u.id === selectedUserId)?.name || "",
-          user_surname:
-            users.find((u) => u.id === selectedUserId)?.surname || "",
-          user_username:
-            users.find((u) => u.id === selectedUserId)?.username || "",
-          is_closed_override:
-            isClosedOverride ||
-            isSlotNaturallyClosed(
-              selectedTurno.day_index,
-              selectedTurno.turno_index,
-              selectedWeek
-            ),
-        };
-
-        const updateWeekState = (
-          setter: React.Dispatch<React.SetStateAction<Turno[]>>
-        ) => {
-          setter((prev) => {
-            const filtered = prev.filter(
-              (t) =>
-                !(
-                  t.data === newTurno.data &&
-                  t.turno_inizio === newTurno.turno_inizio &&
-                  t.turno_fine === newTurno.turno_fine
-                )
-            );
-
-            return [...filtered, newTurno].sort((a, b) => {
-              if (a.data !== b.data) return a.data.localeCompare(b.data);
-              if (a.day_index !== b.day_index) return a.day_index - b.day_index;
-              return a.turno_index - b.turno_index;
-            });
-          });
-        };
-
-        switch (selectedWeek) {
-          case "corrente":
-            updateWeekState(setTurniCorrente);
-            break;
-          case "prossima":
-            updateWeekState(setTurniProssima);
-            break;
-          case "plus2":
-            updateWeekState(setTurniPlus2);
-            break;
-          case "plus3":
-            updateWeekState(setTurniPlus3);
-            break;
-        }
-
+        setMessage({ type: "success", text: "Turno salvato con successo!" });
         closeModal();
-        fetchAllTurni();
+        fetchAllTurni(); // Ricarica tutto per avere la vista aggiornata dal backend
       } else {
         setMessage({
           type: "error",
@@ -321,20 +314,17 @@ const Turni: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Errore nell'assegnazione turno:", error);
+      console.error("Errore assegnazione:", error);
       setMessage({ type: "error", text: "Errore di connessione" });
     }
   };
 
   const handleRimuoviTurno = async () => {
     if (!selectedTurno) return;
-
     try {
       const response = await fetch("/api/turni", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: selectedTurno.data,
           turno_inizio: selectedTurno.turno_inizio,
@@ -346,7 +336,7 @@ const Turni: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        setMessage({ type: "success", text: "Turno rimosso con successo!" });
+        setMessage({ type: "success", text: "Turno rimosso!" });
         fetchAllTurni();
         closeModal();
       } else {
@@ -356,7 +346,6 @@ const Turni: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error("Errore nella rimozione turno:", error);
       setMessage({ type: "error", text: "Errore di connessione" });
     }
   };
@@ -364,10 +353,18 @@ const Turni: React.FC = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedTurno(null);
-    setSelectedUserId(null);
-    setNote("");
-    setIsClosedOverride(false);
-    setUserSearchTerm(""); // Reset search term when closing modal
+    setIsPartialTurno(false);
+  };
+
+  // --- UTILS PER RENDER ---
+
+  const isSlotNaturallyClosed = (dayIndex: number, turnoIndex: number) => {
+    // Sera (3) sempre chiusa di default, Weekend (5,6) chiusi
+    // Ma se selezioniamo "Prossima" o "Corrente", la logica potrebbe variare.
+    // Manteniamo semplice: Sera e Weekend sono "extra"
+    if (turnoIndex === 3) return true;
+    if (dayIndex === 5 || dayIndex === 6) return true;
+    return false;
   };
 
   const formatDate = (dateString: string) => {
@@ -383,102 +380,60 @@ const Turni: React.FC = () => {
     const currentDay = now.getDay();
     const monday = new Date(now);
     monday.setDate(
-      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7,
     );
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-
     return `${monday.getDate()}-${sunday.getDate()} ${monday.toLocaleDateString("it-IT", { month: "long" })}`;
   };
 
-  const getCurrentWeekRange = () => getWeekRange(0);
-  const getNextWeekRange = () => getWeekRange(1);
-  const getPlus2WeekRange = () => getWeekRange(2);
-  const getPlus3WeekRange = () => getWeekRange(3);
-
-  const getCurrentTurni = (): Turno[] => {
-    switch (selectedWeek) {
-      case "prossima":
-        return turniProssima;
-      case "plus2":
-        return turniPlus2;
-      case "plus3":
-        return turniPlus3;
-      default:
-        return turniCorrente;
+  // Filtraggio Utenti
+  const filteredUsers = users.filter(
+    (user) =>
+      `${user.name} ${user.surname}`
+        .toLowerCase()
+        .includes(userSearchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(userSearchTerm.toLowerCase()),
+  );
+  useEffect(() => {
+    if (
+      filteredUsers.length === 1 &&
+      userSearchTerm !== "" &&
+      !selectedUserId
+    ) {
+      setSelectedUserId(filteredUsers[0].id);
     }
-  };
+  }, [filteredUsers, userSearchTerm, selectedUserId]);
 
-  // Organizza turni per rendering dinamico della griglia
-  const organizeRenderingData = (turni: Turno[]) => {
-    const turniPerGiorno: { [dayIndex: number]: { [key: string]: Turno } } = {};
+  // --- RENDER GRID ---
 
-    // Inizializza struttura per ogni giorno
-    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-      turniPerGiorno[dayIndex] = {};
-    }
+  const renderTurniGrid = () => {
+    const turniAttuali = getCurrentTurni();
 
-    // Organizza turni esistenti
-    turni.forEach((turno) => {
-      const key = `${turno.turno_inizio}-${turno.turno_fine}`;
-      if (!turniPerGiorno[turno.day_index]) {
-        turniPerGiorno[turno.day_index] = {};
-      }
-      turniPerGiorno[turno.day_index][key] = turno;
-    });
-
-    return turniPerGiorno;
-  };
-
-  // Ottieni tutti gli orari unici per una settimana
-  const getUniqueTimeSlots = (turni: Turno[]) => {
-    const slotsSet = new Set<string>();
-
-    // Aggiungi slot standard come fallback
-    orariTemplate.forEach((slot) => slotsSet.add(slot));
-
-    // Aggiungi slot dai turni reali
-    turni.forEach((turno) => {
-      const slot = `${turno.turno_inizio}-${turno.turno_fine}`;
-      slotsSet.add(slot);
-    });
-
-    const slots = Array.from(slotsSet).sort((a, b) => {
-      const [aStart] = a.split("-");
-      const [bStart] = b.split("-");
-      return aStart.localeCompare(bStart);
-    });
-
-    return slots;
-  };
-
- const renderTurniGrid = (turni: Turno[]) => {
-    const turniPerGiorno = organizeRenderingData(turni);
-    const timeSlots = getUniqueTimeSlots(turni);
-
-    // Calcolo del lunedì della settimana selezionata
+    // Calcolo date intestazione
     const weekOffset =
-      selectedWeek === "corrente" ? 0 : 
-      selectedWeek === "prossima" ? 1 : 
-      selectedWeek === "plus2" ? 2 : 3;
-
+      selectedWeek === "corrente"
+        ? 0
+        : selectedWeek === "prossima"
+          ? 1
+          : selectedWeek === "plus2"
+            ? 2
+            : 3;
     const now = new Date();
     const currentDay = now.getDay();
     const monday = new Date(now);
-    // Riporta al lunedì e aggiunge l'offset
     monday.setDate(
-      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7
+      now.getDate() - (currentDay === 0 ? 6 : currentDay - 1) + weekOffset * 7,
     );
 
     return (
       <div className="turni-grid">
+        {/* HEADER */}
         <div className="turni-header">
           <div className="turni-time-column">Orari</div>
           {giorni.map((giorno, index) => {
-            // Calcola la data esatta per ogni colonna (Lunedì + index giorni)
             const dateForColumn = new Date(monday);
             dateForColumn.setDate(monday.getDate() + index);
-            
             return (
               <div key={index} className="turni-day-header">
                 <div className="day-name">{giorno}</div>
@@ -493,68 +448,89 @@ const Turni: React.FC = () => {
           })}
         </div>
 
+        {/* BODY */}
         <div className="turni-body">
-          {timeSlots.map((timeSlot, slotIndex) => (
-            <div key={slotIndex} className="turni-row">
-              <div className="turni-time-cell">{timeSlot}</div>
+          {standardSlots.map((slot) => (
+            <div key={slot.index} className="turni-row">
+              <div className="turni-time-cell">{slot.label}</div>
+
               {giorni.map((_, dayIndex) => {
-                const turno = turniPerGiorno[dayIndex][timeSlot];
-                const [slotStart, slotEnd] = timeSlot.split("-");
-
-                const standardSlotIndex = orariTemplate.findIndex(
-                  (slot) => slot === timeSlot
+                // Filtra i turni per questa cella specifica (Giorno + Slot Visivo)
+                const turniCella = turniAttuali.filter(
+                  (t) =>
+                    t.day_index === dayIndex && t.turno_index === slot.index,
                 );
-                const turnoIndex =
-                  standardSlotIndex !== -1 ? standardSlotIndex : slotIndex;
 
-                const isSlotClosed = isSlotNaturallyClosed(
-                  dayIndex,
-                  turnoIndex,
-                  selectedWeek
+                // Separa placeholder e turni reali
+                const realShifts = turniCella.filter(
+                  (t) => !t.is_placeholder && t.assegnato,
                 );
-                const isStraordinario = turno ? isTurnoStraordinario(turno) : false;
+                const placeholder = turniCella.find((t) => t.is_placeholder);
+
+                const isClosed = isSlotNaturallyClosed(dayIndex, slot.index);
 
                 return (
                   <div
-                    key={`${dayIndex}-${slotIndex}`}
-                    className={`turni-cell ${
-                      turno?.assegnato
-                        ? isStraordinario
-                          ? "assigned-extraordinary"
-                          : "assigned"
-                        : turno && !isSlotClosed
-                          ? "available"
-                          : "closed"
-                    }`}
-                    onClick={() => {
-                      if (turno) {
-                        handleTurnoClick(turno);
-                      } else {
-                        const pseudoTurno = createClosedTurno(dayIndex, turnoIndex);
-                        pseudoTurno.turno_inizio = slotStart;
-                        pseudoTurno.turno_fine = slotEnd;
-                        handleTurnoClick(pseudoTurno, true);
-                      }
-                    }}
+                    key={`${dayIndex}-${slot.index}`}
+                    className={`turni-cell-container ${isClosed ? "closed-slot" : ""}`}
                   >
-                    {turno?.assegnato ? (
-                      <div className={`turno-assigned ${isStraordinario ? "straordinario" : ""}`}>
-                        <div className="user-name">
-                          {turno.user_name} {turno.user_surname}
-                        </div>
-                        {isStraordinario && (
-                          <div className="turno-straordinario-badge">⚡ Straordinario</div>
-                        )}
-                        {turno.note && (
-                          <div className="turno-note" title={turno.note}>
-                            {turno.note}
+                    {/* Caso 1: Ci sono turni reali (Standard o Spezzati) */}
+                    {realShifts.length > 0 ? (
+                      <>
+                        {realShifts.map((turno) => (
+                          <div
+                            key={turno.id}
+                            className={`turno-card ${turno.is_closed_override ? "extraordinary" : "standard"}`}
+                            onClick={() => handleTurnoClick(turno)}
+                          >
+                            <div className="turno-card-time">
+                              {turno.turno_inizio}-{turno.turno_fine}
+                            </div>
+                            <div className="turno-card-user">
+                              {turno.user_name} {turno.user_surname}
+                            </div>
+                            {turno.note && (
+                              <div className="turno-card-note">📝</div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        ))}
+                        {/* Bottone + per aggiungere altri turni nello stesso slot (es. buchi) */}
+                        <button
+                          className="add-shift-btn-mini"
+                          title="Aggiungi altro turno in questo orario"
+                          onClick={(e) =>
+                            handleAddTurnoClick(dayIndex, slot.index, e)
+                          }
+                        >
+                          +
+                        </button>
+                      </>
                     ) : (
-                      <div className="turno-closed">
-                        <div>{isSlotClosed ? "Chiuso" : "Disponibile"}</div>
-                        <div style={{ fontSize: "9px" }}>(Clicca per gestire)</div>
+                      /* Caso 2: Slot vuoto (mostra placeholder cliccabile) */
+                      <div
+                        className="turno-placeholder"
+                        onClick={() =>
+                          placeholder
+                            ? handleTurnoClick(placeholder)
+                            : handleAddTurnoClick(
+                                dayIndex,
+                                slot.index,
+                                {} as any,
+                              )
+                        }
+                      >
+                        <span className="placeholder-text">
+                          {isClosed ? "Chiuso" : "Disponibile"}
+                        </span>
+                        {/* Bottone + grande per slot vuoti */}
+                        <button
+                          className="add-shift-btn-large"
+                          onClick={(e) =>
+                            handleAddTurnoClick(dayIndex, slot.index, e)
+                          }
+                        >
+                          +
+                        </button>
                       </div>
                     )}
                   </div>
@@ -567,32 +543,7 @@ const Turni: React.FC = () => {
     );
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      `${user.name} ${user.surname}`
-        .toLowerCase()
-        .includes(userSearchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(userSearchTerm.toLowerCase())
-  );
-
-  useEffect(() => {
-    // Auto-seleziona l'utente quando c'è un solo risultato filtrato
-    if (
-      filteredUsers.length === 1 &&
-      userSearchTerm !== "" &&
-      !selectedUserId
-    ) {
-      setSelectedUserId(filteredUsers[0].id);
-    }
-    // Deseleziona se l'utente selezionato non è più nei risultati filtrati
-    if (
-      selectedUserId &&
-      filteredUsers.length > 0 &&
-      !filteredUsers.some((user) => user.id === selectedUserId)
-    ) {
-      setSelectedUserId(null);
-    }
-  }, [filteredUsers, userSearchTerm, selectedUserId]);
+  // --- RENDER COMPONENT ---
 
   if (loading) {
     return (
@@ -609,34 +560,32 @@ const Turni: React.FC = () => {
     <div className="turni-container">
       <div className="turni-header-section">
         <h1>📅 Gestione Turni</h1>
-
         <div className="week-selector">
           <button
             className={`week-button ${selectedWeek === "corrente" ? "active" : ""}`}
             onClick={() => setSelectedWeek("corrente")}
           >
-            Settimana Corrente ({getCurrentWeekRange()})
+            Settimana Corrente ({getWeekRange(0)})
           </button>
           <button
             className={`week-button ${selectedWeek === "prossima" ? "active" : ""}`}
             onClick={() => setSelectedWeek("prossima")}
           >
-            Prossima Settimana ({getNextWeekRange()})
+            Prossima Settimana ({getWeekRange(1)})
           </button>
           <button
             className={`week-button ${selectedWeek === "plus2" ? "active" : ""}`}
             onClick={() => setSelectedWeek("plus2")}
           >
-            Settimana ({getPlus2WeekRange()})
+            ({getWeekRange(2)})
           </button>
           <button
             className={`week-button ${selectedWeek === "plus3" ? "active" : ""}`}
             onClick={() => setSelectedWeek("plus3")}
           >
-            Settimana ({getPlus3WeekRange()})
+            ({getWeekRange(3)})
           </button>
         </div>
-
         <button onClick={fetchAllTurni} className="refresh-button">
           🔄 Aggiorna
         </button>
@@ -645,68 +594,109 @@ const Turni: React.FC = () => {
       {message && (
         <div className={`turni-message ${message.type}`}>
           <div className="message-icon">
-            {message.type === "success" ? "✅" : message.type === "error" ? "❌" : "ℹ️"}
+            {message.type === "success" ? "✅" : "❌"}
           </div>
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="close-message">×</button>
+          <button onClick={() => setMessage(null)} className="close-message">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Richiamo della funzione corretta qui */}
-      <div className="turni-content">
-        {renderTurniGrid(getCurrentTurni())}
-      </div>
+      <div className="turni-content">{renderTurniGrid()}</div>
 
+      {/* MODALE */}
       {isModalOpen && selectedTurno && (
         <div className="turno-modal-overlay" onClick={closeModal}>
-          <div className="turno-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="turno-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="turno-modal-header">
               <h3>
-                {isSlotNaturallyClosed(selectedTurno.day_index, selectedTurno.turno_index, selectedWeek) && !selectedTurno.assegnato
-                  ? "⚠️ Richiesta Turno Straordinario"
-                  : "Gestisci Turno"}
+                {selectedTurno.assegnato ? "Modifica Turno" : "Assegna Turno"}
               </h3>
-              <button onClick={closeModal} className="close-button">✕</button>
+              <button onClick={closeModal} className="close-button">
+                ✕
+              </button>
             </div>
 
             <div className="turno-modal-body">
               <div className="turno-info">
-                <p><strong>Data:</strong> {formatDate(selectedTurno.data)}</p>
-                <p><strong>Orario:</strong> {selectedTurno.turno_inizio} - {selectedTurno.turno_fine}</p>
+                <p>
+                  <strong>Data:</strong> {formatDate(selectedTurno.data)}
+                </p>
+                <p>
+                  <strong>Slot:</strong>{" "}
+                  {standardSlots[selectedTurno.turno_index]?.label}
+                </p>
               </div>
 
+              {/* Checkbox Turno Parziale */}
+              <div className="form-group-checkbox">
+                <input
+                  type="checkbox"
+                  id="partial-check"
+                  checked={isPartialTurno}
+                  onChange={(e) => setIsPartialTurno(e.target.checked)}
+                />
+                <label htmlFor="partial-check">
+                  ✏️ Modifica orari (Turno Spezzato/Parziale)
+                </label>
+              </div>
+
+              {/* Input Orari (Visibili solo se checkbox attiva) */}
+              {isPartialTurno && (
+                <div className="time-inputs-row">
+                  <div className="form-group half">
+                    <label>Inizio</label>
+                    <input
+                      type="time"
+                      value={customStartTime}
+                      onChange={(e) => setCustomStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group half">
+                    <label>Fine</label>
+                    <input
+                      type="time"
+                      value={customEndTime}
+                      onChange={(e) => setCustomEndTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="form-group">
-                <label htmlFor="user-select">Seleziona Utente:</label>
+                <label>Utente:</label>
                 <input
                   type="text"
-                  placeholder="Cerca utente..."
+                  placeholder="Cerca..."
                   value={userSearchTerm}
                   onChange={(e) => setUserSearchTerm(e.target.value)}
                   className="user-search-input"
                 />
                 <select
-                  id="user-select"
                   value={selectedUserId || ""}
                   onChange={(e) => setSelectedUserId(Number(e.target.value))}
                   size={5}
                 >
-                  <option value="">Seleziona un utente</option>
-                  {filteredUsers.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} {user.surname} ({user.username})
+                  <option value="">Seleziona utente</option>
+                  {filteredUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} {u.surname}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="form-group">
-                <label htmlFor="note-input">Note (opzionale):</label>
+                <label>Note:</label>
                 <input
                   type="text"
-                  id="note-input"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder="Aggiungi una nota..."
+                  placeholder="..."
                 />
               </div>
             </div>
@@ -714,16 +704,19 @@ const Turni: React.FC = () => {
             <div className="turno-modal-actions">
               {selectedTurno.assegnato && (
                 <button onClick={handleRimuoviTurno} className="remove-button">
-                  Rimuovi Assegnazione
+                  Rimuovi
                 </button>
               )}
-              <button onClick={closeModal} className="cancel-button">Annulla</button>
+              <div style={{ flex: 1 }}></div>
+              <button onClick={closeModal} className="cancel-button">
+                Annulla
+              </button>
               <button
                 onClick={handleAssegnaTurno}
                 className="assign-button"
                 disabled={!selectedUserId}
               >
-                {selectedTurno.assegnato ? "Modifica" : "Assegna"} Turno
+                {selectedTurno.assegnato ? "Salva Modifiche" : "Assegna"}
               </button>
             </div>
           </div>
