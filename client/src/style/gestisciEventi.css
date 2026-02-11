@@ -1,400 +1,172 @@
-/* ========== AGGIUNTA CSS PER BROADCAST EMAIL ========== */
+/* =========================================
+   CONTAINER E STRUTTURA GENERALE
+   ========================================= */
+.eventi-container {
+  min-height: 100vh;
+  background-color: rgb(248, 233, 205); /* Sfondo Beige come Turni */
+  padding: 10px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow-x: hidden;
+}
 
-/* Messaggi di successo e errore migliorati */
+.eventi-header-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 69, 19, 0.1);
+}
+
+.eventi-header-section h1 {
+  color: #8b4513; /* Marrone scuro */
+  font-size: 24px;
+  margin: 0;
+  text-align: center;
+  font-weight: 700;
+}
+
+.eventi-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* =========================================
+   BOTTONI GENERALI (Stile Turni)
+   ========================================= */
+.refresh-button,
+.action-button {
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  flex: 1;
+  justify-content: center;
+  min-width: 120px;
+}
+
+/* Bottone Aggiorna (Arancione/Marrone) */
+.refresh-button {
+  background: linear-gradient(135deg, #d2691e 0%, #cd853f 100%);
+  color: white;
+  box-shadow: 0 2px 5px rgba(210, 105, 30, 0.3);
+}
+
+.refresh-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(210, 105, 30, 0.4);
+}
+
+/* Bottone Crea (Verde Foresta - coerente con palette naturale) */
+.action-button.create {
+  background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
+  color: white;
+  box-shadow: 0 2px 5px rgba(46, 125, 50, 0.3);
+}
+
+.action-button.cancel {
+  background: #f5f5f5;
+  color: #555;
+  border: 1px solid #ccc;
+}
+
+.refresh-button:disabled,
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =========================================
+   MESSAGGI
+   ========================================= */
 .eventi-message {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 20px 25px;
-  margin-bottom: 25px;
-  border-radius: 12px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   animation: slideInDown 0.3s ease-out;
 }
 
-.eventi-message.error {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: #dc2626;
-  border: 2px solid #f87171;
-}
-
 .eventi-message.success {
-  background: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%);
-  color: #059669;
-  border: 2px solid #6ee7b7;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
 }
 
-.message-icon {
-  font-size: 1.2rem;
+.eventi-message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
 .close-message {
   margin-left: auto;
   background: none;
   border: none;
+  font-size: 18px;
+  cursor: pointer;
   color: inherit;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.close-message:hover {
-  background: rgba(0, 0, 0, 0.1);
-}
-
-/* Form broadcast email */
-.broadcast-form {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(12, 73, 91, 0.15);
-  border: 2px solid rgba(12, 73, 91, 0.1);
-  overflow: hidden;
-  animation: slideInDown 0.4s ease-out;
-}
-
-.broadcast-form .form-header {
-  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
-  color: white;
-  padding: 25px 30px;
-}
-
-.broadcast-form .form-header h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.broadcast-form .form-header p {
-  margin: 0;
-  opacity: 0.9;
-  font-size: 0.95rem;
-}
-
-.broadcast-form .form-content {
-  padding: 30px;
-}
-
-.broadcast-form .form-group textarea {
-  min-height: 120px;
-  resize: vertical;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.6;
-}
-
-.broadcast-form .form-help {
-  color: #666;
-  font-size: 0.85rem;
-  margin-top: 8px;
-  font-style: italic;
-}
-
-/* Bottone broadcast */
-.btn-broadcast {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  transition: all 0.3s ease;
-  margin-right: 8px;
-}
-
-.btn-broadcast:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d35400 0%, #e67e22 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(230, 126, 34, 0.3);
-}
-
-.btn-broadcast:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Bottone invio broadcast */
-.btn-send-broadcast {
-  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 18px 24px;
-  font-weight: 600;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  min-width: 200px;
-}
-
-.btn-send-broadcast:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d35400 0%, #e67e22 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(230, 126, 34, 0.4);
-}
-
-.btn-send-broadcast:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Spinner per il loading del broadcast */
-.button-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-/* Miglioramenti esistenti */
-.event-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-edit,
-.btn-delete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  transition: all 0.3s ease;
-}
-
-.btn-edit {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: white;
-}
-
-.btn-edit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(52, 152, 219, 0.3);
-}
-
-.btn-delete {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  color: white;
-}
-
-.btn-delete:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(231, 76, 60, 0.3);
-}
-
-.btn-edit:disabled,
-.btn-delete:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Expand icon migliorato */
-.expand-icon {
-  font-size: 0.9rem;
-  color: rgb(12, 73, 91);
-  transition: transform 0.3s ease;
-  margin-left: 8px;
-}
-
-.expand-icon.expanded {
-  transform: rotate(180deg);
-}
-
-/* Animazioni */
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Form styling migliorato */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-group label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgb(12, 73, 91);
-  font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 15px 18px;
-  border: 2px solid rgba(12, 73, 91, 0.1);
-  border-radius: 10px;
-  font-size: 1rem;
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
-  transition: all 0.3s ease;
-  outline: none;
-  font-family: inherit;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  border-color: rgb(12, 73, 91);
-  background: rgba(255, 255, 255, 1);
-  box-shadow: 0 0 0 3px rgba(12, 73, 91, 0.1);
-}
-
-.form-group input:disabled,
-.form-group select:disabled,
-.form-group textarea:disabled {
   opacity: 0.6;
-  cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.5);
 }
 
-.form-actions {
-  display: flex;
-  gap: 15px;
-  padding-top: 25px;
-  border-top: 1px solid rgba(12, 73, 91, 0.1);
-  flex-wrap: wrap;
-}
-
-/* Bottoni form generici */
-.btn-create,
-.btn-save,
-.btn-cancel {
-  padding: 15px 24px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 140px;
-}
-
-.btn-create,
-.btn-save {
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-  color: white;
-}
-
-.btn-create:hover:not(:disabled),
-.btn-save:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(46, 204, 113, 0.3);
-}
-
-.btn-cancel {
-  background: rgba(108, 117, 125, 0.1);
-  color: #6c757d;
-  border: 2px solid rgba(108, 117, 125, 0.2);
-}
-
-.btn-cancel:hover:not(:disabled) {
-  background: rgba(108, 117, 125, 0.2);
-  border-color: rgba(108, 117, 125, 0.4);
-  transform: translateY(-1px);
-}
-
-.btn-create:disabled,
-.btn-save:disabled,
-.btn-cancel:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Event card styling migliorato */
+/* =========================================
+   CARD EVENTI
+   ========================================= */
 .event-card {
   background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(139, 69, 19, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(12, 73, 91, 0.1);
-  border: 2px solid rgba(12, 73, 91, 0.05);
-  transition: all 0.4s ease;
-  margin-bottom: 25px;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .event-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(12, 73, 91, 0.15);
-  border-color: rgba(12, 73, 91, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(139, 69, 19, 0.15);
 }
 
+/* Header della Card (Titolo e Immagine) */
 .event-header {
+  padding: 15px;
   display: flex;
   align-items: center;
-  padding: 20px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.event-header:hover {
-  background: rgba(12, 73, 91, 0.02);
+  background: linear-gradient(
+    to right,
+    #fff,
+    #fffbf0
+  ); /* Sfumatura leggera beige */
 }
 
 .event-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 12px;
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
   overflow: hidden;
-  margin-right: 20px;
+  margin-right: 15px;
+  border: 1px solid rgba(139, 69, 19, 0.1);
   flex-shrink: 0;
+  background-color: #eee;
 }
 
 .event-image img {
@@ -406,336 +178,377 @@
 .no-image {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(12, 73, 91, 0.1) 0%, rgba(12, 73, 91, 0.05) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
-  color: #999;
-  text-align: center;
-}
-
-.no-image span:first-child {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
+  font-size: 10px;
+  color: #8b4513;
+  opacity: 0.5;
 }
 
 .event-info {
   flex: 1;
-  min-width: 0;
-}
-
-.event-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-  gap: 10px;
+  min-width: 0; /* Impedisce overflow del testo */
 }
 
 .event-title h3 {
-  font-size: 1.3rem;
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  color: #8b4513;
   font-weight: 700;
-  color: rgb(12, 73, 91);
-  margin: 0;
-  line-height: 1.3;
+  line-height: 1.2;
+}
+
+.event-date {
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .participant-count {
-  background: linear-gradient(135deg, rgba(12, 73, 91, 0.1) 0%, rgba(12, 73, 91, 0.05) 100%);
-  color: rgb(12, 73, 91);
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 11px;
+  background-color: #f0e6d2;
+  color: #8b4513;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
   font-weight: 600;
   white-space: nowrap;
 }
 
-.event-date {
-  color: #2196F3;
-  font-weight: 600;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* Icona Espandi */
+.expand-icon {
+  margin-left: 10px;
+  color: #8b4513;
+  transition: transform 0.3s;
+  font-size: 12px;
+}
+.expand-icon.expanded {
+  transform: rotate(180deg);
 }
 
+/* =========================================
+   CONTENUTO ESPANSO (Dettagli e Prenotazioni)
+   ========================================= */
 .event-content {
-  padding: 0 20px 20px;
-  border-top: 1px solid rgba(12, 73, 91, 0.1);
-  animation: slideInDown 0.3s ease-out;
-}
-
-.event-description {
-  padding: 20px 0;
-  border-bottom: 1px solid rgba(12, 73, 91, 0.1);
-  margin-bottom: 20px;
+  padding: 15px;
+  border-top: 1px dashed rgba(139, 69, 19, 0.2);
+  background-color: #fffbf5; /* Beige chiarissimo */
+  animation: slideDown 0.3s ease-out;
 }
 
 .event-description p {
-  color: #666;
-  line-height: 1.6;
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-/* Prenotazioni styling */
-.prenotazioni-section h4 {
-  color: rgb(12, 73, 91);
-  font-size: 1.2rem;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.5;
   margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.total-participants {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 400;
-}
-
-.prenotazioni-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.prenotazione-item {
-  background: rgba(12, 73, 91, 0.03);
-  border: 1px solid rgba(12, 73, 91, 0.1);
-  border-radius: 12px;
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  transition: all 0.3s ease;
-}
-
-.prenotazione-item:hover {
-  background: rgba(12, 73, 91, 0.05);
-  border-color: rgba(12, 73, 91, 0.2);
-}
-
-.prenotazione-info {
-  flex: 1;
-}
-
-.prenotazione-info > div {
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-}
-
-.prenotazione-info > div:last-child {
-  margin-bottom: 0;
-}
-
-.partecipante-nome {
-  font-weight: 600;
-  color: rgb(12, 73, 91);
-}
-
-.partecipante-email {
-  color: #2196F3;
-}
-
-.prenotazione-data,
-.num-biglietti {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.prenotazione-actions {
-  margin-left: 15px;
-}
-
-.btn-delete-small {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-delete-small:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
-}
-
-.no-prenotazioni {
-  text-align: center;
-  padding: 40px 20px;
-  color: #999;
-}
-
-.no-prenotazioni span {
-  font-size: 2rem;
-  display: block;
-  margin-bottom: 10px;
-}
-
-.no-prenotazioni p {
-  margin: 0;
   font-style: italic;
 }
 
-/* Responsive Design */
+/* Sezione Prenotazioni */
+.prenotazioni-section h4 {
+  color: #8b4513;
+  font-size: 14px;
+  text-transform: uppercase;
+  border-bottom: 2px solid rgba(139, 69, 19, 0.1);
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.prenotazione-item {
+  background: white;
+  border: 1px solid rgba(139, 69, 19, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.prenotazione-info {
+  font-size: 13px;
+  color: #333;
+}
+
+.partecipante-nome {
+  font-weight: 700;
+  color: #1565c0; /* Blu scuro per i nomi, leggibile */
+  margin-bottom: 2px;
+}
+
+.partecipante-email,
+.prenotazione-data {
+  font-size: 11px;
+  color: #777;
+}
+
+/* Bottoni Azioni Evento (Edit/Delete/Email) */
+.event-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.btn-edit,
+.btn-delete,
+.btn-broadcast,
+.btn-delete-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-broadcast {
+  background: #ff9800;
+  color: white;
+} /* Arancione */
+.btn-edit {
+  background: #2196f3;
+  color: white;
+} /* Blu */
+.btn-delete,
+.btn-delete-small {
+  background: #f44336;
+  color: white;
+} /* Rosso */
+
+.btn-broadcast:hover,
+.btn-edit:hover,
+.btn-delete:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   FORMS (Nuovo Evento, Modifica, Broadcast)
+   ========================================= */
+.new-event-form,
+.broadcast-form,
+.edit-form {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #8b4513;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.form-header h2,
+.edit-form h4 {
+  color: #8b4513;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+  border-bottom: 1px solid rgba(139, 69, 19, 0.1);
+  padding-bottom: 10px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8b4513;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(139, 69, 19, 0.3);
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #d2691e;
+  box-shadow: 0 0 0 2px rgba(210, 105, 30, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-create,
+.btn-save,
+.btn-send-broadcast {
+  flex: 2;
+  background: #2e7d32;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.btn-cancel {
+  flex: 1;
+  background: #e0e0e0;
+  color: #555;
+  border: none;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN (Mobile)
+   ========================================= */
 @media (max-width: 768px) {
-  .broadcast-form .form-content,
-  .event-content {
-    padding: 20px;
+  .eventi-container {
+    padding: 5px;
   }
-  
-  .broadcast-form .form-header {
-    padding: 20px;
+
+  /* Header più compatto su mobile */
+  .eventi-header-section {
+    padding: 10px;
+    gap: 10px;
   }
-  
+
+  .eventi-header-section h1 {
+    font-size: 20px;
+  }
+
+  /* Bottoni azioni full width su mobile */
+  .eventi-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .action-button,
+  .refresh-button {
+    width: 100%;
+  }
+
+  /* Card Evento ottimizzata per mobile */
   .event-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 15px;
+    padding: 10px;
   }
-  
+
   .event-image {
-    width: 100%;
-    height: 120px;
-    margin-right: 0;
-    margin-bottom: 15px;
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
   }
-  
-  .event-actions {
-    justify-content: center;
-    margin-top: 15px;
+
+  .event-title h3 {
+    font-size: 15px;
   }
-  
-  .event-title {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-  
+
   .participant-count {
-    align-self: flex-start;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .btn-create,
-  .btn-save,
-  .btn-cancel,
-  .btn-send-broadcast {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .prenotazione-item {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .prenotazione-actions {
+    display: inline-block;
+    margin-top: 4px;
     margin-left: 0;
-    align-self: flex-end;
+    font-size: 10px;
   }
-  
+
+  .event-actions {
+    /* Spostare le azioni sotto su schermi molto piccoli? 
+       No, meglio tenerle accessibili. Riduciamo gap. */
+    gap: 3px;
+  }
+
+  .btn-edit,
+  .btn-delete,
+  .btn-broadcast {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  /* Form a colonna singola */
   .form-grid {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 480px) {
-  .eventi-container {
-    padding: 0 10px;
-  }
-  
-  .event-card {
-    margin-bottom: 20px;
-  }
-  
-  .event-header {
-    padding: 15px;
-  }
-  
-  .event-content {
-    padding: 0 15px 15px;
-  }
-  
-  .broadcast-form .form-content {
-    padding: 15px;
-  }
-  
-  .broadcast-form .form-header {
-    padding: 15px;
-  }
-  
-  .btn-broadcast,
-  .btn-edit,
-  .btn-delete {
-    width: 36px;
-    height: 36px;
-    font-size: 1rem;
-  }
-  
-  .event-actions {
-    gap: 6px;
-  }
-}
-
-/* Focus states per accessibilità */
-.btn-broadcast:focus,
-.btn-edit:focus,
-.btn-delete:focus,
-.btn-send-broadcast:focus,
-.btn-create:focus,
-.btn-save:focus,
-.btn-cancel:focus {
-  outline: 2px solid #2196F3;
-  outline-offset: 2px;
-}
-
-/* Miglioramenti per la riduzione del movimento */
-@media (prefers-reduced-motion: reduce) {
-  .event-card,
-  .btn-broadcast,
-  .btn-edit,
-  .btn-delete,
-  .btn-send-broadcast,
-  .btn-create,
-  .btn-save,
-  .btn-cancel,
   .prenotazione-item {
-    transition: none;
-    animation: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
-  
-  .event-card:hover,
-  .btn-broadcast:hover,
-  .btn-edit:hover,
-  .btn-delete:hover,
-  .btn-send-broadcast:hover,
-  .btn-create:hover,
-  .btn-save:hover {
-    transform: none;
+
+  .prenotazione-actions {
+    align-self: flex-end;
+    margin-top: -30px; /* Hack per allineare col nome */
   }
-  
-  .expand-icon {
-    transition: none;
+}
+
+/* =========================================
+   LOADING & ANIMAZIONI
+   ========================================= */
+.eventi-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #8b4513;
+}
+
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(139, 69, 19, 0.1);
+  border-top: 3px solid #8b4513;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
-  
-  .button-spinner {
-    animation: none;
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
   }
 }
