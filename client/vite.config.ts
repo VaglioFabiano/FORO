@@ -7,21 +7,21 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      // Qui diciamo a Vite di portarsi dietro entrambi i file
+      // Diciamo a Vite di includere esplicitamente i file
       includeAssets: ["favicon.png", "logo-app.png"],
       manifest: {
         name: "FORO",
         short_name: "FORO",
         description: "Gestionale FORO",
-        theme_color: "#000000",
+        theme_color: "#ffffff",
         background_color: "#ffffff",
         display: "standalone",
         scope: "/",
         start_url: "/",
         orientation: "portrait",
         icons: [
-          // Qui usiamo SOLO l'immagine con sfondo pieno per l'installazione
           {
+            // Android userà questa (Sfondo pieno)
             src: "/logo-app.png",
             sizes: "192x192",
             type: "image/png",
