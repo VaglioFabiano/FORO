@@ -149,7 +149,7 @@ const Navbar: React.FC<NavbarProps> = ({
   };
 
   const handleImageError = (
-    e: React.SyntheticEvent<HTMLImageElement, Event>
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
   ): void => {
     const target = e.target as HTMLImageElement;
     const nextSibling = target.nextElementSibling as HTMLElement;
