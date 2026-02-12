@@ -32,23 +32,18 @@ const transporter = nodemailer.createTransport({
 
 function validateBase64Image(base64String) {
   if (!base64String) return true;
-  // Controlla se è un formato immagine valido
   return /^data:image\/(jpeg|jpg|png|gif|webp);base64,/.test(base64String);
 }
 
-// Converte il BLOB del database in stringa Base64 per il frontend
 function blobToBase64(blob) {
   if (!blob) return null;
-  // Se è già stringa, ritornala
   if (typeof blob === "string" && blob.startsWith("data:image/")) return blob;
-  // Se è un buffer, converti
   if (Buffer.isBuffer(blob) || blob instanceof Uint8Array) {
     return `data:image/jpeg;base64,${Buffer.from(blob).toString("base64")}`;
   }
   return null;
 }
 
-// Turso restituisce BigInt, che JSON.stringify non supporta. Li convertiamo in Number.
 function convertBigIntToNumber(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return Number(obj);
@@ -74,7 +69,6 @@ function validateEmail(email) {
 // 3. FUNZIONI INVIO EMAIL
 // ==========================================
 
-// Funzione generica di invio
 async function sendEmail(to, subject, htmlContent, textContent) {
   console.log(`📧 Tentativo invio a: ${to}`);
 
@@ -100,7 +94,6 @@ async function sendEmail(to, subject, htmlContent, textContent) {
   }
 }
 
-// Template HTML Conferma Prenotazione (Singola)
 function createConfirmationTemplate(prenotazione, evento) {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -124,7 +117,6 @@ function createConfirmationTemplate(prenotazione, evento) {
   `;
 }
 
-// Template HTML Broadcast (Admin -> Tutti)
 function createBroadcastTemplate(message, titoloEvento) {
   const formattedMessage = message.replace(/\n/g, "<br>");
 
@@ -150,7 +142,6 @@ function createBroadcastTemplate(message, titoloEvento) {
 // ==========================================
 
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -175,7 +166,6 @@ export default async function handler(req, res) {
         );
         const eventi = result.rows.map((row) => {
           const e = convertBigIntToNumber(row);
-          // Converti il blob in base64 per mostrarlo nel sito
           e.immagine_blob = blobToBase64(e.immagine_blob);
           return e;
         });
@@ -229,11 +219,10 @@ export default async function handler(req, res) {
 
     // --- POST (CREAZIONE & EMAIL) ---
     if (req.method === "POST") {
-      // 1. Broadcast Email (Admin invia a tutti)
+      // 1. Broadcast Email
       if (section === "broadcast") {
         const { evento_id, subject, message } = req.body;
 
-        // Trova iscritti
         const prenotazioni = await client.execute({
           sql: "SELECT email, nome FROM prenotazioni_eventi WHERE evento_id = ?",
           args: [evento_id],
@@ -248,7 +237,6 @@ export default async function handler(req, res) {
             });
         }
 
-        // Info evento
         const evResult = await client.execute({
           sql: "SELECT titolo, data_evento FROM eventi WHERE id=?",
           args: [evento_id],
@@ -256,15 +244,9 @@ export default async function handler(req, res) {
         const evento = evResult.rows[0];
         const htmlBody = createBroadcastTemplate(message, evento.titolo);
 
-        // Invio sequenziale per non bloccare SMTP
         let sentCount = 0;
         for (const p of prenotazioni.rows) {
-          const resEmail = await sendEmail(
-            p.email,
-            subject,
-            htmlBody,
-            message, // Fallback testo semplice
-          );
+          const resEmail = await sendEmail(p.email, subject, htmlBody, message);
           if (resEmail.success) sentCount++;
         }
 
@@ -275,7 +257,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // 2. Nuova Prenotazione (Utente pubblico -> Conferma Automatica)
+      // 2. Nuova Prenotazione
       if (section === "prenotazioni") {
         const { evento_id, nome, cognome, email, num_biglietti, note } =
           req.body;
@@ -284,7 +266,6 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Email non valida" });
         }
 
-        // Salva DB
         const result = await client.execute({
           sql: `INSERT INTO prenotazioni_eventi (evento_id, nome, cognome, email, num_partecipanti, note, data_prenotazione) 
                 VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
@@ -298,20 +279,16 @@ export default async function handler(req, res) {
           ],
         });
 
-        // Recupera info evento per mandare l'email di conferma
         const evResult = await client.execute({
           sql: "SELECT * FROM eventi WHERE id=?",
           args: [evento_id],
         });
         const evento = evResult.rows[0];
 
-        // Prepara la mail
         const pData = { nome, cognome, num_partecipanti: num_biglietti || 1 };
         const htmlConfirm = createConfirmationTemplate(pData, evento);
         const textConfirm = `Ciao ${nome}, prenotazione confermata per ${evento.titolo}.`;
 
-        // Invia conferma (await per essere sicuri che parta prima di rispondere al client)
-        // Se l'invio fallisce, l'utente vedrà l'errore ma la prenotazione è salvata.
         try {
           await sendEmail(
             email,
@@ -330,33 +307,36 @@ export default async function handler(req, res) {
         });
       }
 
-      // 3. Creazione Evento (Admin)
+      // 3. Creazione Evento (MODIFICATO: senza user_id)
       const {
         titolo,
         descrizione,
         data_evento,
         immagine_url,
         immagine_blob,
-        user_id,
+        immagine_tipo,
+        immagine_nome,
       } = req.body;
 
       let blobBuffer = null;
       if (immagine_blob) {
-        // Rimuove l'header del base64 se presente per salvare solo i dati binari
+        // Rimuove l'header del base64 se presente
         const base64Data = immagine_blob.split(";base64,").pop();
         blobBuffer = Buffer.from(base64Data, "base64");
       }
 
+      // Query modificata per corrispondere alla tua tabella (rimosso user_id)
       await client.execute({
-        sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, user_id) 
-              VALUES (?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome) 
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
         args: [
           titolo,
-          descrizione,
+          descrizione || "",
           data_evento,
-          immagine_url,
+          immagine_url || "",
           blobBuffer,
-          user_id,
+          immagine_tipo || "",
+          immagine_nome || "",
         ],
       });
 
@@ -372,6 +352,8 @@ export default async function handler(req, res) {
         data_evento,
         immagine_url,
         immagine_blob,
+        immagine_tipo,
+        immagine_nome,
       } = req.body;
 
       let sql = `UPDATE eventi SET titolo=?, descrizione=?, data_evento=?, immagine_url=?`;
@@ -380,8 +362,8 @@ export default async function handler(req, res) {
       if (immagine_blob) {
         const base64Data = immagine_blob.split(";base64,").pop();
         const blobBuffer = Buffer.from(base64Data, "base64");
-        sql += `, immagine_blob=?`;
-        args.push(blobBuffer);
+        sql += `, immagine_blob=?, immagine_tipo=?, immagine_nome=?`;
+        args.push(blobBuffer, immagine_tipo || "", immagine_nome || "");
       }
 
       sql += ` WHERE id=?`;
@@ -401,7 +383,6 @@ export default async function handler(req, res) {
           args: [id],
         });
       } else {
-        // Cancella evento (e prenotazioni collegate manualmente per sicurezza)
         await client.execute({
           sql: "DELETE FROM prenotazioni_eventi WHERE evento_id = ?",
           args: [id],
