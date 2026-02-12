@@ -35,23 +35,6 @@ function validateBase64Image(base64String) {
   return /^data:image\/(jpeg|jpg|png|gif|webp);base64,/.test(base64String);
 }
 
-// Converte il BLOB del database in stringa Base64 per il frontend
-function blobToBase64(blob) {
-  if (!blob) return null;
-  // Se è già stringa, ritornala
-  if (typeof blob === "string" && blob.startsWith("data:image/")) return blob;
-  // Se è un buffer, converti
-  if (Buffer.isBuffer(blob) || blob instanceof Uint8Array) {
-    return `data:image/jpeg;base64,${Buffer.from(blob).toString("base64")}`;
-  }
-  // Se è un array di numeri (formato JSON di Turso a volte)
-  if (Array.isArray(blob)) {
-    return `data:image/jpeg;base64,${Buffer.from(blob).toString("base64")}`;
-  }
-  return null;
-}
-
-// Helper per i numeri BigInt di Turso
 function convertBigIntToNumber(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return Number(obj);
@@ -68,7 +51,6 @@ function convertBigIntToNumber(obj) {
 
 function validateEmail(email) {
   if (!email || typeof email !== "string") return false;
-  // Regex standard per email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email.trim());
 }
@@ -81,8 +63,7 @@ async function sendEmail(to, subject, htmlContent, textContent) {
   console.log(`📧 Tentativo invio a: ${to}`);
 
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.error("❌ Credenziali Gmail mancanti nelle variabili d'ambiente");
-    // Non blocchiamo l'esecuzione, ritorniamo solo errore
+    console.error("❌ Credenziali Gmail mancanti");
     return { success: false, error: "Configurazione server errata" };
   }
 
@@ -138,7 +119,6 @@ function createBroadcastTemplate(message, titoloEvento) {
 // ==========================================
 
 export default async function handler(req, res) {
-  // Configurazione CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -149,32 +129,60 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // Health check veloce al DB
+    // Health check DB
     await client.execute("SELECT 1");
 
     const { section, action, id, evento_id } = req.query;
 
     // --- GET ---
     if (req.method === "GET") {
-      // 1. LISTA EVENTI
+      // 1. SCARICARE IMMAGINE (Nuovo Endpoint Dedicato)
+      if (action === "image" && id) {
+        const result = await client.execute({
+          sql: "SELECT immagine_blob, immagine_tipo FROM eventi WHERE id = ?",
+          args: [id],
+        });
+
+        if (result.rows.length === 0 || !result.rows[0].immagine_blob) {
+          return res.status(404).end();
+        }
+
+        const row = result.rows[0];
+        // Converte Uint8Array/Buffer in Buffer Node.js standard
+        const buffer = Buffer.from(row.immagine_blob);
+
+        res.setHeader("Content-Type", row.immagine_tipo || "image/jpeg");
+        res.setHeader("Cache-Control", "public, max-age=86400"); // Cache per 1 giorno
+        return res.send(buffer);
+      }
+
+      // 2. LISTA EVENTI (Ottimizzata: Niente BLOB pesante)
       if (!section && !action) {
-        // Recuperiamo tutto. Se le immagini sono pesanti, questo potrebbe rallentare.
-        const result = await client.execute(
-          `SELECT * FROM eventi ORDER BY data_evento DESC`,
-        );
+        // Selezioniamo tutto TRANNE il blob pesante. Usiamo length() per sapere se l'immagine esiste.
+        const result = await client.execute(`
+            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, 
+            length(immagine_blob) as blob_size 
+            FROM eventi 
+            ORDER BY data_evento DESC
+        `);
 
         const eventi = result.rows.map((row) => {
           const e = convertBigIntToNumber(row);
-          // Decodifica il BLOB in base64 per il frontend
-          e.immagine_blob = blobToBase64(e.immagine_blob);
+          // Se c'è un blob nel DB (size > 0), generiamo l'URL per scaricarlo
+          if (e.blob_size > 0) {
+            e.immagine_url = `/api/eventi?action=image&id=${e.id}`;
+          }
+          // Pulizia
+          delete e.blob_size;
           return e;
         });
 
         return res.status(200).json({ success: true, eventi });
       }
 
-      // 2. DETTAGLIO EVENTO + PRENOTAZIONI
+      // 3. DETTAGLIO EVENTO (Singolo)
       if (action === "single" && id) {
+        // Qui possiamo mandare il blob perché è un solo evento
         const eventoResult = await client.execute({
           sql: `SELECT * FROM eventi WHERE id = ?`,
           args: [id],
@@ -183,7 +191,12 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: "Non trovato" });
 
         const evento = convertBigIntToNumber(eventoResult.rows[0]);
-        evento.immagine_blob = blobToBase64(evento.immagine_blob);
+
+        // Se c'è il blob, meglio usare comunque l'URL per coerenza, ma possiamo mandare base64 se serve subito
+        if (evento.immagine_blob) {
+          evento.immagine_url = `/api/eventi?action=image&id=${evento.id}`;
+          delete evento.immagine_blob; // Rimuoviamo il blob pesante dal JSON
+        }
 
         const prenotazioniResult = await client.execute({
           sql: "SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC",
@@ -197,7 +210,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // 3. SOLO PRENOTAZIONI
+      // 4. SOLO PRENOTAZIONI
       if (section === "prenotazioni") {
         let query = "SELECT * FROM prenotazioni_eventi";
         let args = [];
@@ -224,7 +237,6 @@ export default async function handler(req, res) {
       if (section === "broadcast") {
         const { evento_id, subject, message } = req.body;
 
-        // Recupera iscritti
         const prenotazioni = await client.execute({
           sql: "SELECT email, nome FROM prenotazioni_eventi WHERE evento_id = ?",
           args: [evento_id],
@@ -236,7 +248,6 @@ export default async function handler(req, res) {
             .json({ success: false, error: "Nessun iscritto trovato." });
         }
 
-        // Recupera titolo evento
         const evResult = await client.execute({
           sql: "SELECT titolo FROM eventi WHERE id=?",
           args: [evento_id],
@@ -244,9 +255,9 @@ export default async function handler(req, res) {
         const titoloEvento = evResult.rows[0]?.titolo || "Evento";
         const htmlBody = createBroadcastTemplate(message, titoloEvento);
 
-        // Invio Non Bloccante (Loop)
         let sentCount = 0;
         for (const p of prenotazioni.rows) {
+          // Invio non bloccante per il loop (ma aspetta la singola promise per non sovraccaricare)
           const resEmail = await sendEmail(p.email, subject, htmlBody, message);
           if (resEmail.success) sentCount++;
         }
@@ -258,7 +269,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // 2. NUOVA PRENOTAZIONE (UTENTE)
+      // 2. NUOVA PRENOTAZIONE
       if (section === "prenotazioni") {
         const { evento_id, nome, cognome, email, num_biglietti, note } =
           req.body;
@@ -267,7 +278,6 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Email non valida" });
         }
 
-        // Inserimento DB
         const result = await client.execute({
           sql: `INSERT INTO prenotazioni_eventi (evento_id, nome, cognome, email, num_partecipanti, note, data_prenotazione) 
                 VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
@@ -283,28 +293,23 @@ export default async function handler(req, res) {
 
         const insertId = convertBigIntToNumber(result.lastInsertRowid);
 
-        // Recupera dati evento per la mail
+        // Recupera dati per email
         const evResult = await client.execute({
           sql: "SELECT * FROM eventi WHERE id=?",
           args: [evento_id],
         });
         const evento = evResult.rows[0];
 
-        // Invio Email Conferma (Non blocchiamo se fallisce la mail, l'importante è la prenotazione)
         const pData = { nome, cognome, num_partecipanti: num_biglietti || 1 };
         const htmlConfirm = createConfirmationTemplate(pData, evento);
 
-        // Eseguiamo l'invio ma non aspettiamo all'infinito o blocchiamo l'errore
-        try {
-          await sendEmail(
-            email,
-            `Conferma Prenotazione: ${evento.titolo}`,
-            htmlConfirm,
-            `Confermata prenotazione per ${evento.titolo}`,
-          );
-        } catch (e) {
-          console.error("Errore invio mail conferma (non bloccante):", e);
-        }
+        // Invio Email (senza bloccare la risposta HTTP se lento)
+        sendEmail(
+          email,
+          `Conferma Prenotazione: ${evento.titolo}`,
+          htmlConfirm,
+          `Confermata prenotazione per ${evento.titolo}`,
+        ).catch((err) => console.error("Errore background mail:", err));
 
         return res.status(201).json({
           success: true,
@@ -313,7 +318,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // 3. CREAZIONE EVENTO (ADMIN)
+      // 3. CREAZIONE EVENTO
       const {
         titolo,
         descrizione,
@@ -326,12 +331,10 @@ export default async function handler(req, res) {
 
       let blobBuffer = null;
       if (immagine_blob) {
-        // Rimuove l'header del base64
         const base64Data = immagine_blob.split(";base64,").pop();
         blobBuffer = Buffer.from(base64Data, "base64");
       }
 
-      // Query SENZA user_id (come da tua richiesta)
       const result = await client.execute({
         sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome) 
               VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -392,7 +395,6 @@ export default async function handler(req, res) {
           args: [id],
         });
       } else {
-        // Cancella evento e prenotazioni collegate
         await client.execute({
           sql: "DELETE FROM prenotazioni_eventi WHERE evento_id = ?",
           args: [id],
