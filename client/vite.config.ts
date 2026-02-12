@@ -7,7 +7,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo.png"],
+      // Qui diciamo a Vite di portarsi dietro entrambi i file
+      includeAssets: ["favicon.png", "logo-app.png"],
       manifest: {
         name: "FORO",
         short_name: "FORO",
@@ -19,14 +20,15 @@ export default defineConfig({
         start_url: "/",
         orientation: "portrait",
         icons: [
+          // Qui usiamo SOLO l'immagine con sfondo pieno per l'installazione
           {
-            src: "/logo.png",
+            src: "/logo-app.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/logo.png",
+            src: "/logo-app.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any",
