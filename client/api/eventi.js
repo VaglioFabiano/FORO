@@ -35,15 +35,23 @@ function validateBase64Image(base64String) {
   return /^data:image\/(jpeg|jpg|png|gif|webp);base64,/.test(base64String);
 }
 
+// Converte il BLOB del database in stringa Base64 per il frontend
 function blobToBase64(blob) {
   if (!blob) return null;
+  // Se è già stringa, ritornala
   if (typeof blob === "string" && blob.startsWith("data:image/")) return blob;
+  // Se è un buffer, converti
   if (Buffer.isBuffer(blob) || blob instanceof Uint8Array) {
+    return `data:image/jpeg;base64,${Buffer.from(blob).toString("base64")}`;
+  }
+  // Se è un array di numeri (formato JSON di Turso a volte)
+  if (Array.isArray(blob)) {
     return `data:image/jpeg;base64,${Buffer.from(blob).toString("base64")}`;
   }
   return null;
 }
 
+// Helper per i numeri BigInt di Turso
 function convertBigIntToNumber(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return Number(obj);
@@ -60,8 +68,8 @@ function convertBigIntToNumber(obj) {
 
 function validateEmail(email) {
   if (!email || typeof email !== "string") return false;
-  const emailRegex =
-    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  // Regex standard per email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email.trim());
 }
 
@@ -74,6 +82,7 @@ async function sendEmail(to, subject, htmlContent, textContent) {
 
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
     console.error("❌ Credenziali Gmail mancanti nelle variabili d'ambiente");
+    // Non blocchiamo l'esecuzione, ritorniamo solo errore
     return { success: false, error: "Configurazione server errata" };
   }
 
@@ -96,42 +105,29 @@ async function sendEmail(to, subject, htmlContent, textContent) {
 
 function createConfirmationTemplate(prenotazione, evento) {
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-      <div style="background: white; padding: 30px; border-radius: 10px; border-top: 5px solid #2e7d32; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-        <h1 style="color: #2e7d32; margin-top: 0;">Prenotazione Confermata! ✅</h1>
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;">
+      <div style="background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2e7d32;">Prenotazione Confermata ✅</h2>
         <p>Ciao <strong>${prenotazione.nome}</strong>,</p>
-        <p>Ti confermiamo che la tua prenotazione per l'evento è andata a buon fine.</p>
-        
-        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #1b5e20;">${evento.titolo}</h3>
-          <p style="margin: 5px 0;">📅 <strong>Data:</strong> ${new Date(evento.data_evento).toLocaleDateString("it-IT")}</p>
-          <p style="margin: 5px 0;">📍 <strong>Luogo:</strong> Via Alfieri, 4 - Piossasco (TO)</p>
-          <p style="margin: 5px 0;">🎟️ <strong>Posti prenotati:</strong> ${prenotazione.num_partecipanti}</p>
-        </div>
-
-        <p style="font-size: 0.9em; color: #555;">Se hai bisogno di modificare la prenotazione, rispondi a questa email.</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="text-align: center; font-size: 0.8em; color: #888;">Associazione Foro - Piossasco</p>
+        <p>Ti confermiamo la tua iscrizione all'evento:</p>
+        <h3 style="color: #333;">${evento.titolo}</h3>
+        <p><strong>📅 Data:</strong> ${new Date(evento.data_evento).toLocaleDateString("it-IT")}</p>
+        <p><strong>📍 Luogo:</strong> Via Alfieri, 4 - Piossasco (TO)</p>
+        <hr>
+        <p style="font-size: 12px; color: #666;">Associazione Foro</p>
       </div>
     </div>
   `;
 }
 
 function createBroadcastTemplate(message, titoloEvento) {
-  const formattedMessage = message.replace(/\n/g, "<br>");
-
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-      <div style="background: white; padding: 30px; border-radius: 10px; border-top: 5px solid #d2691e; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-        <h2 style="color: #d2691e; margin-top: 0;">Comunicazione Importante 📢</h2>
-        <p style="color: #666; font-size: 0.9em;">Riguardo all'evento: <strong>${titoloEvento}</strong></p>
-        
-        <div style="font-size: 16px; line-height: 1.6; color: #333; margin: 20px 0;">
-          ${formattedMessage}
-        </div>
-
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="text-align: center; font-size: 0.8em; color: #888;">Associazione Foro - Piossasco</p>
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;">
+      <div style="background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #d84315;">Avviso: ${titoloEvento} 📢</h2>
+        <p style="white-space: pre-line;">${message}</p>
+        <hr>
+        <p style="font-size: 12px; color: #666;">Associazione Foro</p>
       </div>
     </div>
   `;
@@ -142,37 +138,42 @@ function createBroadcastTemplate(message, titoloEvento) {
 // ==========================================
 
 export default async function handler(req, res) {
+  // Configurazione CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS",
   );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // Health check DB
+    // Health check veloce al DB
     await client.execute("SELECT 1");
 
     const { section, action, id, evento_id } = req.query;
 
-    // --- GET (LETTURA) ---
+    // --- GET ---
     if (req.method === "GET") {
-      // 1. Lista Eventi (Home)
+      // 1. LISTA EVENTI
       if (!section && !action) {
+        // Recuperiamo tutto. Se le immagini sono pesanti, questo potrebbe rallentare.
         const result = await client.execute(
           `SELECT * FROM eventi ORDER BY data_evento DESC`,
         );
+
         const eventi = result.rows.map((row) => {
           const e = convertBigIntToNumber(row);
+          // Decodifica il BLOB in base64 per il frontend
           e.immagine_blob = blobToBase64(e.immagine_blob);
           return e;
         });
+
         return res.status(200).json({ success: true, eventi });
       }
 
-      // 2. Dettaglio Singolo Evento
+      // 2. DETTAGLIO EVENTO + PRENOTAZIONI
       if (action === "single" && id) {
         const eventoResult = await client.execute({
           sql: `SELECT * FROM eventi WHERE id = ?`,
@@ -196,7 +197,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // 3. Solo Prenotazioni (Admin)
+      // 3. SOLO PRENOTAZIONI
       if (section === "prenotazioni") {
         let query = "SELECT * FROM prenotazioni_eventi";
         let args = [];
@@ -217,12 +218,13 @@ export default async function handler(req, res) {
       }
     }
 
-    // --- POST (CREAZIONE & EMAIL) ---
+    // --- POST ---
     if (req.method === "POST") {
-      // 1. Broadcast Email
+      // 1. BROADCAST EMAIL
       if (section === "broadcast") {
         const { evento_id, subject, message } = req.body;
 
+        // Recupera iscritti
         const prenotazioni = await client.execute({
           sql: "SELECT email, nome FROM prenotazioni_eventi WHERE evento_id = ?",
           args: [evento_id],
@@ -231,19 +233,18 @@ export default async function handler(req, res) {
         if (prenotazioni.rows.length === 0) {
           return res
             .status(400)
-            .json({
-              success: false,
-              error: "Nessun iscritto trovato per questo evento.",
-            });
+            .json({ success: false, error: "Nessun iscritto trovato." });
         }
 
+        // Recupera titolo evento
         const evResult = await client.execute({
-          sql: "SELECT titolo, data_evento FROM eventi WHERE id=?",
+          sql: "SELECT titolo FROM eventi WHERE id=?",
           args: [evento_id],
         });
-        const evento = evResult.rows[0];
-        const htmlBody = createBroadcastTemplate(message, evento.titolo);
+        const titoloEvento = evResult.rows[0]?.titolo || "Evento";
+        const htmlBody = createBroadcastTemplate(message, titoloEvento);
 
+        // Invio Non Bloccante (Loop)
         let sentCount = 0;
         for (const p of prenotazioni.rows) {
           const resEmail = await sendEmail(p.email, subject, htmlBody, message);
@@ -253,11 +254,11 @@ export default async function handler(req, res) {
         return res.status(200).json({
           success: true,
           destinatari_count: sentCount,
-          message: `Inviate ${sentCount} email su ${prenotazioni.rows.length}`,
+          message: `Inviate ${sentCount} email.`,
         });
       }
 
-      // 2. Nuova Prenotazione
+      // 2. NUOVA PRENOTAZIONE (UTENTE)
       if (section === "prenotazioni") {
         const { evento_id, nome, cognome, email, num_biglietti, note } =
           req.body;
@@ -266,6 +267,7 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Email non valida" });
         }
 
+        // Inserimento DB
         const result = await client.execute({
           sql: `INSERT INTO prenotazioni_eventi (evento_id, nome, cognome, email, num_partecipanti, note, data_prenotazione) 
                 VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
@@ -279,35 +281,39 @@ export default async function handler(req, res) {
           ],
         });
 
+        const insertId = convertBigIntToNumber(result.lastInsertRowid);
+
+        // Recupera dati evento per la mail
         const evResult = await client.execute({
           sql: "SELECT * FROM eventi WHERE id=?",
           args: [evento_id],
         });
         const evento = evResult.rows[0];
 
+        // Invio Email Conferma (Non blocchiamo se fallisce la mail, l'importante è la prenotazione)
         const pData = { nome, cognome, num_partecipanti: num_biglietti || 1 };
         const htmlConfirm = createConfirmationTemplate(pData, evento);
-        const textConfirm = `Ciao ${nome}, prenotazione confermata per ${evento.titolo}.`;
 
+        // Eseguiamo l'invio ma non aspettiamo all'infinito o blocchiamo l'errore
         try {
           await sendEmail(
             email,
             `Conferma Prenotazione: ${evento.titolo}`,
             htmlConfirm,
-            textConfirm,
+            `Confermata prenotazione per ${evento.titolo}`,
           );
         } catch (e) {
-          console.error("Errore invio mail conferma:", e);
+          console.error("Errore invio mail conferma (non bloccante):", e);
         }
 
         return res.status(201).json({
           success: true,
-          id: convertBigIntToNumber(result.lastInsertRowid),
-          message: "Prenotazione effettuata!",
+          id: insertId,
+          message: "Prenotazione salvata!",
         });
       }
 
-      // 3. Creazione Evento (MODIFICATO: senza user_id)
+      // 3. CREAZIONE EVENTO (ADMIN)
       const {
         titolo,
         descrizione,
@@ -320,13 +326,13 @@ export default async function handler(req, res) {
 
       let blobBuffer = null;
       if (immagine_blob) {
-        // Rimuove l'header del base64 se presente
+        // Rimuove l'header del base64
         const base64Data = immagine_blob.split(";base64,").pop();
         blobBuffer = Buffer.from(base64Data, "base64");
       }
 
-      // Query modificata per corrispondere alla tua tabella (rimosso user_id)
-      await client.execute({
+      // Query SENZA user_id (come da tua richiesta)
+      const result = await client.execute({
         sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome) 
               VALUES (?, ?, ?, ?, ?, ?, ?)`,
         args: [
@@ -340,10 +346,13 @@ export default async function handler(req, res) {
         ],
       });
 
-      return res.status(201).json({ success: true });
+      return res.status(201).json({
+        success: true,
+        id: convertBigIntToNumber(result.lastInsertRowid),
+      });
     }
 
-    // --- PUT (MODIFICA EVENTO) ---
+    // --- PUT (MODIFICA) ---
     if (req.method === "PUT") {
       const {
         id,
@@ -373,7 +382,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // --- DELETE (ELIMINAZIONE) ---
+    // --- DELETE ---
     if (req.method === "DELETE") {
       const { id } = req.body;
 
@@ -383,6 +392,7 @@ export default async function handler(req, res) {
           args: [id],
         });
       } else {
+        // Cancella evento e prenotazioni collegate
         await client.execute({
           sql: "DELETE FROM prenotazioni_eventi WHERE evento_id = ?",
           args: [id],
@@ -402,7 +412,7 @@ export default async function handler(req, res) {
     console.error("API Error:", error);
     return res.status(500).json({
       success: false,
-      error: "Errore interno del server: " + error.message,
+      error: "Errore server: " + error.message,
     });
   }
 }
