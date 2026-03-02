@@ -17,7 +17,6 @@ if (!config.url || !config.authToken) {
 
 const client = createClient(config);
 
-// Configurazione Nodemailer (Solo GMAIL)
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -60,10 +59,10 @@ function validateEmail(email) {
 // ==========================================
 
 async function sendEmail(to, subject, htmlContent, textContent) {
-  console.log(`📧 Tentativo invio a: ${to}`);
+  console.log(`Tentativo invio a: ${to}`);
 
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.error("❌ Credenziali Gmail mancanti");
+    console.error("Credenziali Gmail mancanti");
     return { success: false, error: "Configurazione server errata" };
   }
 
@@ -76,10 +75,10 @@ async function sendEmail(to, subject, htmlContent, textContent) {
       text: textContent,
       html: htmlContent,
     });
-    console.log(`✅ Email inviata con successo a ${to}`);
+    console.log(`Email inviata con successo a ${to}`);
     return { success: true };
   } catch (error) {
-    console.error(`❌ Errore invio email a ${to}:`, error);
+    console.error(`Errore invio email a ${to}:`, error);
     return { success: false, error: error.message };
   }
 }
@@ -88,12 +87,12 @@ function createConfirmationTemplate(prenotazione, evento) {
   return `
     <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;">
       <div style="background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2e7d32;">Prenotazione Confermata ✅</h2>
+        <h2 style="color: #2e7d32;">Prenotazione Confermata</h2>
         <p>Ciao <strong>${prenotazione.nome}</strong>,</p>
         <p>Ti confermiamo la tua iscrizione all'evento:</p>
         <h3 style="color: #333;">${evento.titolo}</h3>
-        <p><strong>📅 Data:</strong> ${new Date(evento.data_evento).toLocaleDateString("it-IT")}</p>
-        <p><strong>📍 Luogo:</strong> Via Alfieri, 4 - Piossasco (TO)</p>
+        <p><strong>Data:</strong> ${new Date(evento.data_evento).toLocaleDateString("it-IT")}</p>
+        <p><strong>Luogo:</strong> Via Alfieri, 4 - Piossasco (TO)</p>
         <hr>
         <p style="font-size: 12px; color: #666;">Associazione Foro</p>
       </div>
@@ -105,7 +104,7 @@ function createBroadcastTemplate(message, titoloEvento) {
   return `
     <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;">
       <div style="background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #d84315;">Avviso: ${titoloEvento} 📢</h2>
+        <h2 style="color: #d84315;">Avviso: ${titoloEvento}</h2>
         <p style="white-space: pre-line;">${message}</p>
         <hr>
         <p style="font-size: 12px; color: #666;">Associazione Foro</p>
@@ -129,14 +128,12 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // Health check DB
     await client.execute("SELECT 1");
 
     const { section, action, id, evento_id } = req.query;
 
     // --- GET ---
     if (req.method === "GET") {
-      // 1. SCARICARE IMMAGINE (Nuovo Endpoint Dedicato)
       if (action === "image" && id) {
         const result = await client.execute({
           sql: "SELECT immagine_blob, immagine_tipo FROM eventi WHERE id = ?",
@@ -148,19 +145,17 @@ export default async function handler(req, res) {
         }
 
         const row = result.rows[0];
-        // Converte Uint8Array/Buffer in Buffer Node.js standard
         const buffer = Buffer.from(row.immagine_blob);
 
         res.setHeader("Content-Type", row.immagine_tipo || "image/jpeg");
-        res.setHeader("Cache-Control", "public, max-age=86400"); // Cache per 1 giorno
+        res.setHeader("Cache-Control", "public, max-age=86400");
         return res.send(buffer);
       }
 
-      // 2. LISTA EVENTI (Ottimizzata: Niente BLOB pesante)
       if (!section && !action) {
-        // Selezioniamo tutto TRANNE il blob pesante. Usiamo length() per sapere se l'immagine esiste.
+        // MODIFICA: Aggiunto 'visibile' alla query
         const result = await client.execute(`
-            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, 
+            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile,
             length(immagine_blob) as blob_size 
             FROM eventi 
             ORDER BY data_evento DESC
@@ -168,11 +163,9 @@ export default async function handler(req, res) {
 
         const eventi = result.rows.map((row) => {
           const e = convertBigIntToNumber(row);
-          // Se c'è un blob nel DB (size > 0), generiamo l'URL per scaricarlo
           if (e.blob_size > 0) {
             e.immagine_url = `/api/eventi?action=image&id=${e.id}`;
           }
-          // Pulizia
           delete e.blob_size;
           return e;
         });
@@ -180,9 +173,32 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, eventi });
       }
 
-      // 3. DETTAGLIO EVENTO (Singolo)
+      // Endpoint speciale per ottenere l'evento visibile nella home
+      if (section === "visibile") {
+        const result = await client.execute(`
+            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile,
+            length(immagine_blob) as blob_size 
+            FROM eventi 
+            WHERE visibile = 1
+            ORDER BY data_evento DESC LIMIT 1
+        `);
+
+        if (result.rows.length === 0) {
+          return res
+            .status(404)
+            .json({ success: false, error: "Nessun evento visibile" });
+        }
+
+        const evento = convertBigIntToNumber(result.rows[0]);
+        if (evento.blob_size > 0) {
+          evento.immagine_url = `/api/eventi?action=image&id=${evento.id}`;
+        }
+        delete evento.blob_size;
+
+        return res.status(200).json({ success: true, evento });
+      }
+
       if (action === "single" && id) {
-        // Qui possiamo mandare il blob perché è un solo evento
         const eventoResult = await client.execute({
           sql: `SELECT * FROM eventi WHERE id = ?`,
           args: [id],
@@ -192,10 +208,9 @@ export default async function handler(req, res) {
 
         const evento = convertBigIntToNumber(eventoResult.rows[0]);
 
-        // Se c'è il blob, meglio usare comunque l'URL per coerenza, ma possiamo mandare base64 se serve subito
         if (evento.immagine_blob) {
           evento.immagine_url = `/api/eventi?action=image&id=${evento.id}`;
-          delete evento.immagine_blob; // Rimuoviamo il blob pesante dal JSON
+          delete evento.immagine_blob;
         }
 
         const prenotazioniResult = await client.execute({
@@ -210,7 +225,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // 4. SOLO PRENOTAZIONI
       if (section === "prenotazioni") {
         let query = "SELECT * FROM prenotazioni_eventi";
         let args = [];
@@ -222,18 +236,15 @@ export default async function handler(req, res) {
         query += " ORDER BY data_prenotazione DESC";
 
         const result = await client.execute({ sql: query, args });
-        return res
-          .status(200)
-          .json({
-            success: true,
-            prenotazioni: convertBigIntToNumber(result.rows),
-          });
+        return res.status(200).json({
+          success: true,
+          prenotazioni: convertBigIntToNumber(result.rows),
+        });
       }
     }
 
     // --- POST ---
     if (req.method === "POST") {
-      // 1. BROADCAST EMAIL
       if (section === "broadcast") {
         const { evento_id, subject, message } = req.body;
 
@@ -257,7 +268,6 @@ export default async function handler(req, res) {
 
         let sentCount = 0;
         for (const p of prenotazioni.rows) {
-          // Invio non bloccante per il loop (ma aspetta la singola promise per non sovraccaricare)
           const resEmail = await sendEmail(p.email, subject, htmlBody, message);
           if (resEmail.success) sentCount++;
         }
@@ -269,7 +279,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // 2. NUOVA PRENOTAZIONE
       if (section === "prenotazioni") {
         const { evento_id, nome, cognome, email, num_biglietti, note } =
           req.body;
@@ -293,7 +302,6 @@ export default async function handler(req, res) {
 
         const insertId = convertBigIntToNumber(result.lastInsertRowid);
 
-        // Recupera dati per email
         const evResult = await client.execute({
           sql: "SELECT * FROM eventi WHERE id=?",
           args: [evento_id],
@@ -303,7 +311,6 @@ export default async function handler(req, res) {
         const pData = { nome, cognome, num_partecipanti: num_biglietti || 1 };
         const htmlConfirm = createConfirmationTemplate(pData, evento);
 
-        // Invio Email (senza bloccare la risposta HTTP se lento)
         sendEmail(
           email,
           `Conferma Prenotazione: ${evento.titolo}`,
@@ -318,7 +325,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // 3. CREAZIONE EVENTO
+      // CREAZIONE EVENTO
       const {
         titolo,
         descrizione,
@@ -335,9 +342,10 @@ export default async function handler(req, res) {
         blobBuffer = Buffer.from(base64Data, "base64");
       }
 
+      // MODIFICA: Aggiunto visibile e forzato a 0 (nascosto di default)
       const result = await client.execute({
-        sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome) 
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome, visibile) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
         args: [
           titolo,
           descrizione || "",
@@ -355,8 +363,19 @@ export default async function handler(req, res) {
       });
     }
 
-    // --- PUT (MODIFICA) ---
+    // --- PUT ---
     if (req.method === "PUT") {
+      // MODIFICA: Aggiunto handler per cambiare solo la visibilita
+      if (section === "visibility") {
+        const { id, visibile } = req.body;
+        await client.execute({
+          sql: "UPDATE eventi SET visibile = ? WHERE id = ?",
+          args: [visibile, id],
+        });
+        return res.status(200).json({ success: true });
+      }
+
+      // Modifica Evento Normale
       const {
         id,
         titolo,

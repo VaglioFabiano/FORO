@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "../style/gestisciEventi.css";
 
-// Definizione delle interfacce per i dati
 interface Evento {
   id: number;
   titolo: string;
   descrizione: string;
   data_evento: string;
   immagine_url?: string;
-  immagine_blob?: string; // Base64 encoded image
+  immagine_blob?: string;
   immagine_tipo?: string;
   immagine_nome?: string;
+  visibile: number; // Aggiunto per tracciare lo stato
 }
 
 interface Prenotazione {
@@ -21,7 +21,7 @@ interface Prenotazione {
   email: string;
   data_prenotazione: string;
   num_biglietti?: number;
-  num_partecipanti?: number; // Aggiunto per compatibilità
+  num_partecipanti?: number;
   note?: string;
 }
 
@@ -46,7 +46,6 @@ interface ApiResponse {
   error?: string;
   message?: string;
   evento_id?: number;
-  broadcast_details?: any;
   destinatari_count?: number;
 }
 
@@ -61,7 +60,6 @@ const GestisciEventi: React.FC = () => {
     {},
   );
 
-  // Stato per nuovo evento
   const [nuovoEvento, setNuovoEvento] = useState<NuovoEvento>({
     titolo: "",
     descrizione: "",
@@ -71,14 +69,12 @@ const GestisciEventi: React.FC = () => {
   const [showNewEventForm, setShowNewEventForm] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
 
-  // Stato per modifica evento
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [editData, setEditData] = useState<
     Partial<Evento & { immagine_file?: File }>
   >({});
   const [updatingEvent, setUpdatingEvent] = useState(false);
 
-  // Stato per email broadcast
   const [broadcastEventId, setBroadcastEventId] = useState<number | null>(null);
   const [broadcastData, setBroadcastData] = useState<BroadcastEmail>({
     subject: "",
@@ -87,11 +83,9 @@ const GestisciEventi: React.FC = () => {
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
 
-  // Stato per l'utente loggato
   const [userLevel, setUserLevel] = useState<number>(-1);
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Gestione timer messaggi
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => setError(null), 7000);
@@ -106,12 +100,10 @@ const GestisciEventi: React.FC = () => {
     }
   }, [broadcastSuccess]);
 
-  // --- NUOVA FUNZIONE DI COMPRESSIONE IMMAGINI ---
-  // Risolve il problema del payload troppo grande per il database
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const maxWidth = 800; // Limita larghezza
-      const maxHeight = 800; // Limita altezza
+      const maxWidth = 800;
+      const maxHeight = 800;
       const reader = new FileReader();
 
       reader.readAsDataURL(file);
@@ -123,7 +115,6 @@ const GestisciEventi: React.FC = () => {
           let width = img.width;
           let height = img.height;
 
-          // Ridimensiona mantenendo le proporzioni
           if (width > height) {
             if (width > maxWidth) {
               height *= maxWidth / width;
@@ -147,8 +138,6 @@ const GestisciEventi: React.FC = () => {
           }
 
           ctx.drawImage(img, 0, 0, width, height);
-
-          // Comprimi a JPEG qualità 0.7
           const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
           resolve(dataUrl);
         };
@@ -166,7 +155,7 @@ const GestisciEventi: React.FC = () => {
       "image/gif",
       "image/webp",
     ];
-    const maxSize = 10 * 1024 * 1024; // Accetta file grandi in input (poi li comprimiamo)
+    const maxSize = 10 * 1024 * 1024;
 
     if (!validTypes.includes(file.type)) {
       setError("Tipo di file non supportato. Usa JPG, PNG, GIF o WebP.");
@@ -180,8 +169,6 @@ const GestisciEventi: React.FC = () => {
 
     return true;
   };
-
-  // --- API CALLS ---
 
   const fetchEventi = useCallback(async () => {
     try {
@@ -236,12 +223,10 @@ const GestisciEventi: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setUserLevel(1); // Simulazione Admin
+    setUserLevel(1);
     setUserId(1);
     fetchEventi();
   }, [fetchEventi]);
-
-  // --- AZIONI ---
 
   const inviaEmailBroadcast = async () => {
     if (
@@ -279,7 +264,7 @@ const GestisciEventi: React.FC = () => {
 
       if (data.success) {
         setBroadcastSuccess(
-          `✅ Email inviate a ${data.destinatari_count} partecipanti!`,
+          `Email inviate a ${data.destinatari_count} partecipanti!`,
         );
         setBroadcastData({ subject: "", message: "" });
         setBroadcastEventId(null);
@@ -317,7 +302,6 @@ const GestisciEventi: React.FC = () => {
           setCreatingEvent(false);
           return;
         }
-        // Compressione obbligatoria
         const compressedBase64 = await compressImage(nuovoEvento.immagine_file);
         eventData.immagine_blob = compressedBase64;
         eventData.immagine_tipo = "image/jpeg";
@@ -426,7 +410,34 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
-  // --- HANDLERS UI ---
+  // Funzione per attivare/disattivare la visibilita
+  const toggleVisibility = async (eventoId: number, currentVisible: number) => {
+    try {
+      const newStatus = currentVisible === 1 ? 0 : 1;
+
+      const response = await fetch("/api/eventi?section=visibility", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: eventoId, visibile: newStatus }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Aggiorna lo stato locale senza ricaricare tutto
+        setEventi(
+          eventi.map((ev) =>
+            ev.id === eventoId ? { ...ev, visibile: newStatus } : ev,
+          ),
+        );
+      } else {
+        throw new Error(
+          data.error || "Errore durante l'aggiornamento della visibilita.",
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore connessione.");
+    }
+  };
 
   const handleNewEventImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -506,8 +517,6 @@ const GestisciEventi: React.FC = () => {
     setExpandedEvents((prev) => ({ ...prev, [eventoId]: !prev[eventoId] }));
   };
 
-  // --- RENDER ---
-
   if (loading && eventi.length === 0) {
     return (
       <div className="eventi-container">
@@ -522,7 +531,7 @@ const GestisciEventi: React.FC = () => {
   return (
     <div className="eventi-container">
       <div className="eventi-header-section">
-        <h1>🎭 Gestione Eventi</h1>
+        <h1>Gestione Eventi</h1>
         <div className="eventi-actions">
           {canManageEvents() && (
             <button
@@ -532,7 +541,7 @@ const GestisciEventi: React.FC = () => {
               }}
               className={`action-button ${showNewEventForm ? "cancel" : "create"}`}
             >
-              {showNewEventForm ? "✕ Chiudi" : "✨ Nuovo Evento"}
+              {showNewEventForm ? "Chiudi" : "Nuovo Evento"}
             </button>
           )}
           <button
@@ -540,39 +549,38 @@ const GestisciEventi: React.FC = () => {
             className="refresh-button"
             disabled={loading}
           >
-            🔄 Aggiorna
+            Aggiorna
           </button>
         </div>
       </div>
 
       {error && (
         <div className="eventi-message error">
-          <div className="message-icon">❌</div>
+          <div className="message-icon">X</div>
           <span>{error}</span>
           <button onClick={() => setError(null)} className="close-message">
-            ×
+            X
           </button>
         </div>
       )}
 
       {broadcastSuccess && (
         <div className="eventi-message success">
-          <div className="message-icon">✅</div>
+          <div className="message-icon">V</div>
           <span>{broadcastSuccess}</span>
           <button
             onClick={() => setBroadcastSuccess(null)}
             className="close-message"
           >
-            ×
+            X
           </button>
         </div>
       )}
 
-      {/* BROADCAST FORM */}
       {broadcastEventId && (
         <div className="broadcast-form">
           <div className="form-header">
-            <h2>📧 Invia Email ai Partecipanti</h2>
+            <h2>Invia Email ai Partecipanti</h2>
             <p>
               Evento:{" "}
               <strong>
@@ -618,7 +626,7 @@ const GestisciEventi: React.FC = () => {
                 className="btn-send-broadcast"
                 disabled={sendingBroadcast}
               >
-                {sendingBroadcast ? "Invio in corso..." : "📧 Invia Email"}
+                {sendingBroadcast ? "Invio in corso..." : "Invia Email"}
               </button>
               <button
                 onClick={annullaBroadcast}
@@ -632,11 +640,10 @@ const GestisciEventi: React.FC = () => {
         </div>
       )}
 
-      {/* NUOVO EVENTO FORM */}
       {showNewEventForm && canManageEvents() && (
         <div className="new-event-form">
           <div className="form-header">
-            <h2>✨ Nuovo Evento</h2>
+            <h2>Nuovo Evento</h2>
           </div>
           <div className="form-content">
             <div className="form-grid">
@@ -711,7 +718,7 @@ const GestisciEventi: React.FC = () => {
                 className="btn-create"
                 disabled={creatingEvent}
               >
-                {creatingEvent ? "Salvataggio..." : "💾 Crea"}
+                {creatingEvent ? "Salvataggio..." : "Crea"}
               </button>
               <button
                 onClick={() => setShowNewEventForm(false)}
@@ -725,7 +732,6 @@ const GestisciEventi: React.FC = () => {
         </div>
       )}
 
-      {/* LISTA EVENTI */}
       <div className="eventi-content">
         {eventi.length > 0 ? (
           <div className="eventi-grid">
@@ -740,7 +746,7 @@ const GestisciEventi: React.FC = () => {
                       <img src={getImageUrl(evento)} alt={evento.titolo} />
                     ) : (
                       <div className="no-image">
-                        <span>🖼️</span>
+                        <span>Img</span>
                       </div>
                     )}
                   </div>
@@ -750,14 +756,47 @@ const GestisciEventi: React.FC = () => {
                       <span className="participant-count">
                         {getParticipantCount(evento.id)} iscritti
                       </span>
+                      {/* Badge Visibilita */}
+                      <span
+                        style={{
+                          marginLeft: "10px",
+                          padding: "2px 8px",
+                          borderRadius: "12px",
+                          fontSize: "0.8rem",
+                          backgroundColor:
+                            evento.visibile === 1 ? "#d4edda" : "#f8d7da",
+                          color: evento.visibile === 1 ? "#155724" : "#721c24",
+                        }}
+                      >
+                        {evento.visibile === 1 ? "Online" : "Bozza"}
+                      </span>
                     </div>
                     <div className="event-date">
-                      📅 {formatDate(evento.data_evento)}
+                      {formatDate(evento.data_evento)}
                     </div>
                   </div>
                   <div className="event-actions">
                     {canManageEvents() && (
                       <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleVisibility(evento.id, evento.visibile);
+                          }}
+                          className="btn-edit"
+                          style={{
+                            backgroundColor:
+                              evento.visibile === 1 ? "#ffc107" : "#28a745",
+                            color: "#fff",
+                          }}
+                          title={
+                            evento.visibile === 1
+                              ? "Nascondi Evento"
+                              : "Pubblica Evento"
+                          }
+                        >
+                          {evento.visibile === 1 ? "Nascondi" : "Pubblica"}
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -767,7 +806,7 @@ const GestisciEventi: React.FC = () => {
                           title="Email"
                           disabled={broadcastEventId === evento.id}
                         >
-                          📧
+                          Email
                         </button>
                         <button
                           onClick={(e) => {
@@ -777,7 +816,7 @@ const GestisciEventi: React.FC = () => {
                           className="btn-edit"
                           title="Modifica"
                         >
-                          ✏️
+                          Modifica
                         </button>
                         <button
                           onClick={(e) => {
@@ -787,7 +826,7 @@ const GestisciEventi: React.FC = () => {
                           className="btn-delete"
                           title="Elimina"
                         >
-                          🗑️
+                          Elimina
                         </button>
                       </>
                     )}
@@ -889,13 +928,12 @@ const GestisciEventi: React.FC = () => {
                                 >
                                   <div className="prenotazione-info">
                                     <div className="partecipante-nome">
-                                      👤 {pren.nome} {pren.cognome}
+                                      {pren.nome} {pren.cognome}
                                     </div>
                                     <div className="partecipante-email">
-                                      📧 {pren.email}
+                                      {pren.email}
                                     </div>
                                     <div className="num-biglietti">
-                                      🎟️{" "}
                                       {pren.num_biglietti ||
                                         pren.num_partecipanti ||
                                         1}{" "}
