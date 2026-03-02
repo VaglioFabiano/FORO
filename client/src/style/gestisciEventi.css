@@ -565,3 +565,110 @@
     max-height: 1000px;
   }
 }
+/* =========================================
+   CHECK-IN E PRENOTAZIONI AVANZATE
+   ========================================= */
+.prenotazioni-header-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid rgba(139, 69, 19, 0.1);
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+}
+
+.prenotazioni-header-stats h4 {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.stats-badges {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.stat-totale {
+  color: #8b4513;
+}
+.stat-arrivati {
+  color: #2e7d32;
+}
+
+/* Stile Riga Prenotazione */
+.prenotazione-item {
+  transition: background-color 0.3s ease;
+}
+
+.prenotazione-item.checkin-completo {
+  background-color: #f1f8e9; /* Verde molto chiaro */
+  border-color: #c5e1a5;
+}
+
+/* Controllore Bottoni + e - */
+.checkin-controller {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid #ddd;
+}
+
+.checkin-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkin-btn.minus {
+  background-color: white;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.checkin-btn.plus {
+  background-color: white;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.checkin-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.checkin-btn:not(:disabled):hover {
+  filter: brightness(0.95);
+  transform: scale(1.05);
+}
+
+.checkin-status {
+  min-width: 45px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0 5px;
+}
+
+.arrivati-num {
+  color: #2e7d32;
+  font-size: 16px;
+}
+
+.totale-num {
+  color: #666;
+  font-size: 12px;
+}

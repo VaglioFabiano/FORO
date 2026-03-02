@@ -153,7 +153,6 @@ export default async function handler(req, res) {
       }
 
       if (!section && !action) {
-        // MODIFICA: Aggiunto 'visibile' alla query
         const result = await client.execute(`
             SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile,
             length(immagine_blob) as blob_size 
@@ -342,7 +341,6 @@ export default async function handler(req, res) {
         blobBuffer = Buffer.from(base64Data, "base64");
       }
 
-      // MODIFICA: Aggiunto visibile e forzato a 0 (nascosto di default)
       const result = await client.execute({
         sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome, visibile) 
               VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
@@ -365,7 +363,17 @@ export default async function handler(req, res) {
 
     // --- PUT ---
     if (req.method === "PUT") {
-      // MODIFICA: Aggiunto handler per cambiare solo la visibilita
+      // GESTIONE CHECKIN
+      if (section === "checkin") {
+        const { id, num_arrivati } = req.body;
+        await client.execute({
+          sql: "UPDATE prenotazioni_eventi SET num_arrivati = ? WHERE id = ?",
+          args: [num_arrivati, id],
+        });
+        return res.status(200).json({ success: true });
+      }
+
+      // Gestione Visibilità
       if (section === "visibility") {
         const { id, visibile } = req.body;
         await client.execute({

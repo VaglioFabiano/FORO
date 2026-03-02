@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Mail, Edit, Trash2 } from "lucide-react";
+import { Mail, Edit, Trash2, ChevronDown } from "lucide-react";
 import "../style/gestisciEventi.css";
 
 // Definizione delle interfacce per i dati
@@ -24,6 +24,7 @@ interface Prenotazione {
   data_prenotazione: string;
   num_biglietti?: number;
   num_partecipanti?: number;
+  num_arrivati?: number; // Aggiunto per il check-in
   note?: string;
 }
 
@@ -439,6 +440,34 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
+  const handleCheckin = async (
+    prenotazioneId: number,
+    eventoId: number,
+    newArrivati: number,
+  ) => {
+    try {
+      const response = await fetch("/api/eventi?section=checkin", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: prenotazioneId, num_arrivati: newArrivati }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setPrenotazioni((prev) => ({
+          ...prev,
+          [eventoId]: prev[eventoId].map((p) =>
+            p.id === prenotazioneId ? { ...p, num_arrivati: newArrivati } : p,
+          ),
+        }));
+      } else {
+        throw new Error(data.error || "Errore durante il check-in.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore connessione.");
+    }
+  };
+
   const handleNewEventImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -509,6 +538,11 @@ const GestisciEventi: React.FC = () => {
       (acc, p) => acc + (p.num_biglietti || p.num_partecipanti || 1),
       0,
     );
+  };
+
+  const getArrivatiCount = (eventoId: number) => {
+    const list = prenotazioni[eventoId] || [];
+    return list.reduce((acc, p) => acc + (p.num_arrivati || 0), 0);
   };
 
   const canManageEvents = () => userLevel >= 0 && userLevel <= 2;
@@ -820,7 +854,7 @@ const GestisciEventi: React.FC = () => {
                     <span
                       className={`expand-icon ${expandedEvents[evento.id] ? "expanded" : ""}`}
                     >
-                      ▼
+                      <ChevronDown size={18} />
                     </span>
                   </div>
                 </div>
@@ -904,31 +938,85 @@ const GestisciEventi: React.FC = () => {
                         <div className="event-description">
                           <p>{evento.descrizione || "Nessuna descrizione."}</p>
                         </div>
+
                         <div className="prenotazioni-section">
-                          <h4>Prenotazioni</h4>
+                          <div className="prenotazioni-header-stats">
+                            <h4>Prenotazioni</h4>
+                            <div className="stats-badges">
+                              <span className="stat-totale">
+                                Prenotati: {getParticipantCount(evento.id)}
+                              </span>
+                              <span className="stat-arrivati">
+                                Arrivati: {getArrivatiCount(evento.id)}
+                              </span>
+                            </div>
+                          </div>
+
                           {(prenotazioni[evento.id] || []).length > 0 ? (
                             <div className="prenotazioni-list">
-                              {prenotazioni[evento.id].map((pren) => (
-                                <div
-                                  key={pren.id}
-                                  className="prenotazione-item"
-                                >
-                                  <div className="prenotazione-info">
-                                    <div className="partecipante-nome">
-                                      {pren.nome} {pren.cognome}
+                              {prenotazioni[evento.id].map((pren) => {
+                                const totaleBiglietti =
+                                  pren.num_biglietti ||
+                                  pren.num_partecipanti ||
+                                  1;
+                                const arrivati = pren.num_arrivati || 0;
+                                const isCompleto = arrivati === totaleBiglietti;
+
+                                return (
+                                  <div
+                                    key={pren.id}
+                                    className={`prenotazione-item ${isCompleto ? "checkin-completo" : ""}`}
+                                  >
+                                    <div className="prenotazione-info">
+                                      <div className="partecipante-nome">
+                                        {pren.nome} {pren.cognome}
+                                      </div>
+                                      <div className="partecipante-email">
+                                        {pren.email}
+                                      </div>
                                     </div>
-                                    <div className="partecipante-email">
-                                      {pren.email}
-                                    </div>
-                                    <div className="num-biglietti">
-                                      {pren.num_biglietti ||
-                                        pren.num_partecipanti ||
-                                        1}{" "}
-                                      biglietti
+
+                                    <div className="checkin-controller">
+                                      <button
+                                        className="checkin-btn minus"
+                                        disabled={arrivati <= 0}
+                                        onClick={() =>
+                                          handleCheckin(
+                                            pren.id,
+                                            evento.id,
+                                            arrivati - 1,
+                                          )
+                                        }
+                                      >
+                                        -
+                                      </button>
+
+                                      <div className="checkin-status">
+                                        <span className="arrivati-num">
+                                          {arrivati}
+                                        </span>
+                                        <span className="totale-num">
+                                          / {totaleBiglietti}
+                                        </span>
+                                      </div>
+
+                                      <button
+                                        className="checkin-btn plus"
+                                        disabled={arrivati >= totaleBiglietti}
+                                        onClick={() =>
+                                          handleCheckin(
+                                            pren.id,
+                                            evento.id,
+                                            arrivati + 1,
+                                          )
+                                        }
+                                      >
+                                        +
+                                      </button>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           ) : (
                             <div className="no-prenotazioni">
