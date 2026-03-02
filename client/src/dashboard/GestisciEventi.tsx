@@ -24,7 +24,7 @@ interface Prenotazione {
   data_prenotazione: string;
   num_biglietti?: number;
   num_partecipanti?: number;
-  num_arrivati?: number; // Aggiunto per il check-in
+  num_arrivati?: number;
   note?: string;
 }
 
@@ -173,10 +173,13 @@ const GestisciEventi: React.FC = () => {
     return true;
   };
 
-  const fetchEventi = useCallback(async () => {
+  // Funzione di fetch con flag per il background (silenzioso)
+  const fetchEventi = useCallback(async (isBackground = false) => {
     try {
-      setLoading(true);
-      setError(null);
+      if (!isBackground) {
+        setLoading(true);
+        setError(null);
+      }
 
       const response = await fetch("/api/eventi");
 
@@ -200,9 +203,13 @@ const GestisciEventi: React.FC = () => {
       }
     } catch (err) {
       console.error("Fetch eventi error:", err);
-      setError(err instanceof Error ? err.message : "Errore connessione");
+      if (!isBackground) {
+        setError(err instanceof Error ? err.message : "Errore connessione");
+      }
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -225,10 +232,20 @@ const GestisciEventi: React.FC = () => {
     }
   }, []);
 
+  // 1. Caricamento iniziale visibile
   useEffect(() => {
     setUserLevel(1);
     setUserId(1);
-    fetchEventi();
+    fetchEventi(false);
+  }, [fetchEventi]);
+
+  // 2. Polling automatico in background ogni 7 secondi (7000ms)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchEventi(true);
+    }, 7000);
+
+    return () => clearInterval(interval);
   }, [fetchEventi]);
 
   const inviaEmailBroadcast = async () => {
@@ -327,7 +344,7 @@ const GestisciEventi: React.FC = () => {
           immagine_url: "",
         });
         setShowNewEventForm(false);
-        await fetchEventi();
+        await fetchEventi(true);
       } else {
         throw new Error(data.error || "Errore creazione.");
       }
@@ -380,7 +397,7 @@ const GestisciEventi: React.FC = () => {
       if (data.success) {
         setEditingEventId(null);
         setEditData({});
-        await fetchEventi();
+        await fetchEventi(true);
       } else {
         throw new Error(data.error);
       }
@@ -404,7 +421,7 @@ const GestisciEventi: React.FC = () => {
 
       const data = await response.json();
       if (data.success) {
-        await fetchEventi();
+        await fetchEventi(true);
       } else {
         throw new Error(data.error);
       }
@@ -446,6 +463,14 @@ const GestisciEventi: React.FC = () => {
     newArrivati: number,
   ) => {
     try {
+      // Aggiornamento ottimistico locale per evitare scatti dell'interfaccia
+      setPrenotazioni((prev) => ({
+        ...prev,
+        [eventoId]: prev[eventoId].map((p) =>
+          p.id === prenotazioneId ? { ...p, num_arrivati: newArrivati } : p,
+        ),
+      }));
+
       const response = await fetch("/api/eventi?section=checkin", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -453,14 +478,8 @@ const GestisciEventi: React.FC = () => {
       });
 
       const data = await response.json();
-      if (data.success) {
-        setPrenotazioni((prev) => ({
-          ...prev,
-          [eventoId]: prev[eventoId].map((p) =>
-            p.id === prenotazioneId ? { ...p, num_arrivati: newArrivati } : p,
-          ),
-        }));
-      } else {
+      if (!data.success) {
+        // Ripristino in caso di errore (opzionale, si riallinea al prossimo polling)
         throw new Error(data.error || "Errore durante il check-in.");
       }
     } catch (err) {
@@ -579,7 +598,7 @@ const GestisciEventi: React.FC = () => {
             </button>
           )}
           <button
-            onClick={fetchEventi}
+            onClick={() => fetchEventi(false)} // false mostra il caricamento esplicito
             className="refresh-button"
             disabled={loading}
           >
