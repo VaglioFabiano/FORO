@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Mail, Edit, Trash2 } from "lucide-react";
 import "../style/gestisciEventi.css";
 
+// Definizione delle interfacce per i dati
 interface Evento {
   id: number;
   titolo: string;
@@ -10,7 +12,7 @@ interface Evento {
   immagine_blob?: string;
   immagine_tipo?: string;
   immagine_nome?: string;
-  visibile: number; // Aggiunto per tracciare lo stato
+  visibile: number;
 }
 
 interface Prenotazione {
@@ -410,7 +412,6 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
-  // Funzione per attivare/disattivare la visibilita
   const toggleVisibility = async (eventoId: number, currentVisible: number) => {
     try {
       const newStatus = currentVisible === 1 ? 0 : 1;
@@ -423,7 +424,6 @@ const GestisciEventi: React.FC = () => {
 
       const data = await response.json();
       if (data.success) {
-        // Aggiorna lo stato locale senza ricaricare tutto
         setEventi(
           eventi.map((ev) =>
             ev.id === eventoId ? { ...ev, visibile: newStatus } : ev,
@@ -431,7 +431,7 @@ const GestisciEventi: React.FC = () => {
         );
       } else {
         throw new Error(
-          data.error || "Errore durante l'aggiornamento della visibilita.",
+          data.error || "Errore durante l'aggiornamento della visibilità.",
         );
       }
     } catch (err) {
@@ -566,7 +566,7 @@ const GestisciEventi: React.FC = () => {
 
       {broadcastSuccess && (
         <div className="eventi-message success">
-          <div className="message-icon">V</div>
+          <div className="message-icon">OK</div>
           <span>{broadcastSuccess}</span>
           <button
             onClick={() => setBroadcastSuccess(null)}
@@ -746,7 +746,7 @@ const GestisciEventi: React.FC = () => {
                       <img src={getImageUrl(evento)} alt={evento.titolo} />
                     ) : (
                       <div className="no-image">
-                        <span>Img</span>
+                        <span>IMG</span>
                       </div>
                     )}
                   </div>
@@ -756,7 +756,6 @@ const GestisciEventi: React.FC = () => {
                       <span className="participant-count">
                         {getParticipantCount(evento.id)} iscritti
                       </span>
-                      {/* NUOVO BADGE CON CSS PULITO */}
                       <span
                         className={`visibility-badge ${evento.visibile === 1 ? "online" : "bozza"}`}
                       >
@@ -770,7 +769,6 @@ const GestisciEventi: React.FC = () => {
                   <div className="event-actions">
                     {canManageEvents() && (
                       <>
-                        {/* NUOVO BOTTONE TOGGLE CON CSS PULITO */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -792,10 +790,10 @@ const GestisciEventi: React.FC = () => {
                             iniziaBroadcast(evento.id);
                           }}
                           className="btn-broadcast"
-                          title="Email"
+                          title="Invia Email"
                           disabled={broadcastEventId === evento.id}
                         >
-                          📧
+                          <Mail size={16} />
                         </button>
                         <button
                           onClick={(e) => {
@@ -805,7 +803,7 @@ const GestisciEventi: React.FC = () => {
                           className="btn-edit"
                           title="Modifica"
                         >
-                          ✏️
+                          <Edit size={16} />
                         </button>
                         <button
                           onClick={(e) => {
@@ -815,68 +813,7 @@ const GestisciEventi: React.FC = () => {
                           className="btn-delete"
                           title="Elimina"
                         >
-                          🗑️
-                        </button>
-                      </>
-                    )}
-                    <span
-                      className={`expand-icon ${expandedEvents[evento.id] ? "expanded" : ""}`}
-                    >
-                      ▼
-                    </span>
-                  </div>
-                  <div className="event-actions">
-                    {canManageEvents() && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleVisibility(evento.id, evento.visibile);
-                          }}
-                          className="btn-edit"
-                          style={{
-                            backgroundColor:
-                              evento.visibile === 1 ? "#ffc107" : "#28a745",
-                            color: "#fff",
-                          }}
-                          title={
-                            evento.visibile === 1
-                              ? "Nascondi Evento"
-                              : "Pubblica Evento"
-                          }
-                        >
-                          {evento.visibile === 1 ? "Nascondi" : "Pubblica"}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            iniziaBroadcast(evento.id);
-                          }}
-                          className="btn-broadcast"
-                          title="Email"
-                          disabled={broadcastEventId === evento.id}
-                        >
-                          Email
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            iniziaModifica(evento);
-                          }}
-                          className="btn-edit"
-                          title="Modifica"
-                        >
-                          Modifica
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            eliminaEvento(evento.id);
-                          }}
-                          className="btn-delete"
-                          title="Elimina"
-                        >
-                          Elimina
+                          <Trash2 size={16} />
                         </button>
                       </>
                     )}
