@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
 import OrariSection from "./components/OrariSection";
-// import EventiSection from './components/EventiSection';
 import SocialSection from "./components/SocialSection";
 import StatutoSection from "./components/StatutoSection";
 import Footer from "./components/Footer";
@@ -10,18 +9,15 @@ import Login from "./components/Login";
 import SegnalazioniSection from "./components/Segnalazioni";
 import AssociatiSection from "./components/Associati";
 import HomeDash from "./dashboard/homedash";
-// --- IMPORTA IL BANNER COOKIE CORRETTO ---
 import BannerCookie from "./components/banner_cookie";
-// import MappeSection from './components/mappe';
-// import PrenotaEventoPage from './components/PrenotaEventoPage';
+import PrenotaEventoPage from "./components/PrenotaEventoPage";
 
-// Tipo per le pagine dell'applicazione
-type PageType = "home" | "login" | "dashboard"; // | 'prenota-evento';
+// Estensione dei tipi per includere la pagina eventi
+type PageType = "home" | "login" | "dashboard" | "eventi";
 
-// Interfaccia per lo stato del routing
 interface RouteState {
   page: PageType;
-  // eventoId?: number;
+  eventoId?: number;
 }
 
 function App() {
@@ -29,29 +25,48 @@ function App() {
     page: "home",
   });
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
-  const [, /*currentUser,*/ setCurrentUser] = useState<{
+  const [, setCurrentUser] = useState<{
     id: number;
     level: number;
   } | null>(null);
 
-  // Funzione per parsare l'URL e determinare la pagina corrente
+  // Stato per l'evento che deve apparire nell'Header della Home
+  const [eventoInEvidenza, setEventoInEvidenza] = useState<any>(null);
+
+  // Funzione per parsare l'URL (Router custom)
   const parseUrl = (): RouteState => {
     const path = window.location.pathname;
-    const hash = window.location.hash;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
 
-    if (hash && path === "/") {
-      return { page: "home" };
-    }
     if (path === "/login") {
       return { page: "login" };
     }
     if (path === "/dashboard") {
       return { page: "dashboard" };
     }
+    if (path === "/eventi") {
+      return {
+        page: "eventi",
+        eventoId: id ? parseInt(id) : undefined,
+      };
+    }
     return { page: "home" };
   };
 
-  // Controlla i permessi utente
+  // Recupera l'evento visibile per l'header all'avvio
+  const fetchEventoVisibile = async () => {
+    try {
+      const response = await fetch("/api/eventi?section=visibile");
+      const data = await response.json();
+      if (data.success && data.evento) {
+        setEventoInEvidenza(data.evento);
+      }
+    } catch (err) {
+      console.error("Errore recupero evento visibile:", err);
+    }
+  };
+
   const checkUserPermissions = () => {
     const user = localStorage.getItem("user");
     if (user) {
@@ -67,8 +82,8 @@ function App() {
     }
   };
 
-  // Controlla lo stato di login all'avvio e imposta la rotta iniziale
   useEffect(() => {
+    // Inizializzazione rotta e permessi
     const user = localStorage.getItem("user");
     const loginTime = localStorage.getItem("loginTime");
 
@@ -84,20 +99,20 @@ function App() {
         const currentUrl = parseUrl();
         if (currentUrl.page === "dashboard") {
           setCurrentRoute({ page: "dashboard" });
+          checkUserPermissions();
           return;
         }
       } else {
-        // Non svuotare tutto se il banner cookie non è accettato,
-        // altrimenti si crea un loop. Qui si svuota solo
-        // se il login è SCADUTO.
         localStorage.clear();
       }
     }
+
     setCurrentRoute(parseUrl());
     checkUserPermissions();
+    fetchEventoVisibile();
   }, []);
 
-  // Gestisci il pulsante indietro del browser
+  // Gestione navigazione browser (avanti/indietro)
   useEffect(() => {
     const handlePopState = () => {
       setCurrentRoute(parseUrl());
@@ -106,7 +121,7 @@ function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  // Funzione per navigare alle diverse pagine
+  // Funzione di navigazione interna
   const navigateTo = (route: RouteState) => {
     setCurrentRoute(route);
     let newUrl = "/";
@@ -117,7 +132,9 @@ function App() {
       case "dashboard":
         newUrl = "/dashboard";
         break;
-      case "home":
+      case "eventi":
+        newUrl = route.eventoId ? `/eventi?id=${route.eventoId}` : "/eventi";
+        break;
       default:
         newUrl = "/";
         break;
@@ -125,19 +142,17 @@ function App() {
     window.history.pushState(null, "", newUrl);
   };
 
+  // Handlers
   const handleShowLogin = () => navigateTo({ page: "login" });
-
   const handleBackToHome = () => {
     navigateTo({ page: "home" });
     checkUserPermissions();
   };
-
   const handleLoginSuccess = () => {
     navigateTo({ page: "dashboard" });
     setForceNavbarUpdate((prev) => !prev);
     checkUserPermissions();
   };
-
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("loginTime");
@@ -147,11 +162,11 @@ function App() {
     setForceNavbarUpdate((prev) => !prev);
     checkUserPermissions();
   };
-
   const handleGoToDashboard = () => navigateTo({ page: "dashboard" });
 
+  // Espone la navigazione alla home globalmente (usata dai componenti figli)
   useEffect(() => {
-    (window as any).navigateToHome = () => navigateTo({ page: "home" });
+    (window as any).navigateToHome = handleBackToHome;
     return () => {
       delete (window as any).navigateToHome;
     };
@@ -159,7 +174,6 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      {/* Navbar: è fuori dal <main> e si estende per tutta la larghezza */}
       <Navbar
         onLoginClick={handleShowLogin}
         onBackToHome={handleBackToHome}
@@ -170,10 +184,7 @@ function App() {
         onGoToDashboard={handleGoToDashboard}
       />
 
-      {/* MODIFICA CHIAVE: 
-          Spostiamo la logica di 'max-width' e 'margin: auto' qui dentro.
-      */}
-
+      {/* Renderizzazione condizionale delle pagine */}
       {currentRoute.page === "dashboard" ? (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <HomeDash onLogout={handleLogout} onBackToHome={handleBackToHome} />
@@ -182,43 +193,42 @@ function App() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Login onLoginSuccess={handleLoginSuccess} />
         </main>
+      ) : currentRoute.page === "eventi" ? (
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <PrenotaEventoPage eventoId={currentRoute.eventoId} />
+        </main>
       ) : (
-        // Pagina Home
-        <>
-          {/* Il contenuto della home è avvolto dal main */}
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div id="header">
-              <Header />
-            </div>
-            <div id="orari">
-              <OrariSection />
-            </div>
-            {/* {canSeeEventi() && (
-              <div id="eventi">
-                <EventiSection />
-              </div>
-            )} */}
-            <div id="social">
-              <SocialSection />
-            </div>
-            <div id="statuto">
-              <StatutoSection />
-            </div>
-            <div id="associati">
-              <AssociatiSection />
-            </div>
-            <div id="segnalazioni">
-              <SegnalazioniSection />
-            </div>
-            <div id="footer">
-              <Footer />
-            </div>
-            {/*
-            <div id="mappe">
-              <MappeSection />
-            </div>*/}
-          </main>
-        </>
+        /* --- PAGINA HOME --- */
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div id="header">
+            {/* Se esiste un evento visibile nel DB, l'header cambia aspetto */}
+            <Header eventoSpeciale={eventoInEvidenza} />
+          </div>
+
+          <div id="orari">
+            <OrariSection />
+          </div>
+
+          <div id="social">
+            <SocialSection />
+          </div>
+
+          <div id="statuto">
+            <StatutoSection />
+          </div>
+
+          <div id="associati">
+            <AssociatiSection />
+          </div>
+
+          <div id="segnalazioni">
+            <SegnalazioniSection />
+          </div>
+
+          <div id="footer">
+            <Footer />
+          </div>
+        </main>
       )}
 
       <BannerCookie />

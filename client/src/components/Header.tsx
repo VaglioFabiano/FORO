@@ -30,15 +30,25 @@ const setCachedData = (key: string, data: any) => {
 };
 
 const invalidateHomepageCache = () => {
-  console.log("Invalidating all homepage cache...");
   localStorage.removeItem(CACHE_VERSION_KEY);
   localStorage.removeItem(CACHE_DATA_KEY);
   localStorage.removeItem(CACHE_HEADER_KEY);
   localStorage.removeItem(CACHE_SEGNALAZIONI_KEY);
 };
-// --- FINE LOGICA CACHE ---
 
-const Header: React.FC = () => {
+// --- INTERFACCIA PROPS ---
+interface HeaderProps {
+  eventoSpeciale?: {
+    id: number;
+    titolo: string;
+    descrizione: string;
+    data_evento: string;
+    immagine_blob?: string;
+    immagine_url?: string;
+  } | null;
+}
+
+const Header: React.FC<HeaderProps> = () => {
   const [descrizione, setDescrizione] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -62,7 +72,6 @@ const Header: React.FC = () => {
         setUserLevel(userData.level);
       }
     } catch (error) {
-      console.error("Errore nel parsing user data:", error);
       setUserLevel(null);
     }
   };
@@ -96,7 +105,6 @@ const Header: React.FC = () => {
         setTempDescrizione(defaultDescription);
       }
     } catch (error) {
-      console.error("Errore header:", error);
       setDescrizione(defaultDescription);
       setTempDescrizione(defaultDescription);
     } finally {
@@ -119,10 +127,7 @@ const Header: React.FC = () => {
     try {
       setIsSaving(true);
       const user = localStorage.getItem("user");
-      if (!user) {
-        alert("Login necessario");
-        return;
-      }
+      if (!user) return;
       const userData = JSON.parse(user);
 
       const requestBody = {
@@ -137,15 +142,10 @@ const Header: React.FC = () => {
         body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) throw new Error("Errore salvataggio");
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.ok) {
         setDescrizione(tempDescrizione.trim());
         setIsEditing(false);
         invalidateHomepageCache();
-      } else {
-        throw new Error(data.error || "Errore");
       }
     } catch (error) {
       alert("Errore durante il salvataggio.");
@@ -155,7 +155,7 @@ const Header: React.FC = () => {
   };
 
   const handleImageError = (
-    e: React.SyntheticEvent<HTMLImageElement, Event>
+    e: React.SyntheticEvent<HTMLImageElement, Event>,
   ): void => {
     const target = e.target as HTMLImageElement;
     const nextSibling = target.nextElementSibling as HTMLElement;
@@ -167,6 +167,7 @@ const Header: React.FC = () => {
     userLevel !== null &&
     (userLevel === 0 || userLevel === 1 || userLevel === 2);
 
+  // NOTA: Ignoriamo volutamente 'eventoSpeciale' nel render per non mostrare modifiche nella Home
   return (
     <header id="header_foro" className="header_foro_wrapper">
       <div className="header_foro_background"></div>
@@ -202,14 +203,13 @@ const Header: React.FC = () => {
                 value={tempDescrizione}
                 onChange={(e) => setTempDescrizione(e.target.value)}
                 className="header_foro_textarea"
-                placeholder="Inserisci la descrizione..."
                 disabled={isSaving}
               />
               <div className="header_foro_buttons_row">
                 <button
                   onClick={handleSaveClick}
                   className="header_foro_btn header_foro_btn_save"
-                  disabled={isSaving || tempDescrizione.trim() === ""}
+                  disabled={isSaving}
                 >
                   {isSaving ? "Salvando..." : "Salva"}
                 </button>
