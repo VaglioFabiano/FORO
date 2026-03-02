@@ -56,7 +56,6 @@
   min-width: 120px;
 }
 
-/* Bottone Aggiorna (Arancione/Marrone) */
 .refresh-button {
   background: linear-gradient(135deg, #d2691e 0%, #cd853f 100%);
   color: white;
@@ -68,7 +67,6 @@
   box-shadow: 0 4px 8px rgba(210, 105, 30, 0.4);
 }
 
-/* Bottone Crea (Verde Foresta - coerente con palette naturale) */
 .action-button.create {
   background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
   color: white;
@@ -145,17 +143,12 @@
   box-shadow: 0 5px 15px rgba(139, 69, 19, 0.15);
 }
 
-/* Header della Card (Titolo e Immagine) */
 .event-header {
   padding: 15px;
   display: flex;
   align-items: center;
   cursor: pointer;
-  background: linear-gradient(
-    to right,
-    #fff,
-    #fffbf0
-  ); /* Sfumatura leggera beige */
+  background: linear-gradient(to right, #fff, #fffbf0);
 }
 
 .event-image {
@@ -189,11 +182,19 @@
 
 .event-info {
   flex: 1;
-  min-width: 0; /* Impedisce overflow del testo */
+  min-width: 0;
+}
+
+.event-title {
+  display: flex;
+  flex-wrap: wrap; /* Importante per il mobile */
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
 }
 
 .event-title h3 {
-  margin: 0 0 5px 0;
+  margin: 0;
   font-size: 16px;
   color: #8b4513;
   font-weight: 700;
@@ -208,15 +209,36 @@
   gap: 5px;
 }
 
+/* Badge Partecipanti e Visibilità */
 .participant-count {
   font-size: 11px;
   background-color: #f0e6d2;
   color: #8b4513;
   padding: 2px 8px;
   border-radius: 10px;
-  margin-left: 8px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.visibility-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.visibility-badge.online {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.visibility-badge.bozza {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
 /* Icona Espandi */
@@ -231,12 +253,12 @@
 }
 
 /* =========================================
-   CONTENUTO ESPANSO (Dettagli e Prenotazioni)
+   CONTENUTO ESPANSO E PRENOTAZIONI
    ========================================= */
 .event-content {
   padding: 15px;
   border-top: 1px dashed rgba(139, 69, 19, 0.2);
-  background-color: #fffbf5; /* Beige chiarissimo */
+  background-color: #fffbf5;
   animation: slideDown 0.3s ease-out;
 }
 
@@ -248,7 +270,6 @@
   font-style: italic;
 }
 
-/* Sezione Prenotazioni */
 .prenotazioni-section h4 {
   color: #8b4513;
   font-size: 14px;
@@ -276,26 +297,29 @@
 
 .partecipante-nome {
   font-weight: 700;
-  color: #1565c0; /* Blu scuro per i nomi, leggibile */
+  color: #1565c0;
   margin-bottom: 2px;
 }
 
-.partecipante-email,
-.prenotazione-data {
+.partecipante-email {
   font-size: 11px;
   color: #777;
 }
 
-/* Bottoni Azioni Evento (Edit/Delete/Email) */
+/* =========================================
+   BOTTONI AZIONI EVENTO
+   ========================================= */
 .event-actions {
   display: flex;
   gap: 5px;
+  flex-wrap: wrap; /* Evita che escano dallo schermo su mobile */
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .btn-edit,
 .btn-delete,
-.btn-broadcast,
-.btn-delete-small {
+.btn-broadcast {
   width: 32px;
   height: 32px;
   border-radius: 6px;
@@ -311,17 +335,40 @@
 .btn-broadcast {
   background: #ff9800;
   color: white;
-} /* Arancione */
+}
 .btn-edit {
   background: #2196f3;
   color: white;
-} /* Blu */
-.btn-delete,
-.btn-delete-small {
+}
+.btn-delete {
   background: #f44336;
   color: white;
-} /* Rosso */
+}
 
+/* Nuovo Bottone Visibilità (Testuale) */
+.btn-toggle-vis {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.btn-toggle-vis.online {
+  background: #ffc107; /* Giallo per "Nascondi" */
+  color: #000;
+}
+
+.btn-toggle-vis.bozza {
+  background: #28a745; /* Verde per "Pubblica" */
+  color: white;
+}
+
+.btn-toggle-vis:hover,
 .btn-broadcast:hover,
 .btn-edit:hover,
 .btn-delete:hover {
@@ -425,78 +472,46 @@
   .eventi-container {
     padding: 5px;
   }
-
-  /* Header più compatto su mobile */
   .eventi-header-section {
     padding: 10px;
     gap: 10px;
   }
-
   .eventi-header-section h1 {
     font-size: 20px;
   }
-
-  /* Bottoni azioni full width su mobile */
   .eventi-actions {
     flex-direction: column;
     width: 100%;
   }
-
   .action-button,
   .refresh-button {
     width: 100%;
   }
-
-  /* Card Evento ottimizzata per mobile */
   .event-header {
     padding: 10px;
-  }
-
-  .event-image {
-    width: 50px;
-    height: 50px;
-    margin-right: 10px;
-  }
-
-  .event-title h3 {
-    font-size: 15px;
-  }
-
-  .participant-count {
-    display: inline-block;
-    margin-top: 4px;
-    margin-left: 0;
-    font-size: 10px;
-  }
-
-  .event-actions {
-    /* Spostare le azioni sotto su schermi molto piccoli? 
-       No, meglio tenerle accessibili. Riduciamo gap. */
-    gap: 3px;
-  }
-
-  .btn-edit,
-  .btn-delete,
-  .btn-broadcast {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-  }
-
-  /* Form a colonna singola */
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .prenotazione-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-
-  .prenotazione-actions {
-    align-self: flex-end;
-    margin-top: -30px; /* Hack per allineare col nome */
+  .event-image {
+    width: 100%;
+    height: 120px;
+    margin-right: 0;
+  }
+  .event-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  .btn-toggle-vis {
+    flex: 1;
+    text-align: center;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .expand-icon {
+    display: none; /* Su mobile l'intera card è cliccabile, togliamo la freccia per fare spazio */
   }
 }
 
@@ -530,7 +545,6 @@
     transform: rotate(360deg);
   }
 }
-
 @keyframes slideInDown {
   from {
     opacity: 0;
@@ -541,7 +555,6 @@
     transform: translateY(0);
   }
 }
-
 @keyframes slideDown {
   from {
     opacity: 0;

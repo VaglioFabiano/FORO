@@ -756,17 +756,9 @@ const GestisciEventi: React.FC = () => {
                       <span className="participant-count">
                         {getParticipantCount(evento.id)} iscritti
                       </span>
-                      {/* Badge Visibilita */}
+                      {/* NUOVO BADGE CON CSS PULITO */}
                       <span
-                        style={{
-                          marginLeft: "10px",
-                          padding: "2px 8px",
-                          borderRadius: "12px",
-                          fontSize: "0.8rem",
-                          backgroundColor:
-                            evento.visibile === 1 ? "#d4edda" : "#f8d7da",
-                          color: evento.visibile === 1 ? "#155724" : "#721c24",
-                        }}
+                        className={`visibility-badge ${evento.visibile === 1 ? "online" : "bozza"}`}
                       >
                         {evento.visibile === 1 ? "Online" : "Bozza"}
                       </span>
@@ -774,6 +766,64 @@ const GestisciEventi: React.FC = () => {
                     <div className="event-date">
                       {formatDate(evento.data_evento)}
                     </div>
+                  </div>
+                  <div className="event-actions">
+                    {canManageEvents() && (
+                      <>
+                        {/* NUOVO BOTTONE TOGGLE CON CSS PULITO */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleVisibility(evento.id, evento.visibile);
+                          }}
+                          className={`btn-toggle-vis ${evento.visibile === 1 ? "online" : "bozza"}`}
+                          title={
+                            evento.visibile === 1
+                              ? "Nascondi Evento"
+                              : "Pubblica Evento"
+                          }
+                        >
+                          {evento.visibile === 1 ? "Nascondi" : "Pubblica"}
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            iniziaBroadcast(evento.id);
+                          }}
+                          className="btn-broadcast"
+                          title="Email"
+                          disabled={broadcastEventId === evento.id}
+                        >
+                          📧
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            iniziaModifica(evento);
+                          }}
+                          className="btn-edit"
+                          title="Modifica"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            eliminaEvento(evento.id);
+                          }}
+                          className="btn-delete"
+                          title="Elimina"
+                        >
+                          🗑️
+                        </button>
+                      </>
+                    )}
+                    <span
+                      className={`expand-icon ${expandedEvents[evento.id] ? "expanded" : ""}`}
+                    >
+                      ▼
+                    </span>
                   </div>
                   <div className="event-actions">
                     {canManageEvents() && (
