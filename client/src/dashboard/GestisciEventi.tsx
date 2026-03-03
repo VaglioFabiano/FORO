@@ -1,18 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Mail,
-  Edit,
-  Trash2,
-  ChevronDown,
-  Search,
-  Plus,
-  X,
-  Check,
-  RefreshCw,
-} from "lucide-react";
+import { Mail, Edit, Trash2, ChevronDown, Search } from "lucide-react";
 import "../style/gestisciEventi.css";
 
-// --- INTERFACCE DATI ---
+// Definizione delle interfacce per i dati
 interface Evento {
   id: number;
   titolo: string;
@@ -23,7 +13,7 @@ interface Evento {
   immagine_tipo?: string;
   immagine_nome?: string;
   visibile: number;
-  num_max?: number;
+  num_max?: number; // Aggiunto num_max
 }
 
 interface Prenotazione {
@@ -33,6 +23,7 @@ interface Prenotazione {
   cognome: string;
   email: string;
   data_prenotazione: string;
+  num_biglietti?: number;
   num_partecipanti?: number;
   num_arrivati?: number;
   note?: string;
@@ -44,14 +35,22 @@ interface NuovoEvento {
   data_evento: string;
   immagine_url: string;
   immagine_file?: File;
-  num_max: number | "";
+  num_max: number | ""; // Aggiunto num_max
+}
+
+interface BroadcastEmail {
+  subject: string;
+  message: string;
 }
 
 interface ApiResponse {
   success: boolean;
   eventi?: Evento[];
+  evento?: Evento;
   prenotazioni?: Prenotazione[];
   error?: string;
+  message?: string;
+  evento_id?: number;
   destinatari_count?: number;
 }
 
@@ -65,10 +64,9 @@ const GestisciEventi: React.FC = () => {
   const [expandedEvents, setExpandedEvents] = useState<Record<number, boolean>>(
     {},
   );
-  const [searchQuery, setSearchQuery] = useState<Record<number, string>>({});
 
-  // Timestamp per forzare il refresh delle immagini esterne e ignorare la cache
-  const [renderTime] = useState(Date.now());
+  // Stato per la ricerca dei partecipanti
+  const [searchQuery, setSearchQuery] = useState<Record<number, string>>({});
 
   const [nuovoEvento, setNuovoEvento] = useState<NuovoEvento>({
     titolo: "",
@@ -87,163 +85,262 @@ const GestisciEventi: React.FC = () => {
   const [updatingEvent, setUpdatingEvent] = useState(false);
 
   const [broadcastEventId, setBroadcastEventId] = useState<number | null>(null);
-  const [broadcastData, setBroadcastData] = useState({
+  const [broadcastData, setBroadcastData] = useState<BroadcastEmail>({
     subject: "",
     message: "",
   });
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [broadcastSuccess, setBroadcastSuccess] = useState<string | null>(null);
 
-  // --- LOGICA IMMAGINI ---
+  const [userLevel, setUserLevel] = useState<number>(-1);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (broadcastSuccess) {
+      const timer = setTimeout(() => setBroadcastSuccess(null), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [broadcastSuccess]);
+
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
+      const maxWidth = 800;
+      const maxHeight = 800;
       const reader = new FileReader();
+
       reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
         img.src = event.target?.result as string;
+
         img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 1080;
           let width = img.width;
           let height = img.height;
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
           }
+
+          const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL("image/jpeg", 0.7));
+
+          if (!ctx) {
+            reject(new Error("Errore compressione immagine"));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(dataUrl);
         };
+        img.onerror = (err) => reject(err);
       };
-      reader.onerror = reject;
+      reader.onerror = (err) => reject(err);
     });
   };
 
-  const getImageUrl = (evento: Evento) => {
-    // 1. Se il database restituisce direttamente la stringa base64 (inizia con data:image), la usiamo subito!
-    if (
-      evento.immagine_blob &&
-      typeof evento.immagine_blob === "string" &&
-      evento.immagine_blob.startsWith("data:image")
-    ) {
-      return evento.immagine_blob;
+  const validateImageFile = (file: File): boolean => {
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    const maxSize = 10 * 1024 * 1024;
+
+    if (!validTypes.includes(file.type)) {
+      setError("Tipo di file non supportato. Usa JPG, PNG, GIF o WebP.");
+      return false;
     }
-    // 2. Altrimenti usa l'URL salvato o l'API endpoint, aggiungendo un timestamp per bypassare la cache
-    const base =
-      evento.immagine_url || `/api/eventi?action=image&id=${evento.id}`;
-    return `${base}${base.includes("?") ? "&" : "?"}t=${renderTime}`;
+
+    if (file.size > maxSize) {
+      setError("File troppo grande. Dimensione massima: 10MB.");
+      return false;
+    }
+
+    return true;
   };
 
-  // --- API CALLS ---
   const fetchEventi = useCallback(async (isBackground = false) => {
     try {
-      if (!isBackground) setLoading(true);
-      const res = await fetch("/api/eventi");
-      const data: ApiResponse = await res.json();
-      if (data.success) {
-        setEventi(data.eventi || []);
-        // Fetch parallelo delle prenotazioni per ogni evento
-        data.eventi?.forEach((ev) => fetchPrenotazioni(ev.id));
+      if (!isBackground) {
+        setLoading(true);
+        setError(null);
+      }
+
+      const response = await fetch("/api/eventi");
+
+      if (!response.ok) {
+        throw new Error("Errore caricamento eventi");
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Errore sconosciuto");
+      }
+
+      const fetchedEventi = data.eventi || [];
+      setEventi(fetchedEventi);
+
+      if (fetchedEventi.length > 0) {
+        await Promise.all(
+          fetchedEventi.map((evento) => fetchPrenotazioni(evento.id)),
+        );
       }
     } catch (err) {
-      if (!isBackground) setError("Errore connessione server");
+      console.error("Fetch eventi error:", err);
+      if (!isBackground) {
+        setError(err instanceof Error ? err.message : "Errore connessione");
+      }
     } finally {
-      if (!isBackground) setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   }, []);
 
-  const fetchPrenotazioni = async (eventoId: number) => {
+  const fetchPrenotazioni = useCallback(async (eventoId: number) => {
     try {
-      const res = await fetch(
+      const response = await fetch(
         `/api/eventi?section=prenotazioni&evento_id=${eventoId}`,
       );
-      const data: ApiResponse = await res.json();
-      if (data.success)
+      if (!response.ok) return;
+
+      const data: ApiResponse = await response.json();
+      if (data.success && data.prenotazioni) {
         setPrenotazioni((prev) => ({
           ...prev,
           [eventoId]: data.prenotazioni || [],
         }));
-    } catch (e) {
-      console.error(e);
+      }
+    } catch (err) {
+      console.error("Errore caricamento prenotazioni:", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchEventi();
+    setUserLevel(1);
+    setUserId(1);
+    fetchEventi(false);
   }, [fetchEventi]);
 
-  const toggleVisibility = async (id: number, current: number) => {
-    const newVis = current === 1 ? 0 : 1;
-    try {
-      const res = await fetch("/api/eventi?section=visibility", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, visibile: newVis }),
-      });
-      if ((await res.json()).success) fetchEventi(true);
-    } catch (e) {
-      setError("Errore visibilità");
-    }
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchEventi(true);
+    }, 7000);
 
-  const handleCheckin = async (pId: number, eId: number, count: number) => {
-    try {
-      // Aggiornamento ottimistico dell'UI per reattività immediata
-      setPrenotazioni((prev) => ({
-        ...prev,
-        [eId]: prev[eId].map((p) =>
-          p.id === pId ? { ...p, num_arrivati: count } : p,
-        ),
-      }));
-      await fetch("/api/eventi?section=checkin", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: pId, num_arrivati: count }),
-      });
-    } catch (e) {
-      setError("Errore check-in");
-    }
-  };
+    return () => clearInterval(interval);
+  }, [fetchEventi]);
 
-  const deleteEvento = async (id: number) => {
+  const inviaEmailBroadcast = async () => {
     if (
-      !confirm(
-        "Eliminare definitivamente l'evento e tutte le prenotazioni collegate?",
-      )
-    )
+      !broadcastEventId ||
+      !broadcastData.subject.trim() ||
+      !broadcastData.message.trim()
+    ) {
+      setError("Oggetto e messaggio obbligatori.");
       return;
-    try {
-      const res = await fetch("/api/eventi", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if ((await res.json()).success) fetchEventi(true);
-    } catch (e) {
-      setError("Errore eliminazione");
     }
-  };
 
-  const submitNuovoEvento = async () => {
-    if (!nuovoEvento.titolo || !nuovoEvento.data_evento)
-      return setError("Titolo e data obbligatori");
-    setCreatingEvent(true);
+    const numDestinatari = (prenotazioni[broadcastEventId] || []).length;
+    if (numDestinatari === 0) {
+      setError("Nessun partecipante a cui scrivere.");
+      return;
+    }
+
+    setSendingBroadcast(true);
+    setError(null);
+    setBroadcastSuccess(null);
+
     try {
-      const body: any = { ...nuovoEvento, num_max: nuovoEvento.num_max || 0 };
-      if (nuovoEvento.immagine_file) {
-        body.immagine_blob = await compressImage(nuovoEvento.immagine_file);
-        body.immagine_tipo = "image/jpeg";
-      }
-      const res = await fetch("/api/eventi", {
+      const response = await fetch("/api/eventi?section=broadcast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          evento_id: broadcastEventId,
+          subject: broadcastData.subject.trim(),
+          message: broadcastData.message.trim(),
+          user_id: userId,
+        }),
       });
-      if ((await res.json()).success) {
-        setShowNewEventForm(false);
+
+      const data: ApiResponse = await response.json();
+
+      if (data.success) {
+        setBroadcastSuccess(
+          `Email inviate a ${data.destinatari_count} partecipanti!`,
+        );
+        setBroadcastData({ subject: "", message: "" });
+        setBroadcastEventId(null);
+      } else {
+        throw new Error(data.error || "Errore invio.");
+      }
+    } catch (err) {
+      console.error("Broadcast error:", err);
+      setError(err instanceof Error ? err.message : "Errore invio email.");
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
+
+  const creaEvento = async () => {
+    if (!nuovoEvento.titolo.trim() || !nuovoEvento.data_evento.trim()) {
+      setError("Titolo e data obbligatori.");
+      return;
+    }
+
+    setCreatingEvent(true);
+    setError(null);
+
+    try {
+      let eventData: any = {
+        titolo: nuovoEvento.titolo.trim(),
+        descrizione: nuovoEvento.descrizione.trim(),
+        data_evento: nuovoEvento.data_evento.trim(),
+        immagine_url: nuovoEvento.immagine_url.trim(),
+        num_max: nuovoEvento.num_max !== "" ? Number(nuovoEvento.num_max) : 0,
+        user_id: userId,
+      };
+
+      if (nuovoEvento.immagine_file) {
+        if (!validateImageFile(nuovoEvento.immagine_file)) {
+          setCreatingEvent(false);
+          return;
+        }
+        const compressedBase64 = await compressImage(nuovoEvento.immagine_file);
+        eventData.immagine_blob = compressedBase64;
+        eventData.immagine_tipo = "image/jpeg";
+        eventData.immagine_nome = nuovoEvento.immagine_file.name;
+      }
+
+      const response = await fetch("/api/eventi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
         setNuovoEvento({
           titolo: "",
           descrizione: "",
@@ -251,242 +348,362 @@ const GestisciEventi: React.FC = () => {
           immagine_url: "",
           num_max: "",
         });
-        fetchEventi();
+        setShowNewEventForm(false);
+        await fetchEventi(true);
+      } else {
+        throw new Error(data.error || "Errore creazione.");
       }
-    } catch (e) {
-      setError("Errore creazione");
+    } catch (err) {
+      console.error("Create error:", err);
+      setError(err instanceof Error ? err.message : "Errore server.");
     } finally {
       setCreatingEvent(false);
     }
   };
 
-  const saveEdit = async () => {
+  const aggiornaEvento = async () => {
+    if (!editingEventId || !editData.titolo?.trim()) {
+      setError("Titolo obbligatorio.");
+      return;
+    }
+
     setUpdatingEvent(true);
+    setError(null);
+
     try {
-      const body: any = { ...editData, id: editingEventId };
+      let eventData: any = {
+        id: editingEventId,
+        titolo: editData.titolo.trim(),
+        descrizione: editData.descrizione?.trim() || "",
+        data_evento: editData.data_evento?.trim(),
+        immagine_url: editData.immagine_url?.trim() || "",
+        num_max: editData.num_max || 0,
+        user_id: userId,
+      };
+
       if (editData.immagine_file) {
-        body.immagine_blob = await compressImage(editData.immagine_file);
-        body.immagine_tipo = "image/jpeg";
+        if (!validateImageFile(editData.immagine_file)) {
+          setUpdatingEvent(false);
+          return;
+        }
+        const compressedBase64 = await compressImage(editData.immagine_file);
+        eventData.immagine_blob = compressedBase64;
+        eventData.immagine_tipo = "image/jpeg";
+        eventData.immagine_nome = editData.immagine_file.name;
       }
-      const res = await fetch("/api/eventi", {
+
+      const response = await fetch("/api/eventi", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(eventData),
       });
-      if ((await res.json()).success) {
+
+      const data = await response.json();
+
+      if (data.success) {
         setEditingEventId(null);
-        fetchEventi();
+        setEditData({});
+        await fetchEventi(true);
+      } else {
+        throw new Error(data.error);
       }
-    } catch (e) {
-      setError("Errore modifica");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore aggiornamento.");
     } finally {
       setUpdatingEvent(false);
     }
   };
 
-  const sendBroadcast = async () => {
-    setSendingBroadcast(true);
+  const eliminaEvento = async (eventoId: number) => {
+    if (!confirm("Eliminare evento e tutte le prenotazioni?")) return;
+
+    setError(null);
     try {
-      const res = await fetch("/api/eventi?section=broadcast", {
-        method: "POST",
+      const response = await fetch("/api/eventi", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ evento_id: broadcastEventId, ...broadcastData }),
+        body: JSON.stringify({ id: eventoId, user_id: userId }),
       });
-      const data = await res.json();
+
+      const data = await response.json();
       if (data.success) {
-        setBroadcastSuccess(
-          `Email inviate con successo a ${data.destinatari_count} persone`,
-        );
-        setBroadcastEventId(null);
+        await fetchEventi(true);
+      } else {
+        throw new Error(data.error);
       }
-    } catch (e) {
-      setError("Errore invio mail");
-    } finally {
-      setSendingBroadcast(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore eliminazione.");
     }
   };
 
-  // --- RENDER HELPERS ---
-  const getCounts = (id: number) => {
-    const list = prenotazioni[id] || [];
-    const prenotati = list.reduce(
-      (acc, p) => acc + (p.num_partecipanti || 1),
-      0,
-    );
-    const arrivati = list.reduce((acc, p) => acc + (p.num_arrivati || 0), 0);
-    return { prenotati, arrivati };
+  const toggleVisibility = async (eventoId: number, currentVisible: number) => {
+    try {
+      const newStatus = currentVisible === 1 ? 0 : 1;
+
+      const response = await fetch("/api/eventi?section=visibility", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: eventoId, visibile: newStatus }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setEventi(
+          eventi.map((ev) =>
+            ev.id === eventoId ? { ...ev, visibile: newStatus } : ev,
+          ),
+        );
+      } else {
+        throw new Error(
+          data.error || "Errore durante l'aggiornamento della visibilità.",
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore connessione.");
+    }
+  };
+
+  const handleCheckin = async (
+    prenotazioneId: number,
+    eventoId: number,
+    newArrivati: number,
+  ) => {
+    try {
+      setPrenotazioni((prev) => ({
+        ...prev,
+        [eventoId]: prev[eventoId].map((p) =>
+          p.id === prenotazioneId ? { ...p, num_arrivati: newArrivati } : p,
+        ),
+      }));
+
+      const response = await fetch("/api/eventi?section=checkin", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: prenotazioneId, num_arrivati: newArrivati }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || "Errore durante il check-in.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Errore connessione.");
+    }
+  };
+
+  const handleNewEventImageChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (file)
+      setNuovoEvento({ ...nuovoEvento, immagine_file: file, immagine_url: "" });
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file)
+      setEditData({ ...editData, immagine_file: file, immagine_url: "" });
+  };
+
+  // Funzione getImageUrl modificata per mostrare correttamente le immagini caricate
+  const getImageUrl = (evento: Evento) => {
+    if (evento.immagine_url) {
+      return evento.immagine_url;
+    }
+    if (evento.immagine_tipo || evento.immagine_nome || evento.immagine_blob) {
+      return `/api/eventi?action=image&id=${evento.id}`;
+    }
+    return "";
+  };
+
+  const iniziaModifica = (evento: Evento) => {
+    setEditingEventId(evento.id);
+    setEditData({
+      titolo: evento.titolo,
+      descrizione: evento.descrizione,
+      data_evento: evento.data_evento.split("T")[0],
+      immagine_url: evento.immagine_url || "",
+      num_max: evento.num_max || 0,
+    });
+  };
+
+  const annullaModifica = () => {
+    setEditingEventId(null);
+    setEditData({});
+    setError(null);
+  };
+
+  const iniziaBroadcast = (eventoId: number) => {
+    const evento = eventi.find((e) => e.id === eventoId);
+    if (!evento) return;
+    setBroadcastEventId(eventoId);
+    setBroadcastData({
+      subject: `Aggiornamento: ${evento.titolo}`,
+      message: `Ciao!\n\nCi sono novità per l'evento "${evento.titolo}".\n\n[Scrivi qui il messaggio]\n\nSaluti,\nStaff`,
+    });
+    setError(null);
+    setBroadcastSuccess(null);
+  };
+
+  const annullaBroadcast = () => {
+    setBroadcastEventId(null);
+    setBroadcastData({ subject: "", message: "" });
+    setError(null);
   };
 
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString("it-IT", {
-        day: "2-digit",
-        month: "short",
         year: "numeric",
+        month: "long",
+        day: "numeric",
       });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
 
-  if (loading && eventi.length === 0)
+  const getParticipantCount = (eventoId: number) => {
+    const list = prenotazioni[eventoId] || [];
+    return list.reduce(
+      (acc, p) => acc + (p.num_biglietti || p.num_partecipanti || 1),
+      0,
+    );
+  };
+
+  const getArrivatiCount = (eventoId: number) => {
+    const list = prenotazioni[eventoId] || [];
+    return list.reduce((acc, p) => acc + (p.num_arrivati || 0), 0);
+  };
+
+  const canManageEvents = () => userLevel >= 0 && userLevel <= 2;
+
+  const toggleEvent = (eventoId: number) => {
+    setExpandedEvents((prev) => ({ ...prev, [eventoId]: !prev[eventoId] }));
+  };
+
+  const handleSearchChange = (eventoId: number, value: string) => {
+    setSearchQuery((prev) => ({
+      ...prev,
+      [eventoId]: value.toLowerCase(),
+    }));
+  };
+
+  if (loading && eventi.length === 0) {
     return (
-      <div className="eventi-loading">
-        <RefreshCw className="spinner" /> Caricamento gestione eventi...
+      <div className="eventi-container">
+        <div className="eventi-loading">
+          <div className="loading-spinner"></div>
+          <p>Caricamento...</p>
+        </div>
       </div>
     );
+  }
 
   return (
     <div className="eventi-container">
       <div className="eventi-header-section">
-        <h1>Dashboard Eventi</h1>
+        <h1>Gestione Eventi</h1>
         <div className="eventi-actions">
+          {canManageEvents() && (
+            <button
+              onClick={() => {
+                setShowNewEventForm(!showNewEventForm);
+                if (showNewEventForm) setError(null);
+              }}
+              className={`action-button ${showNewEventForm ? "cancel" : "create"}`}
+            >
+              {showNewEventForm ? "Chiudi" : "Nuovo Evento"}
+            </button>
+          )}
           <button
-            onClick={() => setShowNewEventForm(!showNewEventForm)}
-            className={`btn-icon ${showNewEventForm ? "btn-cancel" : "btn-create"}`}
+            onClick={() => fetchEventi(false)}
+            className="refresh-button"
+            disabled={loading}
           >
-            {showNewEventForm ? <X size={20} /> : <Plus size={20} />}{" "}
-            {showNewEventForm ? "Annulla" : "Nuovo Evento"}
-          </button>
-          <button onClick={() => fetchEventi()} className="btn-refresh">
-            <RefreshCw size={18} /> Aggiorna
+            Aggiorna
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="msg-alert error">
-          <X
-            size={14}
-            onClick={() => setError(null)}
-            style={{ cursor: "pointer" }}
-          />{" "}
-          {error}
-        </div>
-      )}
-      {broadcastSuccess && (
-        <div className="msg-alert success">
-          <Check
-            size={14}
-            onClick={() => setBroadcastSuccess(null)}
-            style={{ cursor: "pointer" }}
-          />{" "}
-          {broadcastSuccess}
-        </div>
-      )}
-
-      {/* FORM NUOVO EVENTO */}
-      {showNewEventForm && (
-        <div className="admin-form-card">
-          <h2>Crea Nuovo Evento</h2>
-          <div className="form-grid">
-            <div className="field">
-              <label>Titolo *</label>
-              <input
-                type="text"
-                value={nuovoEvento.titolo}
-                onChange={(e) =>
-                  setNuovoEvento({ ...nuovoEvento, titolo: e.target.value })
-                }
-              />
-            </div>
-            <div className="field">
-              <label>Data *</label>
-              <input
-                type="date"
-                value={nuovoEvento.data_evento}
-                onChange={(e) =>
-                  setNuovoEvento({
-                    ...nuovoEvento,
-                    data_evento: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="field">
-              <label>Posti Max (0 = illimitati)</label>
-              <input
-                type="number"
-                min="0"
-                value={nuovoEvento.num_max}
-                onChange={(e) =>
-                  setNuovoEvento({
-                    ...nuovoEvento,
-                    num_max:
-                      e.target.value === "" ? "" : Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="field full">
-              <label>Descrizione</label>
-              <textarea
-                value={nuovoEvento.descrizione}
-                onChange={(e) =>
-                  setNuovoEvento({
-                    ...nuovoEvento,
-                    descrizione: e.target.value,
-                  })
-                }
-                rows={3}
-              />
-            </div>
-            <div className="field">
-              <label>Locandina (File)</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  setNuovoEvento({
-                    ...nuovoEvento,
-                    immagine_file: e.target.files?.[0],
-                  })
-                }
-              />
-            </div>
-          </div>
-          <button
-            onClick={submitNuovoEvento}
-            disabled={creatingEvent}
-            className="btn-submit-admin"
-          >
-            {creatingEvent ? "Creazione..." : "Pubblica Evento"}
+        <div className="eventi-message error">
+          <div className="message-icon">X</div>
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="close-message">
+            X
           </button>
         </div>
       )}
 
-      {/* MODALE BROADCAST */}
+      {broadcastSuccess && (
+        <div className="eventi-message success">
+          <div className="message-icon">OK</div>
+          <span>{broadcastSuccess}</span>
+          <button
+            onClick={() => setBroadcastSuccess(null)}
+            className="close-message"
+          >
+            X
+          </button>
+        </div>
+      )}
+
       {broadcastEventId && (
-        <div className="overlay-modal">
-          <div className="modal-content">
-            <h3>Invia Comunicazione agli Iscritti</h3>
-            <input
-              type="text"
-              placeholder="Oggetto Email"
-              value={broadcastData.subject}
-              onChange={(e) =>
-                setBroadcastData({ ...broadcastData, subject: e.target.value })
-              }
-            />
-            <textarea
-              placeholder="Messaggio..."
-              rows={5}
-              value={broadcastData.message}
-              onChange={(e) =>
-                setBroadcastData({ ...broadcastData, message: e.target.value })
-              }
-            />
-            <div className="modal-btns">
+        <div className="broadcast-form">
+          <div className="form-header">
+            <h2>Invia Email ai Partecipanti</h2>
+            <p>
+              Evento:{" "}
+              <strong>
+                {eventi.find((e) => e.id === broadcastEventId)?.titolo}
+              </strong>{" "}
+              ({(prenotazioni[broadcastEventId] || []).length} destinatari)
+            </p>
+          </div>
+          <div className="form-content">
+            <div className="form-grid">
+              <div className="form-group full-width">
+                <label>Oggetto *</label>
+                <input
+                  type="text"
+                  value={broadcastData.subject}
+                  onChange={(e) =>
+                    setBroadcastData({
+                      ...broadcastData,
+                      subject: e.target.value,
+                    })
+                  }
+                  disabled={sendingBroadcast}
+                />
+              </div>
+              <div className="form-group full-width">
+                <label>Messaggio *</label>
+                <textarea
+                  rows={6}
+                  value={broadcastData.message}
+                  onChange={(e) =>
+                    setBroadcastData({
+                      ...broadcastData,
+                      message: e.target.value,
+                    })
+                  }
+                  disabled={sendingBroadcast}
+                />
+              </div>
+            </div>
+            <div className="form-actions">
               <button
-                onClick={sendBroadcast}
+                onClick={inviaEmailBroadcast}
+                className="btn-send-broadcast"
                 disabled={sendingBroadcast}
-                className="btn-primary"
               >
-                {sendingBroadcast ? "Invio..." : "Invia ora"}
+                {sendingBroadcast ? "Invio in corso..." : "Invia Email"}
               </button>
               <button
-                onClick={() => setBroadcastEventId(null)}
-                className="btn-secondary"
+                onClick={annullaBroadcast}
+                className="btn-cancel"
+                disabled={sendingBroadcast}
               >
                 Annulla
               </button>
@@ -495,290 +712,450 @@ const GestisciEventi: React.FC = () => {
         </div>
       )}
 
-      {/* LISTA EVENTI */}
-      <div className="eventi-admin-grid">
-        {eventi.map((evento) => {
-          const { prenotati, arrivati } = getCounts(evento.id);
-          const isExpanded = expandedEvents[evento.id];
-
-          return (
-            <div
-              key={evento.id}
-              className={`admin-event-card ${evento.visibile ? "is-online" : "is-draft"}`}
-            >
-              {/* Header della Card: cliccabile per espandere */}
-              <div
-                className="card-main"
-                onClick={() =>
-                  setExpandedEvents((prev) => ({
-                    ...prev,
-                    [evento.id]: !prev[evento.id],
-                  }))
-                }
+      {showNewEventForm && canManageEvents() && (
+        <div className="new-event-form">
+          <div className="form-header">
+            <h2>Nuovo Evento</h2>
+          </div>
+          <div className="form-content">
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Titolo *</label>
+                <input
+                  type="text"
+                  value={nuovoEvento.titolo}
+                  onChange={(e) =>
+                    setNuovoEvento({ ...nuovoEvento, titolo: e.target.value })
+                  }
+                  disabled={creatingEvent}
+                />
+              </div>
+              <div className="form-group">
+                <label>Data *</label>
+                <input
+                  type="date"
+                  value={nuovoEvento.data_evento}
+                  onChange={(e) =>
+                    setNuovoEvento({
+                      ...nuovoEvento,
+                      data_evento: e.target.value,
+                    })
+                  }
+                  disabled={creatingEvent}
+                />
+              </div>
+              <div className="form-group">
+                <label>Numero Massimo Partecipanti</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={nuovoEvento.num_max}
+                  onChange={(e) =>
+                    setNuovoEvento({
+                      ...nuovoEvento,
+                      num_max:
+                        e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
+                  disabled={creatingEvent}
+                  placeholder="Lascia vuoto per nessun limite"
+                />
+              </div>
+              <div className="form-group full-width">
+                <label>Descrizione</label>
+                <textarea
+                  rows={3}
+                  value={nuovoEvento.descrizione}
+                  onChange={(e) =>
+                    setNuovoEvento({
+                      ...nuovoEvento,
+                      descrizione: e.target.value,
+                    })
+                  }
+                  disabled={creatingEvent}
+                />
+              </div>
+              <div className="form-group">
+                <label>Immagine (File)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleNewEventImageChange}
+                  disabled={creatingEvent}
+                />
+                <p className="form-help">Verrà compressa automaticamente.</p>
+              </div>
+              <div className="form-group">
+                <label>Oppure URL Immagine</label>
+                <input
+                  type="url"
+                  value={nuovoEvento.immagine_url}
+                  onChange={(e) =>
+                    setNuovoEvento({
+                      ...nuovoEvento,
+                      immagine_url: e.target.value,
+                      immagine_file: undefined,
+                    })
+                  }
+                  disabled={creatingEvent}
+                />
+              </div>
+            </div>
+            <div className="form-actions">
+              <button
+                onClick={creaEvento}
+                className="btn-create"
+                disabled={creatingEvent}
               >
-                <div className="event-preview-img">
-                  <img
-                    src={getImageUrl(evento)}
-                    alt="Preview"
-                    onError={(e) =>
-                      (e.currentTarget.src = "/assets/placeholder.png")
-                    }
-                  />
-                </div>
-                <div className="event-summary">
-                  <h3>{evento.titolo}</h3>
-                  <div className="summary-meta">
-                    <span>{formatDate(evento.data_evento)}</span>
-                    <span className="badge-count">
-                      {prenotati} iscritti{" "}
-                      {evento.num_max ? `/ ${evento.num_max}` : ""}
-                    </span>
+                {creatingEvent ? "Salvataggio..." : "Crea"}
+              </button>
+              <button
+                onClick={() => setShowNewEventForm(false)}
+                className="btn-cancel"
+                disabled={creatingEvent}
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="eventi-content">
+        {eventi.length > 0 ? (
+          <div className="eventi-grid">
+            {eventi.map((evento) => (
+              <div key={evento.id} className="event-card">
+                <div
+                  className="event-header"
+                  onClick={() => toggleEvent(evento.id)}
+                >
+                  <div className="event-image">
+                    {getImageUrl(evento) ? (
+                      <img src={getImageUrl(evento)} alt={evento.titolo} />
+                    ) : (
+                      <div className="no-image">
+                        <span>IMG</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="event-info">
+                    <div className="event-title">
+                      <h3>{evento.titolo}</h3>
+                      <span className="participant-count">
+                        {getParticipantCount(evento.id)} iscritti
+                      </span>
+                      <span
+                        className={`visibility-badge ${evento.visibile === 1 ? "online" : "bozza"}`}
+                      >
+                        {evento.visibile === 1 ? "Online" : "Bozza"}
+                      </span>
+                    </div>
+                    <div className="event-date">
+                      {formatDate(evento.data_evento)}
+                    </div>
+                  </div>
+                  <div className="event-actions">
+                    {canManageEvents() && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleVisibility(evento.id, evento.visibile);
+                          }}
+                          className={`btn-toggle-vis ${evento.visibile === 1 ? "online" : "bozza"}`}
+                          title={
+                            evento.visibile === 1
+                              ? "Nascondi Evento"
+                              : "Pubblica Evento"
+                          }
+                        >
+                          {evento.visibile === 1 ? "Nascondi" : "Pubblica"}
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            iniziaBroadcast(evento.id);
+                          }}
+                          className="btn-broadcast"
+                          title="Invia Email"
+                          disabled={broadcastEventId === evento.id}
+                        >
+                          <Mail size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            iniziaModifica(evento);
+                          }}
+                          className="btn-edit"
+                          title="Modifica"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            eliminaEvento(evento.id);
+                          }}
+                          className="btn-delete"
+                          title="Elimina"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
                     <span
-                      className={`status-dot ${evento.visibile ? "online" : "draft"}`}
+                      className={`expand-icon ${expandedEvents[evento.id] ? "expanded" : ""}`}
                     >
-                      {evento.visibile ? "Visibile" : "Bozza"}
+                      <ChevronDown size={18} />
                     </span>
                   </div>
                 </div>
-                <div className="card-ctrls">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleVisibility(evento.id, evento.visibile);
-                    }}
-                    className="btn-vis"
-                  >
-                    {evento.visibile ? "Nascondi" : "Pubblica"}
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setBroadcastEventId(evento.id);
-                    }}
-                    className="btn-mail"
-                    title="Invia Email a tutti"
-                  >
-                    <Mail size={18} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingEventId(evento.id);
-                      setEditData(evento);
-                    }}
-                    className="btn-edit"
-                    title="Modifica Rapida"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteEvento(evento.id);
-                    }}
-                    className="btn-trash"
-                    title="Elimina Evento"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                  <ChevronDown className={`arrow ${isExpanded ? "up" : ""}`} />
-                </div>
-              </div>
 
-              {/* Dettagli Espansi: Mostra form di modifica OPPURE lista partecipanti */}
-              {isExpanded && (
-                <div className="card-details">
-                  {editingEventId === evento.id ? (
-                    <div className="mini-edit-form">
-                      <h4>Modifica Rapida Evento</h4>
-                      <div className="form-grid">
-                        <div className="field">
-                          <label>Titolo</label>
-                          <input
-                            type="text"
-                            value={editData.titolo || ""}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                titolo: e.target.value,
-                              })
-                            }
-                            disabled={updatingEvent}
-                          />
+                {expandedEvents[evento.id] && (
+                  <div className="event-content">
+                    {editingEventId === evento.id ? (
+                      <div className="edit-form">
+                        <h4>Modifica Evento</h4>
+                        <div className="form-grid">
+                          <div className="form-group">
+                            <label>Titolo</label>
+                            <input
+                              type="text"
+                              value={editData.titolo || ""}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  titolo: e.target.value,
+                                })
+                              }
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Data</label>
+                            <input
+                              type="date"
+                              value={editData.data_evento || ""}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  data_evento: e.target.value,
+                                })
+                              }
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Numero Massimo Partecipanti</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={editData.num_max || ""}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  num_max: e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined,
+                                })
+                              }
+                              disabled={updatingEvent}
+                              placeholder="Lascia vuoto per nessun limite"
+                            />
+                          </div>
+                          <div className="form-group full-width">
+                            <label>Descrizione</label>
+                            <textarea
+                              value={editData.descrizione || ""}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  descrizione: e.target.value,
+                                })
+                              }
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Nuova Immagine</label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleEditImageChange}
+                              disabled={updatingEvent}
+                            />
+                          </div>
                         </div>
-                        <div className="field">
-                          <label>Data</label>
-                          <input
-                            type="date"
-                            value={
-                              editData.data_evento
-                                ? editData.data_evento.split("T")[0]
-                                : ""
-                            }
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                data_evento: e.target.value,
-                              })
-                            }
+                        <div className="form-actions">
+                          <button
+                            onClick={aggiornaEvento}
+                            className="btn-save"
                             disabled={updatingEvent}
-                          />
-                        </div>
-                        <div className="field">
-                          <label>Posti Max</label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={editData.num_max || ""}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                num_max: e.target.value
-                                  ? Number(e.target.value)
-                                  : undefined,
-                              })
-                            }
+                          >
+                            Salva
+                          </button>
+                          <button
+                            onClick={annullaModifica}
+                            className="btn-cancel"
                             disabled={updatingEvent}
-                          />
-                        </div>
-                        <div className="field full">
-                          <label>Descrizione</label>
-                          <textarea
-                            value={editData.descrizione || ""}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                descrizione: e.target.value,
-                              })
-                            }
-                            disabled={updatingEvent}
-                            rows={3}
-                          />
-                        </div>
-                        <div className="field">
-                          <label>Cambia Locandina</label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                immagine_file: e.target.files?.[0],
-                              })
-                            }
-                            disabled={updatingEvent}
-                          />
+                          >
+                            Annulla
+                          </button>
                         </div>
                       </div>
-                      <div className="edit-btns">
-                        <button
-                          onClick={saveEdit}
-                          className="btn-save-mini"
-                          disabled={updatingEvent}
-                        >
-                          {updatingEvent ? "Salvataggio..." : "Salva Modifiche"}
-                        </button>
-                        <button
-                          onClick={() => setEditingEventId(null)}
-                          className="btn-cancel-mini"
-                          disabled={updatingEvent}
-                        >
-                          Annulla
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="participants-section">
-                      <div className="section-header">
-                        <h4>
-                          Lista Partecipanti ({arrivati}/{prenotati} arrivati)
-                        </h4>
-                        <div className="search-box">
-                          <Search size={16} />
-                          <input
-                            type="text"
-                            placeholder="Filtra per nome o email..."
-                            value={searchQuery[evento.id] || ""}
-                            onChange={(e) =>
-                              setSearchQuery({
-                                ...searchQuery,
-                                [evento.id]: e.target.value,
-                              })
-                            }
-                          />
+                    ) : (
+                      <>
+                        <div className="event-description">
+                          <p>{evento.descrizione || "Nessuna descrizione."}</p>
                         </div>
-                      </div>
 
-                      <div className="attendees-table">
-                        {prenotazioni[evento.id]
-                          ?.filter((p) => {
-                            const query = searchQuery[evento.id]?.toLowerCase();
-                            return (
-                              !query ||
-                              `${p.nome} ${p.cognome} ${p.email}`
-                                .toLowerCase()
-                                .includes(query)
-                            );
-                          })
-                          .map((p) => (
-                            <div
-                              key={p.id}
-                              className={`attendee-row ${p.num_arrivati === (p.num_partecipanti || 1) ? "fully-checked" : ""}`}
-                            >
-                              <div className="att-info">
-                                <span className="att-name">
-                                  {p.nome} {p.cognome}
+                        <div className="prenotazioni-section">
+                          <div className="prenotazioni-header-stats">
+                            <h4>Prenotazioni</h4>
+                            <div className="stats-badges">
+                              <span className="stat-totale">
+                                Prenotati: {getParticipantCount(evento.id)}
+                              </span>
+                              <span className="stat-arrivati">
+                                Arrivati: {getArrivatiCount(evento.id)}
+                              </span>
+                              {evento.num_max && evento.num_max > 0 ? (
+                                <span className="stat-max">
+                                  Posti Max: {evento.num_max}
                                 </span>
-                                <span className="att-mail">{p.email}</span>
-                              </div>
-                              <div className="att-checkin">
-                                <button
-                                  onClick={() =>
-                                    handleCheckin(
-                                      p.id,
-                                      evento.id,
-                                      (p.num_arrivati || 0) - 1,
-                                    )
-                                  }
-                                  disabled={(p.num_arrivati || 0) <= 0}
-                                >
-                                  -
-                                </button>
-                                <span className="att-num">
-                                  {p.num_arrivati || 0} /{" "}
-                                  {p.num_partecipanti || 1}
-                                </span>
-                                <button
-                                  onClick={() =>
-                                    handleCheckin(
-                                      p.id,
-                                      evento.id,
-                                      (p.num_arrivati || 0) + 1,
-                                    )
-                                  }
-                                  disabled={
-                                    (p.num_arrivati || 0) >=
-                                    (p.num_partecipanti || 1)
-                                  }
-                                >
-                                  +
-                                </button>
-                              </div>
+                              ) : null}
                             </div>
-                          ))}
-                        {prenotazioni[evento.id]?.length === 0 && (
-                          <p className="empty-msg">
-                            Nessuno si è ancora prenotato a questo evento.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                          </div>
+
+                          {/* Barra di ricerca per i partecipanti */}
+                          {(prenotazioni[evento.id] || []).length > 0 && (
+                            <div
+                              className="search-bar-container"
+                              style={{ margin: "15px 0", position: "relative" }}
+                            >
+                              <Search
+                                size={18}
+                                style={{
+                                  position: "absolute",
+                                  left: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  color: "#666",
+                                }}
+                              />
+                              <input
+                                type="text"
+                                placeholder="Cerca partecipante per nome o cognome..."
+                                value={searchQuery[evento.id] || ""}
+                                onChange={(e) =>
+                                  handleSearchChange(evento.id, e.target.value)
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "10px 10px 10px 35px",
+                                  borderRadius: "8px",
+                                  border: "1px solid #ccc",
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {(prenotazioni[evento.id] || []).length > 0 ? (
+                            <div className="prenotazioni-list">
+                              {prenotazioni[evento.id]
+                                .filter((pren) => {
+                                  const query = searchQuery[evento.id];
+                                  if (!query) return true;
+                                  const fullName =
+                                    `${pren.nome} ${pren.cognome}`.toLowerCase();
+                                  return fullName.includes(query);
+                                })
+                                .map((pren) => {
+                                  const totaleBiglietti =
+                                    pren.num_biglietti ||
+                                    pren.num_partecipanti ||
+                                    1;
+                                  const arrivati = pren.num_arrivati || 0;
+                                  const isCompleto =
+                                    arrivati === totaleBiglietti;
+
+                                  return (
+                                    <div
+                                      key={pren.id}
+                                      className={`prenotazione-item ${isCompleto ? "checkin-completo" : ""}`}
+                                    >
+                                      <div className="prenotazione-info">
+                                        <div className="partecipante-nome">
+                                          {pren.nome} {pren.cognome}
+                                        </div>
+                                        <div className="partecipante-email">
+                                          {pren.email}
+                                        </div>
+                                      </div>
+
+                                      <div className="checkin-controller">
+                                        <button
+                                          className="checkin-btn minus"
+                                          disabled={arrivati <= 0}
+                                          onClick={() =>
+                                            handleCheckin(
+                                              pren.id,
+                                              evento.id,
+                                              arrivati - 1,
+                                            )
+                                          }
+                                        >
+                                          -
+                                        </button>
+
+                                        <div className="checkin-status">
+                                          <span className="arrivati-num">
+                                            {arrivati}
+                                          </span>
+                                          <span className="totale-num">
+                                            / {totaleBiglietti}
+                                          </span>
+                                        </div>
+
+                                        <button
+                                          className="checkin-btn plus"
+                                          disabled={arrivati >= totaleBiglietti}
+                                          onClick={() =>
+                                            handleCheckin(
+                                              pren.id,
+                                              evento.id,
+                                              arrivati + 1,
+                                            )
+                                          }
+                                        >
+                                          +
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          ) : (
+                            <div className="no-prenotazioni">
+                              <p>Nessuna prenotazione.</p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-eventi">
+            <h2>Nessun evento</h2>
+          </div>
+        )}
       </div>
     </div>
   );
