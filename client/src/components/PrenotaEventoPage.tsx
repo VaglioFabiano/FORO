@@ -34,41 +34,21 @@ interface PrenotazioneForm {
   privacy: boolean;
 }
 
-interface ApiResponse {
-  success: boolean;
-  evento?: Evento;
-  eventi?: Evento[];
-  prenotazioni?: any[];
-  error?: string;
-  message?: string;
-  prenotazione_id?: number;
-}
-
 interface Props {
   eventoId?: number;
 }
 
-// Eventi di esempio per test
-const eventiTest: Evento[] = [
-  {
-    id: 1,
-    titolo: "Evento di Debug",
-    descrizione:
-      "Questo evento è di prova, se sei qui hai raggiunto una pagina di debug. Ritorna alla homepage e accedi all'evento corretto usando la pagina apposita.",
-    data_evento: "2024-12-15T10:00:00Z",
-    immagine_url:
-      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1080&h=1350&fit=crop",
-    num_max: 20,
-  },
-];
-
-const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
+const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [postiDisponibili, setPostiDisponibili] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // LOGICA FONDAMENTALE: Legge l'ID dalle Props o direttamente dall'URL
+  const queryId = new URLSearchParams(window.location.search).get("id");
+  const activeId = eventoId || (queryId ? parseInt(queryId) : null);
 
   const [formData, setFormData] = useState<PrenotazioneForm>({
     nome: "",
@@ -78,54 +58,35 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     note: "",
     privacy: false,
   });
-
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (eventoId) {
-      fetchEvento();
+    if (activeId) {
+      fetchEvento(activeId);
+    } else {
+      setLoading(false);
+      setError("Nessun evento selezionato. Impossibile procedere.");
     }
-  }, [eventoId]);
+  }, [activeId]);
 
-  const fetchEvento = async () => {
+  const fetchEvento = async (id: number) => {
     try {
       setLoading(true);
       setError(null);
+      const response = await fetch(`/api/eventi?action=single&id=${id}`);
+      if (!response.ok) throw new Error("Errore di rete");
 
-      try {
-        const response = await fetch(
-          `/api/eventi?action=single&id=${eventoId}`,
-        );
-        if (response.ok) {
-          const data: ApiResponse = await response.json();
-          if (data.success && data.evento) {
-            setEvento(data.evento);
+      const data = await response.json();
+      if (data.success && data.evento) {
+        setEvento(data.evento);
 
-            if (data.evento.num_max && data.evento.num_max > 0) {
-              const prenotati =
-                data.prenotazioni?.reduce(
-                  (acc: number, curr: any) =>
-                    acc + (curr.num_partecipanti || 1),
-                  0,
-                ) || 0;
-              setPostiDisponibili(Math.max(0, data.evento.num_max - prenotati));
-            } else {
-              setPostiDisponibili(null);
-            }
-
-            setLoading(false);
-            return;
-          }
-        }
-      } catch (apiError) {
-        console.log("API non disponibile, usando dati di test");
-      }
-
-      const eventoTest = eventiTest.find((e) => e.id === eventoId);
-      if (eventoTest) {
-        setEvento(eventoTest);
-        if (eventoTest.num_max && eventoTest.num_max > 0) {
-          setPostiDisponibili(eventoTest.num_max);
+        if (data.evento.num_max && data.evento.num_max > 0) {
+          const prenotati =
+            data.prenotazioni?.reduce(
+              (acc: number, curr: any) => acc + (curr.num_partecipanti || 1),
+              0,
+            ) || 0;
+          setPostiDisponibili(Math.max(0, data.evento.num_max - prenotati));
         } else {
           setPostiDisponibili(null);
         }
@@ -139,35 +100,35 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     }
   };
 
+  // LOGICA IMMAGINI: risolve il problema delle immagini non visibili!
+  const getImageUrl = (ev: Evento) => {
+    if (
+      ev.immagine_blob &&
+      typeof ev.immagine_blob === "string" &&
+      ev.immagine_blob.startsWith("data:image")
+    ) {
+      return ev.immagine_blob; // Usa direttamente il Base64 dal database
+    }
+    return (
+      ev.immagine_url || `/api/eventi?action=image&id=${ev.id}&t=${Date.now()}`
+    );
+  };
+
   const maxTickets =
     postiDisponibili !== null ? Math.min(10, postiDisponibili) : 10;
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
-
-    if (!formData.nome.trim()) {
-      errors.nome = "Il nome è obbligatorio";
-    }
-
-    if (!formData.cognome.trim()) {
-      errors.cognome = "Il cognome è obbligatorio";
-    }
-
-    if (!formData.email.trim()) {
-      errors.email = "L'email è obbligatoria";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.nome.trim()) errors.nome = "Il nome è obbligatorio";
+    if (!formData.cognome.trim()) errors.cognome = "Il cognome è obbligatorio";
+    if (
+      !formData.email.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    )
       errors.email = "Inserisci un'email valida";
-    }
-
-    if (formData.num_biglietti < 1 || formData.num_biglietti > maxTickets) {
-      errors.num_biglietti = `Il numero di biglietti deve essere tra 1 e ${maxTickets}`;
-    }
-
-    if (!formData.privacy) {
+    if (!formData.privacy)
       errors.privacy =
         "Devi accettare l'informativa sulla privacy per procedere";
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -178,7 +139,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     >,
   ) => {
     const { name, value, type } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -188,15 +148,11 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
             ? parseInt(value) || 1
             : value,
     }));
-
-    if (formErrors[name]) {
-      setFormErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (formErrors[name]) setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
     setSubmitting(true);
     setError(null);
 
@@ -205,7 +161,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          evento_id: eventoId,
+          evento_id: activeId,
           nome: formData.nome,
           cognome: formData.cognome,
           email: formData.email,
@@ -215,24 +171,13 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
         }),
       });
 
-      const data: ApiResponse = await response.json();
-
+      const data = await response.json();
       if (data.success) {
         setSuccess(true);
       } else {
         throw new Error(data.error || "Errore nella prenotazione");
       }
     } catch (err) {
-      if (
-        typeof err === "object" &&
-        err !== null &&
-        "message" in err &&
-        typeof (err as any).message === "string" &&
-        (err as any).message.includes("fetch")
-      ) {
-        setTimeout(() => setSuccess(true), 1500);
-        return;
-      }
       setError(
         err instanceof Error ? err.message : "Errore durante la prenotazione",
       );
@@ -242,15 +187,12 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
   };
 
   const handleBackToHome = () => {
-    if ((window as any).navigateToHome) {
-      (window as any).navigateToHome();
-    }
+    if ((window as any).navigateToHome) (window as any).navigateToHome();
   };
 
   const formatDate = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("it-IT", {
+      return new Date(dateString).toLocaleDateString("it-IT", {
         weekday: "long",
         year: "numeric",
         month: "long",
@@ -262,9 +204,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
       return "Data non valida";
     }
   };
-
-  const getImageUrl = (evento: Evento) =>
-    evento.immagine_blob || evento.immagine_url || "";
 
   if (loading) {
     return (
@@ -329,7 +268,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                   note: "",
                   privacy: false,
                 });
-                fetchEvento();
+                fetchEvento(activeId as number);
               }}
               className="btn-primary"
             >
@@ -348,25 +287,17 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     <div className="prenota-wrapper" style={{ paddingTop: "80px" }}>
       {evento && (
         <div className="evento-layout">
-          {/* Colonna Sinistra: Immagine */}
           <div className="evento-media">
-            {getImageUrl(evento) ? (
-              <img
-                src={getImageUrl(evento)}
-                alt={`Locandina di ${evento.titolo}`}
-                className="evento-poster"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            ) : (
-              <div className="evento-poster-placeholder">
-                <Calendar size={48} opacity={0.5} />
-              </div>
-            )}
+            <img
+              src={getImageUrl(evento)}
+              alt={`Locandina di ${evento.titolo}`}
+              className="evento-poster"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
           </div>
 
-          {/* Colonna Destra: Dettagli e Form */}
           <div className="evento-content-form">
             <div className="evento-info-box">
               <h2>{evento.titolo}</h2>
@@ -389,7 +320,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                         : {}
                     }
                   >
-                    <Users size={16} />
+                    <Users size={16} />{" "}
                     {postiDisponibili === 0
                       ? "Posti esauriti"
                       : `${postiDisponibili} posti rimasti`}
@@ -423,9 +354,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
             ) : (
               <div className="form-box">
                 <h3>I tuoi dati</h3>
-
                 {error && <div className="form-alert">{error}</div>}
-
                 <div className="form-grid">
                   <div className="input-group">
                     <label htmlFor="nome">Nome *</label>
@@ -446,7 +375,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       <span className="error-text">{formErrors.nome}</span>
                     )}
                   </div>
-
                   <div className="input-group">
                     <label htmlFor="cognome">Cognome *</label>
                     <div className="input-wrapper">
@@ -466,7 +394,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       <span className="error-text">{formErrors.cognome}</span>
                     )}
                   </div>
-
                   <div className="input-group full-width">
                     <label htmlFor="email">Email *</label>
                     <div className="input-wrapper">
@@ -486,7 +413,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       <span className="error-text">{formErrors.email}</span>
                     )}
                   </div>
-
                   <div className="input-group full-width">
                     <label htmlFor="num_biglietti">Numero di biglietti *</label>
                     <div className="input-wrapper">
@@ -513,7 +439,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       </select>
                     </div>
                   </div>
-
                   <div className="input-group full-width">
                     <label htmlFor="note">Note aggiuntive (opzionale)</label>
                     <textarea
@@ -526,7 +451,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       placeholder="Eventuali richieste speciali..."
                     ></textarea>
                   </div>
-
                   <div className="input-group full-width privacy-group">
                     <label className="checkbox-label">
                       <input
@@ -555,7 +479,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                     )}
                   </div>
                 </div>
-
                 <button
                   type="button"
                   onClick={handleSubmit}
