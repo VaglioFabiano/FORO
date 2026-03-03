@@ -34,12 +34,12 @@ function validateBase64Image(base64String) {
   return /^data:image\/(jpeg|jpg|png|gif|webp);base64,/.test(base64String);
 }
 
-// FUNZIONE CORRETTA: Ignora i buffer binari per evitare il blocco del server
 function convertBigIntToNumber(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return Number(obj);
   if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
 
+  // FIX VERCEL: Evita di iterare sui buffer binari
   if (
     obj instanceof ArrayBuffer ||
     ArrayBuffer.isView(obj) ||
@@ -155,17 +155,22 @@ export default async function handler(req, res) {
         }
 
         const row = result.rows[0];
+        let buffer;
 
-        // FIX: Assicuriamoci che l'immagine sia un Buffer Node.js crudo e non venga alterato
-        const buffer = Buffer.isBuffer(row.immagine_blob)
-          ? row.immagine_blob
-          : Buffer.from(new Uint8Array(row.immagine_blob));
+        // FIX VERCEL: Gestione sicura del buffer per evitare immagini grigie/corrotte
+        if (Buffer.isBuffer(row.immagine_blob)) {
+          buffer = row.immagine_blob;
+        } else if (row.immagine_blob instanceof ArrayBuffer) {
+          buffer = Buffer.from(row.immagine_blob);
+        } else if (typeof row.immagine_blob === "string") {
+          buffer = Buffer.from(row.immagine_blob, "base64");
+        } else {
+          buffer = Buffer.from(new Uint8Array(row.immagine_blob));
+        }
 
         res.setHeader("Content-Type", row.immagine_tipo || "image/jpeg");
         res.setHeader("Cache-Control", "public, max-age=86400");
-
-        // FIX: Usare res.end(buffer) al posto di res.send(buffer) previene la corruzione dei file su Vercel
-        return res.end(buffer);
+        return res.end(buffer); // Usiamo end() invece di send() per i file binari
       }
 
       if (!section && !action) {
@@ -213,9 +218,9 @@ export default async function handler(req, res) {
       }
 
       if (action === "single" && id) {
-        // Usa una SELECT esplicita invece di SELECT * per evitare di caricare il BLOB pesante
+        // FIX: Rimosso SELECT * per evitare il blocco del server con l'immagine
         const eventoResult = await client.execute({
-          sql: `SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, num_max, visibile, length(immagine_blob) as blob_size FROM eventi WHERE id = ?`,
+          sql: `SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile, num_max, length(immagine_blob) as blob_size FROM eventi WHERE id = ?`,
           args: [id],
         });
 
@@ -224,11 +229,10 @@ export default async function handler(req, res) {
 
         const evento = convertBigIntToNumber(eventoResult.rows[0]);
 
-        // Se l'immagine esiste nel DB, costruiamo l'URL
         if (evento.blob_size > 0) {
           evento.immagine_url = `/api/eventi?action=image&id=${evento.id}`;
         }
-        delete evento.blob_size; // Puliamo l'oggetto prima di inviarlo
+        delete evento.blob_size;
 
         const prenotazioniResult = await client.execute({
           sql: "SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC",
@@ -318,7 +322,7 @@ export default async function handler(req, res) {
 
         const evento = convertBigIntToNumber(evResult.rows[0]);
 
-        // Controllo disponibilità se è impostato un num_max (> 0)
+        // Controllo disponibilità per num_max
         if (evento.num_max && evento.num_max > 0) {
           const countResult = await client.execute({
             sql: "SELECT SUM(num_partecipanti) as totale FROM prenotazioni_eventi WHERE evento_id = ?",
@@ -379,7 +383,7 @@ export default async function handler(req, res) {
         immagine_blob,
         immagine_tipo,
         immagine_nome,
-        num_max, // Nuovo campo
+        num_max,
       } = req.body;
 
       let blobBuffer = null;
@@ -399,7 +403,7 @@ export default async function handler(req, res) {
           blobBuffer,
           immagine_tipo || "",
           immagine_nome || "",
-          num_max || 0, // Se non specificato, diventa 0
+          num_max || 0,
         ],
       });
 
@@ -411,7 +415,6 @@ export default async function handler(req, res) {
 
     // --- PUT ---
     if (req.method === "PUT") {
-      // GESTIONE CHECKIN
       if (section === "checkin") {
         const { id, num_arrivati } = req.body;
         await client.execute({
@@ -421,7 +424,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
-      // Gestione Visibilità
       if (section === "visibility") {
         const { id, visibile } = req.body;
         await client.execute({
@@ -431,7 +433,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
-      // Modifica Evento Normale
+      // Modifica Evento
       const {
         id,
         titolo,
@@ -441,7 +443,7 @@ export default async function handler(req, res) {
         immagine_blob,
         immagine_tipo,
         immagine_nome,
-        num_max, // Nuovo campo
+        num_max,
       } = req.body;
 
       let sql = `UPDATE eventi SET titolo=?, descrizione=?, data_evento=?, immagine_url=?, num_max=?`;
