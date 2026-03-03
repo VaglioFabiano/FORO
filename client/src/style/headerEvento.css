@@ -1,0 +1,260 @@
+.hero-evento-wrapper {
+  position: relative;
+  min-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 20px 60px;
+  overflow: hidden;
+  background-color: #1a1a1a;
+}
+
+/* Sfondo dinamico con l'immagine dell'evento sfocata */
+.hero-evento-bg {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 120%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px) brightness(0.6);
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.hero-evento-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 69, 19, 0.8) 0%,
+    rgba(26, 26, 26, 0.95) 100%
+  );
+  z-index: 2;
+}
+
+.hero-evento-container {
+  position: relative;
+  z-index: 3;
+  max-width: 1200px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 60px;
+  align-items: center;
+}
+
+/* --- Contenuto testuale --- */
+.hero-evento-content {
+  color: white;
+  animation: slideUpFade 0.8s ease-out forwards;
+}
+
+.hero-evento-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 100px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  backdrop-filter: blur(10px);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #4caf50;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+  animation: pulse 2s infinite;
+}
+
+.hero-evento-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  background: linear-gradient(to right, #ffffff, #ffdcb3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-evento-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px 20px;
+  border-radius: 12px;
+  border-left: 4px solid #d2691e;
+}
+
+.hero-evento-desc {
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: #cccccc;
+  margin-bottom: 40px;
+  max-width: 90%;
+}
+
+.hero-evento-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #d2691e 0%, #a0522d 100%);
+  color: white;
+  border: none;
+  padding: 18px 32px;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(210, 105, 30, 0.3);
+}
+
+.hero-evento-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(210, 105, 30, 0.4);
+  background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%);
+}
+
+.hero-evento-btn .arrow-icon {
+  transition: transform 0.3s ease;
+}
+
+.hero-evento-btn:hover .arrow-icon {
+  transform: translateX(5px);
+}
+
+/* --- Immagine Locandina --- */
+.hero-evento-visual {
+  perspective: 1000px;
+  animation: floatImage 6s ease-in-out infinite;
+}
+
+.hero-evento-poster {
+  width: 100%;
+  aspect-ratio: 1080 / 1350;
+  object-fit: cover;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transform: rotateY(-5deg) rotateX(2deg);
+  transition: transform 0.5s ease;
+}
+
+.hero-evento-visual:hover .hero-evento-poster {
+  transform: rotateY(0deg) rotateX(0deg);
+}
+
+.hero-evento-placeholder {
+  width: 100%;
+  aspect-ratio: 1080 / 1350;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  gap: 16px;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* --- Animazioni --- */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatImage {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+  }
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+  .hero-evento-container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    text-align: center;
+  }
+
+  .hero-evento-meta {
+    align-items: center;
+  }
+
+  .hero-evento-desc {
+    margin: 0 auto 40px auto;
+  }
+
+  .hero-evento-visual {
+    max-width: 400px;
+    margin: 0 auto;
+    animation: none; /* Disabilita animazione fluttuante su mobile per prestazioni */
+  }
+
+  .hero-evento-poster {
+    transform: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-evento-wrapper {
+    padding: 120px 15px 40px;
+  }
+
+  .hero-evento-title {
+    font-size: 2.5rem;
+  }
+
+  .meta-item {
+    font-size: 1rem;
+    padding: 10px 16px;
+  }
+}

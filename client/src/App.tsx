@@ -11,6 +11,7 @@ import AssociatiSection from "./components/Associati";
 import HomeDash from "./dashboard/homedash";
 import BannerCookie from "./components/banner_cookie";
 import PrenotaEventoPage from "./components/PrenotaEventoPage";
+import HeaderEvento from "./components/HeaderEvento";
 
 // Estensione dei tipi per includere la pagina eventi
 type PageType = "home" | "login" | "dashboard" | "eventi";
@@ -201,8 +202,16 @@ function App() {
         /* --- PAGINA HOME --- */
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div id="header">
-            {/* Se esiste un evento visibile nel DB, l'header cambia aspetto */}
-            <Header eventoSpeciale={eventoInEvidenza} />
+            {eventoInEvidenza ? (
+              <HeaderEvento
+                evento={eventoInEvidenza}
+                onPrenotaClick={(id) =>
+                  navigateTo({ page: "eventi", eventoId: id })
+                }
+              />
+            ) : (
+              <Header />
+            )}
           </div>
 
           <div id="orari">
