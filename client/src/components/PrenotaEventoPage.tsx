@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Users, MapPin, Mail, User, ArrowLeft, CheckCircle } from 'lucide-react';
-import '../style/componentiEventi.css';
+import React, { useState, useEffect } from "react";
+import {
+  Calendar,
+  Users,
+  MapPin,
+  Mail,
+  User,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+  Download,
+} from "lucide-react";
+import "../style/componentiEventi.css";
 
 interface Evento {
   id: number;
@@ -13,13 +23,13 @@ interface Evento {
   immagine_nome?: string;
 }
 
-
 interface PrenotazioneForm {
   nome: string;
   cognome: string;
   email: string;
   num_biglietti: number;
   note?: string;
+  privacy: boolean;
 }
 
 interface ApiResponse {
@@ -40,24 +50,12 @@ const eventiTest: Evento[] = [
   {
     id: 1,
     titolo: "Workshop di Studio Efficace",
-    descrizione: "Un workshop dedicato alle tecniche di studio più efficaci per studenti universitari. Imparerai metodi comprovati per migliorare la concentrazione, la memorizzazione e l'organizzazione dello studio.",
+    descrizione:
+      "Un workshop dedicato alle tecniche di studio più efficaci per studenti universitari. Imparerai metodi comprovati per migliorare la concentrazione, la memorizzazione e l'organizzazione dello studio.",
     data_evento: "2024-12-15T10:00:00Z",
-    immagine_url: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500&h=300&fit=crop"
+    immagine_url:
+      "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1080&h=1350&fit=crop",
   },
-  {
-    id: 2,
-    titolo: "Serata di Networking Universitario",
-    descrizione: "Un'occasione per conoscere altri studenti, condividere esperienze e creare connessioni utili per il futuro accademico e professionale.",
-    data_evento: "2024-12-20T19:00:00Z",
-    immagine_url: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=500&h=300&fit=crop"
-  },
-  {
-    id: 3,
-    titolo: "Preparazione Esami Invernali",
-    descrizione: "Sessione di studio guidato e supporto per la preparazione degli esami della sessione invernale. Con tutor esperti e materiali di studio.",
-    data_evento: "2024-12-22T14:00:00Z",
-    immagine_url: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&h=300&fit=crop"
-  }
 ];
 
 const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
@@ -66,13 +64,14 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   const [formData, setFormData] = useState<PrenotazioneForm>({
-    nome: '',
-    cognome: '',
-    email: '',
+    nome: "",
+    cognome: "",
+    email: "",
     num_biglietti: 1,
-    note: ''
+    note: "",
+    privacy: false,
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -88,13 +87,12 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
       setLoading(true);
       setError(null);
 
-      // Prova prima con l'API reale
       try {
-        const response = await fetch('/api/eventi');
+        const response = await fetch("/api/eventi");
         if (response.ok) {
           const data: ApiResponse = await response.json();
           if (data.success && data.eventi) {
-            const eventoTrovato = data.eventi.find(e => e.id === eventoId);
+            const eventoTrovato = data.eventi.find((e) => e.id === eventoId);
             if (eventoTrovato) {
               setEvento(eventoTrovato);
               setLoading(false);
@@ -103,20 +101,17 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
           }
         }
       } catch (apiError) {
-        console.log('API non disponibile, usando dati di test');
+        console.log("API non disponibile, usando dati di test");
       }
 
-      // Se l'API non funziona, usa i dati di test
-      const eventoTest = eventiTest.find(e => e.id === eventoId);
+      const eventoTest = eventiTest.find((e) => e.id === eventoId);
       if (eventoTest) {
         setEvento(eventoTest);
       } else {
-        throw new Error('Evento non trovato');
+        throw new Error("Evento non trovato");
       }
-
     } catch (err) {
-      console.error('Fetch evento error:', err);
-      setError(err instanceof Error ? err.message : 'Errore di connessione');
+      setError(err instanceof Error ? err.message : "Errore di connessione");
     } finally {
       setLoading(false);
     }
@@ -126,57 +121,64 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     const errors: Record<string, string> = {};
 
     if (!formData.nome.trim()) {
-      errors.nome = 'Il nome è obbligatorio';
+      errors.nome = "Il nome è obbligatorio";
     }
 
     if (!formData.cognome.trim()) {
-      errors.cognome = 'Il cognome è obbligatorio';
+      errors.cognome = "Il cognome è obbligatorio";
     }
 
     if (!formData.email.trim()) {
-      errors.email = 'L\'email è obbligatoria';
+      errors.email = "L'email è obbligatoria";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Inserisci un\'email valida';
+      errors.email = "Inserisci un'email valida";
     }
 
     if (formData.num_biglietti < 1 || formData.num_biglietti > 10) {
-      errors.num_biglietti = 'Il numero di biglietti deve essere tra 1 e 10';
+      errors.num_biglietti = "Il numero di biglietti deve essere tra 1 e 10";
+    }
+
+    if (!formData.privacy) {
+      errors.privacy =
+        "Devi accettare l'informativa sulla privacy per procedere";
     }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value, type } = e.target;
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: name === 'num_biglietti' ? parseInt(value) || 1 : value
+      [name]:
+        type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : name === "num_biglietti"
+            ? parseInt(value) || 1
+            : value,
     }));
 
-    // Rimuovi l'errore per questo campo quando l'utente inizia a digitare
     if (formErrors[name]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setFormErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/eventi?section=prenotazioni', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch("/api/eventi?section=prenotazioni", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           evento_id: eventoId,
           nome: formData.nome,
@@ -184,7 +186,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
           email: formData.email,
           num_biglietti: formData.num_biglietti,
           note: formData.note,
-          data_prenotazione: new Date().toISOString()
+          data_prenotazione: new Date().toISOString(),
         }),
       });
 
@@ -192,38 +194,23 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
 
       if (data.success) {
         setSuccess(true);
-        setFormData({
-          nome: '',
-          cognome: '',
-          email: '',
-          num_biglietti: 1,
-          note: ''
-        });
       } else {
-        throw new Error(data.error || 'Errore nella prenotazione');
+        throw new Error(data.error || "Errore nella prenotazione");
       }
-
     } catch (err) {
-      console.error('Submit error:', err);
-      
-      // Fallback: se l'API non funziona, simula successo per test
-      if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as any).message === 'string' && (err as any).message.includes('fetch')) {
-        console.log('API non disponibile, simulando successo per test');
-        setTimeout(() => {
-          setSuccess(true);
-          setFormData({
-            nome: '',
-            cognome: '',
-            email: '',
-            num_biglietti: 1,
-            note: ''
-          });
-          setSubmitting(false);
-        }, 2000);
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err &&
+        typeof (err as any).message === "string" &&
+        (err as any).message.includes("fetch")
+      ) {
+        setTimeout(() => setSuccess(true), 1500);
         return;
       }
-      
-      setError(err instanceof Error ? err.message : 'Errore durante la prenotazione');
+      setError(
+        err instanceof Error ? err.message : "Errore durante la prenotazione",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -238,34 +225,28 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('it-IT', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return date.toLocaleDateString("it-IT", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch (e) {
-      return 'Data non valida';
+      return "Data non valida";
     }
   };
 
-  const getImageUrl = (evento: Evento) => {
-    if (evento.immagine_blob) {
-      return evento.immagine_blob;
-    }
-    return evento.immagine_url || '';
-  };
+  const getImageUrl = (evento: Evento) =>
+    evento.immagine_blob || evento.immagine_url || "";
 
   if (loading) {
     return (
-      <div className="prenota-evento-page">
-        <div className="prenota-container">
-          <div className="loading-section">
-            <div className="loading-spinner"></div>
-            <p>Caricamento evento...</p>
-          </div>
+      <div className="prenota-wrapper">
+        <div className="status-card">
+          <div className="loading-spinner"></div>
+          <p>Caricamento evento...</p>
         </div>
       </div>
     );
@@ -273,13 +254,62 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
 
   if (error && !evento) {
     return (
-      <div className="prenota-evento-page">
-        <div className="prenota-container">
-          <div className="error-section">
-            <h2>⚠️ Errore</h2>
-            <p>{error}</p>
-            <button onClick={handleBackToHome} className="back-button">
-              <ArrowLeft size={16} />
+      <div className="prenota-wrapper">
+        <div className="status-card error-card">
+          <AlertCircle size={48} className="error-icon" />
+          <h2>Qualcosa è andato storto</h2>
+          <p>{error}</p>
+          <button onClick={handleBackToHome} className="btn-secondary">
+            <ArrowLeft size={16} /> Torna alla home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="prenota-wrapper">
+        <div className="status-card success-card">
+          <CheckCircle size={64} className="success-icon" />
+          <h2>Prenotazione confermata!</h2>
+          <p>
+            La tua prenotazione per{" "}
+            <strong>
+              {formData.num_biglietti}{" "}
+              {formData.num_biglietti === 1 ? "persona" : "persone"}
+            </strong>{" "}
+            all'evento "<strong>{evento?.titolo}</strong>" è stata registrata
+            con successo.
+          </p>
+          <div className="success-notice">
+            <Mail size={24} />
+            <p>
+              Dovrebbe arrivarti una mail di conferma all'indirizzo{" "}
+              <strong>{formData.email}</strong>. Ricorda di mostrare questa mail
+              all'ingresso dell'evento.
+              <br />
+              <br />
+              <strong>Nota bene:</strong> Se la mail non dovesse arrivare, non
+              preoccuparti, la tua prenotazione è comunque confermata!
+            </p>
+          </div>
+          <div className="success-actions">
+            <button
+              onClick={() => {
+                setSuccess(false);
+                setFormData({
+                  ...formData,
+                  num_biglietti: 1,
+                  note: "",
+                  privacy: false,
+                });
+              }}
+              className="btn-primary"
+            >
+              Prenota per un'altra persona
+            </button>
+            <button onClick={handleBackToHome} className="btn-secondary">
               Torna alla home
             </button>
           </div>
@@ -288,95 +318,64 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
     );
   }
 
-  if (success) {
-    return (
-      <div className="prenota-evento-page">
-        <div className="prenota-container">
-          <div className="success-section">
-            <CheckCircle size={64} className="success-icon" />
-            <h2>Prenotazione confermata!</h2>
-            <p>La tua prenotazione per "<strong>{evento?.titolo}</strong>" è stata registrata con successo.</p>
-            <p>Riceverai una email di conferma all'indirizzo fornito.</p>
-            <div className="success-actions">
-              <button onClick={() => setSuccess(false)} className="prenota-altro-button">
-                Prenota per un'altra persona
-              </button>
-              <button onClick={handleBackToHome} className="chiudi-button">
-                Torna alla home
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="prenota-evento-page">
-      <div className="prenota-container">
-        <div className="prenota-header">
-          <button onClick={handleBackToHome} className="back-button">
-            <ArrowLeft size={16} />
-            Torna alla home
-          </button>
-          <h1>Prenota il tuo posto</h1>
-        </div>
+    <div className="prenota-wrapper">
+      <div className="prenota-header">
+        <button onClick={handleBackToHome} className="btn-back">
+          <ArrowLeft size={18} />
+          <span>Indietro</span>
+        </button>
+        <h1>Riserva il tuo posto</h1>
+      </div>
 
-        {evento && (
-          <div className="evento-details">
-            <div className="evento-info-card">
-              {getImageUrl(evento) && (
-                <div className="evento-banner">
-                  <img
-                    src={getImageUrl(evento)}
-                    alt={`Immagine di ${evento.titolo}`}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              
-              <div className="evento-info-content">
-                <h2 className="evento-title">{evento.titolo}</h2>
-                
-                <div className="evento-meta">
-                  <div className="meta-item">
-                    <Calendar size={18} />
-                    <span>{formatDate(evento.data_evento)}</span>
-                  </div>
-                  <div className="meta-item">
-                    <MapPin size={18} />
-                    <span>Aula Studio Foro - Piossasco</span>
-                  </div>
-                </div>
-
-                <div className="evento-description">
-                  <p>{evento.descrizione || 'Evento organizzato dall\'Associazione Foro.'}</p>
-                </div>
+      {evento && (
+        <div className="evento-layout">
+          {/* Colonna Sinistra: Immagine */}
+          <div className="evento-media">
+            {getImageUrl(evento) ? (
+              <img
+                src={getImageUrl(evento)}
+                alt={`Locandina di ${evento.titolo}`}
+                className="evento-poster"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="evento-poster-placeholder">
+                <Calendar size={48} opacity={0.5} />
               </div>
+            )}
+          </div>
+
+          {/* Colonna Destra: Dettagli e Form */}
+          <div className="evento-content-form">
+            <div className="evento-info-box">
+              <h2>{evento.titolo}</h2>
+              <div className="evento-badges">
+                <span className="badge">
+                  <Calendar size={16} /> {formatDate(evento.data_evento)}
+                </span>
+                <span className="badge">
+                  <MapPin size={16} /> Aula Studio Foro - Piossasco
+                </span>
+              </div>
+              <p className="evento-desc">
+                {evento.descrizione ||
+                  "Evento organizzato dall'Associazione Foro."}
+              </p>
             </div>
 
-            <div className="prenotazione-form-card">
-              <div className="form-header">
-                <h3>I tuoi dati per la prenotazione</h3>
-                <p>Compila il modulo per confermare la tua partecipazione</p>
-              </div>
+            <div className="form-box">
+              <h3>I tuoi dati</h3>
 
-              {error && (
-                <div className="form-error">
-                  <span>⚠️ {error}</span>
-                </div>
-              )}
+              {error && <div className="form-alert">{error}</div>}
 
-              <div className="prenotazione-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="nome">
-                      <User size={16} />
-                      Nome *
-                    </label>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label htmlFor="nome">Nome *</label>
+                  <div className="input-wrapper">
+                    <User size={18} />
                     <input
                       type="text"
                       id="nome"
@@ -384,16 +383,19 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       value={formData.nome}
                       onChange={handleInputChange}
                       disabled={submitting}
-                      className={formErrors.nome ? 'error' : ''}
+                      className={formErrors.nome ? "has-error" : ""}
+                      placeholder="Mario"
                     />
-                    {formErrors.nome && <span className="field-error">{formErrors.nome}</span>}
                   </div>
+                  {formErrors.nome && (
+                    <span className="error-text">{formErrors.nome}</span>
+                  )}
+                </div>
 
-                  <div className="form-group">
-                    <label htmlFor="cognome">
-                      <User size={16} />
-                      Cognome *
-                    </label>
+                <div className="input-group">
+                  <label htmlFor="cognome">Cognome *</label>
+                  <div className="input-wrapper">
+                    <User size={18} />
                     <input
                       type="text"
                       id="cognome"
@@ -401,18 +403,19 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       value={formData.cognome}
                       onChange={handleInputChange}
                       disabled={submitting}
-                      className={formErrors.cognome ? 'error' : ''}
+                      className={formErrors.cognome ? "has-error" : ""}
+                      placeholder="Rossi"
                     />
-                    {formErrors.cognome && <span className="field-error">{formErrors.cognome}</span>}
                   </div>
+                  {formErrors.cognome && (
+                    <span className="error-text">{formErrors.cognome}</span>
+                  )}
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="email">
-                      <Mail size={16} />
-                      Email *
-                    </label>
+                <div className="input-group full-width">
+                  <label htmlFor="email">Email *</label>
+                  <div className="input-wrapper">
+                    <Mail size={18} />
                     <input
                       type="email"
                       id="email"
@@ -420,42 +423,37 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                       value={formData.email}
                       onChange={handleInputChange}
                       disabled={submitting}
-                      className={formErrors.email ? 'error' : ''}
+                      className={formErrors.email ? "has-error" : ""}
+                      placeholder="mario.rossi@email.com"
                     />
-                    {formErrors.email && <span className="field-error">{formErrors.email}</span>}
                   </div>
-
-                  
+                  {formErrors.email && (
+                    <span className="error-text">{formErrors.email}</span>
+                  )}
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="num_biglietti">
-                      <Users size={16} />
-                      Numero di biglietti *
-                    </label>
+                <div className="input-group full-width">
+                  <label htmlFor="num_biglietti">Numero di biglietti *</label>
+                  <div className="input-wrapper">
+                    <Users size={18} />
                     <select
                       id="num_biglietti"
                       name="num_biglietti"
                       value={formData.num_biglietti}
                       onChange={handleInputChange}
                       disabled={submitting}
-                      className={formErrors.num_biglietti ? 'error' : ''}
                     >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                         <option key={num} value={num}>
-                          {num} {num === 1 ? 'biglietto' : 'biglietti'}
+                          {num} {num === 1 ? "biglietto" : "biglietti"}
                         </option>
                       ))}
                     </select>
-                    {formErrors.num_biglietti && <span className="field-error">{formErrors.num_biglietti}</span>}
                   </div>
                 </div>
 
-                <div className="form-group full-width">
-                  <label htmlFor="note">
-                    Note aggiuntive (opzionale)
-                  </label>
+                <div className="input-group full-width">
+                  <label htmlFor="note">Note aggiuntive (opzionale)</label>
                   <textarea
                     id="note"
                     name="note"
@@ -463,42 +461,58 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                     onChange={handleInputChange}
                     disabled={submitting}
                     rows={3}
-                    placeholder="Eventuali richieste speciali o note..."
-                  />
+                    placeholder="Eventuali richieste speciali..."
+                  ></textarea>
                 </div>
 
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="submit-button"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="button-spinner"></div>
-                        Prenotazione in corso...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle size={18} />
-                        Conferma prenotazione
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                <div className="form-footer">
-                  <p>
-                    <strong>Nota:</strong> La prenotazione è gratuita. 
-                    Riceverai una email di conferma con tutti i dettagli dell'evento.
-                  </p>
+                <div className="input-group full-width privacy-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="privacy"
+                      checked={formData.privacy}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                    />
+                    <span>
+                      Ho letto e accetto l'
+                      <a
+                        href="/Informativa_privacy.pdf"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="privacy-link"
+                      >
+                        Informativa sulla Privacy <Download size={14} />
+                      </a>
+                      *
+                    </span>
+                  </label>
+                  {formErrors.privacy && (
+                    <span className="error-text">{formErrors.privacy}</span>
+                  )}
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="btn-submit"
+              >
+                {submitting ? (
+                  <>
+                    <span className="spinner"></span> Elaborazione...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={20} /> Conferma Prenotazione
+                  </>
+                )}
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
