@@ -17,6 +17,7 @@ interface HeaderEventoProps {
     data_evento: string;
     orario?: string;
     link_esterno?: string;
+    immagine_blob?: string;
     immagine_url?: string;
   };
   onPrenotaClick: (id: number) => void;
@@ -27,6 +28,12 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
   onPrenotaClick,
 }) => {
   const getImageUrl = () => {
+    if (
+      typeof evento.immagine_blob === "string" &&
+      evento.immagine_blob.startsWith("data:image")
+    ) {
+      return evento.immagine_blob;
+    }
     return evento.immagine_url || "";
   };
 
@@ -42,6 +49,14 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
     } catch (e) {
       return dateString;
     }
+  };
+
+  // Funzione per garantire che il link esterno funzioni sempre correttamente
+  const getValidUrl = (url?: string) => {
+    if (!url) return "";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
   };
 
   return (
@@ -101,10 +116,12 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
                   border: "2px solid rgba(255, 255, 255, 0.5)",
                   boxShadow: "none",
                 }}
-                onClick={() => window.open(evento.link_esterno, "_blank")}
+                onClick={() =>
+                  window.open(getValidUrl(evento.link_esterno), "_blank")
+                }
               >
                 <ExternalLink size={20} />
-                <span>Scopri di più</span>
+                <span>Per approfondire</span>
               </button>
             )}
           </div>

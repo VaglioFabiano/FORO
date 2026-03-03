@@ -23,6 +23,9 @@ interface Evento {
   orario?: string;
   link_esterno?: string;
   immagine_url?: string;
+  immagine_blob?: string;
+  immagine_tipo?: string;
+  immagine_nome?: string;
   num_max?: number;
 }
 
@@ -101,7 +104,22 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
   };
 
   const getImageUrl = (ev: Evento) => {
-    return ev.immagine_url || "";
+    if (
+      typeof ev.immagine_blob === "string" &&
+      ev.immagine_blob.startsWith("data:image")
+    ) {
+      return ev.immagine_blob;
+    }
+    if (ev.immagine_url) return ev.immagine_url;
+    return `/api/eventi?action=image&id=${ev.id}`;
+  };
+
+  // Funzione per correggere i link inseriti senza http://
+  const getValidUrl = (url?: string) => {
+    if (!url) return "";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
   };
 
   const maxTickets =
@@ -157,6 +175,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
           email: formData.email,
           num_biglietti: formData.num_biglietti,
           note: formData.note,
+          data_prenotazione: new Date().toISOString(),
         }),
       });
 
@@ -239,6 +258,10 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
               Dovrebbe arrivarti una mail di conferma all'indirizzo{" "}
               <strong>{formData.email}</strong>. Ricorda di mostrare questa mail
               all'ingresso dell'evento.
+              <br />
+              <br />
+              <strong>Nota bene:</strong> Se la mail non dovesse arrivare, non
+              preoccuparti, la tua prenotazione è comunque confermata!
             </p>
           </div>
           <div className="success-actions">
@@ -284,6 +307,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
           <div className="evento-content-form">
             <div className="evento-info-box">
               <h2>{evento.titolo}</h2>
+
               <div className="evento-badges">
                 <span className="badge">
                   <Calendar size={16} /> {formatDate(evento.data_evento)}
@@ -296,7 +320,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                 )}
 
                 <span className="badge">
-                  <MapPin size={16} /> Aula Studio Foro
+                  <MapPin size={16} /> Aula Studio Foro - Piossasco
                 </span>
 
                 {postiDisponibili !== null && (
@@ -317,28 +341,55 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                       : `${postiDisponibili} posti rimasti`}
                   </span>
                 )}
+              </div>
+
+              {/* Descrizione con il link esterno alla fine */}
+              <div
+                className="evento-desc-container"
+                style={{ marginBottom: "40px" }}
+              >
+                <p
+                  className="evento-desc"
+                  style={{
+                    whiteSpace: "pre-line",
+                    marginBottom: evento.link_esterno ? "16px" : "0",
+                  }}
+                >
+                  {evento.descrizione ||
+                    "Evento organizzato dall'Associazione Foro."}
+                </p>
 
                 {evento.link_esterno && (
                   <a
-                    href={evento.link_esterno}
+                    href={getValidUrl(evento.link_esterno)}
                     target="_blank"
                     rel="noreferrer"
-                    className="badge"
                     style={{
-                      backgroundColor: "#034a5a",
-                      color: "white",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      color: "#034a5a",
+                      fontWeight: "700",
                       textDecoration: "none",
-                      cursor: "pointer",
+                      fontSize: "1.1rem",
+                      padding: "8px 16px",
+                      backgroundColor: "rgba(3, 74, 90, 0.1)",
+                      borderRadius: "8px",
+                      transition: "all 0.2s ease",
                     }}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgba(3, 74, 90, 0.2)")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        "rgba(3, 74, 90, 0.1)")
+                    }
                   >
-                    <ExternalLink size={16} /> Approfondisci
+                    <ExternalLink size={18} /> Per approfondire
                   </a>
                 )}
               </div>
-              <p className="evento-desc">
-                {evento.descrizione ||
-                  "Evento organizzato dall'Associazione Foro."}
-              </p>
             </div>
 
             {postiDisponibili === 0 ? (

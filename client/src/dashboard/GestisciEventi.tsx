@@ -506,12 +506,19 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
-  // LA FUNZIONE MANCANTE REINSERITA QUI
   const handleSearchChange = (eventoId: number, value: string) => {
     setSearchQuery((prev) => ({
       ...prev,
       [eventoId]: value.toLowerCase(),
     }));
+  };
+
+  // Funzione per garantire che il link esterno funzioni sempre correttamente
+  const getValidUrl = (url?: string) => {
+    if (!url) return "";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
   };
 
   const getParticipantCount = (eventoId: number) =>
@@ -794,7 +801,6 @@ const GestisciEventi: React.FC = () => {
                         {evento.visibile === 1 ? "Online" : "Bozza"}
                       </span>
                     </div>
-                    {/* UTILIZZO DELL'ICONA CLOCK QUI PER RISOLVERE L'ERRORE E MIGLIORARE LA UI */}
                     <div
                       className="event-date"
                       style={{
@@ -995,7 +1001,7 @@ const GestisciEventi: React.FC = () => {
                           <p>{evento.descrizione || "Nessuna descrizione."}</p>
                           {evento.link_esterno && (
                             <a
-                              href={evento.link_esterno}
+                              href={getValidUrl(evento.link_esterno)}
                               target="_blank"
                               rel="noreferrer"
                               style={{
