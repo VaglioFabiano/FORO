@@ -6,7 +6,8 @@
   justify-content: center;
   padding: 100px 20px 60px;
   overflow: hidden;
-  background-color: #1a1a1a;
+  /* Colore di fallback scuro basato sul petrolio */
+  background-color: #022a33;
 }
 
 /* Sfondo dinamico con l'immagine dell'evento sfocata */
@@ -18,18 +19,19 @@
   height: 120%;
   background-size: cover;
   background-position: center;
-  filter: blur(40px) brightness(0.6);
-  opacity: 0.5;
+  filter: blur(40px) brightness(0.4); /* Ridotta luminosità per risaltare il bianco */
+  opacity: 0.4;
   z-index: 1;
 }
 
 .hero-evento-overlay {
   position: absolute;
   inset: 0;
+  /* Sfumatura che vira dal colore #034a5a verso il nero quasi totale */
   background: linear-gradient(
     135deg,
-    rgba(139, 69, 19, 0.8) 0%,
-    rgba(26, 26, 26, 0.95) 100%
+    rgba(3, 74, 90, 0.85) 0%,
+    rgba(2, 20, 26, 0.98) 100%
   );
   z-index: 2;
 }
@@ -65,6 +67,7 @@
   text-transform: uppercase;
   margin-bottom: 24px;
   backdrop-filter: blur(10px);
+  color: white;
 }
 
 .pulse-dot {
@@ -81,7 +84,8 @@
   font-weight: 800;
   line-height: 1.1;
   margin-bottom: 24px;
-  background: linear-gradient(to right, #ffffff, #ffdcb3);
+  /* Gradiente del titolo dal bianco puro a un azzurro chiarissimo */
+  background: linear-gradient(to right, #ffffff, #cce7ed);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -99,17 +103,18 @@
   align-items: center;
   gap: 12px;
   font-size: 1.1rem;
-  color: #e0e0e0;
-  background: rgba(0, 0, 0, 0.2);
+  color: #ffffff; /* Bianco puro per massimo contrasto */
+  background: rgba(0, 0, 0, 0.3);
   padding: 12px 20px;
   border-radius: 12px;
-  border-left: 4px solid #d2691e;
+  /* Bordino sinistro basato sul colore principale ma più luminoso */
+  border-left: 4px solid #068da6;
 }
 
 .hero-evento-desc {
   font-size: 1.15rem;
   line-height: 1.6;
-  color: #cccccc;
+  color: #f0f0f0; /* Grigio chiarissimo quasi bianco */
   margin-bottom: 40px;
   max-width: 90%;
 }
@@ -118,22 +123,23 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  background: linear-gradient(135deg, #d2691e 0%, #a0522d 100%);
+  /* Bottone con sfumatura basata sul petrolio */
+  background: linear-gradient(135deg, #034a5a 0%, #022a33 100%);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 18px 32px;
   border-radius: 14px;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 30px rgba(210, 105, 30, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .hero-evento-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 15px 40px rgba(210, 105, 30, 0.4);
-  background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%);
+  box-shadow: 0 15px 40px rgba(3, 74, 90, 0.4);
+  background: linear-gradient(135deg, #046175 0%, #034a5a 100%);
 }
 
 .hero-evento-btn .arrow-icon {
@@ -155,8 +161,8 @@
   aspect-ratio: 1080 / 1350;
   object-fit: cover;
   border-radius: 24px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   transform: rotateY(-5deg) rotateX(2deg);
   transition: transform 0.5s ease;
 }
@@ -225,21 +231,17 @@
     gap: 40px;
     text-align: center;
   }
-
   .hero-evento-meta {
     align-items: center;
   }
-
   .hero-evento-desc {
     margin: 0 auto 40px auto;
   }
-
   .hero-evento-visual {
     max-width: 400px;
     margin: 0 auto;
-    animation: none; /* Disabilita animazione fluttuante su mobile per prestazioni */
+    animation: none;
   }
-
   .hero-evento-poster {
     transform: none;
   }
@@ -249,11 +251,9 @@
   .hero-evento-wrapper {
     padding: 120px 15px 40px;
   }
-
   .hero-evento-title {
     font-size: 2.5rem;
   }
-
   .meta-item {
     font-size: 1rem;
     padding: 10px 16px;

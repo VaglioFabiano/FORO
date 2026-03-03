@@ -51,7 +51,6 @@ interface ApiResponse {
   destinatari_count?: number;
 }
 
-// INSERISCI QUI LA TUA CHIAVE API DI IMGBB (tra le virgolette)
 const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY;
 
 const GestisciEventi: React.FC = () => {
