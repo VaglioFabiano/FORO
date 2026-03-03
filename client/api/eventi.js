@@ -155,11 +155,17 @@ export default async function handler(req, res) {
         }
 
         const row = result.rows[0];
-        const buffer = Buffer.from(row.immagine_blob);
+
+        // FIX: Assicuriamoci che l'immagine sia un Buffer Node.js crudo e non venga alterato
+        const buffer = Buffer.isBuffer(row.immagine_blob)
+          ? row.immagine_blob
+          : Buffer.from(new Uint8Array(row.immagine_blob));
 
         res.setHeader("Content-Type", row.immagine_tipo || "image/jpeg");
         res.setHeader("Cache-Control", "public, max-age=86400");
-        return res.send(buffer);
+
+        // FIX: Usare res.end(buffer) al posto di res.send(buffer) previene la corruzione dei file su Vercel
+        return res.end(buffer);
       }
 
       if (!section && !action) {
