@@ -9,11 +9,8 @@ interface Evento {
   descrizione: string;
   data_evento: string;
   immagine_url?: string;
-  immagine_blob?: string;
-  immagine_tipo?: string;
-  immagine_nome?: string;
   visibile: number;
-  num_max?: number; // Aggiunto num_max
+  num_max?: number;
 }
 
 interface Prenotazione {
@@ -35,7 +32,7 @@ interface NuovoEvento {
   data_evento: string;
   immagine_url: string;
   immagine_file?: File;
-  num_max: number | ""; // Aggiunto num_max
+  num_max: number | "";
 }
 
 interface BroadcastEmail {
@@ -54,6 +51,9 @@ interface ApiResponse {
   destinatari_count?: number;
 }
 
+// INSERISCI QUI LA TUA CHIAVE API DI IMGBB (tra le virgolette)
+const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY;
+
 const GestisciEventi: React.FC = () => {
   const [eventi, setEventi] = useState<Evento[]>([]);
   const [prenotazioni, setPrenotazioni] = useState<
@@ -65,7 +65,6 @@ const GestisciEventi: React.FC = () => {
     {},
   );
 
-  // Stato per la ricerca dei partecipanti
   const [searchQuery, setSearchQuery] = useState<Record<number, string>>({});
 
   const [nuovoEvento, setNuovoEvento] = useState<NuovoEvento>({
@@ -109,6 +108,7 @@ const GestisciEventi: React.FC = () => {
     }
   }, [broadcastSuccess]);
 
+  // Comprime l'immagine localmente per renderla leggerissima
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const maxWidth = 800;
@@ -156,6 +156,31 @@ const GestisciEventi: React.FC = () => {
     });
   };
 
+  // Carica l'immagine su ImgBB e restituisce l'URL pubblico definitivo
+  const uploadToImgBB = async (file: File): Promise<string> => {
+    const compressedBase64 = await compressImage(file);
+    // ImgBB vuole solo i dati puri, senza il prefisso "data:image..."
+    const base64Data = compressedBase64.split(",")[1];
+
+    const formData = new FormData();
+    formData.append("image", base64Data);
+
+    const response = await fetch(
+      `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    const data = await response.json();
+    if (data.success) {
+      return data.data.url;
+    } else {
+      throw new Error("Errore nel servizio di hosting immagini.");
+    }
+  };
+
   const validateImageFile = (file: File): boolean => {
     const validTypes = [
       "image/jpeg",
@@ -164,18 +189,16 @@ const GestisciEventi: React.FC = () => {
       "image/gif",
       "image/webp",
     ];
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!validTypes.includes(file.type)) {
       setError("Tipo di file non supportato. Usa JPG, PNG, GIF o WebP.");
       return false;
     }
-
     if (file.size > maxSize) {
       setError("File troppo grande. Dimensione massima: 10MB.");
       return false;
     }
-
     return true;
   };
 
@@ -185,18 +208,11 @@ const GestisciEventi: React.FC = () => {
         setLoading(true);
         setError(null);
       }
-
       const response = await fetch("/api/eventi");
-
-      if (!response.ok) {
-        throw new Error("Errore caricamento eventi");
-      }
+      if (!response.ok) throw new Error("Errore caricamento eventi");
 
       const data: ApiResponse = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || "Errore sconosciuto");
-      }
+      if (!data.success) throw new Error(data.error || "Errore sconosciuto");
 
       const fetchedEventi = data.eventi || [];
       setEventi(fetchedEventi);
@@ -208,13 +224,10 @@ const GestisciEventi: React.FC = () => {
       }
     } catch (err) {
       console.error("Fetch eventi error:", err);
-      if (!isBackground) {
+      if (!isBackground)
         setError(err instanceof Error ? err.message : "Errore connessione");
-      }
     } finally {
-      if (!isBackground) {
-        setLoading(false);
-      }
+      if (!isBackground) setLoading(false);
     }
   }, []);
 
@@ -247,7 +260,6 @@ const GestisciEventi: React.FC = () => {
     const interval = setInterval(() => {
       fetchEventi(true);
     }, 7000);
-
     return () => clearInterval(interval);
   }, [fetchEventi]);
 
@@ -260,7 +272,6 @@ const GestisciEventi: React.FC = () => {
       setError("Oggetto e messaggio obbligatori.");
       return;
     }
-
     const numDestinatari = (prenotazioni[broadcastEventId] || []).length;
     if (numDestinatari === 0) {
       setError("Nessun partecipante a cui scrivere.");
@@ -312,25 +323,25 @@ const GestisciEventi: React.FC = () => {
     setError(null);
 
     try {
-      let eventData: any = {
-        titolo: nuovoEvento.titolo.trim(),
-        descrizione: nuovoEvento.descrizione.trim(),
-        data_evento: nuovoEvento.data_evento.trim(),
-        immagine_url: nuovoEvento.immagine_url.trim(),
-        num_max: nuovoEvento.num_max !== "" ? Number(nuovoEvento.num_max) : 0,
-        user_id: userId,
-      };
+      let finalImageUrl = nuovoEvento.immagine_url.trim();
 
+      // Se l'utente ha selezionato un file, lo carichiamo su ImgBB
       if (nuovoEvento.immagine_file) {
         if (!validateImageFile(nuovoEvento.immagine_file)) {
           setCreatingEvent(false);
           return;
         }
-        const compressedBase64 = await compressImage(nuovoEvento.immagine_file);
-        eventData.immagine_blob = compressedBase64;
-        eventData.immagine_tipo = "image/jpeg";
-        eventData.immagine_nome = nuovoEvento.immagine_file.name;
+        finalImageUrl = await uploadToImgBB(nuovoEvento.immagine_file);
       }
+
+      let eventData: any = {
+        titolo: nuovoEvento.titolo.trim(),
+        descrizione: nuovoEvento.descrizione.trim(),
+        data_evento: nuovoEvento.data_evento.trim(),
+        immagine_url: finalImageUrl, // Mandiamo SOLO l'url al backend!
+        num_max: nuovoEvento.num_max !== "" ? Number(nuovoEvento.num_max) : 0,
+        user_id: userId,
+      };
 
       const response = await fetch("/api/eventi", {
         method: "POST",
@@ -371,26 +382,25 @@ const GestisciEventi: React.FC = () => {
     setError(null);
 
     try {
-      let eventData: any = {
-        id: editingEventId,
-        titolo: editData.titolo.trim(),
-        descrizione: editData.descrizione?.trim() || "",
-        data_evento: editData.data_evento?.trim(),
-        immagine_url: editData.immagine_url?.trim() || "",
-        num_max: editData.num_max || 0,
-        user_id: userId,
-      };
+      let finalImageUrl = editData.immagine_url?.trim() || "";
 
       if (editData.immagine_file) {
         if (!validateImageFile(editData.immagine_file)) {
           setUpdatingEvent(false);
           return;
         }
-        const compressedBase64 = await compressImage(editData.immagine_file);
-        eventData.immagine_blob = compressedBase64;
-        eventData.immagine_tipo = "image/jpeg";
-        eventData.immagine_nome = editData.immagine_file.name;
+        finalImageUrl = await uploadToImgBB(editData.immagine_file);
       }
+
+      let eventData: any = {
+        id: editingEventId,
+        titolo: editData.titolo.trim(),
+        descrizione: editData.descrizione?.trim() || "",
+        data_evento: editData.data_evento?.trim(),
+        immagine_url: finalImageUrl,
+        num_max: editData.num_max || 0,
+        user_id: userId,
+      };
 
       const response = await fetch("/api/eventi", {
         method: "PUT",
@@ -505,15 +515,9 @@ const GestisciEventi: React.FC = () => {
       setEditData({ ...editData, immagine_file: file, immagine_url: "" });
   };
 
-  // Funzione getImageUrl modificata per mostrare correttamente le immagini caricate
+  // Adesso abbiamo solo e unicamente l'URL, tutto è più semplice!
   const getImageUrl = (evento: Evento) => {
-    if (evento.immagine_url) {
-      return evento.immagine_url;
-    }
-    if (evento.immagine_tipo || evento.immagine_nome || evento.immagine_blob) {
-      return `/api/eventi?action=image&id=${evento.id}`;
-    }
-    return "";
+    return evento.immagine_url || "";
   };
 
   const iniziaModifica = (evento: Evento) => {
@@ -783,7 +787,6 @@ const GestisciEventi: React.FC = () => {
                   onChange={handleNewEventImageChange}
                   disabled={creatingEvent}
                 />
-                <p className="form-help">Verrà compressa automaticamente.</p>
               </div>
               <div className="form-group">
                 <label>Oppure URL Immagine</label>
@@ -872,7 +875,6 @@ const GestisciEventi: React.FC = () => {
                         >
                           {evento.visibile === 1 ? "Nascondi" : "Pubblica"}
                         </button>
-
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1030,7 +1032,6 @@ const GestisciEventi: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Barra di ricerca per i partecipanti */}
                           {(prenotazioni[evento.id] || []).length > 0 && (
                             <div
                               className="search-bar-container"
@@ -1110,7 +1111,6 @@ const GestisciEventi: React.FC = () => {
                                         >
                                           -
                                         </button>
-
                                         <div className="checkin-status">
                                           <span className="arrivati-num">
                                             {arrivati}
@@ -1119,7 +1119,6 @@ const GestisciEventi: React.FC = () => {
                                             / {totaleBiglietti}
                                           </span>
                                         </div>
-
                                         <button
                                           className="checkin-btn plus"
                                           disabled={arrivati >= totaleBiglietti}
