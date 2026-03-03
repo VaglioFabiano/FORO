@@ -1,5 +1,12 @@
 import React from "react";
-import { Calendar, MapPin, ArrowRight, Ticket } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  ArrowRight,
+  Ticket,
+  Clock,
+  ExternalLink,
+} from "lucide-react";
 import "../style/headerEvento.css";
 
 interface HeaderEventoProps {
@@ -8,7 +15,8 @@ interface HeaderEventoProps {
     titolo: string;
     descrizione: string;
     data_evento: string;
-    immagine_blob?: string;
+    orario?: string;
+    link_esterno?: string;
     immagine_url?: string;
   };
   onPrenotaClick: (id: number) => void;
@@ -19,12 +27,6 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
   onPrenotaClick,
 }) => {
   const getImageUrl = () => {
-    if (
-      typeof evento.immagine_blob === "string" &&
-      evento.immagine_blob.startsWith("data:image")
-    ) {
-      return evento.immagine_blob;
-    }
     return evento.immagine_url || "";
   };
 
@@ -36,8 +38,6 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
         year: "numeric",
         month: "long",
         day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
       });
     } catch (e) {
       return dateString;
@@ -46,7 +46,6 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
 
   return (
     <section className="hero-evento-wrapper">
-      {/* Sfondo sfocato creato usando l'immagine dell'evento, con fix per gli apici nell'URL */}
       <div
         className="hero-evento-bg"
         style={{ backgroundImage: `url('${getImageUrl()}')` }}
@@ -67,6 +66,12 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
               <Calendar size={18} />
               <span>{formatDate(evento.data_evento)}</span>
             </div>
+            {evento.orario && (
+              <div className="meta-item">
+                <Clock size={18} />
+                <span>{evento.orario}</span>
+              </div>
+            )}
             <div className="meta-item">
               <MapPin size={18} />
               <span>Aula Studio Foro - Piossasco</span>
@@ -78,14 +83,31 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
               "Unisciti a noi per questo nuovo evento organizzato dall'Associazione Foro."}
           </p>
 
-          <button
-            className="hero-evento-btn"
-            onClick={() => onPrenotaClick(evento.id)}
-          >
-            <Ticket size={20} />
-            <span>Prenota il tuo posto</span>
-            <ArrowRight size={18} className="arrow-icon" />
-          </button>
+          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+            <button
+              className="hero-evento-btn"
+              onClick={() => onPrenotaClick(evento.id)}
+            >
+              <Ticket size={20} />
+              <span>Prenota il tuo posto</span>
+              <ArrowRight size={18} className="arrow-icon" />
+            </button>
+
+            {evento.link_esterno && (
+              <button
+                className="hero-evento-btn"
+                style={{
+                  background: "transparent",
+                  border: "2px solid rgba(255, 255, 255, 0.5)",
+                  boxShadow: "none",
+                }}
+                onClick={() => window.open(evento.link_esterno, "_blank")}
+              >
+                <ExternalLink size={20} />
+                <span>Scopri di più</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="hero-evento-visual">

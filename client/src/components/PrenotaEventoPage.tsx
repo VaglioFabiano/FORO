@@ -9,6 +9,8 @@ import {
   CheckCircle,
   AlertCircle,
   Download,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 import "../style/componentiEventi.css";
 import informativaPdf from "../assets/Informativa_privacy.pdf";
@@ -18,10 +20,9 @@ interface Evento {
   titolo: string;
   descrizione: string;
   data_evento: string;
+  orario?: string;
+  link_esterno?: string;
   immagine_url?: string;
-  immagine_blob?: string;
-  immagine_tipo?: string;
-  immagine_nome?: string;
   num_max?: number;
 }
 
@@ -46,7 +47,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // LOGICA FONDAMENTALE: Legge l'ID dalle Props o direttamente dall'URL
   const queryId = new URLSearchParams(window.location.search).get("id");
   const activeId = eventoId || (queryId ? parseInt(queryId) : null);
 
@@ -100,17 +100,8 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
     }
   };
 
-  // LOGICA IMMAGINI: risolve il problema delle immagini non visibili!
   const getImageUrl = (ev: Evento) => {
-    if (
-      typeof ev.immagine_blob === "string" &&
-      ev.immagine_blob.startsWith("data:image")
-    ) {
-      return ev.immagine_blob;
-    }
-    // Se non c'è url, controlla se c'è un ID e forza la chiamata API
-    if (ev.immagine_url) return ev.immagine_url;
-    return `/api/eventi?action=image&id=${ev.id}`;
+    return ev.immagine_url || "";
   };
 
   const maxTickets =
@@ -166,7 +157,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
           email: formData.email,
           num_biglietti: formData.num_biglietti,
           note: formData.note,
-          data_prenotazione: new Date().toISOString(),
         }),
       });
 
@@ -196,8 +186,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
         year: "numeric",
         month: "long",
         day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
       });
     } catch (e) {
       return "Data non valida";
@@ -251,10 +239,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
               Dovrebbe arrivarti una mail di conferma all'indirizzo{" "}
               <strong>{formData.email}</strong>. Ricorda di mostrare questa mail
               all'ingresso dell'evento.
-              <br />
-              <br />
-              <strong>Nota bene:</strong> Se la mail non dovesse arrivare, non
-              preoccuparti, la tua prenotazione è comunque confermata!
             </p>
           </div>
           <div className="success-actions">
@@ -304,9 +288,17 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                 <span className="badge">
                   <Calendar size={16} /> {formatDate(evento.data_evento)}
                 </span>
+
+                {evento.orario && (
+                  <span className="badge">
+                    <Clock size={16} /> {evento.orario}
+                  </span>
+                )}
+
                 <span className="badge">
-                  <MapPin size={16} /> Aula Studio Foro - Piossasco
+                  <MapPin size={16} /> Aula Studio Foro
                 </span>
+
                 {postiDisponibili !== null && (
                   <span
                     className="badge"
@@ -324,6 +316,23 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                       ? "Posti esauriti"
                       : `${postiDisponibili} posti rimasti`}
                   </span>
+                )}
+
+                {evento.link_esterno && (
+                  <a
+                    href={evento.link_esterno}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="badge"
+                    style={{
+                      backgroundColor: "#034a5a",
+                      color: "white",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <ExternalLink size={16} /> Approfondisci
+                  </a>
                 )}
               </div>
               <p className="evento-desc">

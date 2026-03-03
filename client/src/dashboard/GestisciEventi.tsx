@@ -1,13 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Mail, Edit, Trash2, ChevronDown, Search } from "lucide-react";
+import {
+  Mail,
+  Edit,
+  Trash2,
+  ChevronDown,
+  Search,
+  ExternalLink,
+  Clock,
+  Calendar,
+} from "lucide-react";
 import "../style/gestisciEventi.css";
 
-// Definizione delle interfacce per i dati
 interface Evento {
   id: number;
   titolo: string;
   descrizione: string;
   data_evento: string;
+  orario?: string;
+  link_esterno?: string;
   immagine_url?: string;
   visibile: number;
   num_max?: number;
@@ -30,6 +40,8 @@ interface NuovoEvento {
   titolo: string;
   descrizione: string;
   data_evento: string;
+  orario: string;
+  link_esterno: string;
   immagine_url: string;
   immagine_file?: File;
   num_max: number | "";
@@ -63,13 +75,14 @@ const GestisciEventi: React.FC = () => {
   const [expandedEvents, setExpandedEvents] = useState<Record<number, boolean>>(
     {},
   );
-
   const [searchQuery, setSearchQuery] = useState<Record<number, string>>({});
 
   const [nuovoEvento, setNuovoEvento] = useState<NuovoEvento>({
     titolo: "",
     descrizione: "",
     data_evento: "",
+    orario: "",
+    link_esterno: "",
     immagine_url: "",
     num_max: "",
   });
@@ -107,22 +120,18 @@ const GestisciEventi: React.FC = () => {
     }
   }, [broadcastSuccess]);
 
-  // Comprime l'immagine localmente per renderla leggerissima
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const maxWidth = 800;
       const maxHeight = 800;
       const reader = new FileReader();
-
       reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
         img.src = event.target?.result as string;
-
         img.onload = () => {
           let width = img.width;
           let height = img.height;
-
           if (width > height) {
             if (width > maxWidth) {
               height *= maxWidth / width;
@@ -134,20 +143,16 @@ const GestisciEventi: React.FC = () => {
               height = maxHeight;
             }
           }
-
           const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
-
           if (!ctx) {
-            reject(new Error("Errore compressione immagine"));
+            reject(new Error("Errore compressione"));
             return;
           }
-
           ctx.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-          resolve(dataUrl);
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
         };
         img.onerror = (err) => reject(err);
       };
@@ -155,29 +160,18 @@ const GestisciEventi: React.FC = () => {
     });
   };
 
-  // Carica l'immagine su ImgBB e restituisce l'URL pubblico definitivo
   const uploadToImgBB = async (file: File): Promise<string> => {
     const compressedBase64 = await compressImage(file);
-    // ImgBB vuole solo i dati puri, senza il prefisso "data:image..."
     const base64Data = compressedBase64.split(",")[1];
-
     const formData = new FormData();
     formData.append("image", base64Data);
-
     const response = await fetch(
       `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
-      {
-        method: "POST",
-        body: formData,
-      },
+      { method: "POST", body: formData },
     );
-
     const data = await response.json();
-    if (data.success) {
-      return data.data.url;
-    } else {
-      throw new Error("Errore nel servizio di hosting immagini.");
-    }
+    if (data.success) return data.data.url;
+    else throw new Error("Errore host immagini.");
   };
 
   const validateImageFile = (file: File): boolean => {
@@ -188,14 +182,12 @@ const GestisciEventi: React.FC = () => {
       "image/gif",
       "image/webp",
     ];
-    const maxSize = 10 * 1024 * 1024; // 10MB
-
     if (!validTypes.includes(file.type)) {
-      setError("Tipo di file non supportato. Usa JPG, PNG, GIF o WebP.");
+      setError("File non supportato.");
       return false;
     }
-    if (file.size > maxSize) {
-      setError("File troppo grande. Dimensione massima: 10MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File troppo grande (>10MB).");
       return false;
     }
     return true;
@@ -209,20 +201,17 @@ const GestisciEventi: React.FC = () => {
       }
       const response = await fetch("/api/eventi");
       if (!response.ok) throw new Error("Errore caricamento eventi");
-
       const data: ApiResponse = await response.json();
       if (!data.success) throw new Error(data.error || "Errore sconosciuto");
-
       const fetchedEventi = data.eventi || [];
       setEventi(fetchedEventi);
-
       if (fetchedEventi.length > 0) {
         await Promise.all(
           fetchedEventi.map((evento) => fetchPrenotazioni(evento.id)),
         );
       }
     } catch (err) {
-      console.error("Fetch eventi error:", err);
+      console.error(err);
       if (!isBackground)
         setError(err instanceof Error ? err.message : "Errore connessione");
     } finally {
@@ -236,7 +225,6 @@ const GestisciEventi: React.FC = () => {
         `/api/eventi?section=prenotazioni&evento_id=${eventoId}`,
       );
       if (!response.ok) return;
-
       const data: ApiResponse = await response.json();
       if (data.success && data.prenotazioni) {
         setPrenotazioni((prev) => ({
@@ -245,7 +233,7 @@ const GestisciEventi: React.FC = () => {
         }));
       }
     } catch (err) {
-      console.error("Errore caricamento prenotazioni:", err);
+      console.error(err);
     }
   }, []);
 
@@ -267,20 +255,13 @@ const GestisciEventi: React.FC = () => {
       !broadcastEventId ||
       !broadcastData.subject.trim() ||
       !broadcastData.message.trim()
-    ) {
-      setError("Oggetto e messaggio obbligatori.");
-      return;
-    }
-    const numDestinatari = (prenotazioni[broadcastEventId] || []).length;
-    if (numDestinatari === 0) {
-      setError("Nessun partecipante a cui scrivere.");
-      return;
-    }
-
+    )
+      return setError("Oggetto e messaggio obbligatori.");
+    if ((prenotazioni[broadcastEventId] || []).length === 0)
+      return setError("Nessun partecipante.");
     setSendingBroadcast(true);
     setError(null);
     setBroadcastSuccess(null);
-
     try {
       const response = await fetch("/api/eventi?section=broadcast", {
         method: "POST",
@@ -292,20 +273,13 @@ const GestisciEventi: React.FC = () => {
           user_id: userId,
         }),
       });
-
       const data: ApiResponse = await response.json();
-
       if (data.success) {
-        setBroadcastSuccess(
-          `Email inviate a ${data.destinatari_count} partecipanti!`,
-        );
+        setBroadcastSuccess(`Inviate ${data.destinatari_count} email!`);
         setBroadcastData({ subject: "", message: "" });
         setBroadcastEventId(null);
-      } else {
-        throw new Error(data.error || "Errore invio.");
-      }
+      } else throw new Error(data.error || "Errore invio.");
     } catch (err) {
-      console.error("Broadcast error:", err);
       setError(err instanceof Error ? err.message : "Errore invio email.");
     } finally {
       setSendingBroadcast(false);
@@ -313,18 +287,12 @@ const GestisciEventi: React.FC = () => {
   };
 
   const creaEvento = async () => {
-    if (!nuovoEvento.titolo.trim() || !nuovoEvento.data_evento.trim()) {
-      setError("Titolo e data obbligatori.");
-      return;
-    }
-
+    if (!nuovoEvento.titolo.trim() || !nuovoEvento.data_evento.trim())
+      return setError("Titolo e data obbligatori.");
     setCreatingEvent(true);
     setError(null);
-
     try {
       let finalImageUrl = nuovoEvento.immagine_url.trim();
-
-      // Se l'utente ha selezionato un file, lo carichiamo su ImgBB
       if (nuovoEvento.immagine_file) {
         if (!validateImageFile(nuovoEvento.immagine_file)) {
           setCreatingEvent(false);
@@ -332,39 +300,36 @@ const GestisciEventi: React.FC = () => {
         }
         finalImageUrl = await uploadToImgBB(nuovoEvento.immagine_file);
       }
-
       let eventData: any = {
         titolo: nuovoEvento.titolo.trim(),
         descrizione: nuovoEvento.descrizione.trim(),
         data_evento: nuovoEvento.data_evento.trim(),
-        immagine_url: finalImageUrl, // Mandiamo SOLO l'url al backend!
+        orario: nuovoEvento.orario.trim(),
+        link_esterno: nuovoEvento.link_esterno.trim(),
+        immagine_url: finalImageUrl,
         num_max: nuovoEvento.num_max !== "" ? Number(nuovoEvento.num_max) : 0,
         user_id: userId,
       };
-
       const response = await fetch("/api/eventi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventData),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setNuovoEvento({
           titolo: "",
           descrizione: "",
           data_evento: "",
+          orario: "",
+          link_esterno: "",
           immagine_url: "",
           num_max: "",
         });
         setShowNewEventForm(false);
         await fetchEventi(true);
-      } else {
-        throw new Error(data.error || "Errore creazione.");
-      }
+      } else throw new Error(data.error || "Errore creazione.");
     } catch (err) {
-      console.error("Create error:", err);
       setError(err instanceof Error ? err.message : "Errore server.");
     } finally {
       setCreatingEvent(false);
@@ -372,17 +337,12 @@ const GestisciEventi: React.FC = () => {
   };
 
   const aggiornaEvento = async () => {
-    if (!editingEventId || !editData.titolo?.trim()) {
-      setError("Titolo obbligatorio.");
-      return;
-    }
-
+    if (!editingEventId || !editData.titolo?.trim())
+      return setError("Titolo obbligatorio.");
     setUpdatingEvent(true);
     setError(null);
-
     try {
       let finalImageUrl = editData.immagine_url?.trim() || "";
-
       if (editData.immagine_file) {
         if (!validateImageFile(editData.immagine_file)) {
           setUpdatingEvent(false);
@@ -390,32 +350,28 @@ const GestisciEventi: React.FC = () => {
         }
         finalImageUrl = await uploadToImgBB(editData.immagine_file);
       }
-
       let eventData: any = {
         id: editingEventId,
         titolo: editData.titolo.trim(),
         descrizione: editData.descrizione?.trim() || "",
         data_evento: editData.data_evento?.trim(),
+        orario: editData.orario?.trim() || "",
+        link_esterno: editData.link_esterno?.trim() || "",
         immagine_url: finalImageUrl,
         num_max: editData.num_max || 0,
         user_id: userId,
       };
-
       const response = await fetch("/api/eventi", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(eventData),
       });
-
       const data = await response.json();
-
       if (data.success) {
         setEditingEventId(null);
         setEditData({});
         await fetchEventi(true);
-      } else {
-        throw new Error(data.error);
-      }
+      } else throw new Error(data.error);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore aggiornamento.");
     } finally {
@@ -424,8 +380,7 @@ const GestisciEventi: React.FC = () => {
   };
 
   const eliminaEvento = async (eventoId: number) => {
-    if (!confirm("Eliminare evento e tutte le prenotazioni?")) return;
-
+    if (!confirm("Eliminare evento e prenotazioni?")) return;
     setError(null);
     try {
       const response = await fetch("/api/eventi", {
@@ -433,13 +388,9 @@ const GestisciEventi: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: eventoId, user_id: userId }),
       });
-
       const data = await response.json();
-      if (data.success) {
-        await fetchEventi(true);
-      } else {
-        throw new Error(data.error);
-      }
+      if (data.success) await fetchEventi(true);
+      else throw new Error(data.error);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore eliminazione.");
     }
@@ -448,25 +399,19 @@ const GestisciEventi: React.FC = () => {
   const toggleVisibility = async (eventoId: number, currentVisible: number) => {
     try {
       const newStatus = currentVisible === 1 ? 0 : 1;
-
       const response = await fetch("/api/eventi?section=visibility", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: eventoId, visibile: newStatus }),
       });
-
       const data = await response.json();
-      if (data.success) {
+      if (data.success)
         setEventi(
           eventi.map((ev) =>
             ev.id === eventoId ? { ...ev, visibile: newStatus } : ev,
           ),
         );
-      } else {
-        throw new Error(
-          data.error || "Errore durante l'aggiornamento della visibilità.",
-        );
-      }
+      else throw new Error(data.error || "Errore aggiornamento.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore connessione.");
     }
@@ -484,17 +429,13 @@ const GestisciEventi: React.FC = () => {
           p.id === prenotazioneId ? { ...p, num_arrivati: newArrivati } : p,
         ),
       }));
-
       const response = await fetch("/api/eventi?section=checkin", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: prenotazioneId, num_arrivati: newArrivati }),
       });
-
       const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || "Errore durante il check-in.");
-      }
+      if (!data.success) throw new Error(data.error || "Errore check-in.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore connessione.");
     }
@@ -514,10 +455,7 @@ const GestisciEventi: React.FC = () => {
       setEditData({ ...editData, immagine_file: file, immagine_url: "" });
   };
 
-  // Adesso abbiamo solo e unicamente l'URL, tutto è più semplice!
-  const getImageUrl = (evento: Evento) => {
-    return evento.immagine_url || "";
-  };
+  const getImageUrl = (evento: Evento) => evento.immagine_url || "";
 
   const iniziaModifica = (evento: Evento) => {
     setEditingEventId(evento.id);
@@ -525,6 +463,8 @@ const GestisciEventi: React.FC = () => {
       titolo: evento.titolo,
       descrizione: evento.descrizione,
       data_evento: evento.data_evento.split("T")[0],
+      orario: evento.orario || "",
+      link_esterno: evento.link_esterno || "",
       immagine_url: evento.immagine_url || "",
       num_max: evento.num_max || 0,
     });
@@ -558,7 +498,7 @@ const GestisciEventi: React.FC = () => {
     try {
       return new Date(dateString).toLocaleDateString("it-IT", {
         year: "numeric",
-        month: "long",
+        month: "short",
         day: "numeric",
       });
     } catch {
@@ -566,25 +506,7 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
-  const getParticipantCount = (eventoId: number) => {
-    const list = prenotazioni[eventoId] || [];
-    return list.reduce(
-      (acc, p) => acc + (p.num_biglietti || p.num_partecipanti || 1),
-      0,
-    );
-  };
-
-  const getArrivatiCount = (eventoId: number) => {
-    const list = prenotazioni[eventoId] || [];
-    return list.reduce((acc, p) => acc + (p.num_arrivati || 0), 0);
-  };
-
-  const canManageEvents = () => userLevel >= 0 && userLevel <= 2;
-
-  const toggleEvent = (eventoId: number) => {
-    setExpandedEvents((prev) => ({ ...prev, [eventoId]: !prev[eventoId] }));
-  };
-
+  // LA FUNZIONE MANCANTE REINSERITA QUI
   const handleSearchChange = (eventoId: number, value: string) => {
     setSearchQuery((prev) => ({
       ...prev,
@@ -592,7 +514,24 @@ const GestisciEventi: React.FC = () => {
     }));
   };
 
-  if (loading && eventi.length === 0) {
+  const getParticipantCount = (eventoId: number) =>
+    (prenotazioni[eventoId] || []).reduce(
+      (acc, p) => acc + (p.num_biglietti || p.num_partecipanti || 1),
+      0,
+    );
+
+  const getArrivatiCount = (eventoId: number) =>
+    (prenotazioni[eventoId] || []).reduce(
+      (acc, p) => acc + (p.num_arrivati || 0),
+      0,
+    );
+
+  const canManageEvents = () => userLevel >= 0 && userLevel <= 2;
+
+  const toggleEvent = (eventoId: number) =>
+    setExpandedEvents((prev) => ({ ...prev, [eventoId]: !prev[eventoId] }));
+
+  if (loading && eventi.length === 0)
     return (
       <div className="eventi-container">
         <div className="eventi-loading">
@@ -601,7 +540,6 @@ const GestisciEventi: React.FC = () => {
         </div>
       </div>
     );
-  }
 
   return (
     <div className="eventi-container">
@@ -638,7 +576,6 @@ const GestisciEventi: React.FC = () => {
           </button>
         </div>
       )}
-
       {broadcastSuccess && (
         <div className="eventi-message success">
           <div className="message-icon">OK</div>
@@ -655,14 +592,7 @@ const GestisciEventi: React.FC = () => {
       {broadcastEventId && (
         <div className="broadcast-form">
           <div className="form-header">
-            <h2>Invia Email ai Partecipanti</h2>
-            <p>
-              Evento:{" "}
-              <strong>
-                {eventi.find((e) => e.id === broadcastEventId)?.titolo}
-              </strong>{" "}
-              ({(prenotazioni[broadcastEventId] || []).length} destinatari)
-            </p>
+            <h2>Invia Email</h2>
           </div>
           <div className="form-content">
             <div className="form-grid">
@@ -683,7 +613,7 @@ const GestisciEventi: React.FC = () => {
               <div className="form-group full-width">
                 <label>Messaggio *</label>
                 <textarea
-                  rows={6}
+                  rows={4}
                   value={broadcastData.message}
                   onChange={(e) =>
                     setBroadcastData({
@@ -748,7 +678,33 @@ const GestisciEventi: React.FC = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Numero Massimo Partecipanti</label>
+                <label>Orario</label>
+                <input
+                  type="time"
+                  value={nuovoEvento.orario}
+                  onChange={(e) =>
+                    setNuovoEvento({ ...nuovoEvento, orario: e.target.value })
+                  }
+                  disabled={creatingEvent}
+                />
+              </div>
+              <div className="form-group">
+                <label>Link Esterno (opzionale)</label>
+                <input
+                  type="url"
+                  placeholder="https://linktr.ee/..."
+                  value={nuovoEvento.link_esterno}
+                  onChange={(e) =>
+                    setNuovoEvento({
+                      ...nuovoEvento,
+                      link_esterno: e.target.value,
+                    })
+                  }
+                  disabled={creatingEvent}
+                />
+              </div>
+              <div className="form-group">
+                <label>Posti Massimi</label>
                 <input
                   type="number"
                   min="0"
@@ -761,7 +717,16 @@ const GestisciEventi: React.FC = () => {
                     })
                   }
                   disabled={creatingEvent}
-                  placeholder="Lascia vuoto per nessun limite"
+                  placeholder="Vuoto per nessun limite"
+                />
+              </div>
+              <div className="form-group">
+                <label>Nuova Immagine (consigliato)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleNewEventImageChange}
+                  disabled={creatingEvent}
                 />
               </div>
               <div className="form-group full-width">
@@ -773,30 +738,6 @@ const GestisciEventi: React.FC = () => {
                     setNuovoEvento({
                       ...nuovoEvento,
                       descrizione: e.target.value,
-                    })
-                  }
-                  disabled={creatingEvent}
-                />
-              </div>
-              <div className="form-group">
-                <label>Immagine (File)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleNewEventImageChange}
-                  disabled={creatingEvent}
-                />
-              </div>
-              <div className="form-group">
-                <label>Oppure URL Immagine</label>
-                <input
-                  type="url"
-                  value={nuovoEvento.immagine_url}
-                  onChange={(e) =>
-                    setNuovoEvento({
-                      ...nuovoEvento,
-                      immagine_url: e.target.value,
-                      immagine_file: undefined,
                     })
                   }
                   disabled={creatingEvent}
@@ -853,8 +794,24 @@ const GestisciEventi: React.FC = () => {
                         {evento.visibile === 1 ? "Online" : "Bozza"}
                       </span>
                     </div>
-                    <div className="event-date">
-                      {formatDate(evento.data_evento)}
+                    {/* UTILIZZO DELL'ICONA CLOCK QUI PER RISOLVERE L'ERRORE E MIGLIORARE LA UI */}
+                    <div
+                      className="event-date"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <Calendar size={14} /> {formatDate(evento.data_evento)}
+                      {evento.orario && (
+                        <>
+                          <span style={{ margin: "0 4px", opacity: 0.5 }}>
+                            |
+                          </span>
+                          <Clock size={14} /> {evento.orario}
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="event-actions">
@@ -867,9 +824,7 @@ const GestisciEventi: React.FC = () => {
                           }}
                           className={`btn-toggle-vis ${evento.visibile === 1 ? "online" : "bozza"}`}
                           title={
-                            evento.visibile === 1
-                              ? "Nascondi Evento"
-                              : "Pubblica Evento"
+                            evento.visibile === 1 ? "Nascondi" : "Pubblica"
                           }
                         >
                           {evento.visibile === 1 ? "Nascondi" : "Pubblica"}
@@ -950,7 +905,35 @@ const GestisciEventi: React.FC = () => {
                             />
                           </div>
                           <div className="form-group">
-                            <label>Numero Massimo Partecipanti</label>
+                            <label>Orario</label>
+                            <input
+                              type="time"
+                              value={editData.orario || ""}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  orario: e.target.value,
+                                })
+                              }
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Link Esterno</label>
+                            <input
+                              type="url"
+                              value={editData.link_esterno || ""}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  link_esterno: e.target.value,
+                                })
+                              }
+                              disabled={updatingEvent}
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Posti Massimi</label>
                             <input
                               type="number"
                               min="0"
@@ -964,7 +947,15 @@ const GestisciEventi: React.FC = () => {
                                 })
                               }
                               disabled={updatingEvent}
-                              placeholder="Lascia vuoto per nessun limite"
+                            />
+                          </div>
+                          <div className="form-group">
+                            <label>Sostituisci Immagine</label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleEditImageChange}
+                              disabled={updatingEvent}
                             />
                           </div>
                           <div className="form-group full-width">
@@ -977,15 +968,6 @@ const GestisciEventi: React.FC = () => {
                                   descrizione: e.target.value,
                                 })
                               }
-                              disabled={updatingEvent}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Nuova Immagine</label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleEditImageChange}
                               disabled={updatingEvent}
                             />
                           </div>
@@ -1011,6 +993,24 @@ const GestisciEventi: React.FC = () => {
                       <>
                         <div className="event-description">
                           <p>{evento.descrizione || "Nessuna descrizione."}</p>
+                          {evento.link_esterno && (
+                            <a
+                              href={evento.link_esterno}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "8px",
+                                marginTop: "10px",
+                                color: "#034a5a",
+                                fontWeight: "bold",
+                                textDecoration: "none",
+                              }}
+                            >
+                              <ExternalLink size={16} /> Visita Link Esterno
+                            </a>
+                          )}
                         </div>
 
                         <div className="prenotazioni-section">
@@ -1025,12 +1025,11 @@ const GestisciEventi: React.FC = () => {
                               </span>
                               {evento.num_max && evento.num_max > 0 ? (
                                 <span className="stat-max">
-                                  Posti Max: {evento.num_max}
+                                  Max: {evento.num_max}
                                 </span>
                               ) : null}
                             </div>
                           </div>
-
                           {(prenotazioni[evento.id] || []).length > 0 && (
                             <div
                               className="search-bar-container"
@@ -1048,7 +1047,7 @@ const GestisciEventi: React.FC = () => {
                               />
                               <input
                                 type="text"
-                                placeholder="Cerca partecipante per nome o cognome..."
+                                placeholder="Cerca partecipante..."
                                 value={searchQuery[evento.id] || ""}
                                 onChange={(e) =>
                                   handleSearchChange(evento.id, e.target.value)
@@ -1062,7 +1061,6 @@ const GestisciEventi: React.FC = () => {
                               />
                             </div>
                           )}
-
                           {(prenotazioni[evento.id] || []).length > 0 ? (
                             <div className="prenotazioni-list">
                               {prenotazioni[evento.id]
@@ -1081,7 +1079,6 @@ const GestisciEventi: React.FC = () => {
                                   const arrivati = pren.num_arrivati || 0;
                                   const isCompleto =
                                     arrivati === totaleBiglietti;
-
                                   return (
                                     <div
                                       key={pren.id}
@@ -1095,7 +1092,6 @@ const GestisciEventi: React.FC = () => {
                                           {pren.email}
                                         </div>
                                       </div>
-
                                       <div className="checkin-controller">
                                         <button
                                           className="checkin-btn minus"
