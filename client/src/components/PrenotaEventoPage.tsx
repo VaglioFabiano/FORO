@@ -103,15 +103,14 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
   // LOGICA IMMAGINI: risolve il problema delle immagini non visibili!
   const getImageUrl = (ev: Evento) => {
     if (
-      ev.immagine_blob &&
       typeof ev.immagine_blob === "string" &&
       ev.immagine_blob.startsWith("data:image")
     ) {
-      return ev.immagine_blob; // Usa direttamente il Base64 dal database
+      return ev.immagine_blob;
     }
-    return (
-      ev.immagine_url || `/api/eventi?action=image&id=${ev.id}&t=${Date.now()}`
-    );
+    // Se non c'è url, controlla se c'è un ID e forza la chiamata API
+    if (ev.immagine_url) return ev.immagine_url;
+    return `/api/eventi?action=image&id=${ev.id}`;
   };
 
   const maxTickets =

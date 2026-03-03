@@ -18,7 +18,15 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
   evento,
   onPrenotaClick,
 }) => {
-  const getImageUrl = () => evento.immagine_blob || evento.immagine_url || "";
+  const getImageUrl = () => {
+    if (
+      typeof evento.immagine_blob === "string" &&
+      evento.immagine_blob.startsWith("data:image")
+    ) {
+      return evento.immagine_blob;
+    }
+    return evento.immagine_url || "";
+  };
 
   const formatDate = (dateString: string) => {
     try {
