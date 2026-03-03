@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Clock,
   Calendar,
+  Info, // Nuova icona per segnalare la presenza di note
 } from "lucide-react";
 import "../style/gestisciEventi.css";
 
@@ -76,6 +77,11 @@ const GestisciEventi: React.FC = () => {
     {},
   );
   const [searchQuery, setSearchQuery] = useState<Record<number, string>>({});
+
+  // Nuovo stato per gestire quali note sono attualmente visibili
+  const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>(
+    {},
+  );
 
   const [nuovoEvento, setNuovoEvento] = useState<NuovoEvento>({
     titolo: "",
@@ -513,7 +519,6 @@ const GestisciEventi: React.FC = () => {
     }));
   };
 
-  // Funzione per garantire che il link esterno funzioni sempre correttamente
   const getValidUrl = (url?: string) => {
     if (!url) return "";
     return url.startsWith("http://") || url.startsWith("https://")
@@ -537,6 +542,15 @@ const GestisciEventi: React.FC = () => {
 
   const toggleEvent = (eventoId: number) =>
     setExpandedEvents((prev) => ({ ...prev, [eventoId]: !prev[eventoId] }));
+
+  // Nuova funzione per gestire il click sulle note
+  const toggleNote = (prenotazioneId: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // Evita che il click si propaghi ad altri elementi
+    setExpandedNotes((prev) => ({
+      ...prev,
+      [prenotazioneId]: !prev[prenotazioneId],
+    }));
+  };
 
   if (loading && eventi.length === 0)
     return (
@@ -1085,55 +1099,137 @@ const GestisciEventi: React.FC = () => {
                                   const arrivati = pren.num_arrivati || 0;
                                   const isCompleto =
                                     arrivati === totaleBiglietti;
+
+                                  // Controllo per capire se ci sono note o no
+                                  const hasNote =
+                                    pren.note && pren.note.trim() !== "";
+                                  const isNoteExpanded =
+                                    expandedNotes[pren.id] || false;
+
                                   return (
                                     <div
                                       key={pren.id}
                                       className={`prenotazione-item ${isCompleto ? "checkin-completo" : ""}`}
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "10px",
+                                        // Rende il contenitore cliccabile SOLO se ha una nota
+                                        cursor: hasNote ? "pointer" : "default",
+                                      }}
+                                      onClick={(e) =>
+                                        hasNote && toggleNote(pren.id, e)
+                                      }
                                     >
-                                      <div className="prenotazione-info">
-                                        <div className="partecipante-nome">
-                                          {pren.nome} {pren.cognome}
+                                      {/* Riga Principale con Nome, Email e Controlli Check-in */}
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          justifyContent: "space-between",
+                                          alignItems: "center",
+                                          width: "100%",
+                                        }}
+                                      >
+                                        <div
+                                          className="prenotazione-info"
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                          }}
+                                        >
+                                          <div>
+                                            <div
+                                              className="partecipante-nome"
+                                              style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "6px",
+                                              }}
+                                            >
+                                              {pren.nome} {pren.cognome}
+                                              {/* Mostra l'icona Info se c'è una nota, racchiusa in span per title */}
+                                              {hasNote && (
+                                                <span
+                                                  title="Ci sono note aggiuntive"
+                                                  style={{ display: "flex" }}
+                                                >
+                                                  <Info
+                                                    size={16}
+                                                    color="#d2691e"
+                                                  />
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="partecipante-email">
+                                              {pren.email}
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div className="partecipante-email">
-                                          {pren.email}
+
+                                        {/* I bottoni del check in devono fermare la propagazione del click per non aprire/chiudere la nota mentre si fa il check-in */}
+                                        <div
+                                          className="checkin-controller"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <button
+                                            className="checkin-btn minus"
+                                            disabled={arrivati <= 0}
+                                            onClick={() =>
+                                              handleCheckin(
+                                                pren.id,
+                                                evento.id,
+                                                arrivati - 1,
+                                              )
+                                            }
+                                          >
+                                            -
+                                          </button>
+                                          <div className="checkin-status">
+                                            <span className="arrivati-num">
+                                              {arrivati}
+                                            </span>
+                                            <span className="totale-num">
+                                              / {totaleBiglietti}
+                                            </span>
+                                          </div>
+                                          <button
+                                            className="checkin-btn plus"
+                                            disabled={
+                                              arrivati >= totaleBiglietti
+                                            }
+                                            onClick={() =>
+                                              handleCheckin(
+                                                pren.id,
+                                                evento.id,
+                                                arrivati + 1,
+                                              )
+                                            }
+                                          >
+                                            +
+                                          </button>
                                         </div>
                                       </div>
-                                      <div className="checkin-controller">
-                                        <button
-                                          className="checkin-btn minus"
-                                          disabled={arrivati <= 0}
-                                          onClick={() =>
-                                            handleCheckin(
-                                              pren.id,
-                                              evento.id,
-                                              arrivati - 1,
-                                            )
-                                          }
+
+                                      {/* Sezione Note Expandibile */}
+                                      {hasNote && isNoteExpanded && (
+                                        <div
+                                          style={{
+                                            backgroundColor:
+                                              "rgba(210, 105, 30, 0.1)",
+                                            padding: "10px 14px",
+                                            borderRadius: "6px",
+                                            borderLeft: "4px solid #d2691e",
+                                            fontSize: "0.9rem",
+                                            color: "#555",
+                                            marginTop: "4px",
+                                          }}
                                         >
-                                          -
-                                        </button>
-                                        <div className="checkin-status">
-                                          <span className="arrivati-num">
-                                            {arrivati}
-                                          </span>
-                                          <span className="totale-num">
-                                            / {totaleBiglietti}
-                                          </span>
+                                          <strong>Note:</strong>
+                                          <br />
+                                          {pren.note}
                                         </div>
-                                        <button
-                                          className="checkin-btn plus"
-                                          disabled={arrivati >= totaleBiglietti}
-                                          onClick={() =>
-                                            handleCheckin(
-                                              pren.id,
-                                              evento.id,
-                                              arrivati + 1,
-                                            )
-                                          }
-                                        >
-                                          +
-                                        </button>
-                                      </div>
+                                      )}
                                     </div>
                                   );
                                 })}
