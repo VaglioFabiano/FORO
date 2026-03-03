@@ -8,7 +8,7 @@ import {
   ExternalLink,
   Clock,
   Calendar,
-  Info, // Nuova icona per segnalare la presenza di note
+  Info,
 } from "lucide-react";
 import "../style/gestisciEventi.css";
 
@@ -78,7 +78,7 @@ const GestisciEventi: React.FC = () => {
   );
   const [searchQuery, setSearchQuery] = useState<Record<number, string>>({});
 
-  // Nuovo stato per gestire quali note sono attualmente visibili
+  // Stato per gestire quali note sono attualmente visibili
   const [expandedNotes, setExpandedNotes] = useState<Record<number, boolean>>(
     {},
   );
@@ -543,9 +543,8 @@ const GestisciEventi: React.FC = () => {
   const toggleEvent = (eventoId: number) =>
     setExpandedEvents((prev) => ({ ...prev, [eventoId]: !prev[eventoId] }));
 
-  // Nuova funzione per gestire il click sulle note
   const toggleNote = (prenotazioneId: number, event: React.MouseEvent) => {
-    event.stopPropagation(); // Evita che il click si propaghi ad altri elementi
+    event.stopPropagation();
     setExpandedNotes((prev) => ({
       ...prev,
       [prenotazioneId]: !prev[prenotazioneId],
@@ -1100,7 +1099,6 @@ const GestisciEventi: React.FC = () => {
                                   const isCompleto =
                                     arrivati === totaleBiglietti;
 
-                                  // Controllo per capire se ci sono note o no
                                   const hasNote =
                                     pren.note && pren.note.trim() !== "";
                                   const isNoteExpanded =
@@ -1114,14 +1112,13 @@ const GestisciEventi: React.FC = () => {
                                         display: "flex",
                                         flexDirection: "column",
                                         gap: "10px",
-                                        // Rende il contenitore cliccabile SOLO se ha una nota
                                         cursor: hasNote ? "pointer" : "default",
                                       }}
                                       onClick={(e) =>
                                         hasNote && toggleNote(pren.id, e)
                                       }
                                     >
-                                      {/* Riga Principale con Nome, Email e Controlli Check-in */}
+                                      {/* Riga Principale */}
                                       <div
                                         style={{
                                           display: "flex",
@@ -1148,7 +1145,6 @@ const GestisciEventi: React.FC = () => {
                                               }}
                                             >
                                               {pren.nome} {pren.cognome}
-                                              {/* Mostra l'icona Info se c'è una nota, racchiusa in span per title */}
                                               {hasNote && (
                                                 <span
                                                   title="Ci sono note aggiuntive"
@@ -1167,7 +1163,7 @@ const GestisciEventi: React.FC = () => {
                                           </div>
                                         </div>
 
-                                        {/* I bottoni del check in devono fermare la propagazione del click per non aprire/chiudere la nota mentre si fa il check-in */}
+                                        {/* Bottoni check-in */}
                                         <div
                                           className="checkin-controller"
                                           onClick={(e) => e.stopPropagation()}
@@ -1211,22 +1207,24 @@ const GestisciEventi: React.FC = () => {
                                         </div>
                                       </div>
 
-                                      {/* Sezione Note Expandibile */}
+                                      {/* Sezione Note: Testo Normale (Rimosso il riquadro) */}
                                       {hasNote && isNoteExpanded && (
                                         <div
                                           style={{
-                                            backgroundColor:
-                                              "rgba(210, 105, 30, 0.1)",
-                                            padding: "10px 14px",
-                                            borderRadius: "6px",
-                                            borderLeft: "4px solid #d2691e",
                                             fontSize: "0.9rem",
-                                            color: "#555",
+                                            color: "#666",
                                             marginTop: "4px",
+                                            lineHeight: "1.4",
                                           }}
                                         >
-                                          <strong>Note:</strong>
-                                          <br />
+                                          <span
+                                            style={{
+                                              fontWeight: 600,
+                                              color: "#444",
+                                            }}
+                                          >
+                                            Note:
+                                          </span>{" "}
                                           {pren.note}
                                         </div>
                                       )}
