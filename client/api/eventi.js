@@ -207,19 +207,22 @@ export default async function handler(req, res) {
       }
 
       if (action === "single" && id) {
+        // Usa una SELECT esplicita invece di SELECT * per evitare di caricare il BLOB pesante
         const eventoResult = await client.execute({
-          sql: `SELECT * FROM eventi WHERE id = ?`,
+          sql: `SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, num_max, visibile, length(immagine_blob) as blob_size FROM eventi WHERE id = ?`,
           args: [id],
         });
+
         if (!eventoResult.rows.length)
           return res.status(404).json({ error: "Non trovato" });
 
         const evento = convertBigIntToNumber(eventoResult.rows[0]);
 
-        if (evento.immagine_blob) {
+        // Se l'immagine esiste nel DB, costruiamo l'URL
+        if (evento.blob_size > 0) {
           evento.immagine_url = `/api/eventi?action=image&id=${evento.id}`;
-          delete evento.immagine_blob;
         }
+        delete evento.blob_size; // Puliamo l'oggetto prima di inviarlo
 
         const prenotazioniResult = await client.execute({
           sql: "SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC",
