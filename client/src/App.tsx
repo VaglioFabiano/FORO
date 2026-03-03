@@ -20,9 +20,8 @@ interface RouteState {
   eventoId?: number;
 }
 
-// Spostato fuori per poterlo usare come stato iniziale immediato
 const parseUrl = (): RouteState => {
-  const path = window.location.pathname;
+  const path = window.location.pathname.replace(/\/$/, "") || "/";
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
 

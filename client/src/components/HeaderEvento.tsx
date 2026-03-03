@@ -38,10 +38,10 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
 
   return (
     <section className="hero-evento-wrapper">
-      {/* Sfondo sfocato creato usando l'immagine dell'evento, se presente */}
+      {/* Sfondo sfocato creato usando l'immagine dell'evento, con fix per gli apici nell'URL */}
       <div
         className="hero-evento-bg"
-        style={{ backgroundImage: `url(${getImageUrl()})` }}
+        style={{ backgroundImage: `url('${getImageUrl()}')` }}
       ></div>
       <div className="hero-evento-overlay"></div>
 

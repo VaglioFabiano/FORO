@@ -34,10 +34,20 @@ function validateBase64Image(base64String) {
   return /^data:image\/(jpeg|jpg|png|gif|webp);base64,/.test(base64String);
 }
 
+// FUNZIONE CORRETTA: Ignora i buffer binari per evitare il blocco del server
 function convertBigIntToNumber(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return Number(obj);
   if (Array.isArray(obj)) return obj.map(convertBigIntToNumber);
+
+  if (
+    obj instanceof ArrayBuffer ||
+    ArrayBuffer.isView(obj) ||
+    (typeof Buffer !== "undefined" && Buffer.isBuffer(obj))
+  ) {
+    return obj;
+  }
+
   if (typeof obj === "object") {
     const converted = {};
     for (const [key, value] of Object.entries(obj)) {
