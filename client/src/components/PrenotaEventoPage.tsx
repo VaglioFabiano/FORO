@@ -346,14 +346,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
 
   return (
     <div className="prenota-wrapper">
-      <div className="prenota-header">
-        <button onClick={handleBackToHome} className="btn-back">
-          <ArrowLeft size={18} />
-          <span>Indietro</span>
-        </button>
-        <h1>Riserva il tuo posto</h1>
-      </div>
-
       {evento && (
         <div className="evento-layout">
           {/* Colonna Sinistra: Immagine */}
