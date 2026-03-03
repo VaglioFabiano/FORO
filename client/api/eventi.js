@@ -154,7 +154,7 @@ export default async function handler(req, res) {
 
       if (!section && !action) {
         const result = await client.execute(`
-            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile,
+            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile, num_max,
             length(immagine_blob) as blob_size 
             FROM eventi 
             ORDER BY data_evento DESC
@@ -172,10 +172,9 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, eventi });
       }
 
-      // Endpoint speciale per ottenere l'evento visibile nella home
       if (section === "visibile") {
         const result = await client.execute(`
-            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile,
+            SELECT id, titolo, descrizione, data_evento, immagine_url, immagine_tipo, visibile, num_max,
             length(immagine_blob) as blob_size 
             FROM eventi 
             WHERE visibile = 1
@@ -286,6 +285,41 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Email non valida" });
         }
 
+        const ticketsRichiesti = num_biglietti || 1;
+
+        // Recupero i dati dell'evento per controllare il limite
+        const evResult = await client.execute({
+          sql: "SELECT * FROM eventi WHERE id=?",
+          args: [evento_id],
+        });
+
+        if (evResult.rows.length === 0) {
+          return res.status(404).json({ error: "Evento non trovato" });
+        }
+
+        const evento = convertBigIntToNumber(evResult.rows[0]);
+
+        // Controllo disponibilità se è impostato un num_max (> 0)
+        if (evento.num_max && evento.num_max > 0) {
+          const countResult = await client.execute({
+            sql: "SELECT SUM(num_partecipanti) as totale FROM prenotazioni_eventi WHERE evento_id = ?",
+            args: [evento_id],
+          });
+
+          const totaleAttuale =
+            convertBigIntToNumber(countResult.rows[0].totale) || 0;
+
+          if (totaleAttuale + ticketsRichiesti > evento.num_max) {
+            const disponibili = evento.num_max - totaleAttuale;
+            const messaggioErrore =
+              disponibili > 0
+                ? `Ci dispiace, sono rimasti solo ${disponibili} posti disponibili.`
+                : "L'evento ha raggiunto il limite massimo di partecipanti.";
+
+            return res.status(400).json({ error: messaggioErrore });
+          }
+        }
+
         const result = await client.execute({
           sql: `INSERT INTO prenotazioni_eventi (evento_id, nome, cognome, email, num_partecipanti, note, data_prenotazione) 
                 VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
@@ -294,20 +328,13 @@ export default async function handler(req, res) {
             nome,
             cognome,
             email.toLowerCase().trim(),
-            num_biglietti || 1,
+            ticketsRichiesti,
             note || "",
           ],
         });
 
         const insertId = convertBigIntToNumber(result.lastInsertRowid);
-
-        const evResult = await client.execute({
-          sql: "SELECT * FROM eventi WHERE id=?",
-          args: [evento_id],
-        });
-        const evento = evResult.rows[0];
-
-        const pData = { nome, cognome, num_partecipanti: num_biglietti || 1 };
+        const pData = { nome, cognome, num_partecipanti: ticketsRichiesti };
         const htmlConfirm = createConfirmationTemplate(pData, evento);
 
         sendEmail(
@@ -333,6 +360,7 @@ export default async function handler(req, res) {
         immagine_blob,
         immagine_tipo,
         immagine_nome,
+        num_max, // Nuovo campo
       } = req.body;
 
       let blobBuffer = null;
@@ -342,8 +370,8 @@ export default async function handler(req, res) {
       }
 
       const result = await client.execute({
-        sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome, visibile) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+        sql: `INSERT INTO eventi (titolo, descrizione, data_evento, immagine_url, immagine_blob, immagine_tipo, immagine_nome, visibile, num_max) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`,
         args: [
           titolo,
           descrizione || "",
@@ -352,6 +380,7 @@ export default async function handler(req, res) {
           blobBuffer,
           immagine_tipo || "",
           immagine_nome || "",
+          num_max || 0, // Se non specificato, diventa 0
         ],
       });
 
@@ -393,10 +422,11 @@ export default async function handler(req, res) {
         immagine_blob,
         immagine_tipo,
         immagine_nome,
+        num_max, // Nuovo campo
       } = req.body;
 
-      let sql = `UPDATE eventi SET titolo=?, descrizione=?, data_evento=?, immagine_url=?`;
-      let args = [titolo, descrizione, data_evento, immagine_url];
+      let sql = `UPDATE eventi SET titolo=?, descrizione=?, data_evento=?, immagine_url=?, num_max=?`;
+      let args = [titolo, descrizione, data_evento, immagine_url, num_max || 0];
 
       if (immagine_blob) {
         const base64Data = immagine_blob.split(";base64,").pop();

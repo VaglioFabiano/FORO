@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Mail, Edit, Trash2, ChevronDown } from "lucide-react";
+import { Mail, Edit, Trash2, ChevronDown, Search } from "lucide-react";
 import "../style/gestisciEventi.css";
 
 // Definizione delle interfacce per i dati
@@ -13,6 +13,7 @@ interface Evento {
   immagine_tipo?: string;
   immagine_nome?: string;
   visibile: number;
+  num_max?: number; // Aggiunto num_max
 }
 
 interface Prenotazione {
@@ -34,6 +35,7 @@ interface NuovoEvento {
   data_evento: string;
   immagine_url: string;
   immagine_file?: File;
+  num_max: number | ""; // Aggiunto num_max
 }
 
 interface BroadcastEmail {
@@ -63,11 +65,15 @@ const GestisciEventi: React.FC = () => {
     {},
   );
 
+  // Stato per la ricerca dei partecipanti
+  const [searchQuery, setSearchQuery] = useState<Record<number, string>>({});
+
   const [nuovoEvento, setNuovoEvento] = useState<NuovoEvento>({
     titolo: "",
     descrizione: "",
     data_evento: "",
     immagine_url: "",
+    num_max: "",
   });
   const [showNewEventForm, setShowNewEventForm] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
@@ -173,7 +179,6 @@ const GestisciEventi: React.FC = () => {
     return true;
   };
 
-  // Funzione di fetch con flag per il background (silenzioso)
   const fetchEventi = useCallback(async (isBackground = false) => {
     try {
       if (!isBackground) {
@@ -232,14 +237,12 @@ const GestisciEventi: React.FC = () => {
     }
   }, []);
 
-  // 1. Caricamento iniziale visibile
   useEffect(() => {
     setUserLevel(1);
     setUserId(1);
     fetchEventi(false);
   }, [fetchEventi]);
 
-  // 2. Polling automatico in background ogni 7 secondi (7000ms)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchEventi(true);
@@ -314,6 +317,7 @@ const GestisciEventi: React.FC = () => {
         descrizione: nuovoEvento.descrizione.trim(),
         data_evento: nuovoEvento.data_evento.trim(),
         immagine_url: nuovoEvento.immagine_url.trim(),
+        num_max: nuovoEvento.num_max !== "" ? Number(nuovoEvento.num_max) : 0,
         user_id: userId,
       };
 
@@ -342,6 +346,7 @@ const GestisciEventi: React.FC = () => {
           descrizione: "",
           data_evento: "",
           immagine_url: "",
+          num_max: "",
         });
         setShowNewEventForm(false);
         await fetchEventi(true);
@@ -372,6 +377,7 @@ const GestisciEventi: React.FC = () => {
         descrizione: editData.descrizione?.trim() || "",
         data_evento: editData.data_evento?.trim(),
         immagine_url: editData.immagine_url?.trim() || "",
+        num_max: editData.num_max || 0,
         user_id: userId,
       };
 
@@ -463,7 +469,6 @@ const GestisciEventi: React.FC = () => {
     newArrivati: number,
   ) => {
     try {
-      // Aggiornamento ottimistico locale per evitare scatti dell'interfaccia
       setPrenotazioni((prev) => ({
         ...prev,
         [eventoId]: prev[eventoId].map((p) =>
@@ -479,7 +484,6 @@ const GestisciEventi: React.FC = () => {
 
       const data = await response.json();
       if (!data.success) {
-        // Ripristino in caso di errore (opzionale, si riallinea al prossimo polling)
         throw new Error(data.error || "Errore durante il check-in.");
       }
     } catch (err) {
@@ -512,6 +516,7 @@ const GestisciEventi: React.FC = () => {
       descrizione: evento.descrizione,
       data_evento: evento.data_evento.split("T")[0],
       immagine_url: evento.immagine_url || "",
+      num_max: evento.num_max || 0,
     });
   };
 
@@ -570,6 +575,13 @@ const GestisciEventi: React.FC = () => {
     setExpandedEvents((prev) => ({ ...prev, [eventoId]: !prev[eventoId] }));
   };
 
+  const handleSearchChange = (eventoId: number, value: string) => {
+    setSearchQuery((prev) => ({
+      ...prev,
+      [eventoId]: value.toLowerCase(),
+    }));
+  };
+
   if (loading && eventi.length === 0) {
     return (
       <div className="eventi-container">
@@ -598,7 +610,7 @@ const GestisciEventi: React.FC = () => {
             </button>
           )}
           <button
-            onClick={() => fetchEventi(false)} // false mostra il caricamento esplicito
+            onClick={() => fetchEventi(false)}
             className="refresh-button"
             disabled={loading}
           >
@@ -723,6 +735,23 @@ const GestisciEventi: React.FC = () => {
                     })
                   }
                   disabled={creatingEvent}
+                />
+              </div>
+              <div className="form-group">
+                <label>Numero Massimo Partecipanti</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={nuovoEvento.num_max}
+                  onChange={(e) =>
+                    setNuovoEvento({
+                      ...nuovoEvento,
+                      num_max:
+                        e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
+                  disabled={creatingEvent}
+                  placeholder="Lascia vuoto per nessun limite"
                 />
               </div>
               <div className="form-group full-width">
@@ -912,6 +941,24 @@ const GestisciEventi: React.FC = () => {
                               disabled={updatingEvent}
                             />
                           </div>
+                          <div className="form-group">
+                            <label>Numero Massimo Partecipanti</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={editData.num_max || ""}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  num_max: e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined,
+                                })
+                              }
+                              disabled={updatingEvent}
+                              placeholder="Lascia vuoto per nessun limite"
+                            />
+                          </div>
                           <div className="form-group full-width">
                             <label>Descrizione</label>
                             <textarea
@@ -968,74 +1015,121 @@ const GestisciEventi: React.FC = () => {
                               <span className="stat-arrivati">
                                 Arrivati: {getArrivatiCount(evento.id)}
                               </span>
+                              {evento.num_max && evento.num_max > 0 ? (
+                                <span className="stat-max">
+                                  Posti Max: {evento.num_max}
+                                </span>
+                              ) : null}
                             </div>
                           </div>
 
+                          {/* Barra di ricerca per i partecipanti */}
+                          {(prenotazioni[evento.id] || []).length > 0 && (
+                            <div
+                              className="search-bar-container"
+                              style={{ margin: "15px 0", position: "relative" }}
+                            >
+                              <Search
+                                size={18}
+                                style={{
+                                  position: "absolute",
+                                  left: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  color: "#666",
+                                }}
+                              />
+                              <input
+                                type="text"
+                                placeholder="Cerca partecipante per nome o cognome..."
+                                value={searchQuery[evento.id] || ""}
+                                onChange={(e) =>
+                                  handleSearchChange(evento.id, e.target.value)
+                                }
+                                style={{
+                                  width: "100%",
+                                  padding: "10px 10px 10px 35px",
+                                  borderRadius: "8px",
+                                  border: "1px solid #ccc",
+                                }}
+                              />
+                            </div>
+                          )}
+
                           {(prenotazioni[evento.id] || []).length > 0 ? (
                             <div className="prenotazioni-list">
-                              {prenotazioni[evento.id].map((pren) => {
-                                const totaleBiglietti =
-                                  pren.num_biglietti ||
-                                  pren.num_partecipanti ||
-                                  1;
-                                const arrivati = pren.num_arrivati || 0;
-                                const isCompleto = arrivati === totaleBiglietti;
+                              {prenotazioni[evento.id]
+                                .filter((pren) => {
+                                  const query = searchQuery[evento.id];
+                                  if (!query) return true;
+                                  const fullName =
+                                    `${pren.nome} ${pren.cognome}`.toLowerCase();
+                                  return fullName.includes(query);
+                                })
+                                .map((pren) => {
+                                  const totaleBiglietti =
+                                    pren.num_biglietti ||
+                                    pren.num_partecipanti ||
+                                    1;
+                                  const arrivati = pren.num_arrivati || 0;
+                                  const isCompleto =
+                                    arrivati === totaleBiglietti;
 
-                                return (
-                                  <div
-                                    key={pren.id}
-                                    className={`prenotazione-item ${isCompleto ? "checkin-completo" : ""}`}
-                                  >
-                                    <div className="prenotazione-info">
-                                      <div className="partecipante-nome">
-                                        {pren.nome} {pren.cognome}
+                                  return (
+                                    <div
+                                      key={pren.id}
+                                      className={`prenotazione-item ${isCompleto ? "checkin-completo" : ""}`}
+                                    >
+                                      <div className="prenotazione-info">
+                                        <div className="partecipante-nome">
+                                          {pren.nome} {pren.cognome}
+                                        </div>
+                                        <div className="partecipante-email">
+                                          {pren.email}
+                                        </div>
                                       </div>
-                                      <div className="partecipante-email">
-                                        {pren.email}
+
+                                      <div className="checkin-controller">
+                                        <button
+                                          className="checkin-btn minus"
+                                          disabled={arrivati <= 0}
+                                          onClick={() =>
+                                            handleCheckin(
+                                              pren.id,
+                                              evento.id,
+                                              arrivati - 1,
+                                            )
+                                          }
+                                        >
+                                          -
+                                        </button>
+
+                                        <div className="checkin-status">
+                                          <span className="arrivati-num">
+                                            {arrivati}
+                                          </span>
+                                          <span className="totale-num">
+                                            / {totaleBiglietti}
+                                          </span>
+                                        </div>
+
+                                        <button
+                                          className="checkin-btn plus"
+                                          disabled={arrivati >= totaleBiglietti}
+                                          onClick={() =>
+                                            handleCheckin(
+                                              pren.id,
+                                              evento.id,
+                                              arrivati + 1,
+                                            )
+                                          }
+                                        >
+                                          +
+                                        </button>
                                       </div>
                                     </div>
-
-                                    <div className="checkin-controller">
-                                      <button
-                                        className="checkin-btn minus"
-                                        disabled={arrivati <= 0}
-                                        onClick={() =>
-                                          handleCheckin(
-                                            pren.id,
-                                            evento.id,
-                                            arrivati - 1,
-                                          )
-                                        }
-                                      >
-                                        -
-                                      </button>
-
-                                      <div className="checkin-status">
-                                        <span className="arrivati-num">
-                                          {arrivati}
-                                        </span>
-                                        <span className="totale-num">
-                                          / {totaleBiglietti}
-                                        </span>
-                                      </div>
-
-                                      <button
-                                        className="checkin-btn plus"
-                                        disabled={arrivati >= totaleBiglietti}
-                                        onClick={() =>
-                                          handleCheckin(
-                                            pren.id,
-                                            evento.id,
-                                            arrivati + 1,
-                                          )
-                                        }
-                                      >
-                                        +
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
                             </div>
                           ) : (
                             <div className="no-prenotazioni">

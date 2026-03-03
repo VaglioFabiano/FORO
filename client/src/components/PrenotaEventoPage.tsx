@@ -11,6 +11,7 @@ import {
   Download,
 } from "lucide-react";
 import "../style/componentiEventi.css";
+import informativaPdf from "../assets/Informativa_privacy.pdf";
 
 interface Evento {
   id: number;
@@ -21,6 +22,7 @@ interface Evento {
   immagine_blob?: string;
   immagine_tipo?: string;
   immagine_nome?: string;
+  num_max?: number;
 }
 
 interface PrenotazioneForm {
@@ -36,6 +38,7 @@ interface ApiResponse {
   success: boolean;
   evento?: Evento;
   eventi?: Evento[];
+  prenotazioni?: any[];
   error?: string;
   message?: string;
   prenotazione_id?: number;
@@ -49,17 +52,19 @@ interface Props {
 const eventiTest: Evento[] = [
   {
     id: 1,
-    titolo: "Workshop di Studio Efficace",
+    titolo: "Evento di Debug",
     descrizione:
-      "Un workshop dedicato alle tecniche di studio più efficaci per studenti universitari. Imparerai metodi comprovati per migliorare la concentrazione, la memorizzazione e l'organizzazione dello studio.",
+      "Questo evento è di prova, se sei qui hai raggiunto una pagina di debug. Ritorna alla homepage e accedi all'evento corretto usando la pagina apposita.",
     data_evento: "2024-12-15T10:00:00Z",
     immagine_url:
       "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1080&h=1350&fit=crop",
+    num_max: 20,
   },
 ];
 
 const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
   const [evento, setEvento] = useState<Evento | null>(null);
+  const [postiDisponibili, setPostiDisponibili] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -88,16 +93,30 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
       setError(null);
 
       try {
-        const response = await fetch("/api/eventi");
+        // Chiamata all'endpoint singolo per ottenere anche i dati sulle prenotazioni correnti
+        const response = await fetch(
+          `/api/eventi?action=single&id=${eventoId}`,
+        );
         if (response.ok) {
           const data: ApiResponse = await response.json();
-          if (data.success && data.eventi) {
-            const eventoTrovato = data.eventi.find((e) => e.id === eventoId);
-            if (eventoTrovato) {
-              setEvento(eventoTrovato);
-              setLoading(false);
-              return;
+          if (data.success && data.evento) {
+            setEvento(data.evento);
+
+            // Calcolo posti disponibili
+            if (data.evento.num_max && data.evento.num_max > 0) {
+              const prenotati =
+                data.prenotazioni?.reduce(
+                  (acc: number, curr: any) =>
+                    acc + (curr.num_partecipanti || 1),
+                  0,
+                ) || 0;
+              setPostiDisponibili(Math.max(0, data.evento.num_max - prenotati));
+            } else {
+              setPostiDisponibili(null); // Nessun limite
             }
+
+            setLoading(false);
+            return;
           }
         }
       } catch (apiError) {
@@ -107,6 +126,11 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
       const eventoTest = eventiTest.find((e) => e.id === eventoId);
       if (eventoTest) {
         setEvento(eventoTest);
+        if (eventoTest.num_max && eventoTest.num_max > 0) {
+          setPostiDisponibili(eventoTest.num_max);
+        } else {
+          setPostiDisponibili(null);
+        }
       } else {
         throw new Error("Evento non trovato");
       }
@@ -116,6 +140,9 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
       setLoading(false);
     }
   };
+
+  const maxTickets =
+    postiDisponibili !== null ? Math.min(10, postiDisponibili) : 10;
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
@@ -134,8 +161,8 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
       errors.email = "Inserisci un'email valida";
     }
 
-    if (formData.num_biglietti < 1 || formData.num_biglietti > 10) {
-      errors.num_biglietti = "Il numero di biglietti deve essere tra 1 e 10";
+    if (formData.num_biglietti < 1 || formData.num_biglietti > maxTickets) {
+      errors.num_biglietti = `Il numero di biglietti deve essere tra 1 e ${maxTickets}`;
     }
 
     if (!formData.privacy) {
@@ -304,6 +331,8 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                   note: "",
                   privacy: false,
                 });
+                // Ricarichiamo i dati per aggiornare i posti disponibili dopo la prenotazione
+                fetchEvento();
               }}
               className="btn-primary"
             >
@@ -359,6 +388,24 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                 <span className="badge">
                   <MapPin size={16} /> Aula Studio Foro - Piossasco
                 </span>
+                {postiDisponibili !== null && (
+                  <span
+                    className="badge"
+                    style={
+                      postiDisponibili === 0
+                        ? {
+                            color: "#e74c3c",
+                            backgroundColor: "rgba(231, 76, 60, 0.1)",
+                          }
+                        : {}
+                    }
+                  >
+                    <Users size={16} />
+                    {postiDisponibili === 0
+                      ? "Posti esauriti"
+                      : `${postiDisponibili} posti rimasti`}
+                  </span>
+                )}
               </div>
               <p className="evento-desc">
                 {evento.descrizione ||
@@ -366,150 +413,177 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
               </p>
             </div>
 
-            <div className="form-box">
-              <h3>I tuoi dati</h3>
-
-              {error && <div className="form-alert">{error}</div>}
-
-              <div className="form-grid">
-                <div className="input-group">
-                  <label htmlFor="nome">Nome *</label>
-                  <div className="input-wrapper">
-                    <User size={18} />
-                    <input
-                      type="text"
-                      id="nome"
-                      name="nome"
-                      value={formData.nome}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                      className={formErrors.nome ? "has-error" : ""}
-                      placeholder="Mario"
-                    />
-                  </div>
-                  {formErrors.nome && (
-                    <span className="error-text">{formErrors.nome}</span>
-                  )}
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="cognome">Cognome *</label>
-                  <div className="input-wrapper">
-                    <User size={18} />
-                    <input
-                      type="text"
-                      id="cognome"
-                      name="cognome"
-                      value={formData.cognome}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                      className={formErrors.cognome ? "has-error" : ""}
-                      placeholder="Rossi"
-                    />
-                  </div>
-                  {formErrors.cognome && (
-                    <span className="error-text">{formErrors.cognome}</span>
-                  )}
-                </div>
-
-                <div className="input-group full-width">
-                  <label htmlFor="email">Email *</label>
-                  <div className="input-wrapper">
-                    <Mail size={18} />
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                      className={formErrors.email ? "has-error" : ""}
-                      placeholder="mario.rossi@email.com"
-                    />
-                  </div>
-                  {formErrors.email && (
-                    <span className="error-text">{formErrors.email}</span>
-                  )}
-                </div>
-
-                <div className="input-group full-width">
-                  <label htmlFor="num_biglietti">Numero di biglietti *</label>
-                  <div className="input-wrapper">
-                    <Users size={18} />
-                    <select
-                      id="num_biglietti"
-                      name="num_biglietti"
-                      value={formData.num_biglietti}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                        <option key={num} value={num}>
-                          {num} {num === 1 ? "biglietto" : "biglietti"}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="input-group full-width">
-                  <label htmlFor="note">Note aggiuntive (opzionale)</label>
-                  <textarea
-                    id="note"
-                    name="note"
-                    value={formData.note}
-                    onChange={handleInputChange}
-                    disabled={submitting}
-                    rows={3}
-                    placeholder="Eventuali richieste speciali..."
-                  ></textarea>
-                </div>
-
-                <div className="input-group full-width privacy-group">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="privacy"
-                      checked={formData.privacy}
-                      onChange={handleInputChange}
-                      disabled={submitting}
-                    />
-                    <span>
-                      Ho letto e accetto l'
-                      <a
-                        href="/Informativa_privacy.pdf"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="privacy-link"
-                      >
-                        Informativa sulla Privacy <Download size={14} />
-                      </a>
-                      *
-                    </span>
-                  </label>
-                  {formErrors.privacy && (
-                    <span className="error-text">{formErrors.privacy}</span>
-                  )}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="btn-submit"
+            {postiDisponibili === 0 ? (
+              <div
+                className="form-box"
+                style={{ textAlign: "center", padding: "40px" }}
               >
-                {submitting ? (
-                  <>
-                    <span className="spinner"></span> Elaborazione...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle size={20} /> Conferma Prenotazione
-                  </>
-                )}
-              </button>
-            </div>
+                <AlertCircle
+                  size={48}
+                  color="#e74c3c"
+                  style={{ marginBottom: "16px" }}
+                />
+                <h3 style={{ borderBottom: "none", marginBottom: "16px" }}>
+                  Evento al Completo
+                </h3>
+                <p style={{ color: "#555", fontSize: "1.1rem" }}>
+                  Ci dispiace, ma questo evento ha raggiunto il numero massimo
+                  di partecipanti e non è più possibile prenotarsi.
+                </p>
+              </div>
+            ) : (
+              <div className="form-box">
+                <h3>I tuoi dati</h3>
+
+                {error && <div className="form-alert">{error}</div>}
+
+                <div className="form-grid">
+                  <div className="input-group">
+                    <label htmlFor="nome">Nome *</label>
+                    <div className="input-wrapper">
+                      <User size={18} />
+                      <input
+                        type="text"
+                        id="nome"
+                        name="nome"
+                        value={formData.nome}
+                        onChange={handleInputChange}
+                        disabled={submitting}
+                        className={formErrors.nome ? "has-error" : ""}
+                        placeholder="Mario"
+                      />
+                    </div>
+                    {formErrors.nome && (
+                      <span className="error-text">{formErrors.nome}</span>
+                    )}
+                  </div>
+
+                  <div className="input-group">
+                    <label htmlFor="cognome">Cognome *</label>
+                    <div className="input-wrapper">
+                      <User size={18} />
+                      <input
+                        type="text"
+                        id="cognome"
+                        name="cognome"
+                        value={formData.cognome}
+                        onChange={handleInputChange}
+                        disabled={submitting}
+                        className={formErrors.cognome ? "has-error" : ""}
+                        placeholder="Rossi"
+                      />
+                    </div>
+                    {formErrors.cognome && (
+                      <span className="error-text">{formErrors.cognome}</span>
+                    )}
+                  </div>
+
+                  <div className="input-group full-width">
+                    <label htmlFor="email">Email *</label>
+                    <div className="input-wrapper">
+                      <Mail size={18} />
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        disabled={submitting}
+                        className={formErrors.email ? "has-error" : ""}
+                        placeholder="mario.rossi@email.com"
+                      />
+                    </div>
+                    {formErrors.email && (
+                      <span className="error-text">{formErrors.email}</span>
+                    )}
+                  </div>
+
+                  <div className="input-group full-width">
+                    <label htmlFor="num_biglietti">Numero di biglietti *</label>
+                    <div className="input-wrapper">
+                      <Users size={18} />
+                      <select
+                        id="num_biglietti"
+                        name="num_biglietti"
+                        value={
+                          formData.num_biglietti > maxTickets
+                            ? maxTickets
+                            : formData.num_biglietti
+                        }
+                        onChange={handleInputChange}
+                        disabled={submitting}
+                      >
+                        {Array.from(
+                          { length: maxTickets },
+                          (_, i) => i + 1,
+                        ).map((num) => (
+                          <option key={num} value={num}>
+                            {num} {num === 1 ? "biglietto" : "biglietti"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="input-group full-width">
+                    <label htmlFor="note">Note aggiuntive (opzionale)</label>
+                    <textarea
+                      id="note"
+                      name="note"
+                      value={formData.note}
+                      onChange={handleInputChange}
+                      disabled={submitting}
+                      rows={3}
+                      placeholder="Eventuali richieste speciali..."
+                    ></textarea>
+                  </div>
+
+                  <div className="input-group full-width privacy-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="privacy"
+                        checked={formData.privacy}
+                        onChange={handleInputChange}
+                        disabled={submitting}
+                      />
+                      <span>
+                        Ho letto e accetto l'
+                        <a
+                          href={informativaPdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="privacy-link"
+                        >
+                          Informativa sulla Privacy <Download size={14} />
+                        </a>
+                        *
+                      </span>
+                    </label>
+                    {formErrors.privacy && (
+                      <span className="error-text">{formErrors.privacy}</span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="btn-submit"
+                >
+                  {submitting ? (
+                    <>
+                      <span className="spinner"></span> Elaborazione...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={20} /> Conferma Prenotazione
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
