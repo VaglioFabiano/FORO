@@ -505,8 +505,15 @@ const GestisciEventi: React.FC = () => {
       setEditData({ ...editData, immagine_file: file, immagine_url: "" });
   };
 
+  // Funzione getImageUrl modificata per mostrare correttamente le immagini caricate
   const getImageUrl = (evento: Evento) => {
-    return evento.immagine_blob || evento.immagine_url || "";
+    if (evento.immagine_url) {
+      return evento.immagine_url;
+    }
+    if (evento.immagine_tipo || evento.immagine_nome || evento.immagine_blob) {
+      return `/api/eventi?action=image&id=${evento.id}`;
+    }
+    return "";
   };
 
   const iniziaModifica = (evento: Evento) => {

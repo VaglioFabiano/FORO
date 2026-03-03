@@ -268,7 +268,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
 
   if (loading) {
     return (
-      <div className="prenota-wrapper">
+      <div className="prenota-wrapper" style={{ paddingTop: "80px" }}>
         <div className="status-card">
           <div className="loading-spinner"></div>
           <p>Caricamento evento...</p>
@@ -279,7 +279,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
 
   if (error && !evento) {
     return (
-      <div className="prenota-wrapper">
+      <div className="prenota-wrapper" style={{ paddingTop: "80px" }}>
         <div className="status-card error-card">
           <AlertCircle size={48} className="error-icon" />
           <h2>Qualcosa è andato storto</h2>
@@ -294,7 +294,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
 
   if (success) {
     return (
-      <div className="prenota-wrapper">
+      <div className="prenota-wrapper" style={{ paddingTop: "80px" }}>
         <div className="status-card success-card">
           <CheckCircle size={64} className="success-icon" />
           <h2>Prenotazione confermata!</h2>
@@ -345,7 +345,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
   }
 
   return (
-    <div className="prenota-wrapper">
+    <div className="prenota-wrapper" style={{ paddingTop: "80px" }}>
       {evento && (
         <div className="evento-layout">
           {/* Colonna Sinistra: Immagine */}
