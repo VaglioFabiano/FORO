@@ -93,7 +93,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
       setError(null);
 
       try {
-        // Chiamata all'endpoint singolo per ottenere anche i dati sulle prenotazioni correnti
         const response = await fetch(
           `/api/eventi?action=single&id=${eventoId}`,
         );
@@ -102,7 +101,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
           if (data.success && data.evento) {
             setEvento(data.evento);
 
-            // Calcolo posti disponibili
             if (data.evento.num_max && data.evento.num_max > 0) {
               const prenotati =
                 data.prenotazioni?.reduce(
@@ -112,7 +110,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                 ) || 0;
               setPostiDisponibili(Math.max(0, data.evento.num_max - prenotati));
             } else {
-              setPostiDisponibili(null); // Nessun limite
+              setPostiDisponibili(null);
             }
 
             setLoading(false);
@@ -331,7 +329,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                   note: "",
                   privacy: false,
                 });
-                // Ricarichiamo i dati per aggiornare i posti disponibili dopo la prenotazione
                 fetchEvento();
               }}
               className="btn-primary"
@@ -551,6 +548,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId = 1 }) => {
                         Ho letto e accetto l'
                         <a
                           href={informativaPdf}
+                          download="Informativa_privacy.pdf"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="privacy-link"
