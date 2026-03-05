@@ -51,7 +51,6 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
     }
   };
 
-  // Funzione per garantire che il link esterno funzioni sempre correttamente
   const getValidUrl = (url?: string) => {
     if (!url) return "";
     return url.startsWith("http://") || url.startsWith("https://")
@@ -69,12 +68,10 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
 
       <div className="hero-evento-container">
         <div className="hero-evento-content">
-          <div className="hero-evento-badge">
-            <span className="pulse-dot"></span>
-            Prossimo Evento
-          </div>
-
-          <h1 className="hero-evento-title">{evento.titolo}</h1>
+          {/* Badge rimosso. Aggiunto marginTop per mantenere la spaziatura */}
+          <h1 className="hero-evento-title" style={{ marginTop: "32px" }}>
+            {evento.titolo}
+          </h1>
 
           <div className="hero-evento-meta">
             <div className="meta-item">
