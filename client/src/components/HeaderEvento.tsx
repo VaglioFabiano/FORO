@@ -118,7 +118,7 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
                 }
               >
                 <ExternalLink size={20} />
-                <span>Per approfondire</span>
+                <span>Per Approfondire</span>
               </button>
             )}
           </div>
