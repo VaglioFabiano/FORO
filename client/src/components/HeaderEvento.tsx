@@ -69,7 +69,7 @@ const HeaderEvento: React.FC<HeaderEventoProps> = ({
       <div className="hero-evento-container">
         <div className="hero-evento-content">
           {/* Badge rimosso. Aggiunto marginTop per mantenere la spaziatura */}
-          <h1 className="hero-evento-title" style={{ marginTop: "32px" }}>
+          <h1 className="hero-evento-title" style={{ marginTop: "10px" }}>
             {evento.titolo}
           </h1>
 
