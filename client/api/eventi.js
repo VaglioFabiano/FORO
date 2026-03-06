@@ -183,13 +183,11 @@ export default async function handler(req, res) {
           sql: "SELECT * FROM prenotazioni_eventi WHERE evento_id = ? ORDER BY data_prenotazione DESC",
           args: [id],
         });
-        return res
-          .status(200)
-          .json({
-            success: true,
-            evento,
-            prenotazioni: convertBigIntToNumber(prenotazioniResult.rows),
-          });
+        return res.status(200).json({
+          success: true,
+          evento,
+          prenotazioni: convertBigIntToNumber(prenotazioniResult.rows),
+        });
       }
 
       if (section === "prenotazioni") {
@@ -201,12 +199,10 @@ export default async function handler(req, res) {
         }
         query += " ORDER BY data_prenotazione DESC";
         const result = await client.execute({ sql: query, args });
-        return res
-          .status(200)
-          .json({
-            success: true,
-            prenotazioni: convertBigIntToNumber(result.rows),
-          });
+        return res.status(200).json({
+          success: true,
+          prenotazioni: convertBigIntToNumber(result.rows),
+        });
       }
     }
 
@@ -233,13 +229,11 @@ export default async function handler(req, res) {
           const resEmail = await sendEmail(p.email, subject, htmlBody, message);
           if (resEmail.success) sentCount++;
         }
-        return res
-          .status(200)
-          .json({
-            success: true,
-            destinatari_count: sentCount,
-            message: `Inviate ${sentCount} email.`,
-          });
+        return res.status(200).json({
+          success: true,
+          destinatari_count: sentCount,
+          message: `Inviate ${sentCount} email.`,
+        });
       }
 
       if (section === "prenotazioni") {
@@ -265,14 +259,12 @@ export default async function handler(req, res) {
             convertBigIntToNumber(countResult.rows[0].totale) || 0;
           if (totaleAttuale + ticketsRichiesti > evento.num_max) {
             const disponibili = evento.num_max - totaleAttuale;
-            return res
-              .status(400)
-              .json({
-                error:
-                  disponibili > 0
-                    ? `Ci dispiace, sono rimasti solo ${disponibili} posti disponibili.`
-                    : "L'evento ha raggiunto il limite massimo di partecipanti.",
-              });
+            return res.status(400).json({
+              error:
+                disponibili > 0
+                  ? `Ci dispiace, sono rimasti solo ${disponibili} posti disponibili.`
+                  : "L'evento ha raggiunto il limite massimo di partecipanti.",
+            });
           }
         }
         const result = await client.execute({
@@ -295,13 +287,11 @@ export default async function handler(req, res) {
           htmlConfirm,
           `Confermata prenotazione per ${evento.titolo}`,
         ).catch(console.error);
-        return res
-          .status(201)
-          .json({
-            success: true,
-            id: insertId,
-            message: "Prenotazione salvata!",
-          });
+        return res.status(201).json({
+          success: true,
+          id: insertId,
+          message: "Prenotazione salvata!",
+        });
       }
 
       // CREAZIONE EVENTO (AGGIORNATO)
@@ -326,12 +316,10 @@ export default async function handler(req, res) {
           num_max || 0,
         ],
       });
-      return res
-        .status(201)
-        .json({
-          success: true,
-          id: convertBigIntToNumber(result.lastInsertRowid),
-        });
+      return res.status(201).json({
+        success: true,
+        id: convertBigIntToNumber(result.lastInsertRowid),
+      });
     }
 
     if (req.method === "PUT") {
