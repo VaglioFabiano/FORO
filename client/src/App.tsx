@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import Navbar from "./components/Navbar";
 import Header from "./components/Header";
 import HeaderEvento from "./components/HeaderEvento";
+import MultiEventi from "./components/MultiEvento";
 import OrariSection from "./components/OrariSection";
 import SocialSection from "./components/SocialSection";
 import StatutoSection from "./components/StatutoSection";
@@ -37,9 +38,8 @@ const parseUrl = (): RouteState => {
 };
 
 function App() {
-  // ORA INIZIALIZZA SUBITO L'URL CORRETTO
   const [currentRoute, setCurrentRoute] = useState<RouteState>(parseUrl());
-  const [eventoInEvidenza, setEventoInEvidenza] = useState<any>(null);
+  const [eventiVisibili, setEventiVisibili] = useState<any[]>([]); // MODIFICA QUI
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
   const [, setCurrentUser] = useState<any>(null);
 
@@ -100,9 +100,14 @@ function App() {
     try {
       const response = await fetch("/api/eventi?section=visibile");
       const data = await response.json();
-      if (data.success && data.evento) setEventoInEvidenza(data.evento);
+      if (data.success && data.eventi) {
+        setEventiVisibili(data.eventi);
+      } else if (data.success && data.evento) {
+        // Fallback se l'API restituisce ancora un singolo evento
+        setEventiVisibili([data.evento]);
+      }
     } catch (err) {
-      console.error("Errore recupero evento visibile:", err);
+      console.error("Errore recupero eventi visibili:", err);
     }
   };
 
@@ -158,21 +163,28 @@ function App() {
           </div>
         ) : currentRoute.page === "eventi" ? (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            {/* IL PARAMETRO VIENE PASSATO QUI */}
             <PrenotaEventoPage eventoId={currentRoute.eventoId} />
           </div>
         ) : (
           <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
             <section id="header">
-              {eventoInEvidenza ? (
+              {/* LOGICA DI RENDERING AGGIORNATA */}
+              {eventiVisibili.length === 0 ? (
+                <Header />
+              ) : eventiVisibili.length === 1 ? (
                 <HeaderEvento
-                  evento={eventoInEvidenza}
+                  evento={eventiVisibili[0]}
                   onPrenotaClick={(id) =>
                     navigateTo({ page: "eventi", eventoId: id })
                   }
                 />
               ) : (
-                <Header />
+                <MultiEventi
+                  eventi={eventiVisibili}
+                  onPrenotaClick={(id) =>
+                    navigateTo({ page: "eventi", eventoId: id })
+                  }
+                />
               )}
             </section>
 

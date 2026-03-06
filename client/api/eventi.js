@@ -151,20 +151,27 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, eventi });
       }
 
+      // MODIFICA QUI: Recupera TUTTI gli eventi visibili invece di uno solo
       if (section === "visibile") {
         const result = await client.execute(`
             SELECT id, titolo, descrizione, data_evento, orario, link_esterno, immagine_url, immagine_tipo, visibile, num_max,
-            length(immagine_blob) as blob_size FROM eventi WHERE visibile = 1 ORDER BY data_evento DESC LIMIT 1
+            length(immagine_blob) as blob_size FROM eventi WHERE visibile = 1 ORDER BY data_evento DESC
         `);
-        if (result.rows.length === 0)
-          return res
-            .status(404)
-            .json({ success: false, error: "Nessun evento visibile" });
-        const evento = convertBigIntToNumber(result.rows[0]);
-        if (evento.blob_size > 0)
-          evento.immagine_url = `/api/eventi?action=image&id=${evento.id}`;
-        delete evento.blob_size;
-        return res.status(200).json({ success: true, evento });
+
+        if (result.rows.length === 0) {
+          return res.status(200).json({ success: true, eventi: [] });
+        }
+
+        const eventiVisibili = result.rows.map((row) => {
+          const evento = convertBigIntToNumber(row);
+          if (evento.blob_size > 0) {
+            evento.immagine_url = `/api/eventi?action=image&id=${evento.id}`;
+          }
+          delete evento.blob_size;
+          return evento;
+        });
+
+        return res.status(200).json({ success: true, eventi: eventiVisibili });
       }
 
       if (action === "single" && id) {
@@ -208,7 +215,6 @@ export default async function handler(req, res) {
 
     if (req.method === "POST") {
       if (section === "broadcast") {
-        /* ... (codice broadcast invariato) ... */
         const { evento_id, subject, message } = req.body;
         const prenotazioni = await client.execute({
           sql: "SELECT email, nome FROM prenotazioni_eventi WHERE evento_id = ?",
@@ -237,7 +243,6 @@ export default async function handler(req, res) {
       }
 
       if (section === "prenotazioni") {
-        /* ... (codice prenotazioni invariato) ... */
         const { evento_id, nome, cognome, email, num_biglietti, note } =
           req.body;
         if (!validateEmail(email))
@@ -294,7 +299,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // CREAZIONE EVENTO (AGGIORNATO)
       const {
         titolo,
         descrizione,
@@ -341,7 +345,6 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
-      // MODIFICA EVENTO (AGGIORNATO)
       const {
         id,
         titolo,
