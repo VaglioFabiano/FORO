@@ -402,6 +402,45 @@ const GestisciEventi: React.FC = () => {
     }
   };
 
+  // Funzione per eliminare una singola prenotazione
+  const eliminaPrenotazione = async (
+    prenotazioneId: number,
+    eventoId: number,
+  ) => {
+    if (
+      !confirm(
+        "Sei sicuro di voler eliminare questa prenotazione? L'operazione non è reversibile e i posti verranno liberati.",
+      )
+    )
+      return;
+    setError(null);
+    try {
+      const response = await fetch("/api/eventi?section=prenotazioni", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: prenotazioneId }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        // Aggiorna lo stato localmente per reattività
+        setPrenotazioni((prev) => ({
+          ...prev,
+          [eventoId]: prev[eventoId].filter((p) => p.id !== prenotazioneId),
+        }));
+      } else {
+        throw new Error(
+          data.error || "Errore durante l'eliminazione della prenotazione.",
+        );
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Errore eliminazione prenotazione.",
+      );
+    }
+  };
+
   const toggleVisibility = async (eventoId: number, currentVisible: number) => {
     try {
       const newStatus = currentVisible === 1 ? 0 : 1;
@@ -1163,51 +1202,70 @@ const GestisciEventi: React.FC = () => {
                                           </div>
                                         </div>
 
-                                        {/* Bottoni check-in */}
-                                        <div
-                                          className="checkin-controller"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <button
-                                            className="checkin-btn minus"
-                                            disabled={arrivati <= 0}
-                                            onClick={() =>
-                                              handleCheckin(
-                                                pren.id,
-                                                evento.id,
-                                                arrivati - 1,
-                                              )
-                                            }
+                                        {/* Area controlli: Check-in + Cestino */}
+                                        <div className="prenotazione-actions">
+                                          <div
+                                            className="checkin-controller"
+                                            onClick={(e) => e.stopPropagation()}
                                           >
-                                            -
-                                          </button>
-                                          <div className="checkin-status">
-                                            <span className="arrivati-num">
-                                              {arrivati}
-                                            </span>
-                                            <span className="totale-num">
-                                              / {totaleBiglietti}
-                                            </span>
+                                            <button
+                                              className="checkin-btn minus"
+                                              disabled={arrivati <= 0}
+                                              onClick={() =>
+                                                handleCheckin(
+                                                  pren.id,
+                                                  evento.id,
+                                                  arrivati - 1,
+                                                )
+                                              }
+                                            >
+                                              -
+                                            </button>
+                                            <div className="checkin-status">
+                                              <span className="arrivati-num">
+                                                {arrivati}
+                                              </span>
+                                              <span className="totale-num">
+                                                / {totaleBiglietti}
+                                              </span>
+                                            </div>
+                                            <button
+                                              className="checkin-btn plus"
+                                              disabled={
+                                                arrivati >= totaleBiglietti
+                                              }
+                                              onClick={() =>
+                                                handleCheckin(
+                                                  pren.id,
+                                                  evento.id,
+                                                  arrivati + 1,
+                                                )
+                                              }
+                                            >
+                                              +
+                                            </button>
                                           </div>
-                                          <button
-                                            className="checkin-btn plus"
-                                            disabled={
-                                              arrivati >= totaleBiglietti
-                                            }
-                                            onClick={() =>
-                                              handleCheckin(
-                                                pren.id,
-                                                evento.id,
-                                                arrivati + 1,
-                                              )
-                                            }
-                                          >
-                                            +
-                                          </button>
+
+                                          {/* Bottone Elimina Prenotazione con nuova classe CSS */}
+                                          {canManageEvents() && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                eliminaPrenotazione(
+                                                  pren.id,
+                                                  evento.id,
+                                                );
+                                              }}
+                                              className="btn-delete-prenotazione"
+                                              title="Elimina prenotazione"
+                                            >
+                                              <Trash2 size={18} />
+                                            </button>
+                                          )}
                                         </div>
                                       </div>
 
-                                      {/* Sezione Note: Testo Normale (Rimosso il riquadro) */}
+                                      {/* Sezione Note: Testo Normale */}
                                       {hasNote && isNoteExpanded && (
                                         <div
                                           style={{

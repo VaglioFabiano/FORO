@@ -672,3 +672,49 @@
   color: #666;
   font-size: 12px;
 }
+
+/* =========================================
+   AZIONI PRENOTAZIONE (Check-in + Cestino)
+   ========================================= */
+.prenotazione-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-delete-prenotazione {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #e74c3c;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-delete-prenotazione:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+  transform: scale(1.05);
+}
+
+/* =========================================
+   AGGIUNTE AL RESPONSIVE (Mobile)
+   ========================================= */
+@media (max-width: 768px) {
+  /* Assicurati che la riga principale della prenotazione possa andare a capo */
+  .prenotazione-item > div:first-child {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* Quando va a capo, allarga il contenitore delle azioni e spostale a destra */
+  .prenotazione-actions {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(139, 69, 19, 0.1);
+    padding-top: 8px;
+  }
+}
