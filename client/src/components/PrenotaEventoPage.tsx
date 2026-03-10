@@ -114,7 +114,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
     return `/api/eventi?action=image&id=${ev.id}`;
   };
 
-  // Funzione per correggere i link inseriti senza http://
   const getValidUrl = (url?: string) => {
     if (!url) return "";
     return url.startsWith("http://") || url.startsWith("https://")
@@ -244,27 +243,79 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
           <CheckCircle size={64} className="success-icon" />
           <h2>Prenotazione confermata!</h2>
           <p>
-            La tua prenotazione per{" "}
-            <strong>
-              {formData.num_biglietti}{" "}
-              {formData.num_biglietti === 1 ? "persona" : "persone"}
-            </strong>{" "}
-            all'evento "<strong>{evento?.titolo}</strong>" è stata registrata
-            con successo.
+            La tua prenotazione all'evento "<strong>{evento?.titolo}</strong>" è
+            stata registrata con successo.
           </p>
-          <div className="success-notice">
-            <Mail size={24} />
-            <p>
-              Dovrebbe arrivarti una mail di conferma all'indirizzo{" "}
-              <strong>{formData.email}</strong>. Ricorda di mostrare questa mail
-              all'ingresso dell'evento.
-              <br />
-              <br />
-              <strong>Nota bene:</strong> Se la mail non dovesse arrivare, non
-              preoccuparti, la tua prenotazione è comunque confermata!
-            </p>
+
+          <div
+            className="success-notice"
+            style={{ marginTop: "20px", textAlign: "left" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "16px",
+              }}
+            >
+              <Users size={24} color="#034a5a" />
+              <p style={{ margin: 0, fontSize: "1.1rem" }}>
+                Hai prenotato:{" "}
+                <strong>
+                  {formData.num_biglietti}{" "}
+                  {formData.num_biglietti === 1 ? "biglietto" : "biglietti"}
+                </strong>
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+              <Mail size={24} color="#034a5a" style={{ flexShrink: 0 }} />
+              <p style={{ margin: 0 }}>
+                Dovrebbe arrivarti una mail di conferma all'indirizzo{" "}
+                <strong>{formData.email}</strong>. Ricorda di mostrare questa
+                mail all'ingresso dell'evento.
+                <br />
+                <small>
+                  <strong>Nota bene:</strong> Se la mail non dovesse arrivare,
+                  non preoccuparti, la tua prenotazione è comunque confermata!
+                </small>
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                backgroundColor: "rgba(3, 74, 90, 0.05)",
+                padding: "12px",
+                borderRadius: "8px",
+              }}
+            >
+              <AlertCircle
+                size={24}
+                color="#034a5a"
+                style={{ flexShrink: 0 }}
+              />
+              <p style={{ margin: 0, fontSize: "0.95rem" }}>
+                <strong>Per annullare la prenotazione:</strong> se per qualsiasi
+                motivo non potrai più partecipare, ti preghiamo di avvisarci
+                inviando una mail a{" "}
+                <a
+                  href="mailto:associazioneforopiossasco@gmail.com"
+                  style={{
+                    color: "#034a5a",
+                    fontWeight: "bold",
+                    textDecoration: "underline",
+                  }}
+                >
+                  associazioneforopiossasco@gmail.com
+                </a>
+              </p>
+            </div>
           </div>
-          <div className="success-actions">
+
+          <div className="success-actions" style={{ marginTop: "24px" }}>
             <button
               onClick={() => {
                 setSuccess(false);
@@ -343,7 +394,6 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                 )}
               </div>
 
-              {/* Descrizione con il link esterno alla fine */}
               <div
                 className="evento-desc-container"
                 style={{ marginBottom: "40px" }}
@@ -352,7 +402,7 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                   className="evento-desc"
                   style={{
                     whiteSpace: "pre-line",
-                    marginBottom: evento.link_esterno ? "16px" : "0",
+                    marginBottom: evento.link_esterno ? "16px" : "16px",
                   }}
                 >
                   {evento.descrizione ||
@@ -360,35 +410,60 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                 </p>
 
                 {evento.link_esterno && (
-                  <a
-                    href={getValidUrl(evento.link_esterno)}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      color: "#034a5a",
-                      fontWeight: "700",
-                      textDecoration: "none",
-                      fontSize: "1.1rem",
-                      padding: "8px 16px",
-                      backgroundColor: "rgba(3, 74, 90, 0.1)",
-                      borderRadius: "8px",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        "rgba(3, 74, 90, 0.2)")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        "rgba(3, 74, 90, 0.1)")
-                    }
-                  >
-                    <ExternalLink size={18} /> Per approfondire
-                  </a>
+                  <div style={{ marginBottom: "20px" }}>
+                    <a
+                      href={getValidUrl(evento.link_esterno)}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        color: "#034a5a",
+                        fontWeight: "700",
+                        textDecoration: "none",
+                        fontSize: "1.1rem",
+                        padding: "8px 16px",
+                        backgroundColor: "rgba(3, 74, 90, 0.1)",
+                        borderRadius: "8px",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseOver={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          "rgba(3, 74, 90, 0.2)")
+                      }
+                      onMouseOut={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          "rgba(3, 74, 90, 0.1)")
+                      }
+                    >
+                      <ExternalLink size={18} /> Per approfondire
+                    </a>
+                  </div>
                 )}
+
+                {/* Nuova sezione per l'annullamento sotto la descrizione/link */}
+                <div
+                  style={{
+                    marginTop: "24px",
+                    padding: "12px",
+                    backgroundColor: "#f8f9fa",
+                    borderRadius: "6px",
+                    borderLeft: "4px solid #034a5a",
+                    fontSize: "0.95rem",
+                    color: "#555",
+                  }}
+                >
+                  <strong>Gestione prenotazione:</strong> in caso di imprevisti,
+                  per annullare la tua prenotazione ti chiediamo di mandare una
+                  mail a{" "}
+                  <a
+                    href="mailto:associazioneforopiossasco@gmail.com"
+                    style={{ color: "#034a5a", fontWeight: "bold" }}
+                  >
+                    associazioneforopiossasco@gmail.com
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -536,6 +611,29 @@ const PrenotaEventoPage: React.FC<Props> = ({ eventoId }) => {
                     {formErrors.privacy && (
                       <span className="error-text">{formErrors.privacy}</span>
                     )}
+
+                    {/* Testo informativo sotto la privacy */}
+                    <p
+                      style={{
+                        marginTop: "12px",
+                        fontSize: "0.85rem",
+                        color: "#666",
+                        marginLeft: "28px",
+                      }}
+                    >
+                      Ti ricordiamo che potrai{" "}
+                      <strong>annullare la tua prenotazione</strong> in
+                      qualsiasi momento mandando una mail a{" "}
+                      <a
+                        href="mailto:associazioneforopiossasco@gmail.com"
+                        style={{
+                          color: "#034a5a",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        associazioneforopiossasco@gmail.com
+                      </a>
+                    </p>
                   </div>
                 </div>
                 <button

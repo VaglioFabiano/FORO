@@ -108,7 +108,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: "Strumento per abbinare i colori per i daltonici",
       icon: <FcLandscape size={iconSize} />,
       component: AiutoAbbinamenti,
-      minLevel: 2,
+      minLevel: 0,
     },
     {
       id: "telegram-debug",

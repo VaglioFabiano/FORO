@@ -71,6 +71,11 @@ async function sendEmail(to, subject, htmlContent, textContent) {
 
 function createConfirmationTemplate(prenotazione, evento) {
   const orarioTesto = evento.orario ? ` alle ore ${evento.orario}` : "";
+  const bigliettiTesto =
+    prenotazione.num_partecipanti === 1
+      ? "1 biglietto"
+      : `${prenotazione.num_partecipanti} biglietti`;
+
   return `
     <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;">
       <div style="background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto;">
@@ -78,9 +83,20 @@ function createConfirmationTemplate(prenotazione, evento) {
         <p>Ciao <strong>${prenotazione.nome}</strong>,</p>
         <p>Ti confermiamo la tua iscrizione all'evento:</p>
         <h3 style="color: #333;">${evento.titolo}</h3>
+        <p><strong>Numero biglietti:</strong> ${bigliettiTesto}</p>
         <p><strong>Data:</strong> ${new Date(evento.data_evento).toLocaleDateString("it-IT")}${orarioTesto}</p>
         <p><strong>Luogo:</strong> Via Alfieri, 4 - Piossasco (TO)</p>
-        <hr>
+        
+        <div style="margin-top: 25px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #034a5a; border-radius: 4px;">
+          <p style="margin: 0; font-size: 14px; color: #555; line-height: 1.5;">
+            <strong>Gestione prenotazione:</strong> se per qualsiasi motivo non potrai più partecipare, 
+            ti chiediamo la cortesia di avvisarci per liberare i posti. 
+            Puoi annullare la prenotazione rispondendo a questa mail o scrivendo a: 
+            <a href="mailto:associazioneforopiossasco@gmail.com" style="color: #034a5a; font-weight: bold; text-decoration: none;">associazioneforopiossasco@gmail.com</a>
+          </p>
+        </div>
+        
+        <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;">
         <p style="font-size: 12px; color: #666;">Associazione Foro</p>
       </div>
     </div>
