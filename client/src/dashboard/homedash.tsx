@@ -8,12 +8,13 @@ import ProfiloUtente from "./ProfiloUtente";
 import Turni from "./Turni";
 import Presenze from "./presenze";
 import GestisciEventi from "./GestisciEventi";
+import Tesserati from "./Tesserati"; // Import aggiunto
 import GestioneTurno from "./GestioneTurno";
 import AiutoAbbinamenti from "./AiutoAbbinamenti";
 import VerbaliAssemblea from "./VerbaliAssemblea";
 import "../style/homeDash.css";
 
-import { FaTelegram } from "react-icons/fa";
+import { FaTelegram, FaIdCard } from "react-icons/fa"; // Aggiunto FaIdCard per la tessera
 import {
   FcCalendar,
   FcTodoList,
@@ -100,6 +101,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: "Crea e gestisci eventi e prenotazioni",
       icon: <FcPlanner size={iconSize} />,
       component: GestisciEventi,
+      minLevel: 2,
+    },
+    {
+      id: "gestione-tesserati",
+      title: "Gestione Tesserati",
+      description: "Aggiungi, visualizza o rimuovi i tesserati",
+      icon: <FaIdCard size={iconSize} color="#8B4513" />,
+      component: Tesserati,
       minLevel: 2,
     },
     {

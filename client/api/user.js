@@ -40,7 +40,7 @@ function hashPassword(password, salt) {
   }
 }
 
-// --- ⬇️ NUOVE FUNZIONI PER CHAT STILISTA (GEMINI + FALLBACK) ⬇️ ---
+// --- FUNZIONI PER CHAT STILISTA (GEMINI + FALLBACK) ---
 
 /**
  * Funzione helper per convertire RGB in HEX
@@ -79,12 +79,12 @@ async function handleChatStilista(req, res) {
   // --- TENTATIVO 1: GOOGLE GEMINI ---
   if (process.env.GEMINI_API_KEY) {
     try {
-      console.log("🚀 Tento con Gemini...");
+      console.log("Tento con Gemini...");
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
       const model = genAI.getGenerativeModel({
         model: "gemini-2.0-flash-lite-preview-02-05",
         systemInstruction:
-          "Sei Heidi, una consulente di stile esperta, amichevole ed empatica. Aiuti le persone comuni ad abbinare i vestiti. Rispondi in italiano, sii concisa e usa emoji.",
+          "Sei Heidi, una consulente di stile esperta, amichevole ed empatica. Aiuti le persone comuni ad abbinare i vestiti. Rispondi in italiano, sii concisa.",
       });
 
       // Converti history per Gemini
@@ -106,8 +106,8 @@ async function handleChatStilista(req, res) {
         choices: [{ message: { role: "assistant", content: text } }],
       });
     } catch (geminiError) {
-      console.error("⚠️ Gemini ha fallito:", geminiError.message);
-      console.log("🔄 Passo al fallback (OpenRouter)...");
+      console.error("Gemini ha fallito:", geminiError.message);
+      console.log("Passo al fallback (OpenRouter)...");
       // Non ritorniamo errore, lasciamo scorrere il codice verso OpenRouter
     }
   }
@@ -156,7 +156,7 @@ async function handleChatStilista(req, res) {
           model: "tngtech/deepseek-r1t2-chimera:free", // O il modello che preferisci
           messages: messages,
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -179,7 +179,7 @@ async function handleChatStilista(req, res) {
   }
 }
 
-// --- ⬆️ FINE NUOVE FUNZIONI ⬆️ ---
+// --- FINE NUOVE FUNZIONI ---
 
 // --- Funzioni CRUD Utenti (CODICE ORIGINALE RESTAURATO) ---
 
@@ -466,13 +466,177 @@ async function deleteUser(req, res) {
   }
 }
 
-// --- HANDLER PRINCIPALE (MODIFICATO PER SMISTARE TRA CHAT E UTENTI) ---
+// --- FUNZIONI CRUD TESSERATI ---
+
+// Handler per creare un nuovo tesserato (POST)
+async function createTesserato(req, res) {
+  try {
+    if (!client) throw new Error("Database non connesso");
+    const { nome, cognome, email } = req.body;
+
+    if (!nome?.trim() || !cognome?.trim() || !email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Tutti i campi sono obbligatori",
+      });
+    }
+
+    const existingEmail = await client.execute({
+      sql: "SELECT id FROM tesserati WHERE email = ?",
+      args: [email.trim()],
+    });
+
+    if (existingEmail.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Email già registrata",
+      });
+    }
+
+    const result = await client.execute({
+      sql: "INSERT INTO tesserati (nome, cognome, email) VALUES (?, ?, ?) RETURNING *",
+      args: [nome.trim(), cognome.trim(), email.trim()],
+    });
+
+    return res.status(201).json({
+      success: true,
+      tesserato: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Errore nella creazione tesserato:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Errore interno del server",
+    });
+  }
+}
+
+// Handler per ottenere tutti i tesserati (GET)
+async function getTesserati(req, res) {
+  try {
+    if (!client) throw new Error("Database non connesso");
+
+    const result = await client.execute(
+      "SELECT * FROM tesserati ORDER BY id DESC",
+    );
+
+    const tesserati = result.rows.map((row) => ({
+      id: row.id,
+      nome: row.nome,
+      cognome: row.cognome,
+      email: row.email,
+      data_iscrizione: row.data_iscrizione,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      tesserati: tesserati,
+      count: tesserati.length,
+    });
+  } catch (error) {
+    console.error("Errore nel recupero tesserati:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Errore interno del server",
+    });
+  }
+}
+
+// Handler per aggiornare un tesserato (PUT)
+async function updateTesserato(req, res) {
+  try {
+    if (!client) throw new Error("Database non connesso");
+    const { id, nome, cognome, email } = req.body;
+
+    if (!id || !nome?.trim() || !cognome?.trim() || !email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: "Dati mancanti",
+      });
+    }
+
+    const emailCheck = await client.execute({
+      sql: "SELECT id FROM tesserati WHERE email = ? AND id != ?",
+      args: [email.trim(), id],
+    });
+
+    if (emailCheck.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Email già registrata per un altro utente",
+      });
+    }
+
+    const result = await client.execute({
+      sql: "UPDATE tesserati SET nome = ?, cognome = ?, email = ? WHERE id = ? RETURNING *",
+      args: [nome.trim(), cognome.trim(), email.trim(), id],
+    });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Tesserato non trovato",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      tesserato: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Errore nell'aggiornamento tesserato:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Errore interno del server",
+    });
+  }
+}
+
+// Handler per eliminare un tesserato (DELETE)
+async function deleteTesserato(req, res) {
+  try {
+    if (!client) throw new Error("Database non connesso");
+    const id = req.query.id || req.body.id;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: "ID tesserato mancante",
+      });
+    }
+
+    const result = await client.execute({
+      sql: "DELETE FROM tesserati WHERE id = ? RETURNING id",
+      args: [id],
+    });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Tesserato non trovato",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Tesserato eliminato con successo",
+    });
+  } catch (error) {
+    console.error("Errore nell'eliminazione tesserato:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Errore interno del server",
+    });
+  }
+}
+
+// --- HANDLER PRINCIPALE ---
 export default async function handler(req, res) {
   console.log(`API /user chiamata con metodo: ${req.method}`); // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
+    "GET, POST, PUT, DELETE, OPTIONS",
   );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
@@ -480,39 +644,42 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // --- ⬇️ SMISTAMENTO RICHIESTE ⬇️ ---
-  // Controlliamo se è una richiesta POST per la chat.
-  // Lo facciamo prima di tentare la connessione al DB, perché la chat non ne ha bisogno.
+  // --- SMISTAMENTO RICHIESTE CHAT ---
   if (req.method === "POST" && req.body.action === "chatStilista") {
     console.log("Handling POST request for [chatStilista]...");
     return await handleChatStilista(req, res);
   }
-  // --- ⬆️ FINE SMISTAMENTO ⬆️ ---
 
-  // Se non è una richiesta di chat, prosegue con la normale logica di gestione UTENTI
   try {
     // Test connessione DB
-    console.log("Testing database connection for user management...");
+    console.log("Testing database connection...");
     if (!client)
       throw new Error("Configurazione DB mancante o connessione fallita");
 
     const testResult = await client.execute("SELECT 1 as test");
     console.log("Database connection successful:", testResult);
 
+    // Controlliamo l'entità richiesta (utente o tesserato)
+    const isTesserato =
+      req.query.entity === "tesserato" || req.body.entity === "tesserato";
+
     switch (req.method) {
       case "GET":
-        console.log("Handling GET request for [getUsers]...");
-        return await getUsers(req, res);
+        return isTesserato
+          ? await getTesserati(req, res)
+          : await getUsers(req, res);
       case "POST":
-        // Arriva qui solo se 'action' NON è 'chatStilista'
-        console.log("Handling POST request for [createUser]...");
-        return await createUser(req, res);
+        return isTesserato
+          ? await createTesserato(req, res)
+          : await createUser(req, res);
       case "PUT":
-        console.log("Handling PUT request for [updateUser]...");
-        return await updateUser(req, res);
+        return isTesserato
+          ? await updateTesserato(req, res)
+          : await updateUser(req, res);
       case "DELETE":
-        console.log("Handling DELETE request for [deleteUser]...");
-        return await deleteUser(req, res);
+        return isTesserato
+          ? await deleteTesserato(req, res)
+          : await deleteUser(req, res);
       default:
         console.log(`Metodo non supportato: ${req.method}`);
         return res.status(405).json({
