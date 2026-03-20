@@ -272,26 +272,21 @@ async function createUser(req, res) {
 async function getUsers(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
-    console.log("Tentativo di recupero utenti...");
+    
     const result = await client.execute("SELECT * FROM users");
-    console.log("Query eseguita, numero righe:", result.rows.length);
-    if (result.rows.length > 0) {
-      console.log("Prima riga:", JSON.stringify(result.rows[0], null, 2));
-    }
+    
 
     const users = result.rows.map((row) => ({
-      id: row.id,
+      id: Number(row.id), 
       name: row.name,
       surname: row.surname,
       username: row.username,
       tel: row.tel,
-      level: row.level,
+      level: Number(row.level), 
       created_at: row.created_at,
       last_login: row.last_login,
-      telegram_chat_id: row.telegram_chat_id,
+      telegram_chat_id: row.telegram_chat_id ? Number(row.telegram_chat_id) : null,
     }));
-
-    console.log("Utenti trasformati:", users.length);
 
     return res.status(200).json({
       success: true,
@@ -302,7 +297,6 @@ async function getUsers(req, res) {
     console.error("Errore dettagliato nel recupero utenti:", {
       message: error.message,
       stack: error.stack,
-      name: error.name,
     });
     return res.status(500).json({
       success: false,
