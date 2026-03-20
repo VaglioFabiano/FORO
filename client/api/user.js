@@ -272,21 +272,17 @@ async function createUser(req, res) {
 async function getUsers(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
+    console.log("Tentativo di recupero utenti...");
     
     const result = await client.execute("SELECT * FROM users");
-    
 
-    const users = result.rows.map((row) => ({
-      id: Number(row.id), 
-      name: row.name,
-      surname: row.surname,
-      username: row.username,
-      tel: row.tel,
-      level: Number(row.level), 
-      created_at: row.created_at,
-      last_login: row.last_login,
-      telegram_chat_id: row.telegram_chat_id ? Number(row.telegram_chat_id) : null,
-    }));
+    const users = result.rows.map((row) => {
+      const safeUser = {};
+      for (const [key, value] of Object.entries(row)) {
+        safeUser[key] = typeof value === "bigint" ? Number(value) : value;
+      }
+      return safeUser;
+    });
 
     return res.status(200).json({
       success: true,
@@ -294,10 +290,7 @@ async function getUsers(req, res) {
       count: users.length,
     });
   } catch (error) {
-    console.error("Errore dettagliato nel recupero utenti:", {
-      message: error.message,
-      stack: error.stack,
-    });
+    console.error("Errore nel recupero utenti:", error);
     return res.status(500).json({
       success: false,
       error: "Errore interno del server",
@@ -626,7 +619,7 @@ async function deleteTesserato(req, res) {
 
 // --- HANDLER PRINCIPALE ---
 export default async function handler(req, res) {
-  console.log(`API /user chiamata con metodo: ${req.method}`); // CORS headers
+  console.log(`API /user chiamata con metodo: ${req.method}`); 
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -638,14 +631,12 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // --- SMISTAMENTO RICHIESTE CHAT ---
-  if (req.method === "POST" && req.body.action === "chatStilista") {
+  if (req.method === "POST" && req.body?.action === "chatStilista") {
     console.log("Handling POST request for [chatStilista]...");
     return await handleChatStilista(req, res);
   }
 
   try {
-    // Test connessione DB
     console.log("Testing database connection...");
     if (!client)
       throw new Error("Configurazione DB mancante o connessione fallita");
@@ -653,9 +644,8 @@ export default async function handler(req, res) {
     const testResult = await client.execute("SELECT 1 as test");
     console.log("Database connection successful:", testResult);
 
-    // Controlliamo l'entità richiesta (utente o tesserato)
     const isTesserato =
-      req.query.entity === "tesserato" || req.body.entity === "tesserato";
+      req.query.entity === "tesserato" || req.body?.entity === "tesserato";
 
     switch (req.method) {
       case "GET":
