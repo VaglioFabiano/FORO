@@ -21,8 +21,6 @@ let client = null;
 // Gestione errore se mancano le variabili, ma senza bloccare l'import se serve solo la chat
 if (!config.url || !config.authToken) {
   console.error("Mancano le variabili d'ambiente per il DB!");
-  // Non lanciamo errore bloccante qui per permettere alla chat di funzionare anche senza DB
-  // Ma le funzioni DB falliranno se chiamate.
 } else {
   client = createClient(config);
   console.log("Client database creato con successo");
@@ -42,9 +40,6 @@ function hashPassword(password, salt) {
 
 // --- FUNZIONI PER CHAT STILISTA (GEMINI + FALLBACK) ---
 
-/**
- * Funzione helper per convertire RGB in HEX
- */
 function rgbToHex(r, g, b) {
   return (
     "#" +
@@ -52,11 +47,6 @@ function rgbToHex(r, g, b) {
   );
 }
 
-/**
- * Gestisce la logica della chat:
- * 1. Prova Google Gemini (Veloce/Gratis)
- * 2. Se fallisce, usa OpenRouter (Vecchio metodo lento ma funzionante)
- */
 async function handleChatStilista(req, res) {
   console.log("Esecuzione di handleChatStilista...");
 
@@ -67,12 +57,10 @@ async function handleChatStilista(req, res) {
       .json({ success: false, error: "Messaggio utente mancante" });
   }
 
-  // --- Preparazione contesto (comune a entrambi) ---
   let colorContext = "";
   let colorHexListStr = "";
   if (colors && colors.length > 0) {
     colorHexListStr = colors.map((c) => rgbToHex(c.r, c.g, c.b)).join(", ");
-    // Formattazione per il prompt
     colorContext = `[Ho questi colori: ${colorHexListStr}] `;
   }
 
@@ -87,7 +75,6 @@ async function handleChatStilista(req, res) {
           "Sei Heidi, una consulente di stile esperta, amichevole ed empatica. Aiuti le persone comuni ad abbinare i vestiti. Rispondi in italiano, sii concisa.",
       });
 
-      // Converti history per Gemini
       const chatHistory = Array.isArray(history)
         ? history.map((msg) => ({
             role: msg.role === "assistant" ? "model" : "user",
@@ -108,16 +95,14 @@ async function handleChatStilista(req, res) {
     } catch (geminiError) {
       console.error("Gemini ha fallito:", geminiError.message);
       console.log("Passo al fallback (OpenRouter)...");
-      // Non ritorniamo errore, lasciamo scorrere il codice verso OpenRouter
     }
   }
 
-  // --- TENTATIVO 2: OPENROUTER (CODICE ORIGINALE RIPRISTINATO COME FALLBACK) ---
+  // --- TENTATIVO 2: OPENROUTER ---
   try {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       console.error("OPENROUTER_API_KEY non è impostata!");
-      // Se anche questo manca/fallisce, diamo errore
       return res.status(500).json({
         success: false,
         error: "Configurazione AI mancante (Né Gemini né OpenRouter).",
@@ -133,13 +118,9 @@ async function handleChatStilista(req, res) {
       messages.push(...history);
     }
 
-    // Logica originale per invio colori solo al primo messaggio
     let finalUserPrompt = userPrompt;
     if (history.length === 0 && colorContext) {
       finalUserPrompt = `${colorContext} ${userPrompt}`;
-    } else if (colorContext) {
-      // Se vuoi reinviare i colori anche dopo, scommenta sotto, altrimenti lascia logica originale
-      // finalUserPrompt = `${colorContext} ${userPrompt}`;
     }
 
     messages.push({ role: "user", content: finalUserPrompt });
@@ -153,7 +134,7 @@ async function handleChatStilista(req, res) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "tngtech/deepseek-r1t2-chimera:free", // O il modello che preferisci
+          model: "tngtech/deepseek-r1t2-chimera:free",
           messages: messages,
         }),
       },
@@ -179,15 +160,11 @@ async function handleChatStilista(req, res) {
   }
 }
 
-// --- FINE NUOVE FUNZIONI ---
-
 // --- Funzioni CRUD Utenti (CODICE ORIGINALE RESTAURATO) ---
-
-// Handler per creare un nuovo utente (POST)
 async function createUser(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
-    const { name, surname, username, tel, level, password } = req.body; // Validazione input
+    const { name, surname, username, tel, level, password } = req.body;
 
     if (
       !name?.trim() ||
@@ -196,19 +173,17 @@ async function createUser(req, res) {
       !tel?.trim() ||
       !password
     ) {
-      return res.status(400).json({
-        success: false,
-        error: "Tutti i campi sono obbligatori",
-      });
+      return res
+        .status(400)
+        .json({ success: false, error: "Tutti i campi sono obbligatori" });
     }
 
     const levelNum = parseInt(level);
     if (isNaN(levelNum)) {
-      return res.status(400).json({
-        success: false,
-        error: "Livello non valido",
-      });
-    } // Validazione username univoco
+      return res
+        .status(400)
+        .json({ success: false, error: "Livello non valido" });
+    }
 
     const existingUsername = await client.execute({
       sql: "SELECT id FROM users WHERE username = ?",
@@ -216,11 +191,10 @@ async function createUser(req, res) {
     });
 
     if (existingUsername.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Username già registrato",
-      });
-    } // Validazione telefono univoco
+      return res
+        .status(400)
+        .json({ success: false, error: "Username già registrato" });
+    }
 
     const existingTel = await client.execute({
       sql: "SELECT id FROM users WHERE tel = ?",
@@ -228,11 +202,10 @@ async function createUser(req, res) {
     });
 
     if (existingTel.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Telefono già registrato",
-      });
-    } // Creazione utente - usa username come salt
+      return res
+        .status(400)
+        .json({ success: false, error: "Telefono già registrato" });
+    }
 
     const salt = username.trim();
     const passwordHash = hashPassword(password, salt);
@@ -253,10 +226,7 @@ async function createUser(req, res) {
       ],
     });
 
-    return res.status(201).json({
-      success: true,
-      user: result.rows[0],
-    });
+    return res.status(201).json({ success: true, user: result.rows[0] });
   } catch (error) {
     console.error("Errore nella creazione utente:", error);
     return res.status(500).json({
@@ -268,12 +238,9 @@ async function createUser(req, res) {
   }
 }
 
-// Handler per ottenere tutti gli utenti (GET)
 async function getUsers(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
-    console.log("Tentativo di recupero utenti...");
-    
     const result = await client.execute("SELECT * FROM users");
 
     const users = result.rows.map((row) => {
@@ -284,22 +251,21 @@ async function getUsers(req, res) {
       return safeUser;
     });
 
-    return res.status(200).json({
-      success: true,
-      users: users,
-      count: users.length,
-    });
+    return res
+      .status(200)
+      .json({ success: true, users: users, count: users.length });
   } catch (error) {
     console.error("Errore nel recupero utenti:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Errore interno del server",
-      details: error.message,
-    });
+    return res
+      .status(500)
+      .json({
+        success: false,
+        error: "Errore interno del server",
+        details: error.message,
+      });
   }
 }
 
-// Handler per aggiornare un utente (PUT)
 async function updateUser(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
@@ -312,19 +278,15 @@ async function updateUser(req, res) {
       !username?.trim() ||
       !tel?.trim()
     ) {
-      return res.status(400).json({
-        success: false,
-        error: "Dati mancanti",
-      });
+      return res.status(400).json({ success: false, error: "Dati mancanti" });
     }
 
     const levelNum = parseInt(level);
     if (isNaN(levelNum)) {
-      return res.status(400).json({
-        success: false,
-        error: "Livello non valido",
-      });
-    } // Verifica esistenza utente
+      return res
+        .status(400)
+        .json({ success: false, error: "Livello non valido" });
+    }
 
     const targetUser = await client.execute({
       sql: "SELECT id, level, username, tel FROM users WHERE id = ?",
@@ -332,11 +294,10 @@ async function updateUser(req, res) {
     });
 
     if (targetUser.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: "Utente non trovato",
-      });
-    } // Verifica username univoco (solo se è diverso da quello attuale)
+      return res
+        .status(404)
+        .json({ success: false, error: "Utente non trovato" });
+    }
 
     if (username.trim() !== targetUser.rows[0].username) {
       const usernameCheck = await client.execute({
@@ -345,12 +306,11 @@ async function updateUser(req, res) {
       });
 
       if (usernameCheck.rows.length > 0) {
-        return res.status(400).json({
-          success: false,
-          error: "Username già registrato",
-        });
+        return res
+          .status(400)
+          .json({ success: false, error: "Username già registrato" });
       }
-    } // Verifica telefono univoco (solo se è diverso da quello attuale)
+    }
 
     if (tel.trim() !== targetUser.rows[0].tel) {
       const telCheck = await client.execute({
@@ -359,12 +319,11 @@ async function updateUser(req, res) {
       });
 
       if (telCheck.rows.length > 0) {
-        return res.status(400).json({
-          success: false,
-          error: "Telefono già registrato",
-        });
+        return res
+          .status(400)
+          .json({ success: false, error: "Telefono già registrato" });
       }
-    } // Costruzione query dinamica
+    }
 
     let updateSql =
       "UPDATE users SET name = ?, surname = ?, username = ?, tel = ?, level = ?";
@@ -378,12 +337,14 @@ async function updateUser(req, res) {
 
     if (password?.trim()) {
       if (password.length < 6) {
-        return res.status(400).json({
-          success: false,
-          error: "Password troppo corta (minimo 6 caratteri)",
-        });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            error: "Password troppo corta (minimo 6 caratteri)",
+          });
       }
-      const salt = username.trim(); // Usa il nuovo username come salt
+      const salt = username.trim();
       const passwordHash = hashPassword(password, salt);
       updateSql += ", password_hash = ?, salt = ?";
       updateArgs.push(passwordHash, salt);
@@ -392,15 +353,9 @@ async function updateUser(req, res) {
     updateSql += " WHERE id = ? RETURNING *";
     updateArgs.push(id);
 
-    const result = await client.execute({
-      sql: updateSql,
-      args: updateArgs,
-    });
+    const result = await client.execute({ sql: updateSql, args: updateArgs });
 
-    return res.status(200).json({
-      success: true,
-      user: result.rows[0],
-    });
+    return res.status(200).json({ success: true, user: result.rows[0] });
   } catch (error) {
     console.error("Errore nell'aggiornamento utente:", error);
     return res.status(500).json({
@@ -412,17 +367,15 @@ async function updateUser(req, res) {
   }
 }
 
-// Handler per eliminare un utente (DELETE)
 async function deleteUser(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
     const id = req.query.id || req.body.id;
 
     if (!id) {
-      return res.status(400).json({
-        success: false,
-        error: "ID utente mancante",
-      });
+      return res
+        .status(400)
+        .json({ success: false, error: "ID utente mancante" });
     }
 
     const result = await client.execute({
@@ -431,17 +384,18 @@ async function deleteUser(req, res) {
     });
 
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: "Utente non trovato",
-      });
+      return res
+        .status(404)
+        .json({ success: false, error: "Utente non trovato" });
     }
 
-    return res.status(200).json({
-      success: true,
-      deletedUser: result.rows[0],
-      message: "Utente eliminato con successo",
-    });
+    return res
+      .status(200)
+      .json({
+        success: true,
+        deletedUser: result.rows[0],
+        message: "Utente eliminato con successo",
+      });
   } catch (error) {
     console.error("Errore nell'eliminazione utente:", error);
     return res.status(500).json({
@@ -459,30 +413,37 @@ async function deleteUser(req, res) {
 async function createTesserato(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
-    const { nome, cognome, email } = req.body;
+    const { nome, cognome, email, numero_di_telefono } = req.body;
 
-    if (!nome?.trim() || !cognome?.trim() || !email?.trim()) {
+    // Solo nome e cognome sono obbligatori
+    if (!nome?.trim() || !cognome?.trim()) {
       return res.status(400).json({
         success: false,
-        error: "Tutti i campi sono obbligatori",
+        error: "Nome e cognome sono obbligatori",
       });
     }
 
-    const existingEmail = await client.execute({
-      sql: "SELECT id FROM tesserati WHERE email = ?",
-      args: [email.trim()],
-    });
+    const cleanEmail = email?.trim() || null;
+    const cleanTelefono = numero_di_telefono?.trim() || null;
 
-    if (existingEmail.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Email già registrata",
+    // Controllo univocità email solo se fornita
+    if (cleanEmail) {
+      const existingEmail = await client.execute({
+        sql: "SELECT id FROM tesserati WHERE email = ?",
+        args: [cleanEmail],
       });
+
+      if (existingEmail.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Email già registrata",
+        });
+      }
     }
 
     const result = await client.execute({
-      sql: "INSERT INTO tesserati (nome, cognome, email) VALUES (?, ?, ?) RETURNING *",
-      args: [nome.trim(), cognome.trim(), email.trim()],
+      sql: "INSERT INTO tesserati (nome, cognome, email, numero_di_telefono) VALUES (?, ?, ?, ?) RETURNING *",
+      args: [nome.trim(), cognome.trim(), cleanEmail, cleanTelefono],
     });
 
     return res.status(201).json({
@@ -512,6 +473,7 @@ async function getTesserati(req, res) {
       nome: row.nome,
       cognome: row.cognome,
       email: row.email,
+      numero_di_telefono: row.numero_di_telefono,
       data_iscrizione: row.data_iscrizione,
     }));
 
@@ -533,30 +495,35 @@ async function getTesserati(req, res) {
 async function updateTesserato(req, res) {
   try {
     if (!client) throw new Error("Database non connesso");
-    const { id, nome, cognome, email } = req.body;
+    const { id, nome, cognome, email, numero_di_telefono } = req.body;
 
-    if (!id || !nome?.trim() || !cognome?.trim() || !email?.trim()) {
+    if (!id || !nome?.trim() || !cognome?.trim()) {
       return res.status(400).json({
         success: false,
-        error: "Dati mancanti",
+        error: "Dati obbligatori mancanti (ID, Nome, Cognome)",
       });
     }
 
-    const emailCheck = await client.execute({
-      sql: "SELECT id FROM tesserati WHERE email = ? AND id != ?",
-      args: [email.trim(), id],
-    });
+    const cleanEmail = email?.trim() || null;
+    const cleanTelefono = numero_di_telefono?.trim() || null;
 
-    if (emailCheck.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Email già registrata per un altro utente",
+    if (cleanEmail) {
+      const emailCheck = await client.execute({
+        sql: "SELECT id FROM tesserati WHERE email = ? AND id != ?",
+        args: [cleanEmail, id],
       });
+
+      if (emailCheck.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Email già registrata per un altro utente",
+        });
+      }
     }
 
     const result = await client.execute({
-      sql: "UPDATE tesserati SET nome = ?, cognome = ?, email = ? WHERE id = ? RETURNING *",
-      args: [nome.trim(), cognome.trim(), email.trim(), id],
+      sql: "UPDATE tesserati SET nome = ?, cognome = ?, email = ?, numero_di_telefono = ? WHERE id = ? RETURNING *",
+      args: [nome.trim(), cognome.trim(), cleanEmail, cleanTelefono, id],
     });
 
     if (result.rows.length === 0) {
@@ -619,7 +586,7 @@ async function deleteTesserato(req, res) {
 
 // --- HANDLER PRINCIPALE ---
 export default async function handler(req, res) {
-  console.log(`API /user chiamata con metodo: ${req.method}`); 
+  console.log(`API /user chiamata con metodo: ${req.method}`);
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",

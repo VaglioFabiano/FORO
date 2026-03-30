@@ -5,7 +5,8 @@ interface Tesserato {
   id: number;
   nome: string;
   cognome: string;
-  email: string;
+  email?: string; // Modificato in opzionale
+  numero_di_telefono?: string; // Aggiunto
   data_iscrizione: string;
 }
 
@@ -76,7 +77,9 @@ const Tesserati: React.FC = () => {
       return (
         t.nome.toLowerCase().includes(query) ||
         t.cognome.toLowerCase().includes(query) ||
-        t.email.toLowerCase().includes(query)
+        (t.email && t.email.toLowerCase().includes(query)) ||
+        (t.numero_di_telefono &&
+          t.numero_di_telefono.toLowerCase().includes(query))
       );
     });
 
@@ -91,8 +94,8 @@ const Tesserati: React.FC = () => {
         valueA = a.cognome.toLowerCase();
         valueB = b.cognome.toLowerCase();
       } else if (sortBy === "email") {
-        valueA = a.email.toLowerCase();
-        valueB = b.email.toLowerCase();
+        valueA = a.email ? a.email.toLowerCase() : "";
+        valueB = b.email ? b.email.toLowerCase() : "";
       }
 
       if (sortOrder === "asc")
@@ -111,7 +114,13 @@ const Tesserati: React.FC = () => {
     if (tesserato) {
       setEditingTesserato({ ...tesserato });
     } else {
-      setEditingTesserato({ id: 0, nome: "", cognome: "", email: "" });
+      setEditingTesserato({
+        id: 0,
+        nome: "",
+        cognome: "",
+        email: "",
+        numero_di_telefono: "",
+      });
     }
     setIsModalOpen(true);
   };
@@ -133,8 +142,10 @@ const Tesserati: React.FC = () => {
       setMessage({ type: "error", text: "Nome e cognome sono obbligatori" });
       return false;
     }
+
+    // Controlla il formato solo se l'email è stata effettivamente inserita
     if (
-      !editingTesserato?.email?.trim() ||
+      editingTesserato.email?.trim() &&
       !/\S+@\S+\.\S+/.test(editingTesserato.email)
     ) {
       setMessage({ type: "error", text: "Email non valida" });
@@ -160,6 +171,7 @@ const Tesserati: React.FC = () => {
         nome: editingTesserato.nome,
         cognome: editingTesserato.cognome,
         email: editingTesserato.email,
+        numero_di_telefono: editingTesserato.numero_di_telefono,
       };
 
       const response = await fetch("/api/user", {
@@ -270,7 +282,7 @@ const Tesserati: React.FC = () => {
           <div style={{ position: "relative" }}>
             <input
               type="text"
-              placeholder="Cerca per nome, cognome o email..."
+              placeholder="Cerca per nome, cognome, email o telefono..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="tesserati-search-input"
@@ -316,6 +328,7 @@ const Tesserati: React.FC = () => {
               <th>Nome</th>
               <th>Cognome</th>
               <th>Email</th>
+              <th>Telefono</th>
               <th>Data Iscrizione</th>
               <th>Azioni</th>
             </tr>
@@ -326,7 +339,8 @@ const Tesserati: React.FC = () => {
                 <td>{t.id}</td>
                 <td>{t.nome}</td>
                 <td>{t.cognome}</td>
-                <td>{t.email}</td>
+                <td>{t.email || "-"}</td>
+                <td>{t.numero_di_telefono || "-"}</td>
                 <td>{formatDate(t.data_iscrizione)}</td>
                 <td>
                   <div className="tesserati-actions">
@@ -378,7 +392,7 @@ const Tesserati: React.FC = () => {
             <form onSubmit={handleSubmit} className="tesserati-edit-form">
               <div className="tesserati-form-row">
                 <div className="tesserati-form-group">
-                  <label>Nome</label>
+                  <label>Nome *</label>
                   <input
                     type="text"
                     name="nome"
@@ -388,7 +402,7 @@ const Tesserati: React.FC = () => {
                   />
                 </div>
                 <div className="tesserati-form-group">
-                  <label>Cognome</label>
+                  <label>Cognome *</label>
                   <input
                     type="text"
                     name="cognome"
@@ -400,14 +414,23 @@ const Tesserati: React.FC = () => {
               </div>
 
               <div className="tesserati-form-row">
-                <div className="tesserati-form-group" style={{ width: "100%" }}>
+                <div className="tesserati-form-group">
                   <label>Email</label>
                   <input
                     type="email"
                     name="email"
-                    value={editingTesserato.email}
+                    value={editingTesserato.email || ""}
                     onChange={handleInputChange}
-                    required
+                    // rimosso il required
+                  />
+                </div>
+                <div className="tesserati-form-group">
+                  <label>Telefono</label>
+                  <input
+                    type="text"
+                    name="numero_di_telefono"
+                    value={editingTesserato.numero_di_telefono || ""}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
