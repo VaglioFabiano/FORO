@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { UserOptions } from "jspdf-autotable";
 import "../style/tesserati.css";
 
+// --- INTERFACCE ---
 interface Tesserato {
   id: number;
   nome: string;
   cognome: string;
-  email?: string; // Modificato in opzionale
-  numero_di_telefono?: string; // Aggiunto
+  email?: string;
+  numero_di_telefono?: string;
   data_iscrizione: string;
 }
 
@@ -15,7 +19,13 @@ interface Message {
   text: string;
 }
 
+// Estensione del tipo jsPDF per includere il plugin autoTable
+interface jsPDFWithPlugin extends jsPDF {
+  autoTable: (options: UserOptions) => jsPDF;
+}
+
 const Tesserati: React.FC = () => {
+  // --- STATO ---
   const [tesserati, setTesserati] = useState<Tesserato[]>([]);
   const [filteredTesserati, setFilteredTesserati] = useState<Tesserato[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -29,6 +39,7 @@ const Tesserati: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  // --- EFFETTI ---
   useEffect(() => {
     fetchTesserati();
   }, []);
@@ -37,6 +48,7 @@ const Tesserati: React.FC = () => {
     filterAndSortTesserati();
   }, [tesserati, sortBy, sortOrder, searchQuery]);
 
+  // --- API ---
   const fetchTesserati = async () => {
     setLoading(true);
     setMessage(null);
@@ -70,6 +82,7 @@ const Tesserati: React.FC = () => {
     }
   };
 
+  // --- LOGICA FILTRI E ORDINAMENTO ---
   const filterAndSortTesserati = () => {
     let filtered = tesserati.filter((t) => {
       if (searchQuery.trim() === "") return true;
@@ -106,10 +119,58 @@ const Tesserati: React.FC = () => {
     setFilteredTesserati(filtered);
   };
 
-  const clearSearch = () => {
-    setSearchQuery("");
+  // --- FUNZIONE STAMPA PDF ---
+  const handleDownloadPdf = () => {
+    try {
+      const doc = new jsPDF() as jsPDFWithPlugin;
+      const today = new Date().toLocaleDateString("it-IT");
+
+      // Intestazione
+      doc.setFontSize(18);
+      doc.text("Elenco tesserati FORO", 14, 20);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Documento generato il: ${today}`, 14, 28);
+      doc.text(`Totale record: ${filteredTesserati.length}`, 14, 33);
+
+      // Preparazione dati tabella
+      const tableRows = filteredTesserati.map((t) => [
+        t.id,
+        t.nome,
+        t.cognome,
+        t.email || "-",
+        t.numero_di_telefono || "-",
+        formatDate(t.data_iscrizione),
+      ]);
+
+      // Generazione tabella
+      doc.autoTable({
+        startY: 40,
+        head: [
+          ["ID", "Nome", "Cognome", "Email", "Telefono", "Data Iscrizione"],
+        ],
+        body: tableRows,
+        theme: "striped",
+        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: {
+          0: { cellWidth: 15 },
+          5: { cellWidth: 35 },
+        },
+      });
+
+      doc.save("Elenco_tesserati_FORO.pdf");
+      setMessage({ type: "success", text: "PDF generato con successo" });
+    } catch (error) {
+      console.error("Errore generazione PDF:", error);
+      setMessage({
+        type: "error",
+        text: "Errore durante la creazione del PDF",
+      });
+    }
   };
 
+  // --- GESTIONE MODALE E FORM ---
   const openModal = (tesserato?: Tesserato) => {
     if (tesserato) {
       setEditingTesserato({ ...tesserato });
@@ -142,8 +203,6 @@ const Tesserati: React.FC = () => {
       setMessage({ type: "error", text: "Nome e cognome sono obbligatori" });
       return false;
     }
-
-    // Controlla il formato solo se l'email è stata effettivamente inserita
     if (
       editingTesserato.email?.trim() &&
       !/\S+@\S+\.\S+/.test(editingTesserato.email)
@@ -193,7 +252,6 @@ const Tesserati: React.FC = () => {
       await fetchTesserati();
       closeModal();
     } catch (error) {
-      console.error("Errore salvataggio:", error);
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Errore di connessione",
@@ -228,7 +286,6 @@ const Tesserati: React.FC = () => {
       });
       await fetchTesserati();
     } catch (error) {
-      console.error("Errore eliminazione:", error);
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Errore di connessione",
@@ -245,7 +302,7 @@ const Tesserati: React.FC = () => {
     });
   };
 
-  if (loading) {
+  if (loading && tesserati.length === 0) {
     return (
       <div className="tesserati-container">
         <div className="tesserati-loading-container">
@@ -264,6 +321,12 @@ const Tesserati: React.FC = () => {
           <button onClick={fetchTesserati} className="tesserati-refresh-button">
             Aggiorna
           </button>
+          <button
+            onClick={handleDownloadPdf}
+            className="tesserati-download-button"
+          >
+            Scarica PDF
+          </button>
           <button onClick={() => openModal()} className="tesserati-add-button">
             Nuovo Tesserato
           </button>
@@ -273,6 +336,9 @@ const Tesserati: React.FC = () => {
       {message && (
         <div className={`tesserati-message ${message.type}`}>
           <span>{message.text}</span>
+          <button onClick={() => setMessage(null)} className="close-message">
+            ×
+          </button>
         </div>
       )}
 
@@ -282,16 +348,15 @@ const Tesserati: React.FC = () => {
           <div style={{ position: "relative" }}>
             <input
               type="text"
-              placeholder="Cerca per nome, cognome, email o telefono..."
+              placeholder="Cerca per nome, cognome, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="tesserati-search-input"
             />
             {searchQuery && (
               <button
-                onClick={clearSearch}
+                onClick={() => setSearchQuery("")}
                 className="tesserati-clear-search"
-                title="Cancella ricerca"
               >
                 X
               </button>
@@ -367,7 +432,7 @@ const Tesserati: React.FC = () => {
 
         {filteredTesserati.length === 0 && (
           <div className="tesserati-no-data">
-            <p>Nessun tesserato corrisponde ai criteri di ricerca.</p>
+            <p>Nessun tesserato trovato.</p>
           </div>
         )}
       </div>
@@ -385,7 +450,7 @@ const Tesserati: React.FC = () => {
                   : "Modifica Tesserato"}
               </h3>
               <button onClick={closeModal} className="tesserati-close-button">
-                X
+                ×
               </button>
             </div>
 
@@ -421,7 +486,6 @@ const Tesserati: React.FC = () => {
                     name="email"
                     value={editingTesserato.email || ""}
                     onChange={handleInputChange}
-                    // rimosso il required
                   />
                 </div>
                 <div className="tesserati-form-group">
