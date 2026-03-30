@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "../style/tesserati.css";
 
 interface Tesserato {
@@ -29,7 +31,6 @@ const Tesserati: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // --- NUOVI STATI PER IL DOWNLOAD ---
   const [isDownloadModalOpen, setIsDownloadModalOpen] =
     useState<boolean>(false);
   const [downloadColumns, setDownloadColumns] = useState({
@@ -256,49 +257,50 @@ const Tesserati: React.FC = () => {
     });
   };
 
-  // --- NUOVA FUNZIONE PER IL DOWNLOAD CSV ---
   const handleDownloadToggleColumn = (column: keyof typeof downloadColumns) => {
     setDownloadColumns((prev) => ({ ...prev, [column]: !prev[column] }));
   };
 
   const executeDownload = () => {
-    const headers = [];
-    if (downloadColumns.id) headers.push("ID");
-    if (downloadColumns.nome) headers.push("Nome");
-    if (downloadColumns.cognome) headers.push("Cognome");
-    if (downloadColumns.email) headers.push("Email");
-    if (downloadColumns.numero_di_telefono) headers.push("Telefono");
-    if (downloadColumns.data_iscrizione) headers.push("Data Iscrizione");
+    const doc = new jsPDF();
 
-    const csvRows = [headers.join(",")];
+    // Titolo del documento
+    doc.text("Lista Tesserati", 14, 15);
 
-    filteredTesserati.forEach((t) => {
+    // Preparazione intestazioni colonna
+    const head = [[] as string[]];
+    if (downloadColumns.id) head[0].push("ID");
+    if (downloadColumns.nome) head[0].push("Nome");
+    if (downloadColumns.cognome) head[0].push("Cognome");
+    if (downloadColumns.email) head[0].push("Email");
+    if (downloadColumns.numero_di_telefono) head[0].push("Telefono");
+    if (downloadColumns.data_iscrizione) head[0].push("Data Iscrizione");
+
+    // Preparazione dei dati delle righe
+    const body = filteredTesserati.map((t) => {
       const row = [];
-      if (downloadColumns.id) row.push(t.id);
-      if (downloadColumns.nome) row.push(`"${t.nome.replace(/"/g, '""')}"`);
-      if (downloadColumns.cognome)
-        row.push(`"${t.cognome.replace(/"/g, '""')}"`);
-      if (downloadColumns.email)
-        row.push(`"${(t.email || "").replace(/"/g, '""')}"`);
+      if (downloadColumns.id) row.push(t.id.toString());
+      if (downloadColumns.nome) row.push(t.nome);
+      if (downloadColumns.cognome) row.push(t.cognome);
+      if (downloadColumns.email) row.push(t.email || "-");
       if (downloadColumns.numero_di_telefono)
-        row.push(`"${(t.numero_di_telefono || "").replace(/"/g, '""')}"`);
+        row.push(t.numero_di_telefono || "-");
       if (downloadColumns.data_iscrizione)
-        row.push(`"${formatDate(t.data_iscrizione)}"`);
-
-      csvRows.push(row.join(","));
+        row.push(formatDate(t.data_iscrizione));
+      return row;
     });
 
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    // Generazione della tabella
+    autoTable(doc, {
+      head: head,
+      body: body,
+      startY: 20,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [41, 128, 185] }, // Colore blu per l'intestazione
+    });
 
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "lista_tesserati.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
+    // Salvataggio del file
+    doc.save("lista_tesserati.pdf");
     setIsDownloadModalOpen(false);
   };
 
@@ -435,7 +437,6 @@ const Tesserati: React.FC = () => {
         )}
       </div>
 
-      {/* Modale Gestione Tesserato */}
       {isModalOpen && editingTesserato && (
         <div className="tesserati-modal-overlay" onClick={closeModal}>
           <div
@@ -519,7 +520,6 @@ const Tesserati: React.FC = () => {
         </div>
       )}
 
-      {/* Modale Download */}
       {isDownloadModalOpen && (
         <div
           className="tesserati-modal-overlay"
@@ -542,7 +542,7 @@ const Tesserati: React.FC = () => {
 
             <div className="tesserati-edit-form" style={{ padding: "1rem 0" }}>
               <p style={{ marginBottom: "1rem" }}>
-                Seleziona i dati da includere nel file CSV:
+                Seleziona i dati da includere nel file PDF:
               </p>
 
               <div
@@ -665,7 +665,7 @@ const Tesserati: React.FC = () => {
                   className="tesserati-submit-button"
                   disabled={!Object.values(downloadColumns).some(Boolean)}
                 >
-                  Scarica CSV
+                  Scarica PDF
                 </button>
               </div>
             </div>
