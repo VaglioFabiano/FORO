@@ -8,13 +8,14 @@ import ProfiloUtente from "./ProfiloUtente";
 import Turni from "./Turni";
 import Presenze from "./presenze";
 import GestisciEventi from "./GestisciEventi";
-import Tesserati from "./Tesserati"; // Import aggiunto
+import Tesserati from "./Tesserati";
 import GestioneTurno from "./GestioneTurno";
 import AiutoAbbinamenti from "./AiutoAbbinamenti";
 import VerbaliAssemblea from "./VerbaliAssemblea";
+import Contabilita from "./Contabilita"; // Import aggiunto per la Contabilità
 import "../style/homeDash.css";
 
-import { FaTelegram, FaIdCard } from "react-icons/fa"; // Aggiunto FaIdCard per la tessera
+import { FaTelegram, FaIdCard } from "react-icons/fa";
 import {
   FcCalendar,
   FcTodoList,
@@ -27,6 +28,7 @@ import {
   FcHighPriority,
   FcReading,
   FcDocument,
+  FcCurrencyExchange, // Icona aggiunta per la Contabilità
 } from "react-icons/fc";
 
 interface HomeDashProps {
@@ -112,6 +114,14 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       minLevel: 2,
     },
     {
+      id: "contabilita",
+      title: "Contabilità Associazione",
+      description: "Gestisci entrate, uscite e bilancio",
+      icon: <FcCurrencyExchange size={iconSize} />,
+      component: Contabilita,
+      minLevel: 1, // Puoi regolare questo livello in base ai tuoi permessi
+    },
+    {
       id: "aiuto-abbinamenti",
       title: "Aiuto Heidis",
       description: "Strumento per abbinare i colori per i daltonici",
@@ -123,11 +133,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       id: "telegram-debug",
       title: "Debug Telegram",
       description: "Per i chat ID Telegram livello 0",
-      icon: (
-        <>
-          <FaTelegram size={iconSize} color="#0088cc" /> ⚙️
-        </>
-      ),
+      icon: <FaTelegram size={iconSize} color="#0088cc" />,
       component: TelegramSender,
       minLevel: 0,
     },
