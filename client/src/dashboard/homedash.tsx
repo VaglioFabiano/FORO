@@ -12,7 +12,7 @@ import Tesserati from "./Tesserati";
 import GestioneTurno from "./GestioneTurno";
 import AiutoAbbinamenti from "./AiutoAbbinamenti";
 import VerbaliAssemblea from "./VerbaliAssemblea";
-import Contabilita from "./Contabilita"; // Import aggiunto per la Contabilità
+import Contabilita from "./Contabilita";
 import "../style/homeDash.css";
 
 import { FaTelegram, FaIdCard } from "react-icons/fa";
@@ -119,7 +119,7 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
       description: "Gestisci entrate, uscite e bilancio",
       icon: <FcCurrencyExchange size={iconSize} />,
       component: Contabilita,
-      minLevel: 1, // Puoi regolare questo livello in base ai tuoi permessi
+      minLevel: 4,
     },
     {
       id: "aiuto-abbinamenti",
