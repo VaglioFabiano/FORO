@@ -13,8 +13,9 @@ import Login from "./components/Login";
 import HomeDash from "./dashboard/homedash";
 import BannerCookie from "./components/banner_cookie";
 import PrenotaEventoPage from "./components/PrenotaEventoPage";
+import PrivacyPage from "./components/PrivacyPage";
 
-type PageType = "home" | "login" | "dashboard" | "eventi";
+type PageType = "home" | "login" | "dashboard" | "eventi" | "privacy";
 
 interface RouteState {
   page: PageType;
@@ -28,6 +29,7 @@ const parseUrl = (): RouteState => {
 
   if (path === "/login") return { page: "login" };
   if (path === "/dashboard") return { page: "dashboard" };
+  if (path === "/informativaPrivacy") return { page: "privacy" };
   if (path === "/eventi") {
     return {
       page: "eventi",
@@ -39,7 +41,7 @@ const parseUrl = (): RouteState => {
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState<RouteState>(parseUrl());
-  const [eventiVisibili, setEventiVisibili] = useState<any[]>([]); // MODIFICA QUI
+  const [eventiVisibili, setEventiVisibili] = useState<any[]>([]);
   const [forceNavbarUpdate, setForceNavbarUpdate] = useState(false);
   const [, setCurrentUser] = useState<any>(null);
 
@@ -52,6 +54,9 @@ function App() {
         break;
       case "dashboard":
         newUrl = "/dashboard";
+        break;
+      case "privacy":
+        newUrl = "/informativaPrivacy";
         break;
       case "eventi":
         newUrl = route.eventoId ? `/eventi?id=${route.eventoId}` : "/eventi";
@@ -103,7 +108,6 @@ function App() {
       if (data.success && data.eventi) {
         setEventiVisibili(data.eventi);
       } else if (data.success && data.evento) {
-        // Fallback se l'API restituisce ancora un singolo evento
         setEventiVisibili([data.evento]);
       }
     } catch (err) {
@@ -165,10 +169,13 @@ function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <PrenotaEventoPage eventoId={currentRoute.eventoId} />
           </div>
+        ) : currentRoute.page === "privacy" ? (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <PrivacyPage />
+          </div>
         ) : (
           <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
             <section id="header">
-              {/* LOGICA DI RENDERING AGGIORNATA */}
               {eventiVisibili.length === 0 ? (
                 <Header />
               ) : eventiVisibili.length === 1 ? (
