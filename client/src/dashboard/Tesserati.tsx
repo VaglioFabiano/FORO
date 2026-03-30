@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-import { UserOptions } from "jspdf-autotable";
 import "../style/tesserati.css";
 
-// --- INTERFACCE ---
 interface Tesserato {
   id: number;
   nome: string;
@@ -19,13 +15,7 @@ interface Message {
   text: string;
 }
 
-// Estensione del tipo jsPDF per includere il plugin autoTable
-interface jsPDFWithPlugin extends jsPDF {
-  autoTable: (options: UserOptions) => jsPDF;
-}
-
 const Tesserati: React.FC = () => {
-  // --- STATO ---
   const [tesserati, setTesserati] = useState<Tesserato[]>([]);
   const [filteredTesserati, setFilteredTesserati] = useState<Tesserato[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -39,7 +29,18 @@ const Tesserati: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // --- EFFETTI ---
+  // --- NUOVI STATI PER IL DOWNLOAD ---
+  const [isDownloadModalOpen, setIsDownloadModalOpen] =
+    useState<boolean>(false);
+  const [downloadColumns, setDownloadColumns] = useState({
+    id: true,
+    nome: true,
+    cognome: true,
+    email: true,
+    numero_di_telefono: true,
+    data_iscrizione: true,
+  });
+
   useEffect(() => {
     fetchTesserati();
   }, []);
@@ -48,7 +49,6 @@ const Tesserati: React.FC = () => {
     filterAndSortTesserati();
   }, [tesserati, sortBy, sortOrder, searchQuery]);
 
-  // --- API ---
   const fetchTesserati = async () => {
     setLoading(true);
     setMessage(null);
@@ -82,7 +82,6 @@ const Tesserati: React.FC = () => {
     }
   };
 
-  // --- LOGICA FILTRI E ORDINAMENTO ---
   const filterAndSortTesserati = () => {
     let filtered = tesserati.filter((t) => {
       if (searchQuery.trim() === "") return true;
@@ -119,58 +118,10 @@ const Tesserati: React.FC = () => {
     setFilteredTesserati(filtered);
   };
 
-  // --- FUNZIONE STAMPA PDF ---
-  const handleDownloadPdf = () => {
-    try {
-      const doc = new jsPDF() as jsPDFWithPlugin;
-      const today = new Date().toLocaleDateString("it-IT");
-
-      // Intestazione
-      doc.setFontSize(18);
-      doc.text("Elenco tesserati FORO", 14, 20);
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Documento generato il: ${today}`, 14, 28);
-      doc.text(`Totale record: ${filteredTesserati.length}`, 14, 33);
-
-      // Preparazione dati tabella
-      const tableRows = filteredTesserati.map((t) => [
-        t.id,
-        t.nome,
-        t.cognome,
-        t.email || "-",
-        t.numero_di_telefono || "-",
-        formatDate(t.data_iscrizione),
-      ]);
-
-      // Generazione tabella
-      doc.autoTable({
-        startY: 40,
-        head: [
-          ["ID", "Nome", "Cognome", "Email", "Telefono", "Data Iscrizione"],
-        ],
-        body: tableRows,
-        theme: "striped",
-        headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-        styles: { fontSize: 9, cellPadding: 3 },
-        columnStyles: {
-          0: { cellWidth: 15 },
-          5: { cellWidth: 35 },
-        },
-      });
-
-      doc.save("Elenco_tesserati_FORO.pdf");
-      setMessage({ type: "success", text: "PDF generato con successo" });
-    } catch (error) {
-      console.error("Errore generazione PDF:", error);
-      setMessage({
-        type: "error",
-        text: "Errore durante la creazione del PDF",
-      });
-    }
+  const clearSearch = () => {
+    setSearchQuery("");
   };
 
-  // --- GESTIONE MODALE E FORM ---
   const openModal = (tesserato?: Tesserato) => {
     if (tesserato) {
       setEditingTesserato({ ...tesserato });
@@ -203,6 +154,7 @@ const Tesserati: React.FC = () => {
       setMessage({ type: "error", text: "Nome e cognome sono obbligatori" });
       return false;
     }
+
     if (
       editingTesserato.email?.trim() &&
       !/\S+@\S+\.\S+/.test(editingTesserato.email)
@@ -252,6 +204,7 @@ const Tesserati: React.FC = () => {
       await fetchTesserati();
       closeModal();
     } catch (error) {
+      console.error("Errore salvataggio:", error);
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Errore di connessione",
@@ -286,6 +239,7 @@ const Tesserati: React.FC = () => {
       });
       await fetchTesserati();
     } catch (error) {
+      console.error("Errore eliminazione:", error);
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Errore di connessione",
@@ -302,7 +256,53 @@ const Tesserati: React.FC = () => {
     });
   };
 
-  if (loading && tesserati.length === 0) {
+  // --- NUOVA FUNZIONE PER IL DOWNLOAD CSV ---
+  const handleDownloadToggleColumn = (column: keyof typeof downloadColumns) => {
+    setDownloadColumns((prev) => ({ ...prev, [column]: !prev[column] }));
+  };
+
+  const executeDownload = () => {
+    const headers = [];
+    if (downloadColumns.id) headers.push("ID");
+    if (downloadColumns.nome) headers.push("Nome");
+    if (downloadColumns.cognome) headers.push("Cognome");
+    if (downloadColumns.email) headers.push("Email");
+    if (downloadColumns.numero_di_telefono) headers.push("Telefono");
+    if (downloadColumns.data_iscrizione) headers.push("Data Iscrizione");
+
+    const csvRows = [headers.join(",")];
+
+    filteredTesserati.forEach((t) => {
+      const row = [];
+      if (downloadColumns.id) row.push(t.id);
+      if (downloadColumns.nome) row.push(`"${t.nome.replace(/"/g, '""')}"`);
+      if (downloadColumns.cognome)
+        row.push(`"${t.cognome.replace(/"/g, '""')}"`);
+      if (downloadColumns.email)
+        row.push(`"${(t.email || "").replace(/"/g, '""')}"`);
+      if (downloadColumns.numero_di_telefono)
+        row.push(`"${(t.numero_di_telefono || "").replace(/"/g, '""')}"`);
+      if (downloadColumns.data_iscrizione)
+        row.push(`"${formatDate(t.data_iscrizione)}"`);
+
+      csvRows.push(row.join(","));
+    });
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "lista_tesserati.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setIsDownloadModalOpen(false);
+  };
+
+  if (loading) {
     return (
       <div className="tesserati-container">
         <div className="tesserati-loading-container">
@@ -322,10 +322,10 @@ const Tesserati: React.FC = () => {
             Aggiorna
           </button>
           <button
-            onClick={handleDownloadPdf}
-            className="tesserati-download-button"
+            onClick={() => setIsDownloadModalOpen(true)}
+            className="tesserati-refresh-button"
           >
-            Scarica PDF
+            Scarica Lista
           </button>
           <button onClick={() => openModal()} className="tesserati-add-button">
             Nuovo Tesserato
@@ -336,9 +336,6 @@ const Tesserati: React.FC = () => {
       {message && (
         <div className={`tesserati-message ${message.type}`}>
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="close-message">
-            ×
-          </button>
         </div>
       )}
 
@@ -348,15 +345,16 @@ const Tesserati: React.FC = () => {
           <div style={{ position: "relative" }}>
             <input
               type="text"
-              placeholder="Cerca per nome, cognome, email..."
+              placeholder="Cerca per nome, cognome, email o telefono..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="tesserati-search-input"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={clearSearch}
                 className="tesserati-clear-search"
+                title="Cancella ricerca"
               >
                 X
               </button>
@@ -432,11 +430,12 @@ const Tesserati: React.FC = () => {
 
         {filteredTesserati.length === 0 && (
           <div className="tesserati-no-data">
-            <p>Nessun tesserato trovato.</p>
+            <p>Nessun tesserato corrisponde ai criteri di ricerca.</p>
           </div>
         )}
       </div>
 
+      {/* Modale Gestione Tesserato */}
       {isModalOpen && editingTesserato && (
         <div className="tesserati-modal-overlay" onClick={closeModal}>
           <div
@@ -450,7 +449,7 @@ const Tesserati: React.FC = () => {
                   : "Modifica Tesserato"}
               </h3>
               <button onClick={closeModal} className="tesserati-close-button">
-                ×
+                X
               </button>
             </div>
 
@@ -516,6 +515,160 @@ const Tesserati: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modale Download */}
+      {isDownloadModalOpen && (
+        <div
+          className="tesserati-modal-overlay"
+          onClick={() => setIsDownloadModalOpen(false)}
+        >
+          <div
+            className="tesserati-modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "400px" }}
+          >
+            <div className="tesserati-modal-header">
+              <h3>Scarica Lista Tesserati</h3>
+              <button
+                onClick={() => setIsDownloadModalOpen(false)}
+                className="tesserati-close-button"
+              >
+                X
+              </button>
+            </div>
+
+            <div className="tesserati-edit-form" style={{ padding: "1rem 0" }}>
+              <p style={{ marginBottom: "1rem" }}>
+                Seleziona i dati da includere nel file CSV:
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={downloadColumns.id}
+                    onChange={() => handleDownloadToggleColumn("id")}
+                  />
+                  ID
+                </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={downloadColumns.nome}
+                    onChange={() => handleDownloadToggleColumn("nome")}
+                  />
+                  Nome
+                </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={downloadColumns.cognome}
+                    onChange={() => handleDownloadToggleColumn("cognome")}
+                  />
+                  Cognome
+                </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={downloadColumns.email}
+                    onChange={() => handleDownloadToggleColumn("email")}
+                  />
+                  Email
+                </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={downloadColumns.numero_di_telefono}
+                    onChange={() =>
+                      handleDownloadToggleColumn("numero_di_telefono")
+                    }
+                  />
+                  Telefono
+                </label>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={downloadColumns.data_iscrizione}
+                    onChange={() =>
+                      handleDownloadToggleColumn("data_iscrizione")
+                    }
+                  />
+                  Data Iscrizione
+                </label>
+              </div>
+
+              <div
+                className="tesserati-modal-actions"
+                style={{ marginTop: "1.5rem" }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsDownloadModalOpen(false)}
+                  className="tesserati-cancel-button"
+                >
+                  Annulla
+                </button>
+                <button
+                  type="button"
+                  onClick={executeDownload}
+                  className="tesserati-submit-button"
+                  disabled={!Object.values(downloadColumns).some(Boolean)}
+                >
+                  Scarica CSV
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
