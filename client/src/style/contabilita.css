@@ -1,0 +1,138 @@
+/* =========================================
+   CONTAINER E LAYOUT GENERALE
+   ========================================= */
+
+.contabilita_container {
+  padding: 2rem 1rem;
+  max-width: 1200px; /* Più largo per dare spazio alle colonne del foglio */
+  margin: 0 auto;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   HEADER
+   ========================================= */
+
+.contabilita_header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.contabilita_title {
+  font-size: 1.8rem;
+  color: rgb(12, 73, 91);
+  margin: 0;
+  font-weight: 700;
+}
+
+/* =========================================
+   CARD PRINCIPALE
+   ========================================= */
+
+.contabilita_card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  /* Questo fissa l'altezza della card all'80% dell'altezza dello schermo */
+  height: 80vh;
+  /* Un'altezza minima per evitare che diventi minuscola su schermi piccoli */
+  min-height: 600px;
+}
+
+/* =========================================
+   BARRA DI NAVIGAZIONE
+   ========================================= */
+
+.contabilita_nav {
+  padding: 16px 20px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  /* Evita che la barra si rimpicciolisca */
+  flex-shrink: 0;
+}
+
+.contabilita_nav-left {
+  display: flex;
+  align-items: center;
+}
+
+.contabilita_path {
+  font-size: 0.95rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Bottone Apri Esternamente */
+.contabilita_external-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #d1d5db;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #374151;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.contabilita_external-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+/* =========================================
+   AREA IFRAME (IL TRUCCO PER L'ALTEZZA)
+   ========================================= */
+
+.contabilita_iframe-wrapper {
+  /* Prende tutto lo spazio rimanente della card */
+  flex-grow: 1;
+  position: relative;
+  width: 100%;
+  background-color: #f3f4f6; /* Colore di sfondo mentre carica */
+}
+
+.contabilita_iframe-wrapper iframe {
+  /* Si aggancia ai bordi del wrapper per riempirlo perfettamente */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 600px) {
+  .contabilita_container {
+    padding: 1rem;
+  }
+
+  .contabilita_card {
+    height: 85vh; /* Su mobile prende un po' più di spazio verticale */
+    min-height: 400px;
+  }
+}
