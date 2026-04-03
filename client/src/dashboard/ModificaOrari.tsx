@@ -459,7 +459,6 @@ const ModificaOrari: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     aggiungiNuovaFascia(giorno, week);
-                    // Forza l'apertura se è chiuso
                     setExpandedDays((prev) => ({
                       ...prev,
                       [`${week}-${giorno}`]: true,
@@ -499,27 +498,29 @@ const ModificaOrari: React.FC = () => {
                           editingId.week === week ? (
                             <div className="edit-mode-container">
                               <div className="edit-inputs">
-                                <input
-                                  type="time"
-                                  value={editData.ora_inizio}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      ora_inizio: e.target.value,
-                                    })
-                                  }
-                                />
-                                <span>-</span>
-                                <input
-                                  type="time"
-                                  value={editData.ora_fine}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      ora_fine: e.target.value,
-                                    })
-                                  }
-                                />
+                                <div className="time-inputs">
+                                  <input
+                                    type="time"
+                                    value={editData.ora_inizio}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        ora_inizio: e.target.value,
+                                      })
+                                    }
+                                  />
+                                  <span>-</span>
+                                  <input
+                                    type="time"
+                                    value={editData.ora_fine}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        ora_fine: e.target.value,
+                                      })
+                                    }
+                                  />
+                                </div>
                                 <input
                                   type="text"
                                   value={editData.note}
@@ -682,7 +683,6 @@ const ModificaOrari: React.FC = () => {
 
   return (
     <div className="modifica-orari-container">
-      {/* Sticky Header */}
       <div className="main-header">
         <h1>Gestione Orari</h1>
         <div className="header-actions">
@@ -706,7 +706,6 @@ const ModificaOrari: React.FC = () => {
         </div>
       )}
 
-      {/* Tabs per versione Mobile */}
       <div className="mobile-tabs">
         <button
           className={`tab-btn ${activeMobileTab === "current" ? "active" : ""}`}
@@ -737,7 +736,6 @@ const ModificaOrari: React.FC = () => {
         )}
       </div>
 
-      {/* Floating Bottom Bar per il salvataggio */}
       {hasNuoveFasce && (
         <div className="bottom-action-bar">
           <div className="bottom-bar-content">
@@ -754,7 +752,6 @@ const ModificaOrari: React.FC = () => {
         </div>
       )}
 
-      {/* Modale Telegram */}
       {showTelegramModal && (
         <div className="modal-backdrop">
           <div className="modal-box">
