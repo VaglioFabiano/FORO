@@ -34,7 +34,6 @@ const GIORNI_SETTIMANA = [
   "domenica",
 ];
 
-// ID del gruppo Telegram
 const TELEGRAM_CHAT_ID = "@aulastudioforo";
 
 const getCurrentWeek = (): string => {
@@ -78,15 +77,14 @@ const getNextWeek = (): string => {
 };
 
 const ModificaOrari: React.FC = () => {
-  // Stati Dati
   const [orariCorrente, setOrariCorrente] = useState<FasciaOraria[]>([]);
   const [orariProssima, setOrariProssima] = useState<FasciaOraria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [activeMobileTab, setActiveMobileTab] = useState<WeekType>("current");
 
-  // Stati Modifica/Nuovi
   const [nuoveFasce, setNuoveFasce] = useState<
     Record<string, Record<WeekType, NuovaFascia[]>>
   >({});
@@ -96,17 +94,13 @@ const ModificaOrari: React.FC = () => {
   } | null>(null);
   const [editData, setEditData] = useState<Partial<FasciaOraria>>({});
 
-  // Stati Telegram
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [telegramMessage, setTelegramMessage] = useState("");
-
-  // SelectedOrari è una stringa combinata "week-id"
   const [selectedOrariKeys, setSelectedOrariKeys] = useState<string[]>([]);
   const [activeTemplate, setActiveTemplate] =
     useState<TemplateType>("settimana");
 
   useEffect(() => {
-    // Inizializza tutte le tendine come aperte
     const initialExpanded: Record<string, boolean> = {};
     GIORNI_SETTIMANA.forEach((giorno) => {
       initialExpanded[`current-${giorno}`] = true;
@@ -118,8 +112,6 @@ const ModificaOrari: React.FC = () => {
   useEffect(() => {
     fetchOrari();
   }, []);
-
-  // --- API CALLS ---
 
   const fetchOrari = async () => {
     try {
@@ -195,7 +187,8 @@ const ModificaOrari: React.FC = () => {
   };
 
   const eliminaFascia = async (id: number, week: WeekType) => {
-    if (!confirm("Sei sicuro di voler eliminare questa fascia oraria?")) return;
+    if (!window.confirm("Sei sicuro di voler eliminare questa fascia oraria?"))
+      return;
     try {
       const body = { id, settimana: week === "next" ? "next" : "current" };
       const response = await fetch("/api/orari_settimana", {
@@ -210,8 +203,6 @@ const ModificaOrari: React.FC = () => {
       setError("Errore nell'eliminazione");
     }
   };
-
-  // --- FUNZIONI DI MODIFICA ---
 
   const iniziaModifica = (fascia: FasciaOraria, week: WeekType) => {
     setEditingId({ id: fascia.id, week });
@@ -251,8 +242,6 @@ const ModificaOrari: React.FC = () => {
     }
   };
 
-  // --- LOGICA UTILS ---
-
   const groupByDay = (orari: FasciaOraria[]) => {
     return GIORNI_SETTIMANA.reduce(
       (acc, giorno) => {
@@ -279,8 +268,6 @@ const ModificaOrari: React.FC = () => {
       [key]: !prev[key],
     }));
   };
-
-  // --- LOGICA NUOVE FASCE ---
 
   const aggiungiNuovaFascia = (giorno: string, week: WeekType) => {
     setNuoveFasce((prev) => {
@@ -328,13 +315,12 @@ const ModificaOrari: React.FC = () => {
       if (
         updated[giorno].current.length === 0 &&
         updated[giorno].next.length === 0
-      )
+      ) {
         delete updated[giorno];
+      }
       return updated;
     });
   };
-
-  // --- TELEGRAM LOGIC ---
 
   const toggleSelectOrario = (id: number, week: WeekType) => {
     const uniqueKey = `${week}-${id}`;
@@ -346,50 +332,37 @@ const ModificaOrari: React.FC = () => {
   };
 
   const generateMessageText = (selectedKeys: string[], type: TemplateType) => {
-    // 1. Determina quali orari sono stati selezionati
     const selectedOrari: FasciaOraria[] = [];
-
-    // Contatori per capire se stiamo usando la settimana corrente o la prossima
     let hasCurrent = false;
     let hasNext = false;
 
     selectedKeys.forEach((key) => {
       const [week, idStr] = key.split("-");
       const id = parseInt(idStr);
-
       if (week === "current") hasCurrent = true;
       if (week === "next") hasNext = true;
-
       const sourceArray = week === "current" ? orariCorrente : orariProssima;
       const found = sourceArray.find((o) => o.id === id);
       if (found) selectedOrari.push(found);
     });
 
     const grouped = groupByDay(selectedOrari);
-
-    // 2. Determina la stringa della data
-    // Se ho selezionato SOLO cose della prossima settimana, usa la data della prossima.
-    // Altrimenti (solo corrente o misto), usa la data corrente.
     let dateRangeString = getCurrentWeek();
     if (hasNext && !hasCurrent) {
       dateRangeString = getNextWeek();
     }
 
-    // 3. Costruzione Messaggio
     const footer = `\nC'è sempre bisogno di una mano! \nPer aiutarci a tenere aperta l'Aula studio ed estendere gli orari di apertura entra in contatto con noi! www.foroets.com\nInstagram: @associazioneforo\nTelegram: @AAAdminForo`;
 
     let text = "";
-
-    // Header
     if (type === "settimana") {
-      text = `<b>ORARI DELLA SETTIMANA ❄️:</b>\n${dateRangeString}\n\n`;
+      text = `<b>ORARI DELLA SETTIMANA:</b>\n${dateRangeString}\n\n`;
     } else if (type === "weekend") {
-      text = `<b>ORARI DEL WEEKEND ❄️:</b>\n\n`;
+      text = `<b>ORARI DEL WEEKEND:</b>\n\n`;
     } else {
-      text = `<b>📍APERTURE STRAORDINARIE:</b>\n\n`;
+      text = `<b>APERTURE STRAORDINARIE:</b>\n\n`;
     }
 
-    // Corpo
     GIORNI_SETTIMANA.forEach((giorno) => {
       const fasce = grouped[giorno];
       if (fasce && fasce.length > 0) {
@@ -399,7 +372,6 @@ const ModificaOrari: React.FC = () => {
             return o.note ? `${times} ${o.note}` : times;
           })
           .join(type === "settimana" ? " e " : ", ");
-
         text += `<b>${giorno.charAt(0).toUpperCase() + giorno.slice(1)}</b> \n${orariString}\n`;
       }
     });
@@ -448,8 +420,6 @@ const ModificaOrari: React.FC = () => {
     }
   };
 
-  // --- RENDER ---
-
   const renderWeekSection = (
     title: string,
     orari: FasciaOraria[],
@@ -457,145 +427,158 @@ const ModificaOrari: React.FC = () => {
     className: string,
   ) => {
     const grouped = groupByDay(orari);
+    const isMobileVisible = activeMobileTab === week;
 
     return (
-      <div className={className}>
-        <h2 className="week-title">{title}</h2>
+      <div
+        className={`${className} ${isMobileVisible ? "active-on-mobile" : ""}`}
+      >
+        <div className="week-header-wrapper">
+          <h2 className="week-title">{title}</h2>
+        </div>
+
         <div className="orari-list">
           {GIORNI_SETTIMANA.map((giorno) => (
-            <div key={`${week}-${giorno}`} className="day-section">
+            <div key={`${week}-${giorno}`} className="day-card">
               <div
                 className="day-header"
                 onClick={() => toggleDay(giorno, week)}
               >
-                <h3 className="day-title">
-                  {giorno.charAt(0).toUpperCase() + giorno.slice(1)}{" "}
-                  <span className="orari-count">
-                    ({grouped[giorno].length})
-                  </span>
-                </h3>
-                <div className="day-actions">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      aggiungiNuovaFascia(giorno, week);
-                    }}
-                    className="btn btn-add"
-                  >
-                    + Aggiungi
-                  </button>
+                <div className="day-header-left">
                   <span
                     className={`expand-icon ${expandedDays[`${week}-${giorno}`] ? "expanded" : ""}`}
                   >
-                    ▼
+                    {expandedDays[`${week}-${giorno}`] ? "-" : "+"}
                   </span>
+                  <h3 className="day-title">
+                    {giorno.charAt(0).toUpperCase() + giorno.slice(1)}
+                  </h3>
+                  <span className="orari-count">{grouped[giorno].length}</span>
                 </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    aggiungiNuovaFascia(giorno, week);
+                    // Forza l'apertura se è chiuso
+                    setExpandedDays((prev) => ({
+                      ...prev,
+                      [`${week}-${giorno}`]: true,
+                    }));
+                  }}
+                  className="btn btn-add"
+                  aria-label="Aggiungi fascia"
+                >
+                  + Aggiungi
+                </button>
               </div>
 
               {expandedDays[`${week}-${giorno}`] && (
-                <div className="day-content">
+                <div className="day-body">
+                  {/* Orari Esistenti */}
                   {grouped[giorno].length > 0 && (
                     <div className="existing-orari">
                       {grouped[giorno].map((orario) => (
                         <div
                           key={`${week}-${orario.id}`}
-                          className="orario-item"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                          }}
+                          className="orario-row"
                         >
-                          {/* Checkbox usa chiave univoca composta */}
-                          <input
-                            type="checkbox"
-                            className="orario-checkbox"
-                            checked={selectedOrariKeys.includes(
-                              `${week}-${orario.id}`,
-                            )}
-                            onChange={() => toggleSelectOrario(orario.id, week)}
-                            style={{
-                              transform: "scale(1.5)",
-                              cursor: "pointer",
-                            }}
-                          />
+                          <div className="orario-checkbox-wrapper">
+                            <input
+                              type="checkbox"
+                              className="orario-checkbox"
+                              checked={selectedOrariKeys.includes(
+                                `${week}-${orario.id}`,
+                              )}
+                              onChange={() =>
+                                toggleSelectOrario(orario.id, week)
+                              }
+                            />
+                          </div>
 
                           {editingId?.id === orario.id &&
                           editingId.week === week ? (
-                            <div className="edit-form">
-                              <input
-                                type="time"
-                                value={editData.ora_inizio}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    ora_inizio: e.target.value,
-                                  })
-                                }
-                              />
-                              <input
-                                type="time"
-                                value={editData.ora_fine}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    ora_fine: e.target.value,
-                                  })
-                                }
-                              />
-                              <input
-                                type="text"
-                                value={editData.note}
-                                onChange={(e) =>
-                                  setEditData({
-                                    ...editData,
-                                    note: e.target.value,
-                                  })
-                                }
-                              />
-                              <button
-                                onClick={salvaModifica}
-                                className="btn btn-success btn-small"
-                              >
-                                ✓
-                              </button>
-                              <button
-                                onClick={annullaModifica}
-                                className="btn btn-secondary btn-small"
-                              >
-                                ✗
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="orario-display" style={{ flex: 1 }}>
-                              <div className="orario-time">
-                                <span className="time-badge">
-                                  {formatTime(orario.ora_inizio)}
-                                </span>
+                            <div className="edit-mode-container">
+                              <div className="edit-inputs">
+                                <input
+                                  type="time"
+                                  value={editData.ora_inizio}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      ora_inizio: e.target.value,
+                                    })
+                                  }
+                                />
                                 <span>-</span>
-                                <span className="time-badge">
-                                  {formatTime(orario.ora_fine)}
-                                </span>
+                                <input
+                                  type="time"
+                                  value={editData.ora_fine}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      ora_fine: e.target.value,
+                                    })
+                                  }
+                                />
+                                <input
+                                  type="text"
+                                  value={editData.note}
+                                  placeholder="Aggiungi nota..."
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      note: e.target.value,
+                                    })
+                                  }
+                                />
                               </div>
-                              {orario.note && (
-                                <div className="orario-note">{orario.note}</div>
-                              )}
-                              <div className="orario-actions">
+                              <div className="edit-actions">
                                 <button
-                                  onClick={() => {
-                                    iniziaModifica(orario, week);
-                                  }}
-                                  className="btn btn-edit btn-small"
+                                  onClick={salvaModifica}
+                                  className="btn btn-success btn-small"
                                 >
-                                  ✏️
+                                  Salva
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    eliminaFascia(orario.id, week);
-                                  }}
-                                  className="btn btn-delete btn-small"
+                                  onClick={annullaModifica}
+                                  className="btn btn-secondary btn-small"
                                 >
-                                  🗑️
+                                  Annulla
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="view-mode-container">
+                              <div className="orario-info">
+                                <div className="time-badges">
+                                  <span className="time-badge">
+                                    {formatTime(orario.ora_inizio)}
+                                  </span>
+                                  <span className="time-separator">-</span>
+                                  <span className="time-badge">
+                                    {formatTime(orario.ora_fine)}
+                                  </span>
+                                </div>
+                                {orario.note && (
+                                  <span className="orario-note">
+                                    {orario.note}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="action-buttons">
+                                <button
+                                  onClick={() => iniziaModifica(orario, week)}
+                                  className="btn btn-icon btn-edit"
+                                  title="Modifica"
+                                >
+                                  Modifica
+                                </button>
+                                <button
+                                  onClick={() => eliminaFascia(orario.id, week)}
+                                  className="btn btn-icon btn-delete"
+                                  title="Elimina"
+                                >
+                                  Elimina
                                 </button>
                               </div>
                             </div>
@@ -605,63 +588,75 @@ const ModificaOrari: React.FC = () => {
                     </div>
                   )}
 
-                  {/* FORM NUOVE FASCE */}
+                  {/* Form Nuove Fasce */}
                   {nuoveFasce[giorno]?.[week]?.map((fascia, index) => (
-                    <div key={index} className="new-fascia-form">
-                      <input
-                        type="time"
-                        value={fascia.ora_inizio}
-                        onChange={(e) =>
-                          aggiornaNuovaFascia(
-                            giorno,
-                            week,
-                            index,
-                            "ora_inizio",
-                            e.target.value,
-                          )
-                        }
-                      />
-                      <span>-</span>
-                      <input
-                        type="time"
-                        value={fascia.ora_fine}
-                        onChange={(e) =>
-                          aggiornaNuovaFascia(
-                            giorno,
-                            week,
-                            index,
-                            "ora_fine",
-                            e.target.value,
-                          )
-                        }
-                      />
-                      <input
-                        type="text"
-                        value={fascia.note}
-                        onChange={(e) =>
-                          aggiornaNuovaFascia(
-                            giorno,
-                            week,
-                            index,
-                            "note",
-                            e.target.value,
-                          )
-                        }
-                        placeholder="Note"
-                      />
-                      <button
-                        onClick={() => rimuoviNuovaFascia(giorno, week, index)}
-                        className="btn btn-delete btn-small"
-                      >
-                        ✗
-                      </button>
+                    <div key={`new-${index}`} className="new-fascia-card">
+                      <div className="new-fascia-header">
+                        <span>Nuova Fascia</span>
+                        <button
+                          onClick={() =>
+                            rimuoviNuovaFascia(giorno, week, index)
+                          }
+                          className="btn-close"
+                        >
+                          X
+                        </button>
+                      </div>
+                      <div className="new-fascia-inputs">
+                        <div className="time-inputs">
+                          <input
+                            type="time"
+                            value={fascia.ora_inizio}
+                            onChange={(e) =>
+                              aggiornaNuovaFascia(
+                                giorno,
+                                week,
+                                index,
+                                "ora_inizio",
+                                e.target.value,
+                              )
+                            }
+                          />
+                          <span>-</span>
+                          <input
+                            type="time"
+                            value={fascia.ora_fine}
+                            onChange={(e) =>
+                              aggiornaNuovaFascia(
+                                giorno,
+                                week,
+                                index,
+                                "ora_fine",
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          className="note-input"
+                          value={fascia.note}
+                          onChange={(e) =>
+                            aggiornaNuovaFascia(
+                              giorno,
+                              week,
+                              index,
+                              "note",
+                              e.target.value,
+                            )
+                          }
+                          placeholder="Note aggiuntive (opzionale)"
+                        />
+                      </div>
                     </div>
                   ))}
 
                   {grouped[giorno].length === 0 &&
                     (!nuoveFasce[giorno]?.[week] ||
                       nuoveFasce[giorno][week].length === 0) && (
-                      <div className="no-orari">Nessun orario impostato</div>
+                      <div className="no-orari-state">
+                        Nessun orario impostato per questo giorno.
+                      </div>
                     )}
                 </div>
               )}
@@ -675,141 +670,135 @@ const ModificaOrari: React.FC = () => {
   if (loading && orariCorrente.length === 0 && orariProssima.length === 0) {
     return (
       <div className="modifica-orari-container">
-        <div className="loading">
-          <div className="loading-spinner"></div>
-          <span>Caricamento...</span>
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Caricamento orari...</p>
         </div>
       </div>
     );
   }
 
+  const hasNuoveFasce = Object.keys(nuoveFasce).length > 0;
+
   return (
     <div className="modifica-orari-container">
-      <div className="modifica-orari-header">
+      {/* Sticky Header */}
+      <div className="main-header">
         <h1>Gestione Orari</h1>
         <div className="header-actions">
           <button
             onClick={handleOpenTelegramModal}
-            className="btn"
-            style={{
-              backgroundColor: "#0088cc",
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-            }}
+            className="btn btn-telegram"
             disabled={selectedOrariKeys.length === 0}
           >
-            📢 Componi Telegram ({selectedOrariKeys.length})
+            Componi Telegram ({selectedOrariKeys.length})
           </button>
-          <button onClick={fetchOrari} className="btn btn-refresh">
-            🔄 Ricarica
+          <button onClick={fetchOrari} className="btn btn-secondary">
+            Ricarica Dati
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="error-message">
-          {error}
-          <button onClick={() => setError(null)} className="close-error">
-            ×
-          </button>
+        <div className="alert-error">
+          <p>{error}</p>
+          <button onClick={() => setError(null)}>X</button>
         </div>
       )}
 
-      <div className="weeks-container">
+      {/* Tabs per versione Mobile */}
+      <div className="mobile-tabs">
+        <button
+          className={`tab-btn ${activeMobileTab === "current" ? "active" : ""}`}
+          onClick={() => setActiveMobileTab("current")}
+        >
+          Settimana Corrente
+        </button>
+        <button
+          className={`tab-btn ${activeMobileTab === "next" ? "active" : ""}`}
+          onClick={() => setActiveMobileTab("next")}
+        >
+          Prossima Settimana
+        </button>
+      </div>
+
+      <div className="grid-container">
         {renderWeekSection(
           `Settimana Corrente (${getCurrentWeek()})`,
           orariCorrente,
           "current",
-          "week-section current-week",
+          "week-column current-week",
         )}
         {renderWeekSection(
           `Prossima Settimana (${getNextWeek()})`,
           orariProssima,
           "next",
-          "week-section next-week",
+          "week-column next-week",
         )}
       </div>
 
-      {Object.keys(nuoveFasce).length > 0 && (
-        <div className="bottom-save-section">
-          <button
-            onClick={salvaTuttiGliOrari}
-            className="btn btn-success btn-large"
-          >
-            💾 Salva Nuovi Orari
-          </button>
+      {/* Floating Bottom Bar per il salvataggio */}
+      {hasNuoveFasce && (
+        <div className="bottom-action-bar">
+          <div className="bottom-bar-content">
+            <span className="pending-text">
+              Hai delle fasce orarie non salvate.
+            </span>
+            <button
+              onClick={salvaTuttiGliOrari}
+              className="btn btn-success btn-large"
+            >
+              Salva Nuovi Orari
+            </button>
+          </div>
         </div>
       )}
 
-      {/* MODALE TELEGRAM */}
+      {/* Modale Telegram */}
       {showTelegramModal && (
-        <div className="modal-overlay">
-          <div
-            className="modal-content"
-            style={{ maxWidth: "600px", width: "90%" }}
-          >
-            <h2>Configura Messaggio Telegram</h2>
-
-            <div
-              style={{
-                marginBottom: "15px",
-                padding: "10px",
-                backgroundColor: "#f5f5f5",
-                borderRadius: "5px",
-              }}
-            >
-              <label style={{ fontWeight: "bold", marginRight: "10px" }}>
-                Tipo messaggio:
-              </label>
-              <select
-                value={activeTemplate}
-                onChange={(e) =>
-                  handleTemplateChange(e.target.value as TemplateType)
-                }
-                style={{
-                  padding: "5px",
-                  fontSize: "16px",
-                  borderRadius: "4px",
-                }}
+        <div className="modal-backdrop">
+          <div className="modal-box">
+            <div className="modal-header">
+              <h2>Componi Messaggio</h2>
+              <button
+                onClick={() => setShowTelegramModal(false)}
+                className="btn-close-modal"
               >
-                <option value="settimana">Settimanale Standard</option>
-                <option value="weekend">Orari Weekend</option>
-                <option value="straordinaria">Apertura Straordinaria</option>
-              </select>
+                X
+              </button>
             </div>
 
-            <textarea
-              value={telegramMessage}
-              onChange={(e) => setTelegramMessage(e.target.value)}
-              rows={15}
-              style={{
-                width: "100%",
-                fontFamily: "monospace",
-                padding: "10px",
-                fontSize: "14px",
-                lineHeight: "1.4",
-              }}
-            />
+            <div className="modal-body">
+              <div className="template-selector">
+                <label>Modello di messaggio:</label>
+                <select
+                  value={activeTemplate}
+                  onChange={(e) =>
+                    handleTemplateChange(e.target.value as TemplateType)
+                  }
+                >
+                  <option value="settimana">Settimanale Standard</option>
+                  <option value="weekend">Orari Weekend</option>
+                  <option value="straordinaria">Apertura Straordinaria</option>
+                </select>
+              </div>
+              <textarea
+                value={telegramMessage}
+                onChange={(e) => setTelegramMessage(e.target.value)}
+                rows={12}
+                className="telegram-textarea"
+              />
+            </div>
 
-            <div
-              className="modal-actions"
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-                marginTop: "15px",
-              }}
-            >
+            <div className="modal-footer">
               <button
                 onClick={() => setShowTelegramModal(false)}
                 className="btn btn-secondary"
               >
                 Annulla
               </button>
-              <button onClick={handleSendTelegram} className="btn btn-success">
-                Invia al Gruppo ✈️
+              <button onClick={handleSendTelegram} className="btn btn-telegram">
+                Invia al Gruppo
               </button>
             </div>
           </div>
