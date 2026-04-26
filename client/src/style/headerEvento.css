@@ -117,6 +117,8 @@
   color: #f0f0f0; /* Grigio chiarissimo quasi bianco */
   margin-bottom: 40px;
   max-width: 90%;
+  /* Aggiunto white-space per mantenere i ritorni a capo (\n) inseriti dall'utente */
+  white-space: pre-wrap;
 }
 
 .hero-evento-btn {
