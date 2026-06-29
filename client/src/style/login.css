@@ -74,6 +74,18 @@
   color: #999;
 }
 
+/* Normalizza l'aspetto dei campi compilati dall'autofill del browser,
+   così username e password mantengono lo stesso stile */
+.auth-login-input:-webkit-autofill,
+.auth-login-input:-webkit-autofill:hover,
+.auth-login-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #333;
+  -webkit-box-shadow: 0 0 0 1000px white inset;
+  box-shadow: 0 0 0 1000px white inset;
+  font-size: 14px;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 .auth-login-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
