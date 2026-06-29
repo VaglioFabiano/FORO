@@ -23,7 +23,12 @@ export function verifyToken(userId, token) {
       .createHmac('sha256', SESSION_SECRET)
       .update(`${userId}:${d}`)
       .digest('hex');
-    if (crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(token.padEnd(expected.length, '0').slice(0, expected.length), 'hex')) && expected === token) {
+    // Confronto a tempo costante; timingSafeEqual richiede buffer di pari lunghezza,
+    // quindi controlliamo prima la lunghezza per evitare eccezioni.
+    if (
+      token.length === expected.length &&
+      crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected))
+    ) {
       return true;
     }
   }
