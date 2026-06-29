@@ -56,57 +56,68 @@
   font-weight: 500;
 }
 
-.auth-login-input {
+/* Stile unico per TUTTI i campi del login (username e password).
+   appearance:none azzera il rendering nativo del browser, che disegna
+   i campi password diversamente dai text: senza questo restano un bordo
+   e un'ombra interna differenti. */
+.foro-login-field {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   width: 100%;
   box-sizing: border-box;
+  height: 48px;
+  margin: 0;
   padding: 12px 16px;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
+  background-color: #fff;
+  background-image: none;
+  box-shadow: none;
+  color: #333;
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.4;
-  height: 48px;
   transition: border-color 0.3s ease;
-  background-color: white;
 }
 
-/* Nasconde le icone native iniettate dal browser dentro i campi
-   (chiave autofill / rivelazione password) che rendono username e
-   password visivamente diversi */
-.auth-login-input::-webkit-credentials-auto-fill-button,
-.auth-login-input::-webkit-strong-password-auto-fill-button {
+.foro-login-field:focus {
+  outline: none;
+  border-color: hsl(194, 77%, 20%);
+}
+
+.foro-login-field::placeholder {
+  color: #999;
+}
+
+/* Nasconde le icone native iniettate dal browser dentro i campi */
+.foro-login-field::-webkit-credentials-auto-fill-button,
+.foro-login-field::-webkit-strong-password-auto-fill-button {
   visibility: hidden;
   pointer-events: none;
   position: absolute;
   right: 0;
 }
 
-.auth-login-input::-ms-reveal,
-.auth-login-input::-ms-clear {
+.foro-login-field::-ms-reveal,
+.foro-login-field::-ms-clear {
   display: none;
 }
 
-.auth-login-input:focus {
-  outline: none;
-  border-color: hsl(194, 77%, 20%);
-}
-
-.auth-login-input::placeholder {
-  color: #999;
-}
-
-/* Normalizza l'aspetto dei campi compilati dall'autofill del browser,
-   così username e password mantengono lo stesso stile */
-.auth-login-input:-webkit-autofill,
-.auth-login-input:-webkit-autofill:hover,
-.auth-login-input:-webkit-autofill:focus {
+/* Normalizza i campi compilati dall'autofill del browser */
+.foro-login-field:-webkit-autofill,
+.foro-login-field:-webkit-autofill:hover,
+.foro-login-field:-webkit-autofill:focus,
+.foro-login-field:-webkit-autofill:active {
   -webkit-text-fill-color: #333;
-  -webkit-box-shadow: 0 0 0 1000px white inset;
-  box-shadow: 0 0 0 1000px white inset;
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  border: 2px solid #e0e0e0;
   font-size: 14px;
   transition: background-color 5000s ease-in-out 0s;
 }
 
-.auth-login-input:disabled {
+.foro-login-field:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

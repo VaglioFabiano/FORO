@@ -109,11 +109,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           {success && <div className="auth-login-success-message">{success}</div>}
 
           <div className="auth-login-form-group">
-            <label htmlFor="auth-login-username" className="auth-login-label">Username</label>
+            <label htmlFor="foro-login-username" className="auth-login-label">Username</label>
             <input
               type="text"
-              id="auth-login-username"
-              className="auth-login-input"
+              id="foro-login-username"
+              className="foro-login-field"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Inserisci il tuo username"
@@ -123,11 +123,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
 
           <div className="auth-login-form-group">
-            <label htmlFor="auth-login-password" className="auth-login-label">Password</label>
+            <label htmlFor="foro-login-password" className="auth-login-label">Password</label>
             <input
               type="password"
-              id="auth-login-password"
-              className="auth-login-input"
+              id="foro-login-password"
+              className="foro-login-field"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Inserisci la password"
