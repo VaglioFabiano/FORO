@@ -57,12 +57,32 @@
 }
 
 .auth-login-input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 12px 16px;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
   font-size: 14px;
+  line-height: 1.4;
+  height: 48px;
   transition: border-color 0.3s ease;
   background-color: white;
+}
+
+/* Nasconde le icone native iniettate dal browser dentro i campi
+   (chiave autofill / rivelazione password) che rendono username e
+   password visivamente diversi */
+.auth-login-input::-webkit-credentials-auto-fill-button,
+.auth-login-input::-webkit-strong-password-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.auth-login-input::-ms-reveal,
+.auth-login-input::-ms-clear {
+  display: none;
 }
 
 .auth-login-input:focus {
