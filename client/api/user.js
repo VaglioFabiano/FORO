@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client/web";
 import crypto from "crypto";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { requireAuth } from './_auth.js';
 
 // --- Configurazione Database (CODICE ORIGINALE) ---
 const config = {
@@ -207,7 +208,7 @@ async function createUser(req, res) {
         .json({ success: false, error: "Telefono già registrato" });
     }
 
-    const salt = username.trim();
+    const salt = crypto.randomBytes(32).toString('hex');
     const passwordHash = hashPassword(password, salt);
 
     const sqlQuery =
@@ -344,7 +345,7 @@ async function updateUser(req, res) {
             error: "Password troppo corta (minimo 6 caratteri)",
           });
       }
-      const salt = username.trim();
+      const salt = crypto.randomBytes(32).toString('hex');
       const passwordHash = hashPassword(password, salt);
       updateSql += ", password_hash = ?, salt = ?";
       updateArgs.push(passwordHash, salt);
@@ -587,7 +588,7 @@ async function deleteTesserato(req, res) {
 // --- HANDLER PRINCIPALE ---
 export default async function handler(req, res) {
   console.log(`API /user chiamata con metodo: ${req.method}`);
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "https://foroets.com");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS",
@@ -603,13 +604,14 @@ export default async function handler(req, res) {
     return await handleChatStilista(req, res);
   }
 
+  // Tutte le operazioni su utenti e tesserati richiedono autenticazione
+  if (requireAuth(req, res) === null) return;
+
   try {
-    console.log("Testing database connection...");
     if (!client)
       throw new Error("Configurazione DB mancante o connessione fallita");
 
     const testResult = await client.execute("SELECT 1 as test");
-    console.log("Database connection successful:", testResult);
 
     const isTesserato =
       req.query.entity === "tesserato" || req.body?.entity === "tesserato";

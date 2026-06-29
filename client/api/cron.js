@@ -23,7 +23,7 @@ const resend = process.env.RESEND_API_KEY
 // Configurazione Telegram
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN?.trim();
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-const TEST_CHAT_ID = "1129901266"; // Chat ID per i test
+const TEST_CHAT_ID = process.env.CRON_ADMIN_CHAT_ID || "1129901266";
 
 // Link Google Sheets per le presenze
 const GOOGLE_SHEETS_LINK = "https://foroets.com/dashboard";
@@ -725,6 +725,20 @@ async function sundayEndTask(timestamp) {
       await sendTelegramMessage(
         TEST_CHAT_ID,
         "⚠️ Database non disponibile per cambio settimana",
+      );
+      return;
+    }
+
+    // Guard idempotenza: se presenze è già vuota, il task è già stato eseguito oggi
+    const presenzeCheck = await db.execute({
+      sql: `SELECT COUNT(*) as cnt FROM presenze`,
+      args: [],
+    });
+    if (Number(presenzeCheck.rows[0].cnt) === 0) {
+      console.log(`⚠️ Presenze già archiviate (tabella vuota) — task domenicale già eseguito, skip.`);
+      await sendTelegramMessage(
+        process.env.CRON_ADMIN_CHAT_ID || TEST_CHAT_ID,
+        "⚠️ Task domenicale skippato: presenze già archiviate (doppia esecuzione prevenuta).",
       );
       return;
     }

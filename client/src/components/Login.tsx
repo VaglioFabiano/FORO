@@ -16,6 +16,7 @@ interface LoginResponse {
     tel: string;
     level: number;
   };
+  sessionToken?: string;
   error?: string;
 }
 
@@ -74,9 +75,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         // Salva i dati dell'utente nel localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('loginTime', new Date().getTime().toString());
-        
-        // Crea anche un sessionToken per compatibilità
-        localStorage.setItem('sessionToken', `token_${data.user?.id}_${new Date().getTime()}`);
+        localStorage.setItem('sessionToken', data.sessionToken || '');
 
         // Reindirizza alla dashboard
         setTimeout(() => {

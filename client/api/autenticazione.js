@@ -1,5 +1,6 @@
 import { createClient } from '@libsql/client';
 import crypto from 'crypto';
+import { generateToken } from './_auth.js';
 
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL,
@@ -64,10 +65,13 @@ async function handleLogin(req, res) {
       level: user.level
     };
 
-    return res.status(200).json({ 
-      success: true, 
+    const sessionToken = generateToken(user.id);
+
+    return res.status(200).json({
+      success: true,
       message: 'Login effettuato con successo',
-      user: userResponse
+      user: userResponse,
+      sessionToken,
     });
 
   } catch (error) {
@@ -107,7 +111,7 @@ async function handleLogout(req, res) {
 // Handler principale
 export default async function handler(req, res) {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || 'https://foroets.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 

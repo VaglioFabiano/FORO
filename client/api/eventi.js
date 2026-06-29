@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client/web";
 import nodemailer from "nodemailer";
+import { requireAuth } from './_auth.js';
 
 const config = {
   url: process.env.TURSO_DATABASE_URL?.trim(),
@@ -52,6 +53,7 @@ function validateEmail(email) {
 
 async function sendEmail(to, subject, htmlContent, textContent) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.error("[EVENTI] GMAIL_USER o GMAIL_APP_PASSWORD non configurati nelle env vars!");
     return { success: false, error: "Configurazione server errata" };
   }
   try {
@@ -117,14 +119,22 @@ function createBroadcastTemplate(message, titoloEvento) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "https://foroets.com");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS",
   );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") return res.status(200).end();
+
+  // PUT e DELETE richiedono autenticazione (operazioni admin)
+  // POST prenotazioni è pubblico, POST broadcast/evento richiede auth
+  const isPublicPost = req.method === "POST" && req.query.section === "prenotazioni";
+  if ((req.method === "PUT" || req.method === "DELETE") ||
+      (req.method === "POST" && !isPublicPost)) {
+    if (requireAuth(req, res) === null) return;
+  }
 
   try {
     await client.execute("SELECT 1");
@@ -302,16 +312,20 @@ export default async function handler(req, res) {
         const insertId = convertBigIntToNumber(result.lastInsertRowid);
         const pData = { nome, cognome, num_partecipanti: ticketsRichiesti };
         const htmlConfirm = createConfirmationTemplate(pData, evento);
-        sendEmail(
+        const emailResult = await sendEmail(
           email,
           `Conferma Prenotazione: ${evento.titolo}`,
           htmlConfirm,
           `Confermata prenotazione per ${evento.titolo}`,
-        ).catch(console.error);
+        );
+        if (!emailResult.success) {
+          console.error(`[EVENTI] Invio email fallito per prenotazione ${insertId}:`, emailResult.error);
+        }
         return res.status(201).json({
           success: true,
           id: insertId,
           message: "Prenotazione salvata!",
+          emailSent: emailResult.success,
         });
       }
 

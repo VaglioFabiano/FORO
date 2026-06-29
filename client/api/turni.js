@@ -474,7 +474,7 @@ async function rimuoviTurno(req, res) {
 
 export default async function handler(req, res) {
   // Configurazione CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "https://foroets.com");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 

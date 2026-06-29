@@ -1,4 +1,5 @@
 import { createClient } from "@libsql/client/web";
+import { requireAuth } from './_auth.js';
 
 // Configurazione database
 const config = {
@@ -681,11 +682,16 @@ async function getStatistiche(req, res) {
 
 // MAIN
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", process.env.ALLOWED_ORIGIN || "https://foroets.com");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") return res.status(200).end();
+
+  // GET pubblico (sola lettura), tutto il resto richiede autenticazione
+  if (req.method !== "GET") {
+    if (requireAuth(req, res) === null) return;
+  }
 
   try {
     await client.execute("SELECT 1");
