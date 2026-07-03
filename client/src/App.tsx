@@ -82,7 +82,10 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem("user");
+    localStorage.removeItem("loginTime");
+    localStorage.removeItem("sessionToken");
+    localStorage.removeItem("rememberMe");
     navigateTo({ page: "home" });
     setForceNavbarUpdate((prev) => !prev);
     checkUserPermissions();
@@ -127,7 +130,12 @@ function App() {
         ? 30 * 24 * 60 * 60 * 1000
         : 24 * 60 * 60 * 1000;
 
-      if (now - loginTimestamp > expirationTime) localStorage.clear();
+      if (now - loginTimestamp > expirationTime) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("loginTime");
+        localStorage.removeItem("sessionToken");
+        localStorage.removeItem("rememberMe");
+      }
     }
 
     checkUserPermissions();

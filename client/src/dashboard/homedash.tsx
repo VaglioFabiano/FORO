@@ -207,7 +207,10 @@ const HomeDash: React.FC<HomeDashProps> = ({ onLogout, onBackToHome }) => {
         setIsAuthenticated(true);
       } catch (error) {
         console.error("Errore autenticazione:", error);
-        localStorage.clear();
+        localStorage.removeItem("user");
+        localStorage.removeItem("loginTime");
+        localStorage.removeItem("sessionToken");
+        localStorage.removeItem("rememberMe");
         setIsAuthenticated(false);
         onLogout();
       } finally {

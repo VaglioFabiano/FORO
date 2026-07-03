@@ -51,7 +51,10 @@ const Navbar: React.FC<NavbarProps> = ({
       if (now - loginTimestamp < expirationTime) {
         setIsLoggedIn(true);
       } else {
-        localStorage.clear();
+        localStorage.removeItem("user");
+        localStorage.removeItem("loginTime");
+        localStorage.removeItem("sessionToken");
+        localStorage.removeItem("rememberMe");
         setIsLoggedIn(false);
       }
     } else {
@@ -103,8 +106,11 @@ const Navbar: React.FC<NavbarProps> = ({
       window.location.href = "/";
     } catch (error) {
       console.error("Errore durante il logout:", error);
-      // Anche in caso di errore, pulisci il localStorage
-      localStorage.clear();
+      // Anche in caso di errore, pulisci solo i dati di sessione
+      localStorage.removeItem("user");
+      localStorage.removeItem("loginTime");
+      localStorage.removeItem("sessionToken");
+      localStorage.removeItem("rememberMe");
       setIsLoggedIn(false);
       onLogout();
 
