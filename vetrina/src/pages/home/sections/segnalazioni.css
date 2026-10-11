@@ -1,0 +1,401 @@
+/* 07 · Segnalazioni — prefisso sg- */
+.sg-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(32px, 6vw, 96px);
+  align-items: start;
+}
+
+/* colonna informativa */
+.sg-points {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--foro-linea);
+}
+.sg-points li {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 18px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--foro-linea);
+}
+.sg-points__ic {
+  width: 48px;
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.sg-points li:nth-child(3) .sg-points__ic {
+  background: var(--foro-carta);
+  color: var(--foro-petrolio);
+}
+.sg-points strong {
+  display: block;
+  font-weight: 500;
+  font-size: 1.125rem;
+  color: var(--foro-petrolio);
+  margin-bottom: 4px;
+}
+.sg-points p {
+  font-family: var(--foro-font-text);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--foro-ardesia);
+  text-wrap: pretty;
+}
+
+/* pannello */
+.sg-panel {
+  position: relative;
+  background: var(--foro-carta-soft);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  padding: clamp(20px, 3.4vw, 48px);
+  box-shadow: var(--foro-shadow);
+}
+.sg-form {
+  display: grid;
+  gap: 28px;
+}
+.sg-fs {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.sg-fs legend {
+  padding: 0;
+  margin-bottom: 12px;
+}
+.sg-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sg-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  background: #fffdf9;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--foro-inchiostro);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color var(--foro-dur-1) var(--foro-ease),
+    background-color var(--foro-dur-2) var(--foro-ease),
+    color var(--foro-dur-2) var(--foro-ease),
+    transform var(--foro-dur-1) var(--foro-ease);
+}
+.sg-chip input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.sg-chip svg {
+  color: var(--foro-petrolio);
+  transition: color var(--foro-dur-2) var(--foro-ease);
+}
+.sg-chip:hover {
+  border-color: var(--foro-petrolio);
+}
+.sg-chip:active {
+  transform: translateY(1px);
+}
+.sg-chip.is-on {
+  background: var(--foro-petrolio);
+  border-color: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.sg-chip.is-on svg {
+  color: var(--foro-lanterna);
+}
+.sg-chip:has(input:focus-visible) {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 3px;
+}
+.sg-fs[aria-describedby] .sg-chip:not(.is-on) {
+  border-color: rgba(179, 38, 30, 0.55);
+}
+
+.sg-msg {
+  display: grid;
+  gap: 8px;
+}
+.sg-msg .textarea {
+  min-height: 150px;
+  font-family: var(--foro-font-text);
+  font-size: 1.0625rem;
+}
+.sg-msg__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+.sg-count {
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--foro-ardesia);
+  transition: color var(--foro-dur-1) var(--foro-ease);
+}
+.sg-count.is-low {
+  color: var(--foro-cotto);
+}
+
+/* interruttore anonima */
+.sg-anon {
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  background: var(--foro-travertino);
+  transition: background-color var(--foro-dur-2) var(--foro-ease);
+}
+.sg-anon.is-off {
+  background: #fffdf9;
+}
+.sg-switch {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 14px 18px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: var(--foro-radius);
+}
+.sg-switch__track {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--foro-pietra);
+  transition: background-color var(--foro-dur-2) var(--foro-ease);
+}
+.sg-switch__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fffdf9;
+  box-shadow: 0 1px 3px rgba(7, 48, 61, 0.3);
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.sg-switch[aria-checked="true"] .sg-switch__track {
+  background: var(--foro-petrolio);
+}
+.sg-switch[aria-checked="true"] .sg-switch__thumb {
+  transform: translateX(20px);
+  background: var(--foro-carta);
+}
+.sg-switch__txt {
+  display: grid;
+  gap: 2px;
+}
+.sg-switch__txt strong {
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--foro-petrolio);
+}
+.sg-switch__txt span {
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+}
+.sg-contact {
+  overflow: hidden;
+}
+.sg-contact__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 4px 18px 20px;
+  border-top: 1px solid var(--foro-pietra);
+  padding-top: 18px;
+}
+
+.sg-submit {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.sg-submit__note {
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+}
+.sg-submit__note a {
+  color: var(--foro-laguna);
+}
+
+/* esito */
+.sg-done {
+  display: grid;
+  gap: 28px;
+  justify-items: start;
+}
+.sg-done__head {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+.sg-done__disc {
+  width: 60px;
+  flex: none;
+  background: var(--foro-ok);
+  color: var(--foro-carta);
+}
+.sg-done__kicker {
+  color: var(--foro-ok);
+}
+.sg-done__title {
+  margin-top: 4px;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--foro-petrolio);
+  outline: none;
+}
+.sg-code {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "l b" "v b";
+  align-items: center;
+  gap: 6px 16px;
+  padding: 22px 24px;
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+  border-radius: var(--foro-radius);
+}
+.sg-code .t-label {
+  grid-area: l;
+  color: var(--foro-laguna-chiara);
+}
+.sg-code__val {
+  grid-area: v;
+  font-family: var(--foro-font-mono);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.sg-code__copy {
+  grid-area: b;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(251, 231, 204, 0.4);
+  border-radius: var(--foro-radius);
+  background: transparent;
+  color: var(--foro-carta);
+  font-weight: 500;
+  transition:
+    background-color var(--foro-dur-1) var(--foro-ease),
+    color var(--foro-dur-1) var(--foro-ease);
+}
+.sg-code__copy:hover {
+  background: var(--foro-carta);
+  color: var(--foro-petrolio);
+}
+.sg-next__title {
+  color: var(--foro-ardesia);
+  margin-bottom: -12px;
+}
+.sg-next {
+  width: 100%;
+  display: grid;
+  border-top: 1px solid var(--foro-pietra);
+}
+.sg-next li {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--foro-pietra);
+}
+.sg-next .t-mono {
+  color: var(--foro-cotto);
+  padding-top: 3px;
+}
+.sg-next strong {
+  font-weight: 500;
+  color: var(--foro-petrolio);
+}
+.sg-next p {
+  margin-top: 2px;
+  font-family: var(--foro-font-text);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--foro-ardesia);
+}
+
+@media (max-width: 1100px) {
+  .sg-row {
+    grid-template-columns: 140px minmax(0, 1fr) 150px;
+  }
+  .sg-row__msg {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+@media (max-width: 960px) {
+  .sg-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .sg-contact__grid {
+    grid-template-columns: 1fr;
+    padding-inline: 14px;
+  }
+  .sg-switch {
+    padding-inline: 14px;
+  }
+  .sg-chip {
+    padding: 0 13px;
+  }
+  .sg-submit .btn {
+    width: 100%;
+  }
+  .sg-code {
+    grid-template-areas: "l" "v" "b";
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+  .sg-code__copy {
+    justify-self: start;
+    margin-top: 6px;
+  }
+  .sg-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 16px;
+  }
+  .sg-row__meta {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-auto-flow: column;
+    justify-content: start;
+    align-items: center;
+    gap: 12px;
+  }
+  .sg-row__msg {
+    grid-row: 3;
+  }
+}

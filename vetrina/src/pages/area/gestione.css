@@ -1,0 +1,33 @@
+/* Componenti dei moduli di gestione, prefisso ges- */
+.ges-switch { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0; background: none; border: 0; cursor: pointer; font: inherit; color: var(--foro-petrolio); }
+.ges-switch:focus-visible { outline: 2px solid var(--foro-laguna); outline-offset: 2px; }
+.ges-switch__track { position: relative; width: 44px; height: 24px; border-radius: var(--foro-radius); background: var(--foro-pietra); transition: background var(--foro-dur-2) var(--foro-ease); flex: none; }
+.ges-switch__thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fffdf9; box-shadow: 0 1px 3px rgba(7, 48, 61, 0.35); transition: transform var(--foro-dur-2) var(--foro-ease); }
+.ges-switch.is-on .ges-switch__track { background: var(--foro-petrolio); }
+.ges-switch.is-on .ges-switch__thumb { transform: translateX(20px); }
+.ges-switch__label { font-family: var(--foro-font-display); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; min-width: 52px; text-align: left; color: var(--foro-ardesia); }
+.ges-switch.is-on .ges-switch__label { color: var(--foro-petrolio); }
+
+.ges-search { position: relative; display: block; }
+.ges-search__icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--foro-ardesia); pointer-events: none; }
+.ges-search__input { width: 100%; padding-left: 42px; padding-right: 42px; }
+.ges-search__clear { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; display: grid; place-items: center; background: none; border: 0; cursor: pointer; color: var(--foro-ardesia); }
+
+.ges-tip { position: relative; display: inline-flex; }
+.ges-tip__btn { width: 28px; height: 28px; display: grid; place-items: center; background: none; border: 0; cursor: pointer; color: var(--foro-ardesia); }
+.ges-tip__bubble { position: absolute; z-index: 20; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 260px; padding: 10px 12px; background: var(--foro-notte); color: var(--foro-carta); font-size: 0.82rem; line-height: 1.4; border-radius: var(--foro-radius); opacity: 0; visibility: hidden; transition: opacity var(--foro-dur-1); pointer-events: none; }
+.ges-tip--end .ges-tip__bubble { left: auto; right: 0; transform: none; }
+.ges-tip--start .ges-tip__bubble { left: 0; transform: none; }
+.ges-tip:hover .ges-tip__bubble, .ges-tip:focus-within .ges-tip__bubble { opacity: 1; visibility: visible; }
+
+.ges-stepper { display: inline-flex; align-items: center; border: 1px solid var(--foro-pietra); border-radius: var(--foro-radius); background: #fffdf9; }
+.ges-stepper button { width: 40px; height: 40px; display: grid; place-items: center; background: none; border: 0; cursor: pointer; color: var(--foro-petrolio); }
+.ges-stepper button:hover:not(:disabled) { background: var(--foro-travertino-deep); }
+.ges-stepper button:disabled { color: var(--foro-pietra); cursor: default; }
+.ges-stepper button:focus-visible { outline: 2px solid var(--foro-laguna); outline-offset: -2px; }
+.ges-stepper__val { min-width: 56px; text-align: center; font-family: var(--foro-font-mono); font-size: 1rem; color: var(--foro-petrolio); }
+.ges-stepper__val small { color: var(--foro-ardesia); font-size: 0.8rem; }
+.ges-stepper.is-done { border-color: var(--foro-ok); }
+.ges-stepper.is-done .ges-stepper__val { color: var(--foro-ok); }
+.ges-stepper--lg button { width: 56px; height: 56px; }
+.ges-stepper--lg .ges-stepper__val { min-width: 84px; font-size: 1.5rem; }

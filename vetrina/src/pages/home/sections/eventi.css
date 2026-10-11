@@ -1,0 +1,708 @@
+/* Sezione Eventi (#eventi) · registro Voce · prefisso ev-
+ * Fondo Petrolio: testi Carta, filetti chiari; il pannello dell'evento in evidenza resta Carta. */
+
+.ev {
+  overflow: clip;
+}
+.ev .section-head {
+  margin-bottom: clamp(32px, 4.5vw, 56px);
+}
+
+/* barra filtri */
+.ev-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  margin-bottom: clamp(24px, 3vw, 36px);
+}
+.ev-filter {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: -2px;
+  padding: 2px;
+}
+.ev-filter::-webkit-scrollbar {
+  display: none;
+}
+.ev-filter .segmented {
+  background: rgba(7, 48, 61, 0.45);
+  border-color: var(--foro-linea-chiara);
+}
+.ev-filter .segmented__opt {
+  color: rgba(251, 231, 204, 0.72);
+}
+.ev-filter .segmented__opt.is-active {
+  color: var(--foro-petrolio);
+}
+.ev-filter .segmented__pill {
+  background: var(--foro-carta);
+}
+.ev-filter .segmented__opt {
+  white-space: nowrap;
+  transition: color var(--foro-dur-2) var(--foro-ease);
+  min-height: 40px;
+}
+.ev-filter .segmented__opt:not(.is-active):hover {
+  color: var(--foro-carta);
+}
+.ev-count {
+  font-family: var(--foro-font-mono);
+  font-size: 0.72rem;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+.ev-toolbar__count {
+  letter-spacing: 0.02em;
+}
+
+/* ───────── in evidenza: due moduli affiancati ───────── */
+.ev-feat {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: var(--foro-module-gap);
+}
+.ev-feat__art {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--foro-radius);
+}
+.ev-feat__art .event-art {
+  height: 100%;
+  transition: transform 1100ms var(--foro-ease);
+}
+.ev-feat:hover .ev-feat__art .event-art {
+  transform: scale(1.02);
+}
+.ev-feat__badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+}
+.ev-feat__panel {
+  border-radius: var(--foro-radius);
+  padding: clamp(24px, 3vw, 44px);
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: clamp(20px, 2.2vw, 30px);
+  min-width: 0;
+}
+.ev-feat__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+.ev-feat__next {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--foro-petrolio);
+}
+.ev-feat__pulse {
+  width: 8px;
+  height: 8px;
+  background: var(--foro-lanterna);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(233, 162, 59, 0.6);
+  animation: ev-pulse 2.4s var(--foro-ease) infinite;
+}
+@keyframes ev-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(233, 162, 59, 0.55);
+  }
+  80%,
+  100% {
+    box-shadow: 0 0 0 10px rgba(233, 162, 59, 0);
+  }
+}
+.ev-feat__text {
+  display: grid;
+  gap: 16px;
+  align-content: center;
+}
+.ev-feat__title {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(2.3rem, 4vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  color: var(--foro-petrolio);
+}
+.ev-feat__sub {
+  font-family: var(--foro-font-text);
+  font-size: clamp(1.1rem, 1.35vw, 1.28rem);
+  line-height: 1.5;
+  color: var(--foro-inchiostro);
+  max-width: 38ch;
+}
+.ev-feat__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 12px clamp(20px, 2.6vw, 40px);
+  padding-block: 16px;
+  border-block: 1px solid rgba(12, 73, 91, 0.16);
+}
+.ev-feat__facts > div {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.ev-feat__facts dt {
+  color: var(--foro-cotto);
+}
+.ev-feat__facts dd {
+  margin: 0;
+  color: var(--foro-petrolio);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.ev-feat__soci {
+  display: block;
+  font-family: var(--foro-font-mono);
+  font-size: 0.75rem;
+  color: var(--foro-ardesia);
+  margin-top: 2px;
+}
+.ev-feat__foot {
+  display: grid;
+  gap: 20px;
+}
+.ev-feat__foot .seats__label {
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem;
+  display: flex;
+  justify-content: space-between;
+  color: var(--foro-inchiostro);
+}
+.ev-feat__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 8px;
+  align-items: center;
+}
+.ev-feat__cal {
+  color: var(--foro-petrolio);
+}
+
+/* sottotitolo "Le date successive" */
+.ev-sub {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: clamp(48px, 5.5vw, 80px) 0 4px;
+  color: var(--foro-laguna-chiara);
+}
+.ev-sub__rule {
+  flex: 1;
+  height: 1px;
+  background: var(--foro-linea-chiara);
+}
+
+/* ───────── agenda ───────── */
+.ev-agenda {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ev-agenda > li {
+  border-bottom: 1px solid var(--foro-linea-chiara);
+}
+.ev-row {
+  display: grid;
+  grid-template-columns: 132px 96px minmax(0, 1fr) 200px 44px;
+  align-items: center;
+  gap: clamp(16px, 2.4vw, 40px);
+  padding: 22px 16px;
+  margin-inline: -16px;
+  border-radius: var(--foro-radius);
+  color: var(--foro-carta);
+  transition: background var(--foro-dur-2) var(--foro-ease);
+}
+.ev-row:hover {
+  background: rgba(7, 48, 61, 0.45);
+}
+.ev-row:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: -2px;
+}
+.ev-row__date {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--foro-carta);
+}
+.ev-row__day {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: 3.25rem;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.ev-row__dm {
+  display: grid;
+  gap: 4px;
+}
+.ev-row__month {
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.ev-row__dm .t-mono {
+  font-size: 0.75rem;
+  color: var(--foro-laguna-chiara);
+}
+.ev-row__main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.ev-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-bottom: 2px;
+}
+.ev-row__meta .t-mono {
+  font-size: 0.8125rem;
+}
+/* il Cotto non regge sul Petrolio: le categorie delle righe passano a Lanterna */
+.ev-row .tag--cotto {
+  color: var(--foro-lanterna);
+  border-color: rgba(233, 162, 59, 0.4);
+}
+.ev-row__title {
+  font-family: var(--foro-font-display);
+  font-weight: 400;
+  font-size: clamp(1.25rem, 1.7vw, 1.55rem);
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  color: var(--foro-carta);
+  text-wrap: balance;
+  transition: color var(--foro-dur-2) var(--foro-ease);
+}
+.ev-row:hover .ev-row__title {
+  color: var(--foro-laguna-chiara);
+}
+.ev-row__sub {
+  font-family: var(--foro-font-text);
+  font-size: 1rem;
+  line-height: 1.45;
+  color: rgba(251, 231, 204, 0.72);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ev-row__side {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.ev-row__side .seats {
+  width: 100%;
+}
+.ev-row__side .seats__label {
+  font-family: var(--foro-font-mono);
+  font-size: 0.75rem;
+  color: var(--foro-laguna-chiara);
+}
+.ev-row__go {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(251, 231, 204, 0.3);
+  border-radius: var(--foro-radius-pill);
+  color: var(--foro-carta);
+  transition:
+    background var(--foro-dur-2) var(--foro-ease),
+    border-color var(--foro-dur-2) var(--foro-ease),
+    color var(--foro-dur-2) var(--foro-ease);
+}
+.ev-row__go svg {
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.ev-row:hover .ev-row__go {
+  background: var(--foro-carta);
+  border-color: var(--foro-carta);
+  color: var(--foro-petrolio);
+}
+.ev-row:hover .ev-row__go svg {
+  transform: translateX(3px);
+}
+
+/* miniatura: la locandina vera o la composizione grafica */
+.ev-row__thumb {
+  display: block;
+  border-radius: var(--foro-radius);
+  overflow: hidden;
+  container-type: inline-size;
+}
+.ev-row__thumb .event-art {
+  transition: transform 900ms var(--foro-ease);
+}
+.ev-row:hover .ev-row__thumb .event-art {
+  transform: scale(1.04);
+}
+.ev-row__mini {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  transition: transform 900ms var(--foro-ease);
+}
+.ev-row:hover .ev-row__mini {
+  transform: scale(1.04);
+}
+.ev-row__place {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+  font-family: var(--foro-font-display);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--foro-carta);
+}
+.ev-row__place svg {
+  flex: none;
+  position: relative;
+  top: 2px;
+  color: var(--foro-lanterna);
+}
+.ev-sub__n {
+  font-size: 0.75rem;
+}
+.ev-agenda__more {
+  overflow: hidden;
+}
+
+/* luogo e indicazioni nell'evento in evidenza */
+.ev-place {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  font-family: var(--foro-font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--foro-ardesia);
+}
+.ev-place__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  font-family: var(--foro-font-display);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foro-laguna);
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size var(--foro-dur-2) var(--foro-ease);
+}
+.ev-place:hover .ev-place__go,
+.ev-place:focus-visible .ev-place__go {
+  background-size: 100% 1px;
+}
+.ev-place:focus-visible {
+  outline: 2px solid var(--foro-petrolio);
+  outline-offset: 3px;
+}
+
+/* categorie senza date: visibili ma in sordina */
+.ev-opt.is-empty {
+  opacity: 0.55;
+}
+.segmented__opt.is-active .ev-opt.is-empty {
+  opacity: 1;
+}
+
+/* mostra altri */
+.ev-more {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(28px, 3vw, 40px);
+}
+.ev-more__btn.is-open .ev-arch__chev {
+  transform: rotate(180deg);
+}
+@media (max-width: 640px) {
+  .ev-more__btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* stato vuoto */
+.ev-empty__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ev-empty--filtro {
+  color: var(--foro-petrolio);
+}
+.ev-empty--filtro .t-pretty {
+  color: var(--foro-inchiostro);
+  max-width: 48ch;
+}
+.ev-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: clamp(32px, 5vw, 64px);
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-text);
+  font-size: 1.1rem;
+}
+.ev-empty__title {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+  line-height: 1.15;
+}
+
+/* ───────── archivio ───────── */
+.ev-arch {
+  margin-top: clamp(56px, 6vw, 88px);
+  border-top: 1px solid var(--foro-linea-chiara);
+  padding-top: clamp(28px, 3vw, 40px);
+}
+.ev-arch__bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px 32px;
+}
+.ev-arch__intro {
+  margin-top: 12px;
+  font-family: var(--foro-font-text);
+  font-size: 1.12rem;
+  color: rgba(251, 231, 204, 0.78);
+  max-width: 48ch;
+}
+.ev-arch__chev {
+  transition: transform var(--foro-dur-3) var(--foro-ease);
+}
+.ev-arch__toggle.is-open .ev-arch__chev {
+  transform: rotate(180deg);
+}
+.ev-arch__body {
+  display: grid;
+  gap: clamp(40px, 5vw, 64px);
+  padding-top: clamp(36px, 4vw, 56px);
+}
+.ev-arch__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 18px;
+  margin-bottom: 18px;
+}
+.ev-arch__name {
+  font-family: var(--foro-font-display);
+  font-weight: 400;
+  font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+  color: var(--foro-carta);
+  letter-spacing: -0.01em;
+}
+.ev-arch__nav {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+  align-self: center;
+}
+.ev-arch__btn {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(251, 231, 204, 0.3);
+  background: transparent;
+  border-radius: var(--foro-radius);
+  color: var(--foro-carta);
+  transition:
+    background var(--foro-dur-2) var(--foro-ease),
+    border-color var(--foro-dur-2) var(--foro-ease);
+}
+.ev-arch__btn:hover {
+  background: rgba(7, 48, 61, 0.45);
+  border-color: var(--foro-carta);
+}
+.ev-arch__btn:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 2px;
+}
+.ev-arch__row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(180px, 17vw, 236px);
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 231, 204, 0.3) transparent;
+  padding-bottom: 14px;
+  overscroll-behavior-x: contain;
+}
+.ev-arch__item {
+  scroll-snap-align: start;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  color: inherit;
+}
+.ev-arch__media {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--foro-radius);
+  filter: saturate(0.55);
+  transition: filter var(--foro-dur-3) var(--foro-ease);
+}
+.ev-arch__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 900ms var(--foro-ease);
+}
+.ev-arch__media .event-art {
+  transition: transform 900ms var(--foro-ease);
+}
+.ev-arch__item:hover .ev-arch__media,
+.ev-arch__item:focus-visible .ev-arch__media {
+  filter: none;
+}
+.ev-arch__item:hover .ev-arch__media > * {
+  transform: scale(1.03);
+}
+.ev-arch__item:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 4px;
+}
+.ev-arch__item .t-mono {
+  margin-top: 6px;
+}
+.ev-arch__title {
+  font-family: var(--foro-font-display);
+  font-size: 1.02rem;
+  line-height: 1.3;
+  color: var(--foro-carta);
+}
+
+/* ───────── Petrolio: riquadri ───────── */
+/* le composizioni grafiche hanno moduli Petrolio: un filetto chiaro le stacca dal fondo */
+.ev .event-art:not(.event-art--poster)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border: 1px solid var(--foro-linea-chiara);
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* i pannelli Carta riprendono la barra dei posti su fondo chiaro (domain.css la schiarisce dentro .surface-petrolio) */
+.ev .surface-carta .seats__bar {
+  background: var(--foro-pietra);
+}
+.ev .surface-carta .seats__fill {
+  background: var(--foro-petrolio);
+}
+.ev .surface-carta .seats--low .seats__fill {
+  background: var(--foro-lanterna);
+}
+.ev .surface-carta .seats--full .seats__fill {
+  background: var(--foro-cotto);
+}
+
+/* ───────── responsive ───────── */
+@media (max-width: 1080px) {
+  .ev-row {
+    grid-template-columns: 112px 84px minmax(0, 1fr) 170px 44px;
+  }
+}
+@media (max-width: 820px) {
+  .ev-row {
+    grid-template-columns: 60px minmax(0, 1fr) 64px;
+    grid-template-areas: "date main thumb" "date side side";
+    align-items: start;
+    gap: 12px 16px;
+    padding: 20px 12px;
+    margin-inline: -12px;
+  }
+  .ev-row__date {
+    grid-area: date;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .ev-row__main {
+    grid-area: main;
+  }
+  .ev-row__thumb {
+    grid-area: thumb;
+  }
+  .ev-row__side {
+    grid-area: side;
+    max-width: 260px;
+  }
+  .ev-row__go {
+    display: none;
+  }
+  .ev-row__day {
+    font-size: 2.75rem;
+  }
+  .ev-row__sub {
+    white-space: normal;
+  }
+}
+@media (max-width: 900px) {
+  .ev-feat {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .ev-feat__facts {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .ev-feat__facts > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .ev-filter {
+    width: calc(100% + var(--foro-gutter) * 2);
+    margin-inline: calc(var(--foro-gutter) * -1);
+    padding-inline: var(--foro-gutter);
+  }
+  .ev-feat__ctas .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .ev-arch__nav {
+    display: none;
+  }
+  .ev-arch__row {
+    grid-auto-columns: 62%;
+    margin-inline: calc(var(--foro-gutter) * -1);
+    padding-inline: var(--foro-gutter);
+    scroll-padding-inline: var(--foro-gutter);
+  }
+  .ev-arch__toggle {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ev-feat__pulse {
+    animation: none;
+  }
+}

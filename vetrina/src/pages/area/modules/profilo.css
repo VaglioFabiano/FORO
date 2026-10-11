@@ -1,0 +1,266 @@
+.pro-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+  border-radius: var(--foro-radius);
+  position: relative;
+}
+.pro-hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  background: var(--foro-lanterna);
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+.pro-hero__txt {
+  flex: 1;
+  min-width: 0;
+}
+.pro-hero__txt h2 {
+  color: var(--foro-carta);
+  font-weight: 300;
+}
+.pro-hero__txt p {
+  margin: 4px 0 0;
+  color: var(--foro-laguna-chiara);
+}
+.pro-hero__tag {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  margin-right: 28px;
+}
+.pro-hero__tag .t-label {
+  color: var(--foro-laguna-chiara);
+}
+.pro-hero .num,
+.pro-hero__tag .num {
+  font-family: var(--foro-font-mono);
+}
+
+.pro-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.pro-col {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.pro-form {
+  display: grid;
+  gap: 16px;
+}
+.pro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.pro-act {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pro-act--left {
+  justify-content: flex-start;
+}
+.pro-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+}
+.pro-rule.is-ok {
+  color: var(--foro-ok);
+}
+
+.pro-prefs {
+  list-style: none;
+  margin: -20px;
+  padding: 0;
+}
+.pro-pref {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--foro-linea);
+}
+.pro-pref:last-child {
+  border-bottom: 0;
+}
+.pro-pref div {
+  display: grid;
+  gap: 2px;
+}
+.pro-pref strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+}
+.pro-pref span {
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+}
+.pro-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--foro-travertino);
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+}
+
+.pro-tg__ok {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.pro-tg__ok > div {
+  flex: 1;
+  min-width: 0;
+}
+.pro-tg__ok strong {
+  color: var(--foro-petrolio);
+  font-size: 1.05rem;
+}
+.pro-tg__ok p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--foro-ardesia);
+}
+.pro-tg__disc {
+  width: 48px;
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.pro-tg__steps {
+  display: grid;
+  gap: 18px;
+}
+.pro-tg__steps ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: s;
+  display: grid;
+  gap: 10px;
+}
+.pro-tg__steps li {
+  counter-increment: s;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-family: var(--foro-font-text);
+  line-height: 1.45;
+}
+.pro-tg__steps li::before {
+  content: counter(s);
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--foro-travertino-deep);
+  color: var(--foro-petrolio);
+  font-family: var(--foro-font-mono);
+  font-size: 0.8rem;
+  align-self: start;
+}
+.pro-tg__steps .num {
+  font-family: var(--foro-font-mono);
+  color: var(--foro-petrolio);
+}
+
+.pro-turni {
+  margin-top: 32px;
+  display: grid;
+  gap: 14px;
+}
+.pro-turni h2 {
+  color: var(--foro-petrolio);
+}
+.pro-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.pro-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pro-list__row {
+  display: grid;
+  grid-template-columns: 90px 130px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--foro-linea);
+}
+.pro-list__row:last-child {
+  border-bottom: 0;
+}
+.pro-list__row .num {
+  font-family: var(--foro-font-mono);
+  font-size: 0.92rem;
+}
+.pro-list__d {
+  color: var(--foro-petrolio);
+}
+.pro-list__n {
+  color: var(--foro-ardesia);
+}
+
+@media (max-width: 1000px) {
+  .pro-cols {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 800px) {
+  .pro-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .pro-hero {
+    flex-wrap: wrap;
+    padding: 20px;
+  }
+  .pro-hero__tag {
+    margin: 0;
+    text-align: left;
+    flex-basis: 100%;
+  }
+  .pro-grid {
+    grid-template-columns: 1fr;
+  }
+  .pro-list__row {
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+  }
+  .pro-list__n {
+    grid-column: 1;
+  }
+  .pro-list__s {
+    grid-row: 1 / span 3;
+    grid-column: 2;
+  }
+  .pro-tg__ok {
+    flex-wrap: wrap;
+  }
+}

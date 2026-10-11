@@ -1,0 +1,464 @@
+/* Modifica dei testi dalla homepage (prefisso cms-) */
+.cms-wrap {
+  position: relative;
+}
+/* il pulsante "Modifica" segue la sezione mentre scorre (appiccicoso sotto l'header) */
+.cms-ancora {
+  position: sticky;
+  top: calc(var(--foro-header-h) + 12px);
+  z-index: 30;
+  height: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 20px;
+  pointer-events: none;
+}
+.cms-btn {
+  position: relative;
+  top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 6px 18px rgba(7, 48, 61, 0.28);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    transform var(--foro-dur-2) var(--foro-ease),
+    box-shadow var(--foro-dur-2) var(--foro-ease);
+}
+.cms-btn__sez {
+  padding-left: 8px;
+  border-left: 1px solid color-mix(in srgb, var(--foro-notte) 25%, transparent);
+  font-weight: 500;
+  opacity: 0.8;
+}
+.cms-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(7, 48, 61, 0.34);
+}
+.cms-btn:focus-visible {
+  outline: 2px solid var(--foro-notte);
+  outline-offset: 3px;
+}
+
+.cms-barra {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 40px);
+  padding: 6px 6px 6px 14px;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(7, 48, 61, 0.35);
+  font-size: 0.85rem;
+}
+.cms-barra__ico {
+  flex: none;
+  color: var(--foro-lanterna);
+}
+.cms-barra__testo {
+  padding-right: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cms-barra__btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--foro-carta) 30%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foro-carta);
+  font: inherit;
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+.cms-barra__btn:hover {
+  border-color: var(--foro-lanterna);
+  color: var(--foro-lanterna);
+}
+@media (max-width: 640px) {
+  .cms-barra {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+  .cms-barra__testo {
+    flex: 1;
+    min-width: 0;
+  }
+  .cms-ancora {
+    padding-right: 12px;
+  }
+  .cms-btn__sez {
+    display: none;
+  }
+}
+
+/* finestra di modifica */
+.cms-ed {
+  display: grid;
+  gap: 18px;
+}
+.cms-ed__intro {
+  margin: 0;
+  color: var(--foro-ardesia);
+}
+.cms-ed__altrove {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 0;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--foro-lanterna) 14%, transparent);
+  border-left: 3px solid var(--foro-lanterna);
+  font-size: 0.92rem;
+}
+.cms-ed__gruppo {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+}
+.cms-ed__gruppo legend {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 6px;
+  margin-left: -6px;
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foro-petrolio);
+}
+.cms-ed__gruppo legend .t-mono {
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  color: var(--foro-ardesia);
+}
+.cms-ed__cerca {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cms-ed__cerca svg {
+  position: absolute;
+  left: 12px;
+  color: var(--foro-ardesia);
+  pointer-events: none;
+}
+.cms-ed__cerca .input {
+  width: 100%;
+  padding-left: 36px;
+}
+.cms-ed__vuoto {
+  margin: 0;
+  color: var(--foro-ardesia);
+}
+.cms-ed__foot {
+  position: sticky;
+  bottom: -28px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 -24px -28px;
+  padding: 14px 24px 18px;
+  background: var(--foro-travertino);
+  border-top: 1px solid var(--foro-pietra);
+}
+.cms-ed__stato {
+  flex: 1;
+  min-width: 140px;
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+}
+
+/* singolo campo (anche nel modulo Testi del sito) */
+.cms-campo {
+  display: grid;
+  gap: 6px;
+}
+.cms-campo__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-bottom: -26px;
+  position: relative;
+  z-index: 1;
+}
+.cms-tag {
+  background: color-mix(in srgb, var(--foro-lanterna) 30%, transparent);
+  color: var(--foro-notte);
+}
+.cms-reset {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--foro-petrolio);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cms-campo--mono .input {
+  font-family: var(--foro-font-mono);
+  font-size: 0.9rem;
+}
+
+/* ───────── modifica sul posto ───────── */
+/* la sezione in modifica: cornice e scritte incorniciate */
+.cms-wrap.is-attiva {
+  outline: 2px dashed var(--foro-lanterna);
+  outline-offset: -6px;
+}
+.cms-wrap.is-attiva a,
+.cms-wrap.is-attiva button {
+  -webkit-user-drag: none;
+}
+/* la cornice prende il colore del testo: si vede su fondi chiari, scuri e Lanterna */
+.cms-t {
+  outline: 1.5px dashed color-mix(in srgb, currentColor 65%, transparent);
+  outline-offset: 3px;
+  border-radius: 2px;
+  cursor: text;
+  transition:
+    background-color 0.15s,
+    outline-color 0.15s;
+}
+.cms-t--blocco {
+  display: block;
+}
+.cms-t:hover {
+  outline-style: solid;
+  outline-color: currentColor;
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
+}
+/* modificato e non ancora salvato */
+.cms-t.is-mod {
+  outline-style: solid;
+  outline-color: currentColor;
+  background-color: color-mix(in srgb, var(--foro-lanterna) 22%, transparent);
+}
+.cms-t.is-vuoto {
+  display: inline-block;
+  min-width: 7em;
+}
+.cms-t.is-vuoto::after {
+  content: "Testo vuoto";
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* il campo sopra la scritta */
+.cms-inpag {
+  position: fixed;
+  z-index: 260;
+}
+.cms-inpag__bar {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 16px);
+  margin-bottom: 6px;
+  padding: 4px 4px 4px 10px;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  border-radius: var(--foro-radius);
+  box-shadow: 0 6px 18px rgba(7, 48, 61, 0.3);
+  font-family: var(--foro-font-display);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.cms-inpag__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--foro-laguna-chiara);
+}
+.cms-inpag__btn {
+  flex: none;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--foro-carta) 30%, transparent);
+  border-radius: var(--foro-radius);
+  background: transparent;
+  color: var(--foro-carta);
+  font: inherit;
+  cursor: pointer;
+}
+.cms-inpag__btn:hover {
+  border-color: var(--foro-lanterna);
+  color: var(--foro-lanterna);
+}
+.cms-inpag__btn--ok {
+  background: var(--foro-lanterna);
+  border-color: var(--foro-lanterna);
+  color: var(--foro-notte);
+  font-weight: 600;
+}
+.cms-inpag__btn--ok:hover {
+  color: var(--foro-notte);
+  filter: brightness(1.06);
+}
+.cms-inpag__campo {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 4px 8px;
+  border: 2px solid var(--foro-lanterna);
+  border-radius: var(--foro-radius);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--foro-lanterna) 25%, transparent),
+    0 10px 28px rgba(7, 48, 61, 0.28);
+  resize: none;
+  overflow: hidden;
+  outline: none;
+  white-space: pre-wrap;
+}
+.cms-inpag__campo[aria-invalid="true"] {
+  border-color: var(--foro-errore);
+}
+.cms-inpag__nota {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.cms-inpag__nota.is-err {
+  background: var(--foro-errore);
+  color: #fff;
+}
+
+/* barra della sezione in modifica */
+.cms-barra-ed {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 250;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 8px 8px 8px 16px;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  border-radius: 14px;
+  box-shadow: 0 14px 40px rgba(7, 48, 61, 0.4);
+  font-size: 0.88rem;
+}
+.cms-barra-ed__tit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.cms-barra-ed__tit svg {
+  color: var(--foro-lanterna);
+}
+.cms-barra-ed__tit strong {
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+}
+.cms-barra-ed__stato {
+  color: var(--foro-laguna-chiara);
+}
+.cms-barra-ed__stato.is-err {
+  color: #ffb4a8;
+}
+.cms-barra-ed__azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cms-barra-ed__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--foro-carta) 30%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--foro-carta);
+  font: inherit;
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  cursor: pointer;
+}
+.cms-barra-ed__btn:hover:not(:disabled) {
+  border-color: var(--foro-lanterna);
+  color: var(--foro-lanterna);
+}
+.cms-barra-ed__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cms-barra-ed__btn--salva {
+  background: var(--foro-lanterna);
+  border-color: var(--foro-lanterna);
+  color: var(--foro-notte);
+  font-weight: 600;
+}
+.cms-barra-ed__btn--salva:hover:not(:disabled) {
+  color: var(--foro-notte);
+  filter: brightness(1.06);
+}
+.cms-ed__nota {
+  margin: -6px 0 0;
+  font-size: 0.85rem;
+  color: var(--foro-ardesia);
+}
+@media (max-width: 640px) {
+  .cms-barra-ed {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    transform: none;
+    bottom: 8px;
+  }
+  .cms-barra-ed__azioni {
+    width: 100%;
+  }
+  .cms-barra-ed__btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

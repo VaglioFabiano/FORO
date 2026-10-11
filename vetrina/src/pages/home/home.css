@@ -1,0 +1,50 @@
+/*
+ * Ritmo dei fondi della home, nell'ordine attuale delle sezioni:
+ * Petrolio (apertura) · Travertino · Travertino scuro · Petrolio (Eventi) · Travertino scuro · … · Notte (footer).
+ * Se cambi l'ordine delle sezioni in HomePage.tsx, aggiorna qui l'alternanza.
+ */
+#orari {
+  background: var(--foro-travertino);
+}
+#aula {
+  background: var(--foro-travertino-deep);
+}
+/* il Petrolio dell'apertura torna a metà pagina; i colori interni sono in eventi.css */
+#eventi {
+  background: var(--foro-petrolio);
+}
+#chi-siamo {
+  background: var(--foro-travertino-deep);
+}
+#social {
+  background: var(--foro-travertino);
+}
+#statuto {
+  background: var(--foro-travertino-deep);
+}
+#segnalazioni {
+  background: var(--foro-travertino);
+}
+#contatti {
+  background: var(--foro-travertino-deep);
+}
+
+/* elementi interni che riprendevano il fondo della propria sezione */
+#aula .aula-info__modulo--servizi {
+  background: var(--foro-travertino);
+}
+#chi-siamo .cs-tappa__node {
+  background: var(--foro-travertino-deep);
+}
+#chi-siamo .cs-tappa:hover .cs-tappa__node {
+  background: var(--foro-laguna-chiara);
+}
+#chi-siamo .cs-tappa.is-now .cs-tappa__node {
+  background: var(--foro-petrolio);
+  box-shadow:
+    0 0 0 5px var(--foro-travertino-deep),
+    0 0 0 7px var(--foro-petrolio);
+}
+#segnalazioni .sg-anon {
+  background: var(--foro-travertino-deep);
+}

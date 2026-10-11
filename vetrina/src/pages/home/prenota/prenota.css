@@ -1,0 +1,623 @@
+/* Drawer di prenotazione evento · prefisso pd- */
+
+.modal__body:has(> .pd) {
+  padding: 4px clamp(20px, 4vw, 44px) clamp(40px, 5vw, 64px);
+}
+.modal--right:has(.pd) .modal__head {
+  padding-inline: clamp(20px, 4vw, 44px);
+}
+.pd {
+  display: grid;
+  gap: clamp(28px, 3.4vw, 40px);
+  color: var(--foro-inchiostro);
+}
+
+/* testata: locandina + titolo */
+.pd-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 32px);
+  align-items: end;
+}
+.pd-hero__art {
+  border-radius: var(--foro-radius);
+  overflow: hidden;
+}
+/* locandina vera: in testa, a tutta larghezza */
+.pd-hero--poster {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+.pd-hero--poster .pd-hero__art {
+  margin: calc(var(--pd-pad, 0px) * -1) calc(var(--pd-pad, 0px) * -1) 0;
+}
+.pd-maps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  margin-top: 4px;
+  font-family: var(--foro-font-display);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foro-laguna);
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size var(--foro-dur-2) var(--foro-ease);
+}
+.pd-maps:hover,
+.pd-maps:focus-visible {
+  background-size: 100% 1px;
+}
+.pd-maps:focus-visible {
+  outline: 2px solid var(--foro-petrolio);
+  outline-offset: 3px;
+}
+.pd-hero__text {
+  display: grid;
+  gap: 12px;
+  align-content: end;
+  min-width: 0;
+}
+.pd-hero__tags {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.pd-title {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(2rem, 4.2vw, 2.9rem);
+  line-height: 1.04;
+  letter-spacing: -0.024em;
+  color: var(--foro-petrolio);
+}
+.pd-sub {
+  font-family: var(--foro-font-text);
+  font-size: clamp(1.08rem, 1.4vw, 1.22rem);
+  line-height: 1.5;
+  color: var(--foro-ardesia);
+}
+
+/* quattro moduli */
+.pd-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--foro-module-gap);
+}
+.pd-fact {
+  background: var(--foro-carta-soft);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  padding: 18px 20px 20px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.pd-fact dt {
+  color: var(--foro-cotto);
+}
+.pd-fact dd {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+.pd-fact__v {
+  font-family: var(--foro-font-display);
+  font-size: 1.12rem;
+  line-height: 1.3;
+  color: var(--foro-petrolio);
+}
+.pd-fact__mono {
+  font-family: var(--foro-font-mono);
+  font-size: 1.12rem;
+}
+
+/* nota tessera */
+.pd-note {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  background: var(--foro-carta);
+  color: var(--foro-petrolio);
+  border-radius: var(--foro-radius);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.pd-note svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* posti + copia */
+.pd-status {
+  display: flex;
+  align-items: center;
+  gap: 16px 28px;
+  flex-wrap: wrap;
+  padding-block: 4px;
+}
+.pd-status__seats {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.pd-status__seats .seats__label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem;
+}
+.pd-status__past {
+  color: var(--foro-ardesia);
+}
+.pd-copy {
+  min-height: 44px;
+  transition:
+    background var(--foro-dur-2) var(--foro-ease),
+    color var(--foro-dur-2) var(--foro-ease),
+    border-color var(--foro-dur-2) var(--foro-ease);
+}
+.pd-copy.is-done {
+  background: var(--foro-petrolio);
+  border-color: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+
+/* descrizione */
+.pd-prose {
+  font-family: var(--foro-font-text);
+  font-size: 1.16rem;
+  line-height: 1.66;
+  font-optical-sizing: auto;
+  display: grid;
+  gap: 1em;
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+.pd-prose p:first-child::first-line {
+  font-variant-caps: normal;
+}
+
+/* indizi */
+.pd-indizi {
+  border-radius: var(--foro-radius);
+  padding: clamp(22px, 3vw, 32px);
+  display: grid;
+  gap: 20px;
+}
+.pd-indizi__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  color: var(--foro-lanterna);
+}
+.pd-indizi__hint {
+  color: var(--foro-laguna-chiara);
+}
+.pd-indizi__list {
+  margin: 0;
+  display: grid;
+}
+.pd-indizi__row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--foro-linea-chiara);
+  align-items: baseline;
+}
+.pd-indizi__row dt {
+  color: var(--foro-laguna-chiara);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+}
+.pd-indizi__row dd {
+  margin: 0;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  color: var(--foro-carta);
+}
+
+/* righe info */
+.pd-info {
+  margin: 0;
+  border-top: 1px solid var(--foro-linea);
+}
+.pd-info__row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--foro-linea);
+  align-items: baseline;
+}
+.pd-info__row dt {
+  color: var(--foro-ardesia);
+}
+.pd-info__row dd {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* ───────── prenotazione ───────── */
+.pd-book {
+  margin-top: 8px;
+  padding: clamp(24px, 3.4vw, 40px);
+  background: var(--foro-carta-soft);
+  border: 1px solid var(--foro-pietra);
+  border-top: 3px solid var(--foro-lanterna);
+  border-radius: var(--foro-radius);
+  scroll-margin-top: 24px;
+}
+.pd-form {
+  display: grid;
+  gap: 24px;
+}
+.pd-form__head,
+.pd-full__head {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.pd-form__title {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--foro-petrolio);
+}
+.pd-form__lead {
+  font-family: var(--foro-font-text);
+  font-size: 1.06rem;
+  line-height: 1.55;
+  color: var(--foro-ardesia);
+  max-width: 52ch;
+}
+.pd-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 16px;
+}
+.pd-form__grid .field {
+  min-width: 0;
+}
+.pd-span {
+  grid-column: 1 / -1;
+}
+.pd-form .input,
+.pd-form .select,
+.pd-form .textarea,
+.pd-full .input {
+  background: var(--foro-travertino);
+}
+.pd-form__privacy .check {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.pd-form__alert {
+  margin-top: 2px;
+}
+.pd-form__submit {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+/* successo */
+.pd-ok {
+  display: grid;
+  gap: 24px;
+}
+.pd-ok__head {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.pd-ok__disc {
+  width: 48px;
+  height: 48px;
+  background: var(--foro-ok);
+  color: var(--foro-carta);
+  flex: none;
+  margin-top: 2px;
+}
+.pd-ticket {
+  position: relative;
+  border-radius: var(--foro-radius);
+  padding: clamp(22px, 3vw, 32px);
+  display: grid;
+  gap: 20px;
+  box-shadow: var(--foro-shadow-lg);
+  overflow: hidden;
+}
+.pd-ticket::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 26%;
+  height: 6px;
+  background: var(--foro-lanterna);
+}
+.pd-ticket__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+.pd-ticket__ev {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.pd-ticket__k {
+  color: var(--foro-laguna-chiara);
+}
+.pd-ticket__title {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+.pd-ticket__logo {
+  flex: none;
+}
+.pd-ticket__perf {
+  height: 0;
+  border-top: 1px dashed rgba(251, 231, 204, 0.38);
+  margin-inline: calc(clamp(22px, 3vw, 32px) * -1);
+}
+.pd-ticket__code {
+  display: grid;
+  gap: 8px;
+}
+.pd-ticket__codev {
+  font-family: var(--foro-font-mono);
+  font-weight: 500;
+  font-size: clamp(1.8rem, 4.4vw, 2.6rem);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--foro-lanterna);
+  font-variant-numeric: tabular-nums;
+}
+.pd-ticket__grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1.4fr 0.7fr 1fr 1fr;
+  gap: 16px;
+}
+.pd-ticket__grid dt {
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--foro-laguna-chiara);
+  margin-bottom: 6px;
+}
+.pd-ticket__grid dd {
+  margin: 0;
+  font-family: var(--foro-font-mono);
+  font-size: 0.92rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.pd-ticket__foot {
+  color: var(--foro-carta);
+  opacity: 0.85;
+  padding-top: 14px;
+  border-top: 1px solid var(--foro-linea-chiara);
+}
+.pd-ok__cal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.pd-ok__cal .btn {
+  justify-content: center;
+}
+.pd-ok__more {
+  display: grid;
+  border-top: 1px solid var(--foro-linea);
+}
+.pd-row-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--foro-linea);
+  background: transparent;
+  font: inherit;
+  font-family: var(--foro-font-display);
+  font-size: 1rem;
+  color: var(--foro-petrolio);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--foro-dur-2) var(--foro-ease),
+    padding var(--foro-dur-2) var(--foro-ease);
+}
+.pd-row-btn span {
+  flex: 1;
+}
+.pd-row-btn:hover {
+  color: var(--foro-laguna);
+  padding-left: 10px;
+}
+.pd-row-btn:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 2px;
+}
+.pd-row-btn__go {
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.pd-row-btn:hover .pd-row-btn__go {
+  transform: translateX(4px);
+}
+.pd-row-btn--danger {
+  color: var(--foro-errore);
+}
+.pd-row-btn--danger:hover {
+  color: var(--foro-errore);
+}
+.pd-confirm {
+  padding: 18px 0 20px;
+  border-bottom: 1px solid var(--foro-linea);
+  display: grid;
+  gap: 14px;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.pd-confirm__btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pd-confirm__yes {
+  background: var(--foro-errore);
+  border-color: var(--foro-errore);
+}
+.pd-ok__mail {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--foro-ardesia);
+}
+
+/* al completo / concluso */
+.pd-full,
+.pd-past {
+  display: grid;
+  gap: 22px;
+  justify-items: start;
+}
+.pd-full__form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+  width: 100%;
+}
+.pd-full__form .btn {
+  margin-top: 27px;
+  min-height: 48px;
+}
+.pd-full .alert {
+  width: 100%;
+}
+.pd-past__photo {
+  margin: 0;
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+.pd-past__photo img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--foro-radius);
+}
+.pd-past__photo figcaption {
+  color: var(--foro-ardesia);
+}
+
+/* slug inesistente */
+.pd-404 {
+  padding-top: clamp(24px, 8vh, 96px);
+  justify-items: start;
+  gap: 18px;
+  max-width: 52ch;
+}
+.pd-404__disc {
+  width: 72px;
+  height: 72px;
+  background: var(--foro-carta);
+  color: var(--foro-petrolio);
+  margin-bottom: 8px;
+}
+.pd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .pd-hero {
+    grid-template-columns: 1fr;
+  }
+  .pd-facts {
+    grid-template-columns: 1fr;
+  }
+  .pd-fact {
+    grid-template-columns: 92px 1fr;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .pd-form__grid {
+    grid-template-columns: 1fr;
+  }
+  .pd-indizi__row,
+  .pd-info__row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .pd-ticket__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pd-ok__cal {
+    grid-template-columns: 1fr;
+  }
+  .pd-full__form {
+    grid-template-columns: 1fr;
+  }
+  .pd-full__form .btn {
+    margin-top: 0;
+    width: 100%;
+    justify-content: center;
+  }
+  .pd-status .pd-copy {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* evento aperto: al posto del modulo, l'invito a venire direttamente */
+.pd-aperto {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 22px;
+  background: color-mix(in srgb, var(--foro-ok) 8%, #fffdf9);
+  border: 1px solid color-mix(in srgb, var(--foro-ok) 30%, transparent);
+  border-radius: var(--foro-radius);
+}
+.pd-aperto__ico {
+  width: 44px;
+  background: var(--foro-ok);
+  color: #fff;
+}
+.pd-aperto__corpo {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.pd-aperto__corpo .pd-form__title,
+.pd-aperto__corpo .pd-form__lead {
+  margin: 0;
+}

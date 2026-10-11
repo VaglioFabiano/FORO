@@ -1,0 +1,9 @@
+{
+  "regions": ["dub1"],
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -1,0 +1,959 @@
+/* Hero (#top) e Orari (#orari) · prefisso ho- */
+
+/* ═════════════════════════ HERO ═════════════════════════ */
+.ho-hero {
+  position: relative;
+  min-height: max(100svh, 760px);
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(var(--foro-header-h) + clamp(32px, 5vw, 72px));
+  overflow: hidden;
+  isolation: isolate;
+}
+/* trama della griglia: due linee che dividono la pagina in quattro, appena accennate */
+.ho-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(120% 90% at 85% 10%, rgba(26, 107, 130, 0.35), transparent 60%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.ho-hero__main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  gap: clamp(40px, 5vw, 88px);
+  align-items: center;
+  padding-bottom: clamp(40px, 5vw, 72px);
+}
+.ho-hero__text {
+  display: grid;
+  gap: 28px;
+  align-content: center;
+}
+.ho-hero__eyebrow {
+  color: var(--foro-laguna-chiara);
+}
+.ho-hero__title {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(3.4rem, 6.7vw, 7.25rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+  color: var(--foro-carta);
+  margin-left: -0.05em;
+}
+.ho-hero__title .corner-mark {
+  border-width: max(2px, 0.045em);
+  margin-left: 0.08em;
+  transform: translateY(0.1em);
+}
+.ho-hero__lead {
+  font-family: var(--foro-font-text);
+  font-optical-sizing: auto;
+  font-size: clamp(1.15rem, 1.45vw, 1.4rem);
+  line-height: 1.5;
+  max-width: 44ch;
+  color: rgba(251, 231, 204, 0.86);
+  text-wrap: pretty;
+}
+.ho-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.ho-hero__cta:focus-visible {
+  outline-color: var(--foro-lanterna);
+}
+
+/* ── il prossimo evento da protagonista: locandina · scheda Lanterna · stato Notte ── */
+.ho-hero__gridwrap {
+  width: 100%;
+  max-width: 720px;
+  justify-self: end;
+}
+.ho-feat {
+  display: grid;
+  grid-template-columns: minmax(0, 1.14fr) minmax(0, 1fr);
+  grid-template-areas:
+    "poster evento"
+    "stato stato";
+  gap: var(--foro-module-gap);
+}
+.ho-mod {
+  position: relative;
+  border-radius: var(--foro-radius);
+  overflow: hidden;
+  container-type: inline-size;
+  will-change: clip-path;
+}
+.ho-mod__in {
+  height: 100%;
+}
+.ho-mod__label {
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.ho-mod__mono {
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+/* modulo 1 · locandina vera, intera */
+.ho-mod--poster {
+  grid-area: poster;
+  aspect-ratio: 4 / 5;
+  background: var(--foro-notte);
+}
+.ho-poster {
+  display: block;
+  height: 100%;
+}
+.ho-poster__art {
+  height: 100%;
+  width: 100%;
+  border-radius: 0;
+}
+.ho-poster .ea-poster__img {
+  transition: transform 900ms var(--foro-ease);
+}
+.ho-poster:hover .ea-poster__img {
+  transform: scale(1.025);
+}
+
+/* senza eventi: la foto vera al posto della locandina */
+.ho-foto {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+.ho-foto img {
+  position: absolute;
+  left: 0;
+  top: -8%;
+  width: 100%;
+  height: 116%;
+  object-fit: cover;
+  object-position: 50% 45%;
+  opacity: 0;
+  transition: opacity 900ms var(--foro-ease);
+}
+.ho-foto.is-loaded img {
+  opacity: 1;
+}
+.ho-foto__veil {
+  position: absolute;
+  inset: 0;
+  background: var(--foro-velatura-notte);
+}
+.ho-foto__cap {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 24px;
+  color: var(--foro-carta);
+}
+.ho-foto__cap::before {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+
+/* modulo 2 · scheda dell'evento (Lanterna) */
+.ho-mod--evento {
+  grid-area: evento;
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+}
+.ho-evento {
+  height: 100%;
+  padding: clamp(20px, 8.5cqi, 30px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 6cqi, 22px);
+  color: var(--foro-notte);
+}
+.ho-evento__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.ho-evento__rel,
+.ho-evento__tessera {
+  display: block;
+  opacity: 0.78;
+}
+.ho-evento__head {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+.ho-evento__occhiello {
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+}
+.ho-evento__title {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: clamp(1.6rem, 11.5cqi, 2.4rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.ho-evento__titlelink {
+  color: inherit;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1.5px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size var(--foro-dur-3) var(--foro-ease);
+}
+.ho-evento__titlelink:hover {
+  background-size: 100% 1.5px;
+}
+.ho-evento__titlelink:focus-visible {
+  outline: 2px solid var(--foro-notte);
+  outline-offset: 3px;
+}
+.ho-evento__facts {
+  display: grid;
+  gap: 10px;
+  padding-top: clamp(14px, 5cqi, 18px);
+  border-top: 1px solid rgba(7, 48, 61, 0.25);
+  margin: 0;
+}
+.ho-evento__facts > div {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.ho-evento__facts dt {
+  padding-top: 2px;
+  display: flex;
+}
+.ho-evento__facts dd {
+  margin: 0;
+  display: grid;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+.ho-evento__mono {
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem !important;
+  font-variant-numeric: tabular-nums;
+  display: block !important;
+}
+.ho-evento__mono b {
+  font-weight: 600;
+}
+.ho-evento__luogo {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+}
+.ho-evento__addr {
+  font-size: 0.875rem;
+  opacity: 0.82;
+}
+.ho-evento__cta {
+  --btn-bg: var(--foro-notte);
+  --btn-fg: var(--foro-carta);
+  --btn-bd: var(--foro-notte);
+  --btn-bg-h: var(--foro-petrolio);
+  --btn-bd-h: var(--foro-petrolio);
+  padding-inline: 18px;
+}
+.ho-evento__cta:focus-visible {
+  outline: 2px solid var(--foro-notte);
+  outline-offset: 3px;
+}
+.ho-evento--vuoto {
+  transition: background var(--foro-dur-2) var(--foro-ease);
+}
+.ho-evento--vuoto:hover {
+  background: #f0b457;
+}
+.ho-evento--vuoto .ho-evento__title {
+  margin-top: auto;
+}
+.ho-evento__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+}
+
+/* modulo 3 · stato dell'aula, fascia Notte */
+.ho-mod--stato {
+  grid-area: stato;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+}
+.ho-live {
+  height: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(18px, 3.4cqi, 32px);
+  padding: 18px clamp(20px, 4cqi, 30px);
+  color: var(--foro-carta);
+  transition: background var(--foro-dur-2) var(--foro-ease);
+}
+.ho-live:hover {
+  background: #0a3b4a;
+}
+.ho-live:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: -4px;
+}
+.ho-live__state-wrap {
+  display: grid;
+  gap: 6px;
+}
+.ho-live__label {
+  color: var(--foro-laguna-chiara);
+}
+.ho-live__state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: 2.1rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.ho-live__state .dot {
+  width: 9px;
+  height: 9px;
+}
+.ho-live__state.is-closed .dot {
+  background: var(--foro-laguna-chiara);
+}
+.ho-live__info {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.ho-live__detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem;
+  color: rgba(251, 231, 204, 0.86);
+  font-variant-numeric: tabular-nums;
+}
+.ho-live__bar {
+  display: grid;
+  gap: 6px;
+}
+.ho-live__track {
+  position: relative;
+  display: block;
+  height: 2px;
+  background: var(--foro-linea-chiara);
+  overflow: hidden;
+}
+.ho-live__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--foro-lanterna);
+  transform-origin: left;
+}
+.ho-live__ends {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--foro-font-mono);
+  font-size: 0.75rem;
+  color: var(--foro-laguna-chiara);
+  font-variant-numeric: tabular-nums;
+}
+.ho-live__go {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--foro-radius-pill);
+  border: 1px solid var(--foro-linea-chiara);
+  color: var(--foro-carta);
+  transition:
+    transform var(--foro-dur-2) var(--foro-ease),
+    background var(--foro-dur-2) var(--foro-ease);
+}
+.ho-live:hover .ho-live__go {
+  transform: translateX(4px);
+  background: var(--foro-lanterna);
+  border-color: var(--foro-lanterna);
+  color: var(--foro-notte);
+}
+
+/* ── fascia di fatti ── */
+.ho-hero__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block: 22px 26px;
+  border-top: 1px solid var(--foro-linea-chiara);
+  position: relative;
+}
+.ho-fatti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 36px;
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem;
+  color: rgba(251, 231, 204, 0.82);
+}
+.ho-fatti li {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.ho-fatti svg {
+  color: var(--foro-laguna-chiara);
+  flex: none;
+}
+.ho-scroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: var(--foro-size-label);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--foro-carta);
+  flex: none;
+  transition: color var(--foro-dur-1);
+}
+.ho-scroll:hover {
+  color: var(--foro-lanterna);
+}
+.ho-scroll__line {
+  position: relative;
+  width: 1px;
+  height: 36px;
+  background: var(--foro-linea-chiara);
+  overflow: hidden;
+}
+.ho-scroll__line i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 40%;
+  background: currentColor;
+  animation: ho-scroll 2.2s var(--foro-ease-in-out) infinite;
+}
+@keyframes ho-scroll {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(260%);
+  }
+}
+
+@media (max-width: 1100px) {
+  .ho-fatti {
+    gap: 8px 24px;
+  }
+}
+@media (max-width: 960px) {
+  .ho-hero {
+    min-height: auto;
+  }
+  .ho-hero::before {
+    background: radial-gradient(120% 60% at 85% 0%, rgba(26, 107, 130, 0.35), transparent 60%);
+  }
+  .ho-hero__main {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  .ho-hero__gridwrap {
+    justify-self: stretch;
+    max-width: 680px;
+  }
+  .ho-hero__foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ho-scroll {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .ho-hero__text {
+    gap: 22px;
+  }
+  .ho-hero__title {
+    font-size: clamp(3rem, 15.4vw, 4.4rem);
+  }
+  .ho-hero__ctas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 0;
+  }
+  .ho-hero__ctas .btn {
+    width: 100%;
+    min-height: 52px;
+    padding-inline: 12px;
+    font-size: 0.975rem;
+    gap: 8px;
+  }
+  .ho-hero__main {
+    gap: 32px;
+  }
+  .ho-feat {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "poster"
+      "evento"
+      "stato";
+  }
+  .ho-mod--poster {
+    aspect-ratio: 1 / 1;
+  }
+  .ho-evento {
+    padding: 22px;
+    gap: 16px;
+  }
+  .ho-evento__head {
+    margin-top: 4px;
+  }
+  .ho-evento__title {
+    font-size: 2rem;
+  }
+  .ho-live {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "state go"
+      "info info";
+    padding: 20px 22px;
+    row-gap: 16px;
+  }
+  .ho-live__state-wrap {
+    grid-area: state;
+  }
+  .ho-live__info {
+    grid-area: info;
+  }
+  .ho-live__go {
+    grid-area: go;
+  }
+  .ho-fatti {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ═════════════════════════ ORARI ═════════════════════════ */
+.ho-orari {
+  background: var(--foro-travertino);
+}
+.ho-orari .section-head__intro > div {
+  display: grid;
+  gap: 14px;
+}
+.ho-orari__tg {
+  margin-top: 28px;
+}
+.ho-period {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--foro-petrolio);
+}
+.ho-period .t-mono {
+  font-size: 0.95rem;
+}
+.ho-period__text {
+  font-family: var(--foro-font-text);
+  font-size: 1.08rem;
+  line-height: 1.55;
+  color: var(--foro-ardesia);
+  text-wrap: pretty;
+}
+.ho-orari__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: clamp(32px, 4vw, 64px);
+  align-items: start;
+}
+.ho-orari__main {
+  min-width: 0;
+}
+.ho-orari__aside {
+  position: sticky;
+  top: calc(var(--foro-header-h) + 24px);
+  display: grid;
+  gap: var(--foro-module-gap);
+}
+.ho-orari__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--foro-module-gap);
+}
+.ho-orari__pair > * {
+  display: grid;
+}
+
+/* ristile della settimana condivisa */
+.ho-week .orari-row {
+  border-radius: var(--foro-radius);
+  grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1.25fr);
+}
+.ho-week .orari-row:not(.is-today):not(.is-closed):hover {
+  background: var(--foro-travertino-deep);
+}
+.ho-week .orari-row.is-today {
+  padding-block: 24px;
+}
+.ho-week .orari-row.is-today .orari-row__range {
+  font-size: 1.12rem;
+}
+.ho-week .orari-row.is-closed .orari-row__dow {
+  color: var(--foro-ardesia);
+}
+.ho-week .timeline__ticks {
+  margin-left: calc(170px + 28px);
+  margin-right: 0;
+}
+@media (max-width: 760px) {
+  .ho-week .orari-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 6px 16px;
+  }
+  .ho-week .orari-row__hours {
+    justify-items: end;
+    text-align: right;
+  }
+  .ho-week .orari-row__note {
+    justify-content: flex-end;
+  }
+}
+
+/* adesso */
+.ho-now {
+  border-radius: var(--foro-radius);
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+}
+.ho-now__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--foro-laguna-chiara);
+}
+.ho-now__clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ho-now__state {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 4vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.ho-now__state .dot {
+  width: 12px;
+  height: 12px;
+}
+.ho-now.is-closed .ho-now__state .dot {
+  background: var(--foro-laguna-chiara);
+}
+.ho-now__rows {
+  display: grid;
+  border-top: 1px solid var(--foro-linea-chiara);
+}
+.ho-now__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--foro-linea-chiara);
+}
+.ho-now__k {
+  font-size: 0.92rem;
+  color: rgba(251, 231, 204, 0.75);
+}
+.ho-now__v {
+  text-align: right;
+}
+.ho-now__count {
+  font-size: 1.05rem;
+  color: var(--foro-lanterna);
+}
+.ho-now__bar {
+  display: grid;
+  gap: 8px;
+}
+.ho-now__track {
+  position: relative;
+  height: 2px;
+  background: var(--foro-linea-chiara);
+  overflow: hidden;
+}
+.ho-now__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--foro-lanterna);
+  transform-origin: left;
+}
+.ho-now__ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--foro-laguna-chiara);
+}
+
+/* riquadri informativi */
+.ho-info {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 20px;
+  background: var(--foro-carta-soft);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  transition: border-color var(--foro-dur-2) var(--foro-ease);
+}
+.ho-info:hover {
+  border-color: rgba(12, 73, 91, 0.35);
+}
+.ho-info.is-live {
+  border-color: var(--foro-petrolio);
+}
+.ho-info__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 40px;
+}
+.ho-info__icon {
+  width: 40px;
+  background: var(--foro-travertino-deep);
+  color: var(--foro-petrolio);
+}
+.ho-info__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--foro-ok);
+}
+.ho-info__title {
+  text-wrap: balance;
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1.02rem;
+  line-height: 1.25;
+  color: var(--foro-petrolio);
+}
+.ho-info__text {
+  font-family: var(--foro-font-text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--foro-inchiostro);
+}
+.ho-info__text .t-mono {
+  font-size: 0.85em;
+}
+.ho-info__data {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--foro-linea);
+  color: var(--foro-ardesia);
+  font-size: 0.75rem;
+}
+
+/* telegram */
+.ho-tg {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border-radius: var(--foro-radius);
+  background: var(--foro-carta-soft);
+  border: 1px solid var(--foro-pietra);
+  transition:
+    border-color var(--foro-dur-2) var(--foro-ease),
+    background var(--foro-dur-2) var(--foro-ease);
+}
+.ho-tg:hover {
+  border-color: var(--foro-laguna);
+  background: #fffdf9;
+}
+.ho-tg__icon {
+  width: 44px;
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.ho-tg__body {
+  display: grid;
+  gap: 2px;
+}
+.ho-tg__title {
+  font-weight: 500;
+  color: var(--foro-petrolio);
+  line-height: 1.3;
+}
+.ho-tg__text {
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+  line-height: 1.4;
+}
+.ho-tg__text .t-mono {
+  font-size: 0.82rem;
+  color: var(--foro-laguna);
+}
+.ho-tg__arrow {
+  color: var(--foro-laguna);
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.ho-tg:hover .ho-tg__arrow {
+  transform: translate(3px, -3px);
+}
+
+/* volontari */
+.ho-vol {
+  border-radius: var(--foro-radius);
+  padding: 26px 28px;
+  display: grid;
+  gap: 12px;
+}
+.ho-vol__title {
+  font-family: var(--foro-font-display);
+  font-weight: 400;
+  font-size: 1.6rem;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.ho-vol__text {
+  font-family: var(--foro-font-text);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.ho-vol__cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+.ho-vol__cta:focus-visible {
+  outline-color: var(--foro-notte);
+}
+.ho-vol__go {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--foro-radius-pill);
+  background: var(--foro-notte);
+  color: var(--foro-lanterna);
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.ho-vol__cta:hover .ho-vol__go {
+  transform: translateX(4px);
+}
+
+@media (max-width: 1100px) {
+  .ho-orari__layout {
+    grid-template-columns: 1fr;
+  }
+  .ho-orari__aside {
+    position: static;
+    grid-template-columns: 1fr 1fr;
+  }
+  .ho-orari__aside > :first-child {
+    grid-row: span 2;
+  }
+}
+@media (max-width: 680px) {
+  .ho-orari__aside {
+    grid-template-columns: 1fr;
+  }
+  .ho-orari__aside > :first-child {
+    grid-row: auto;
+  }
+  .ho-orari__pair {
+    grid-template-columns: 1fr;
+  }
+  /* sul telefono lo stato è già nell'hero, nell'header e nella riga di oggi: qui non si ripete */
+  .ho-orari__aside > :first-child {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .ho-orari__main {
+    display: contents;
+  }
+  .ho-orari__aside {
+    order: 2;
+  }
+  .ho-orari__tg {
+    order: 3;
+    margin-top: 0;
+  }
+}
+@media (max-width: 760px) {
+  .ho-week .orari-row__hours {
+    display: contents;
+  }
+  .ho-week .orari-row__range {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+    font-size: 0.95rem;
+  }
+  .ho-week .orari-row__note {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+  .ho-week .orari-row__dow {
+    white-space: nowrap;
+  }
+}
+
+.ho-hero__lead p + p {
+  margin-top: 0.7em;
+}

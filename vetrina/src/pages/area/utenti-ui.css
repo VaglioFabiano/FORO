@@ -1,0 +1,121 @@
+/* componenti condivisi Tesserati / Utenti / Profilo */
+.uu-switch {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--foro-radius);
+}
+.uu-switch:focus-visible {
+  outline: 2px solid var(--foro-laguna);
+  outline-offset: 2px;
+}
+.uu-switch__track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  transition: background var(--foro-dur-2) var(--foro-ease);
+}
+.uu-switch__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fffdf9;
+  box-shadow: 0 1px 2px rgba(7, 48, 61, 0.35);
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.uu-switch.is-on .uu-switch__track {
+  background: var(--foro-petrolio);
+}
+.uu-switch.is-on .uu-switch__thumb {
+  transform: translateX(20px);
+}
+.uu-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.uu-search {
+  position: relative;
+  min-width: 0;
+}
+.uu-search__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--foro-ardesia);
+  pointer-events: none;
+}
+.uu-search__input {
+  padding-left: 40px;
+}
+
+.uu-stato {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: var(--foro-inchiostro);
+}
+.uu-stato__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--foro-ardesia);
+}
+.uu-stato--ok .uu-stato__dot {
+  background: var(--foro-ok);
+}
+.uu-stato--attesa .uu-stato__dot {
+  background: var(--foro-lanterna);
+}
+.uu-stato--errore .uu-stato__dot {
+  background: var(--foro-errore);
+}
+.uu-stato--neutro {
+  color: var(--foro-ardesia);
+}
+
+.uu-code {
+  display: grid;
+  gap: 8px;
+}
+.uu-code__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--foro-travertino);
+  border: 1px dashed var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  justify-content: space-between;
+}
+.uu-code__val {
+  font-family: var(--foro-font-mono);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: var(--foro-petrolio);
+  overflow-wrap: anywhere;
+}
+.uu-code__val--big {
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+}
+/* righe di caricamento (Skeleton) */
+.uu-skel {
+  display: grid;
+  gap: 10px;
+  padding: 16px 20px;
+}

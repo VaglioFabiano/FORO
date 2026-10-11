@@ -1,0 +1,201 @@
+/* Archivio verbali: prefisso .vb- */
+.vb-creato {
+  margin-bottom: 16px;
+}
+.vb-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--foro-pietra);
+  background: var(--foro-travertino);
+}
+.vb-back {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  color: var(--foro-petrolio);
+  cursor: pointer;
+}
+.vb-back:hover:not(:disabled) {
+  border-color: var(--foro-petrolio);
+}
+.vb-back:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.vb-crumbs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  font-family: var(--foro-font-display);
+  font-size: 1.05rem;
+  color: var(--foro-petrolio);
+}
+.vb-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.vb-crumb__sep {
+  color: var(--foro-ardesia);
+}
+.vb-crumb button {
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--foro-radius);
+  background: none;
+  font: inherit;
+  color: var(--foro-laguna);
+  cursor: pointer;
+}
+.vb-crumb button:hover {
+  background: rgba(12, 73, 91, 0.07);
+}
+.vb-crumb [aria-current] {
+  padding: 4px 6px;
+  font-weight: 500;
+}
+
+.vb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.vb-list li + li {
+  border-top: 1px solid var(--foro-linea);
+}
+.vb-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--foro-inchiostro);
+  cursor: pointer;
+  transition: background var(--foro-dur-1);
+}
+.vb-item:hover {
+  background: rgba(12, 73, 91, 0.05);
+}
+.vb-item__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--foro-radius);
+  background: var(--foro-travertino-deep);
+  color: var(--foro-petrolio);
+}
+.vb-item.is-folder .vb-item__icon {
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.vb-item__main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.vb-item__name {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.vb-item__type {
+  font-family: var(--foro-font-mono);
+  font-size: 0.75rem;
+  color: var(--foro-ardesia);
+}
+.vb-item__go {
+  color: var(--foro-ardesia);
+  transition: transform var(--foro-dur-2) var(--foro-ease), color var(--foro-dur-1);
+}
+.vb-item:hover .vb-item__go {
+  color: var(--foro-petrolio);
+  transform: translateX(3px);
+}
+.vb-nota {
+  margin: 12px 0 0;
+  font-size: 0.88rem;
+}
+
+/* nuovo verbale */
+.vb-lead {
+  margin: 0 0 16px;
+  color: var(--foro-ardesia);
+  line-height: 1.5;
+}
+.vb-lead strong {
+  color: var(--foro-inchiostro);
+}
+.vb-models {
+  display: grid;
+  gap: 10px;
+}
+.vb-model {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  font: inherit;
+  text-align: left;
+  color: var(--foro-petrolio);
+  cursor: pointer;
+  transition: border-color var(--foro-dur-1);
+}
+.vb-model:hover {
+  border-color: var(--foro-petrolio);
+}
+.vb-model span {
+  display: grid;
+  gap: 2px;
+}
+.vb-model strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+}
+.vb-model small {
+  color: var(--foro-ardesia);
+  font-size: 0.85rem;
+}
+.vb-model__go {
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.vb-model:hover .vb-model__go {
+  transform: translateX(3px);
+}
+
+/* anteprima di Google */
+.vb-preview {
+  display: grid;
+  gap: 12px;
+}
+.vb-preview__bar {
+  display: flex;
+  justify-content: flex-end;
+}
+.vb-preview__frame {
+  width: 100%;
+  height: max(360px, calc(100dvh - 230px));
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  background: #fff;
+}

@@ -1,0 +1,303 @@
+/* 08 · Dove siamo — prefisso ct- */
+.ct {
+  background: var(--foro-travertino);
+}
+.ct-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--foro-module-gap);
+}
+.ct-map,
+.ct-map .map-block {
+  height: 100%;
+}
+.ct-map .map-block {
+  border-radius: var(--foro-radius);
+  overflow: hidden;
+}
+.ct-addr {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: clamp(24px, 3.2vw, 48px);
+  border-radius: var(--foro-radius);
+}
+.ct-addr__k {
+  color: var(--foro-laguna-chiara);
+}
+.ct-addr__street {
+  font-style: normal;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(2.4rem, 4.2vw, 3.75rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--foro-carta);
+  margin-top: -12px;
+}
+.ct-addr__street span {
+  display: block;
+  margin-top: 14px;
+  font-size: 0.42em;
+  letter-spacing: -0.005em;
+  color: rgba(251, 231, 204, 0.78);
+}
+.ct-access {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--foro-linea-chiara);
+}
+.ct-access > div {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--foro-linea-chiara);
+}
+.ct-access dt {
+  font-size: 0.75rem;
+  color: var(--foro-laguna-chiara);
+  padding-top: 3px;
+}
+.ct-access dd {
+  margin: 0;
+  font-family: var(--foro-font-text);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+.ct-access dd.t-mono {
+  font-family: var(--foro-font-mono);
+  font-size: 0.85rem;
+  padding-top: 2px;
+}
+.ct-addr__actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* colonne */
+.ct-cols {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(24px, 3vw, 48px);
+  margin-top: clamp(48px, 6vw, 88px);
+}
+.ct-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--foro-inchiostro);
+  min-width: 0;
+}
+.ct-col__k {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--foro-ardesia);
+}
+.ct-col__k .t-mono {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-weight: 400;
+}
+.ct-col__txt {
+  font-family: var(--foro-font-text);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--foro-ardesia);
+  text-wrap: pretty;
+}
+.ct-state {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 1.05rem;
+}
+.ct-state .dot {
+  align-self: center;
+  color: var(--foro-ardesia);
+}
+.ct-state strong {
+  font-weight: 500;
+  color: var(--foro-petrolio);
+}
+.ct-state span:last-child {
+  color: var(--foro-ardesia);
+  font-size: 0.95rem;
+}
+.ct-fasce {
+  display: grid;
+  gap: 6px;
+}
+.ct-fasce li {
+  font-size: clamp(1.5rem, 2.1vw, 1.9rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--foro-inchiostro);
+}
+.ct-fasce li span {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  line-height: 1.45;
+  color: var(--foro-ardesia);
+  margin-top: 6px;
+}
+.ct-more {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--foro-laguna);
+  align-self: flex-start;
+}
+.ct-more svg {
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.ct-more:hover svg {
+  transform: translateX(4px);
+}
+.ct-mail {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--foro-pietra);
+  color: var(--foro-petrolio);
+  transition:
+    color var(--foro-dur-1) var(--foro-ease),
+    border-color var(--foro-dur-2) var(--foro-ease);
+}
+.ct-mail__addr {
+  font-family: var(--foro-font-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+.ct-mail svg {
+  flex: none;
+  margin-top: 3px;
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.ct-mail:hover {
+  color: var(--foro-laguna);
+  border-color: var(--foro-laguna);
+}
+.ct-mail:hover svg {
+  transform: translate(2px, -2px);
+}
+.ct-social {
+  display: grid;
+}
+.ct-social__a {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--foro-linea);
+}
+.ct-social li:first-child .ct-social__a {
+  padding-top: 0;
+}
+.ct-social__ic {
+  width: 40px;
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+  transition: background-color var(--foro-dur-2) var(--foro-ease);
+}
+.ct-social__txt {
+  display: grid;
+  min-width: 0;
+}
+.ct-social__txt strong {
+  font-weight: 500;
+  color: var(--foro-inchiostro);
+}
+.ct-social__txt .t-mono {
+  font-size: 0.75rem;
+  color: var(--foro-ardesia);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ct-social__go {
+  color: var(--foro-ardesia);
+  transition:
+    transform var(--foro-dur-2) var(--foro-ease),
+    color var(--foro-dur-2) var(--foro-ease);
+}
+.ct-social__a:hover .ct-social__ic {
+  background: var(--foro-laguna);
+}
+.ct-social__a:hover .ct-social__go {
+  color: var(--foro-laguna);
+  transform: translate(2px, -2px);
+}
+.ct-legal {
+  display: grid;
+  gap: 4px;
+  font-family: var(--foro-font-text);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+.ct-legal strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--foro-petrolio);
+}
+
+@media (max-width: 1100px) {
+  .ct-top {
+    grid-template-columns: 1fr;
+  }
+  .ct-map .map-block {
+    min-height: 420px !important;
+  }
+  .ct-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .ct-map .map-block {
+    min-height: 340px !important;
+  }
+  .ct-cols {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .ct-addr__actions .btn {
+    width: 100%;
+  }
+  .ct-access > div {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+}
+
+/* revisione: la mappa non ripete indirizzo e indicazioni, già nel pannello Petrolio accanto */
+.ct-map .map-block__addr,
+.ct-map .map-block__actions > a {
+  display: none !important; /* MapBlock imposta display in linea */
+}
+.ct-map .map-block__overlay {
+  left: auto;
+  padding: 10px;
+}
+.ct-map .map-block__overlay:not(:has(button)) {
+  display: none;
+}
+/* il punto «aperta» resta dentro la colonna: l'alone non sborda a sinistra */
+.ct-state .dot {
+  margin-left: 4px;
+}

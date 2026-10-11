@@ -1,0 +1,257 @@
+.ute-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.ute-tools {
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) 1fr;
+  gap: 12px 24px;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--foro-pietra);
+}
+.ute-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ute-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--foro-inchiostro);
+  cursor: pointer;
+  transition: background var(--foro-dur-1), color var(--foro-dur-1), border-color var(--foro-dur-1);
+}
+.ute-chip span {
+  font-family: var(--foro-font-mono);
+  font-size: 0.8rem;
+  color: var(--foro-ardesia);
+}
+.ute-chip:hover {
+  border-color: var(--foro-petrolio);
+}
+.ute-chip.is-on {
+  background: var(--foro-petrolio);
+  border-color: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.ute-chip.is-on span {
+  color: var(--foro-laguna-chiara);
+}
+.ute-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+}
+.ute-who > div {
+  display: grid;
+  gap: 1px;
+}
+.ute-who strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ute-who strong em {
+  font-style: normal;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--foro-travertino-deep);
+  color: var(--foro-petrolio);
+  border-radius: var(--foro-radius);
+}
+.ute-who span {
+  font-size: 0.8rem;
+  color: var(--foro-ardesia);
+}
+.ute-who--modal {
+  padding: 12px;
+  background: var(--foro-travertino);
+  border-radius: var(--foro-radius);
+}
+.ute-tg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--foro-petrolio);
+  white-space: nowrap;
+}
+.ute-last {
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+.ute-th-act {
+  text-align: right !important;
+}
+.ute-act {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.ute-ib {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  color: var(--foro-petrolio);
+  cursor: pointer;
+  transition: background var(--foro-dur-1), border-color var(--foro-dur-1);
+}
+.ute-ib:hover:not(:disabled) {
+  background: var(--foro-travertino-deep);
+  border-color: var(--foro-petrolio);
+}
+.ute-ib:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.ute-foot {
+  padding: 14px 20px;
+  border-top: 1px solid var(--foro-pietra);
+  font-size: 0.88rem;
+}
+
+.ute-form {
+  display: grid;
+  gap: 18px;
+}
+.ute-lead {
+  margin: 0;
+  color: var(--foro-ardesia);
+  font-family: var(--foro-font-text);
+  line-height: 1.5;
+}
+.ute-lead strong {
+  color: var(--foro-inchiostro);
+  font-weight: 600;
+}
+.ute-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.ute-full {
+  grid-column: 1 / -1;
+}
+.ute-ro input {
+  font-family: var(--foro-font-mono);
+  background: var(--foro-travertino);
+  color: var(--foro-petrolio);
+}
+.ute-pw {
+  display: grid;
+  gap: 8px;
+}
+.ute-pw__regola {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--foro-ardesia);
+}
+.ute-form__act {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.ute-radios {
+  display: grid;
+  gap: 8px;
+}
+.ute-radio {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  cursor: pointer;
+  transition: border-color var(--foro-dur-1), background var(--foro-dur-1);
+}
+.ute-radio input {
+  margin-top: 4px;
+  accent-color: var(--foro-petrolio);
+}
+.ute-radio span {
+  display: grid;
+  gap: 2px;
+}
+.ute-radio strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+}
+.ute-radio small {
+  color: var(--foro-ardesia);
+  font-size: 0.85rem;
+}
+.ute-radio.is-on {
+  border-color: var(--foro-petrolio);
+  background: rgba(12, 73, 91, 0.05);
+}
+@media (max-width: 900px) {
+  .ute-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ute-tools {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .ute-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.ute-table th, .ute-table td { padding-left: 12px; padding-right: 12px; }
+.ute-table th:first-child, .ute-table td:first-child { padding-left: 20px; }
+.ute-who { min-width: 190px; }
+.ute-table .tag { white-space: normal; line-height: 1.25; max-width: 150px; }
+.ute-last { font-size: 0.82rem; }
+.ute-ib { width: 44px; height: 44px; }
+.ute-table .tag { padding-top: 4px; padding-bottom: 4px; }
+.ute-lv { display: none; }
+@media (max-width: 720px) {
+  .ute-table th:nth-child(n+2):nth-child(-n+5),
+  .ute-table td:nth-child(n+2):nth-child(-n+5) { display: none; }
+  .ute-who { min-width: 0; }
+  .ute-lv { display: block; font-size: 0.72rem !important; letter-spacing: 0.08em; text-transform: uppercase; color: var(--foro-petrolio) !important; font-weight: 600; }
+  .ute-table th:first-child, .ute-table td:first-child { padding-left: 16px; }
+  .ute-table th:last-child, .ute-table td:last-child { padding-right: 16px; }
+}
+@media (max-width: 720px) {
+  .ute-ib { width: 40px; height: 40px; }
+  .ute-act { gap: 4px; }
+  .ute-who { gap: 10px; }
+  .ute-who strong { white-space: normal; }
+  .ute-table th, .ute-table td { padding-left: 8px; padding-right: 8px; }
+  .ute-table th:first-child, .ute-table td:first-child { padding-left: 14px; }
+  .ute-table th:last-child, .ute-table td:last-child { padding-right: 14px; }
+}
+/* elimina (come Tesserati) */
+.ute-ib--del:not(:disabled) {
+  color: var(--foro-errore);
+}
+.ute-ib--del:hover:not(:disabled) {
+  border-color: var(--foro-errore);
+}
+.ute-del-btn {
+  background: var(--foro-errore);
+  border-color: var(--foro-errore);
+}

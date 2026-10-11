@@ -1,0 +1,76 @@
+/* Debug Telegram (prefisso tgi-) */
+.tgi { display: grid; gap: 20px; }
+.tgi-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); gap: 20px; align-items: start; }
+.tgi-col { display: grid; gap: 20px; min-width: 0; }
+.tgi-lab { font-family: var(--foro-font-display); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--foro-ardesia); margin: 0 0 8px; display: block; }
+.tgi-block { display: grid; gap: 10px; }
+.tgi-hint { font-size: 0.85rem; color: var(--foro-ardesia); margin: 0; line-height: 1.45; }
+.tgi-lead { margin: 0 0 18px; color: var(--foro-ardesia); line-height: 1.5; }
+
+/* utente loggato */
+.tgi-user { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.tgi-user div { display: grid; gap: 2px; min-width: 0; }
+.tgi-user dt { font-family: var(--foro-font-display); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--foro-ardesia); }
+.tgi-user dd { margin: 0; color: var(--foro-inchiostro); overflow-wrap: anywhere; }
+.tgi-user .num { font-family: var(--foro-font-mono); color: var(--foro-petrolio); }
+
+/* modelli e messaggio */
+.tgi-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tgi-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--foro-pietra); background: #fffdf9; border-radius: var(--foro-radius); font: inherit; font-size: 0.88rem; cursor: pointer; color: var(--foro-inchiostro); }
+.tgi-chip:hover:not(:disabled) { border-color: var(--foro-petrolio); }
+.tgi-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.tgi-editor { border: 1px solid var(--foro-pietra); border-radius: var(--foro-radius); background: #fff; }
+.tgi-editor:focus-within { border-color: var(--foro-petrolio); box-shadow: 0 0 0 3px rgba(12, 73, 91, 0.12); }
+.tgi-tools { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid var(--foro-linea); background: var(--foro-travertino); align-items: center; flex-wrap: wrap; }
+.tgi-tool { height: 34px; display: grid; place-items: center; background: none; border: 1px solid transparent; border-radius: var(--foro-radius); cursor: pointer; color: var(--foro-petrolio); }
+.tgi-tool:hover:not(:disabled) { background: #fffdf9; border-color: var(--foro-pietra); }
+.tgi-tool--text { padding: 0 10px; font-family: var(--foro-font-mono); font-size: 0.78rem; }
+.tgi-tools__count { margin-left: auto; font-family: var(--foro-font-mono); font-size: 0.74rem; color: var(--foro-ardesia); padding-right: 8px; }
+.tgi-text { display: block; width: 100%; min-height: 150px; resize: vertical; border: 0; outline: 0; padding: 14px 16px; font-family: var(--foro-font-text); font-size: 1.02rem; line-height: 1.5; background: transparent; color: var(--foro-inchiostro); }
+.tgi-send { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.tgi-send__more { display: flex; gap: 8px; flex-wrap: wrap; }
+.tgi-reset { color: var(--foro-errore); }
+.tgi-del-btn { background: var(--foro-errore); border-color: var(--foro-errore); }
+.tgi-modal-act { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+/* anteprima */
+.tgi-phone { background: var(--foro-travertino-deep); border: 1px solid var(--foro-pietra); border-radius: var(--foro-radius); overflow: hidden; }
+.tgi-phone__bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--foro-petrolio); color: var(--foro-carta); }
+.tgi-phone__bar strong { font-family: var(--foro-font-display); font-weight: 500; font-size: 0.95rem; display: block; line-height: 1.1; }
+.tgi-phone__bar span { font-size: 0.72rem; color: var(--foro-laguna-chiara); }
+.tgi-phone__body { padding: 22px 14px 26px; min-height: 220px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; background-image: radial-gradient(rgba(12, 73, 91, 0.07) 1px, transparent 1px); background-size: 16px 16px; }
+.tgi-day { align-self: center; font-size: 0.72rem; background: rgba(12, 73, 91, 0.12); color: var(--foro-petrolio); padding: 2px 10px; border-radius: 999px; }
+.tgi-bubble { align-self: flex-start; max-width: 88%; background: #fff; border-radius: 10px 10px 10px 2px; padding: 8px 12px 6px; box-shadow: 0 1px 1px rgba(7, 48, 61, 0.15); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 0.93rem; line-height: 1.38; color: #111; overflow-wrap: anywhere; }
+.tgi-bubble p { margin: 0; white-space: pre-wrap; }
+.tgi-bubble__empty { color: #8a949a; }
+.tgi-bubble__foot { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 2px; font-size: 0.7rem; color: #7d8b91; }
+
+/* informazioni debug */
+.tgi-debug { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tgi-debug__item { min-width: 0; }
+.tgi-debug__item--wide { grid-column: 1 / -1; }
+.tgi-pre { margin: 0; padding: 12px; background: var(--foro-travertino); border: 1px solid var(--foro-linea); border-radius: var(--foro-radius); font-family: var(--foro-font-mono); font-size: 0.76rem; line-height: 1.5; overflow: auto; max-height: 260px; white-space: pre; }
+.tgi-upd { list-style: none; margin: 0; padding: 0; border: 1px solid var(--foro-linea); border-radius: var(--foro-radius); max-height: 420px; overflow-y: auto; }
+.tgi-upd li { display: grid; gap: 2px; padding: 12px 14px; font-size: 0.85rem; line-height: 1.45; border-bottom: 1px solid var(--foro-linea); overflow-wrap: anywhere; }
+.tgi-upd li:last-child { border-bottom: 0; }
+.tgi-upd strong { font-weight: 600; color: var(--foro-inchiostro); }
+.tgi-upd .num { font-family: var(--foro-font-mono); color: var(--foro-petrolio); }
+
+/* imposta chat id */
+.tgi-chat { display: grid; gap: 14px; }
+.tgi-chat__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* risultati */
+.tgi-log { list-style: none; margin: 0; padding: 0; }
+.tgi-log li { display: grid; gap: 3px; padding: 14px 20px; border-bottom: 1px solid var(--foro-linea); }
+.tgi-log li:last-child { border-bottom: 0; }
+.tgi-log__top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-family: var(--foro-font-mono); font-size: 0.78rem; color: var(--foro-ardesia); }
+.tgi-log__to { display: inline-flex; align-items: center; gap: 4px; }
+.tgi-log__msg { font-size: 0.92rem; color: var(--foro-inchiostro); overflow-wrap: anywhere; }
+.tgi-res--ok { box-shadow: inset 3px 0 0 var(--foro-ok); }
+.tgi-res--ok .tgi-log__to { color: var(--foro-ok); }
+.tgi-res--errore { box-shadow: inset 3px 0 0 var(--foro-errore); }
+.tgi-res--errore .tgi-log__to { color: var(--foro-errore); }
+
+@media (max-width: 1000px) { .tgi-grid { grid-template-columns: 1fr; } .tgi-debug { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .tgi-user, .tgi-chat__grid { grid-template-columns: 1fr; } .tgi-send > .btn { width: 100%; } }

@@ -1,0 +1,98 @@
+/* Modifica orari, prefisso ora- */
+.ora-tabs { display: none; margin-bottom: 16px; }
+.ora-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+.ora-col__head { display: grid; gap: 4px; margin-bottom: 14px; color: var(--foro-petrolio); }
+.ora-col__label { color: var(--foro-ardesia); }
+.ora-col__range { margin: 0; font-family: var(--foro-font-display); font-weight: 400; font-size: clamp(1.5rem, 2.2vw, 1.9rem); line-height: 1.1; letter-spacing: -0.01em; color: var(--foro-petrolio); }
+.ora-days { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.ora-day.is-today { border-left: 3px solid var(--foro-lanterna); }
+.ora-day__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px 4px 4px; }
+.ora-day__toggle {
+  display: flex; align-items: center; gap: 10px; flex: 1; min-height: 44px; padding: 0 12px 0 8px;
+  background: none; border: 0; cursor: pointer; text-align: left; font: inherit; color: var(--foro-petrolio);
+}
+.ora-day__toggle:focus-visible { outline: 2px solid var(--foro-laguna); outline-offset: 2px; }
+.ora-day__chev { color: var(--foro-ardesia); transition: transform var(--foro-dur-2) var(--foro-ease); }
+.ora-day__toggle[aria-expanded="false"] .ora-day__chev { transform: rotate(-90deg); }
+.ora-day__toggle { min-height: 60px; }
+.ora-day__data { flex: none; display: grid; justify-items: center; align-content: center; width: 48px; height: 48px; border-radius: var(--foro-radius); background: var(--foro-petrolio); color: var(--foro-carta); line-height: 1; }
+.ora-day__n { font-family: var(--foro-font-display); font-weight: 400; font-size: 1.45rem; }
+.ora-day__m { margin-top: 2px; font-family: var(--foro-font-display); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--foro-laguna-chiara); }
+.ora-day.is-today .ora-day__data { background: var(--foro-lanterna); color: var(--foro-notte); }
+.ora-day.is-today .ora-day__m { color: var(--foro-notte); }
+.ora-day__label { display: grid; gap: 1px; min-width: 0; }
+.ora-day__name { font-family: var(--foro-font-display); font-weight: 500; font-size: 1.1rem; line-height: 1.2; }
+.ora-day__full { font-family: var(--foro-font-display); font-size: 0.85rem; color: var(--foro-ardesia); }
+.ora-today { background: var(--foro-lanterna); color: var(--foro-notte); }
+.ora-day__count {
+  margin-left: auto; min-width: 24px; height: 24px; display: inline-grid; place-items: center; border-radius: 999px;
+  background: var(--foro-travertino-deep); color: var(--foro-petrolio); font-size: 0.78rem;
+}
+.ora-day__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 0 16px 16px; }
+.ora-vuoto { margin: 0; padding: 4px 0 4px 8px; color: var(--foro-ardesia); font-family: var(--foro-font-text); font-size: 0.95rem; }
+
+.ora-fascia {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap;
+  padding: 8px 8px 8px 12px; background: var(--foro-travertino); border: 1px solid var(--foro-pietra); border-radius: var(--foro-radius);
+}
+.ora-fascia.is-sel { border-color: var(--foro-petrolio); background: var(--foro-carta-soft); }
+.ora-fascia.is-edit { display: grid; }
+.ora-fascia__check { min-width: 0; flex: 1; }
+.ora-fascia__txt { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.ora-badge { white-space: nowrap; font-size: 0.95rem; padding: 3px 10px; background: var(--foro-petrolio); color: var(--foro-carta); border-radius: var(--foro-radius); letter-spacing: 0.01em; }
+.ora-fascia__note { font-family: var(--foro-font-text); font-size: 0.95rem; color: var(--foro-ardesia); }
+.ora-fascia__btns { display: flex; gap: 2px; }
+.ora-del { color: var(--foro-errore); }
+.ora-del-btn { background: var(--foro-errore); border-color: var(--foro-errore); color: #fff; }
+
+.ora-new { display: grid; gap: 10px; padding: 12px; border: 1px dashed var(--foro-petrolio); border-radius: var(--foro-radius); background: #fffdf9; }
+.ora-new__top { display: flex; justify-content: space-between; align-items: center; color: var(--foro-petrolio); }
+.ora-x { display: inline-grid; place-items: center; width: 44px; height: 32px; margin: -6px -6px -6px 0; background: none; border: 0; cursor: pointer; color: var(--foro-ardesia); }
+.ora-x:hover { color: var(--foro-petrolio); }
+.ora-edit { display: grid; gap: 10px; }
+.ora-edit__times { display: flex; align-items: center; gap: 8px; }
+.ora-edit__times .input { width: 128px; }
+.ora-edit__note .input { width: 100%; }
+
+.ora-save {
+  position: sticky; bottom: 16px; z-index: 5; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  margin-top: 24px; padding: 12px 16px; background: var(--foro-notte); color: var(--foro-carta); border-radius: var(--foro-radius); box-shadow: var(--foro-shadow-lg);
+}
+.ora-save > span { display: inline-flex; align-items: center; gap: 10px; }
+.ora-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ora-confirm { display: grid; gap: 16px; }
+
+.ora-tg { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; align-items: start; }
+.ora-tg__edit { display: grid; gap: 16px; min-width: 0; }
+.ora-tg__area { font-family: var(--foro-font-mono); font-size: 0.85rem; }
+.ora-tg__area textarea { font-family: var(--foro-font-mono); font-size: 0.85rem; line-height: 1.5; }
+.ora-tg__prev { display: grid; gap: 8px; position: sticky; top: 0; min-width: 0; }
+.ora-tg__phone { border-radius: var(--foro-radius); overflow: hidden; border: 1px solid var(--foro-pietra); background: var(--foro-petrolio); display: grid; grid-template-rows: auto 1fr; max-height: 520px; }
+.ora-tg__bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--foro-notte); color: var(--foro-carta); }
+.ora-tg__bar strong { display: block; font-family: var(--foro-font-display); font-weight: 500; }
+.ora-tg__bar .t-mono { font-size: 0.72rem; color: var(--foro-laguna-chiara); }
+.ora-tg__logo { width: 36px; height: 36px; background: var(--foro-lanterna); color: var(--foro-notte); }
+.ora-tg__chat { padding: 16px 12px; overflow-y: auto; }
+.ora-bubble { background: var(--foro-carta-soft); color: var(--foro-inchiostro); padding: 10px 14px 6px; border-radius: 12px 12px 12px 2px; max-width: 100%; }
+.ora-bubble p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--foro-font-display); font-size: 0.9rem; line-height: 1.45; }
+.ora-bubble strong { font-weight: 600; color: var(--foro-petrolio); }
+.ora-bubble__meta { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 4px; font-size: 0.7rem; color: var(--foro-ardesia); }
+.ora-tg__foot { grid-column: 1 / -1; margin-top: 0; padding-top: 16px; border-top: 1px solid var(--foro-pietra); }
+
+@media (max-width: 960px) {
+  .ora-tabs { display: inline-flex; }
+  .ora-cols { grid-template-columns: minmax(0, 1fr); }
+  .ora-col:not(.is-active) { display: none; }
+  .ora-tg { grid-template-columns: 1fr; gap: 20px; }
+  .ora-tg__prev { position: static; }
+}
+@media (max-width: 520px) {
+  .ora-day__body { padding: 0 12px 12px; }
+  .ora-edit__times .input { width: 118px; }
+  .ora-save { bottom: 8px; }
+  .ora-fascia__check { flex-basis: 100%; }
+  .ora-fascia__btns { margin-left: -8px; }
+  .ora-day__toggle { min-width: 0; padding-right: 4px; gap: 8px; }
+  .ora-day__count { margin-left: auto; }
+  .ora-tabs { display: flex; }
+}

@@ -1,0 +1,521 @@
+/* Area volontari · shell (barra laterale Notte, barra mobile, notifica UFORObot) */
+
+.sh {
+  --sh-side-w: 272px;
+  min-height: 100dvh;
+  background: var(--foro-travertino);
+  display: grid;
+  grid-template-columns: var(--sh-side-w) minmax(0, 1fr);
+}
+
+/* ───────── barra laterale ───────── */
+.sh-side {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 231, 204, 0.18) transparent;
+}
+.sh-side__inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 18px 20px;
+  gap: 28px;
+}
+.sh-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 10px 22px;
+  border-bottom: 1px solid var(--foro-linea-chiara);
+}
+.sh-brand__text {
+  display: grid;
+  gap: 3px;
+  padding-left: 14px;
+  border-left: 1px solid var(--foro-linea-chiara);
+}
+.sh-brand__text .t-label {
+  color: var(--foro-carta);
+  font-size: 0.7rem;
+}
+.sh-brand__sub {
+  font-family: var(--foro-font-mono);
+  font-size: 0.72rem;
+  color: var(--foro-laguna-chiara);
+}
+
+.sh-nav {
+  display: grid;
+  gap: 22px;
+}
+.sh-nav__group {
+  display: grid;
+  gap: 6px;
+}
+.sh-nav__group ul {
+  display: grid;
+  gap: 2px;
+}
+.sh-nav__label {
+  padding: 0 12px;
+  font-family: var(--foro-font-mono);
+  font-size: 0.72rem;
+  color: var(--foro-laguna-chiara);
+  opacity: 0.85;
+}
+.sh-nav__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--foro-radius);
+  color: rgba(251, 231, 204, 0.78);
+  font-size: 0.97rem;
+  transition:
+    color var(--foro-dur-1) var(--foro-ease),
+    background-color var(--foro-dur-1) var(--foro-ease);
+}
+.sh-nav__link:hover {
+  color: var(--foro-carta);
+  background: rgba(251, 231, 204, 0.05);
+}
+.sh-nav__link.is-active {
+  color: var(--foro-carta);
+}
+.sh-nav__active {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--foro-radius);
+  background: rgba(251, 231, 204, 0.09);
+  box-shadow: inset 2px 0 0 var(--foro-lanterna);
+}
+.sh-nav__icon,
+.sh-nav__text,
+.sh-nav__badge {
+  position: relative;
+}
+.sh-nav__icon {
+  flex: none;
+  opacity: 0.9;
+}
+.sh-nav__link.is-active .sh-nav__icon {
+  color: var(--foro-lanterna);
+  opacity: 1;
+}
+.sh-nav__text {
+  flex: 1;
+  min-width: 0;
+}
+.sh-nav__badge {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--foro-radius);
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+  font-family: var(--foro-font-mono);
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+
+.sh-foot {
+  margin-top: auto;
+  display: grid;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--foro-linea-chiara);
+}
+.sh-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -6px;
+  padding: 8px 12px;
+  border-radius: var(--foro-radius);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--foro-dur-2) var(--foro-ease);
+}
+.sh-user:hover {
+  background: color-mix(in srgb, var(--foro-carta) 8%, transparent);
+}
+.sh-user:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 2px;
+}
+.sh-user__go {
+  flex: none;
+  margin-left: auto;
+  color: var(--foro-laguna-chiara);
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.sh-user:hover .sh-user__go {
+  transform: translateX(3px);
+  color: var(--foro-lanterna);
+}
+.sh-user__text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.3;
+}
+.sh-user__text strong {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sh-user__text span {
+  font-size: 0.82rem;
+  color: var(--foro-laguna-chiara);
+}
+.sh-vista {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--foro-linea-chiara);
+  border-radius: var(--foro-radius);
+}
+.sh-vista__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--foro-font-mono);
+  font-size: 0.74rem;
+  color: var(--foro-laguna-chiara);
+}
+.sh-vista__select {
+  appearance: none;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 34px 0 10px;
+  background: rgba(251, 231, 204, 0.06)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%23FBE7CC' stroke-width='1.6'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 8px center / 18px;
+  border: 1px solid rgba(251, 231, 204, 0.14);
+  border-radius: var(--foro-radius);
+  color: var(--foro-carta);
+  font-family: var(--foro-font-display);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color var(--foro-dur-1) var(--foro-ease);
+}
+.sh-vista__select:hover {
+  border-color: rgba(251, 231, 204, 0.36);
+}
+.sh-vista__select:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 2px;
+}
+.sh-vista__select option {
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+}
+.sh-foot__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.sh-foot__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--foro-linea-chiara);
+  border-radius: var(--foro-radius);
+  background: transparent;
+  color: rgba(251, 231, 204, 0.86);
+  font-family: var(--foro-font-display);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition:
+    background-color var(--foro-dur-1) var(--foro-ease),
+    color var(--foro-dur-1) var(--foro-ease),
+    border-color var(--foro-dur-1) var(--foro-ease);
+}
+.sh-foot__btn:hover {
+  background: var(--foro-carta);
+  border-color: var(--foro-carta);
+  color: var(--foro-notte);
+}
+.sh-foot__btn[disabled] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.sh-foot__btn .spinner {
+  width: 15px;
+  height: 15px;
+  border: 1.6px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: foro-spin 0.7s linear infinite;
+}
+
+/* ───────── contenuto ───────── */
+.sh-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sh-content {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: clamp(28px, 4.4vw, 64px) clamp(16px, 4vw, 56px) 96px;
+}
+.sh-vista-bar {
+  overflow: hidden;
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+}
+.sh-vista-bar__inner {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 10px clamp(16px, 4vw, 56px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.sh-vista-bar__inner > span {
+  flex: 1;
+}
+.sh-vista-bar__inner strong {
+  font-weight: 600;
+}
+.sh-vista-bar .btn--ghost {
+  --btn-bg-h: rgba(7, 48, 61, 0.1);
+  border: 1px solid rgba(7, 48, 61, 0.35);
+  flex: none;
+}
+
+.sh-gate {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 64px 0;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+}
+.sh-gate .area-empty {
+  padding-bottom: 12px;
+}
+.sh-fallback {
+  display: grid;
+  gap: 16px;
+}
+.sh-fallback__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-block: 12px;
+}
+
+/* ───────── mobile ───────── */
+.sh-top,
+.sh-drawer-root {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .sh {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sh-side {
+    display: none;
+  }
+  .sh-top {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 60px;
+    padding: 0 8px 0 16px;
+    background: var(--foro-notte);
+    color: var(--foro-carta);
+  }
+  .sh-top__brand {
+    display: inline-flex;
+    padding-right: 14px;
+    border-right: 1px solid var(--foro-linea-chiara);
+  }
+  .sh-top__title {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--foro-font-display);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sh-top__menu {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: var(--foro-carta);
+    border-radius: var(--foro-radius);
+  }
+  .sh-top__menu:hover {
+    background: rgba(251, 231, 204, 0.08);
+  }
+  .sh-drawer-root {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+  }
+  .sh-drawer-scrim {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(7, 48, 61, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    cursor: default;
+  }
+  .sh-drawer {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: min(320px, 88vw);
+    background: var(--foro-notte);
+    color: var(--foro-carta);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-shadow: var(--foro-shadow-lg);
+  }
+  .sh-drawer__close {
+    position: absolute;
+    top: 22px;
+    right: 10px;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: var(--foro-carta);
+    border-radius: var(--foro-radius);
+  }
+  .sh-drawer__close:hover {
+    background: rgba(251, 231, 204, 0.08);
+  }
+  .sh-drawer .sh-brand {
+    padding-right: 48px;
+  }
+  .sh-vista-bar__inner {
+    flex-wrap: wrap;
+  }
+  .sh-fallback__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ───────── notifica UFORObot (Telegram) ───────── */
+.sh-tg {
+  width: 100%;
+  max-width: 400px;
+  margin: 0;
+  padding: 16px;
+  background: #0b2530;
+  background: color-mix(in srgb, var(--foro-notte) 82%, black);
+  border: 1px solid rgba(251, 231, 204, 0.08);
+  border-radius: 14px;
+  color: var(--foro-carta);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+  font-family: var(--foro-font-display);
+}
+.sh-tg__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sh-tg__avatar {
+  width: 38px;
+  background: var(--foro-petrolio);
+}
+.sh-tg__who {
+  display: grid;
+  line-height: 1.25;
+}
+.sh-tg__who strong {
+  font-weight: 500;
+  font-size: 0.98rem;
+}
+.sh-tg__who span {
+  font-size: 0.8rem;
+  color: var(--foro-laguna-chiara);
+}
+.sh-tg__bubble {
+  position: relative;
+  padding: 12px 14px 26px;
+  background: rgba(251, 231, 204, 0.06);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.sh-tg__text strong {
+  font-weight: 600;
+  color: var(--foro-carta);
+}
+.sh-tg__text p + p {
+  margin-top: 4px;
+}
+.sh-tg__text .sh-tg__mono {
+  font-family: var(--foro-font-mono);
+  font-size: 0.88em;
+}
+.sh-tg__time {
+  position: absolute;
+  right: 12px;
+  bottom: 7px;
+  font-family: var(--foro-font-mono);
+  font-size: 0.72rem;
+  color: var(--foro-laguna-chiara);
+  opacity: 0.8;
+}
+.sh-tg__action {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(143, 193, 204, 0.12);
+  color: var(--foro-laguna-chiara);
+  font-family: var(--foro-font-display);
+  font-size: 0.93rem;
+  transition:
+    background-color var(--foro-dur-2) var(--foro-ease),
+    color var(--foro-dur-2) var(--foro-ease);
+}
+.sh-tg__action > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.sh-tg__action:hover {
+  background: rgba(143, 193, 204, 0.2);
+  color: var(--foro-carta);
+}
+.sh-tg__action.is-done {
+  background: rgba(58, 166, 118, 0.18);
+  color: var(--foro-carta);
+}

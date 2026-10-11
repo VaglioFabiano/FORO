@@ -1,0 +1,319 @@
+/* 05 · Seguici sui social */
+/* Instagram sopra a tutta larghezza; sotto Telegram (largo) e Facebook (piccolo) */
+.so-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(16px, 2vw, 28px);
+}
+.so-grid__side {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+  gap: clamp(16px, 2vw, 28px);
+  align-items: start;
+}
+/* Instagram: intestazione a sinistra, post del profilo a destra */
+.so-ig {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 620px);
+}
+.so-ig__head {
+  align-self: stretch;
+  flex-direction: column;
+  align-items: flex-start !important;
+  justify-content: center;
+  gap: 18px !important;
+  padding: clamp(28px, 3.6vw, 56px) !important;
+  border-bottom: 0 !important;
+  background: var(--foro-petrolio);
+}
+.so-ig__id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.so-ig__head .so-ig__avatar {
+  background: var(--foro-carta);
+  box-shadow:
+    0 0 0 2px var(--foro-petrolio),
+    0 0 0 4px var(--foro-lanterna);
+}
+.so-ig__head .so-ig__k {
+  color: var(--foro-laguna-chiara);
+}
+.so-ig__head .so-ig__who strong {
+  color: var(--foro-carta);
+}
+.so-ig__titolo {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(2.2rem, 3.6vw, 3.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--foro-carta);
+  margin-top: 8px;
+}
+.so-ig__testo {
+  font-family: var(--foro-font-text);
+  font-size: clamp(1.05rem, 1.3vw, 1.2rem);
+  line-height: 1.55;
+  color: rgba(251, 231, 204, 0.82);
+  max-width: 38ch;
+}
+.so-ig__head .so-ig__cta {
+  margin-left: 0;
+  margin-top: 6px;
+}
+.so-card {
+  border-radius: var(--foro-radius);
+  border: 1px solid var(--foro-pietra);
+  background: var(--foro-carta-soft);
+  overflow: hidden;
+}
+
+/* Instagram, protagonista */
+.so-ig__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--foro-pietra);
+}
+.so-ig__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--foro-petrolio);
+  box-shadow:
+    0 0 0 2px var(--foro-carta-soft),
+    0 0 0 4px var(--foro-lanterna);
+  flex: none;
+}
+.so-ig__who {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.so-ig__k {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--foro-ardesia);
+}
+.so-ig__who strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--foro-petrolio);
+}
+.so-ig__cta {
+  margin-left: auto;
+}
+.so-ig__embed {
+  container-type: inline-size;
+  background: #fff;
+}
+.so-ig__embed iframe {
+  display: block;
+  width: 100%;
+  /* intestazione del profilo + due righe di tre post quadrati */
+  height: calc(150px + 66.7cqi);
+  border: 0;
+}
+
+/* Telegram */
+.so-tg {
+  display: grid;
+  gap: 18px;
+  padding: 22px 22px 24px;
+  background: var(--foro-petrolio);
+  border-color: var(--foro-petrolio);
+}
+.so-tg__head {
+  display: grid;
+  gap: 8px;
+}
+.so-tg__k {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--foro-laguna-chiara);
+}
+.so-tg__titolo {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(1.7rem, 2.4vw, 2.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--foro-carta);
+}
+.so-tg__testo {
+  font-family: var(--foro-font-text);
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: rgba(251, 231, 204, 0.82);
+}
+.so-tg__feed {
+  display: grid;
+  /* ogni messaggio alto quanto il suo contenuto: il feed scorre, i messaggi non si tagliano */
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 12px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+.so-tg__post {
+  min-height: 120px;
+  border-radius: var(--foro-radius);
+}
+.so-tg__post iframe {
+  border-radius: var(--foro-radius);
+}
+.so-tg__cta {
+  justify-self: start;
+}
+
+/* Facebook */
+.so-fb {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  align-items: center;
+  padding: 20px 22px;
+  color: inherit;
+  transition: border-color var(--foro-dur-2) var(--foro-ease), background var(--foro-dur-2) var(--foro-ease);
+}
+.so-fb:hover {
+  border-color: var(--foro-petrolio);
+}
+.so-fb__icona {
+  width: 48px;
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.so-fb__corpo {
+  display: grid;
+  gap: 2px;
+}
+.so-fb__k {
+  color: var(--foro-ardesia);
+}
+.so-fb__corpo strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: var(--foro-petrolio);
+}
+.so-fb__testo {
+  font-size: 0.92rem;
+  color: var(--foro-ardesia);
+}
+.so-fb__cta {
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-weight: 500;
+  color: var(--foro-petrolio);
+}
+
+@media (max-width: 960px) {
+  .so-ig,
+  .so-grid__side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .so-ig__head {
+    padding: 28px 22px !important;
+  }
+}
+@media (max-width: 560px) {
+  .so-ig__head {
+    flex-wrap: wrap;
+  }
+  .so-ig__cta {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ── riga sotto Instagram: Telegram 2/3 + Facebook 1/3, stessa altezza, più compatti ── */
+.so-grid__side {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: clamp(300px, 26vw, 360px);
+  align-items: stretch;
+}
+.so-grid__side > * {
+  height: 100%;
+  min-height: 0;
+}
+.so-tg {
+  height: 100%;
+  min-height: 0;
+  /* il widget di Telegram è largo almeno 320px: la colonna del feed non scende sotto */
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 1.3fr);
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "head feed"
+    "cta feed";
+  gap: 16px 24px;
+  padding: 22px;
+}
+.so-tg__head {
+  grid-area: head;
+  align-content: start;
+}
+.so-tg__titolo {
+  font-size: clamp(1.45rem, 1.9vw, 1.8rem);
+}
+.so-tg__testo {
+  font-size: 0.98rem;
+}
+.so-tg__feed {
+  grid-area: feed;
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+}
+.so-tg__cta {
+  grid-area: cta;
+  align-self: end;
+}
+.so-fb {
+  height: 100%;
+  grid-template-columns: 1fr;
+  align-content: center;
+  justify-items: start;
+  gap: 14px;
+  padding: 24px;
+}
+.so-fb__cta {
+  grid-column: 1;
+  margin-top: 4px;
+}
+@media (max-width: 960px) {
+  .so-grid__side {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .so-tg {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "head"
+      "feed"
+      "cta";
+    grid-template-rows: auto auto auto;
+  }
+  .so-tg__feed {
+    height: 300px;
+  }
+}
+@media (max-width: 560px) {
+  /* sul telefono la card è più stretta dei 320px minimi del widget: lo lasciamo adattare */
+  .so-tg__post iframe {
+    min-width: 0 !important;
+  }
+}

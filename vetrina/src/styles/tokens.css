@@ -1,0 +1,73 @@
+/* FORO · design tokens v1.0 — dal Manuale di identità visiva e verbale (29.09.2026) */
+:root {
+  /* colore · primari */
+  --foro-petrolio: #0c495b;
+  --foro-carta: #fbe7cc;
+  /* colore · secondari */
+  --foro-lanterna: #e9a23b;
+  --foro-notte: #07303d;
+  --foro-laguna: #1a6b82;
+  --foro-laguna-chiara: #8fc1cc;
+  --foro-cotto: #9a4424;
+  /* colore · neutri */
+  --foro-travertino: #f6f0e6;
+  --foro-pietra: #ddd5c7;
+  --foro-ardesia: #55656c;
+  --foro-inchiostro: #0f1f25;
+  /* colore · stati */
+  --foro-ok: #236b4d;
+  --foro-avviso: var(--foro-lanterna);
+  --foro-errore: #b3261e;
+  --foro-info: var(--foro-laguna);
+
+  /* estensioni web (derivate, non nuovi colori) */
+  --foro-carta-soft: #fdf6ec; /* Carta schiarita per superfici card su Travertino */
+  --foro-travertino-deep: #eee6d8; /* Travertino un tono sotto, per fondi di sezione */
+  --foro-velatura-petrolio: rgba(12, 73, 91, 0.55); /* velatura foto 55% */
+  --foro-velatura-notte: rgba(7, 48, 61, 0.7); /* velatura foto 70% */
+  --foro-linea: rgba(15, 31, 37, 0.12);
+  --foro-linea-chiara: rgba(251, 231, 204, 0.16);
+
+  /* tipografia */
+  --foro-font-display: "Jost", "Futura", "Century Gothic", system-ui, sans-serif;
+  --foro-font-text: "Newsreader", "Georgia", serif;
+  --foro-font-mono: "IBM Plex Mono", Menlo, monospace;
+  --foro-size-display: 3.5rem;
+  --foro-size-h1: 2.5rem;
+  --foro-size-h2: 1.75rem;
+  --foro-size-h3: 1.25rem;
+  --foro-size-body: 1.125rem;
+  --foro-size-ui: 0.95rem;
+  --foro-size-label: 0.75rem;
+  /* scala fluida per il web (stesso rapporto 1,25, estesa verso l'alto) */
+  --foro-size-hero: clamp(3.25rem, 8.4vw, 9rem);
+  --foro-size-display-fluid: clamp(2.5rem, 5.2vw, 4.5rem);
+  --foro-size-h1-fluid: clamp(2rem, 3.6vw, 2.75rem);
+
+  /* forma e spazio · unità 8 px */
+  --foro-radius: 2px;
+  --foro-radius-pill: 999px; /* solo avatar e sigillo */
+  --foro-space-1: 8px;
+  --foro-space-2: 16px;
+  --foro-space-3: 24px;
+  --foro-space-4: 32px;
+  --foro-space-6: 48px;
+  --foro-space-8: 64px;
+  --foro-space-12: 96px;
+  --foro-space-16: 128px;
+  --foro-shadow: 0 12px 32px -16px rgba(7, 48, 61, 0.35);
+  --foro-shadow-lg: 0 32px 64px -32px rgba(7, 48, 61, 0.45);
+
+  /* layout */
+  --foro-max: 1360px;
+  --foro-gutter: clamp(16px, 4vw, 48px);
+  --foro-header-h: 76px;
+  --foro-module-gap: 0.6rem; /* il gap 0,6X della griglia 2×2 */
+
+  /* movimento */
+  --foro-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --foro-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --foro-dur-1: 160ms;
+  --foro-dur-2: 320ms;
+  --foro-dur-3: 640ms;
+}

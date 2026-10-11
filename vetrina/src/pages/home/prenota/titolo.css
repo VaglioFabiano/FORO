@@ -1,0 +1,13 @@
+/* TitoloEvento: due righe, il separatore resta solo per chi usa un lettore di schermo */
+.te-a,
+.te-b {
+  display: block;
+}
+.te-sep {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

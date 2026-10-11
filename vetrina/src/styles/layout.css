@@ -1,0 +1,506 @@
+/* header, footer, menu mobile, cookie, fallback */
+
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: -60px;
+  z-index: 500;
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+  padding: 10px 16px;
+  font-weight: 500;
+  border-radius: var(--foro-radius);
+  transition: top var(--foro-dur-2) var(--foro-ease);
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+/* ───────── header ───────── */
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 120;
+  height: var(--foro-header-h);
+  transition:
+    background-color var(--foro-dur-2) var(--foro-ease),
+    color var(--foro-dur-2) var(--foro-ease),
+    box-shadow var(--foro-dur-2) var(--foro-ease),
+    height var(--foro-dur-2) var(--foro-ease);
+}
+.site-header.is-light {
+  color: var(--foro-petrolio);
+}
+.site-header.is-dark {
+  color: var(--foro-carta);
+}
+.site-header.is-scrolled {
+  background: rgba(246, 240, 230, 0.86);
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  box-shadow: 0 1px 0 var(--foro-linea);
+  height: 66px;
+}
+.site-header.is-open {
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  color: var(--foro-carta);
+}
+.site-header__inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.site-header__logo {
+  flex: none;
+  display: inline-flex;
+}
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.site-nav__link {
+  position: relative;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  opacity: 0.86;
+  transition: opacity var(--foro-dur-1);
+}
+.site-nav__link:hover,
+.site-nav__link.is-active {
+  opacity: 1;
+}
+.site-nav__underline {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 4px;
+  height: 1px;
+  background: currentColor;
+}
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: none;
+}
+.site-header__login {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.site-header__burger {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  position: relative;
+  color: inherit;
+  margin-right: -10px;
+}
+.site-header__burger span {
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  height: 1.6px;
+  background: currentColor;
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.site-header__burger span:first-child {
+  top: 17px;
+}
+.site-header__burger span:last-child {
+  top: 26px;
+}
+.site-header.is-open .site-header__burger span:first-child {
+  transform: translateY(4.5px) rotate(45deg);
+}
+.site-header.is-open .site-header__burger span:last-child {
+  transform: translateY(-4.5px) rotate(-45deg);
+}
+
+/* chip di stato dell'aula */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--foro-linea);
+  border-radius: var(--foro-radius-pill);
+  font-family: var(--foro-font-mono);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  transition: border-color var(--foro-dur-1), background var(--foro-dur-1);
+}
+.status-chip:hover {
+  border-color: currentColor;
+}
+.status-chip--dark {
+  border-color: var(--foro-linea-chiara);
+}
+.status-chip__main {
+  font-weight: 500;
+}
+.status-chip__detail {
+  opacity: 0.75;
+}
+.status-chip.is-closed .dot {
+  background: var(--foro-lanterna);
+}
+
+@media (max-width: 1180px) {
+  .site-nav {
+    display: none;
+  }
+  .site-header__actions {
+    margin-left: auto;
+  }
+  .site-header__burger {
+    display: block;
+  }
+}
+@media (max-width: 720px) {
+  .site-header .status-chip__detail,
+  .site-header__login,
+  .site-header__actions > .btn {
+    display: none;
+  }
+  .logo-descr--compact {
+    display: none !important;
+  }
+}
+@media (max-width: 380px) {
+  .site-header .status-chip {
+    display: none;
+  }
+}
+
+/* ───────── menu mobile ───────── */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  overflow-y: auto;
+}
+.mobile-menu__inner {
+  min-height: 100%;
+  padding-top: calc(var(--foro-header-h) + 24px);
+  padding-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+}
+.mobile-menu__nav {
+  display: grid;
+}
+.mobile-menu__link {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 10px 0;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  border-bottom: 1px solid var(--foro-linea-chiara);
+}
+.mobile-menu__link .t-mono {
+  color: var(--foro-laguna-chiara);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  transform: translateY(-0.6em);
+}
+.mobile-menu__link.is-active {
+  color: var(--foro-lanterna);
+}
+.mobile-menu__foot {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+}
+.mobile-menu__foot .btn {
+  max-width: 420px;
+}
+.mobile-menu__contacts {
+  display: grid;
+  gap: 4px;
+  color: var(--foro-laguna-chiara);
+}
+
+/* ───────── main ───────── */
+.site-main {
+  min-height: 70vh;
+}
+.page-fallback {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+}
+
+/* ───────── footer ───────── */
+.site-footer {
+  padding-top: clamp(80px, 10vw, 140px);
+  padding-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.site-footer__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  padding-bottom: clamp(56px, 7vw, 96px);
+  border-bottom: 1px solid var(--foro-linea-chiara);
+}
+.site-footer__payoff {
+  font-size: clamp(3rem, 7.4vw, 7rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  color: var(--foro-carta);
+}
+.site-footer__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.site-footer__grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 0.8fr 1.3fr;
+  gap: 48px;
+  padding-block: 64px;
+}
+.site-footer__brand {
+  display: grid;
+  gap: 24px;
+  align-content: start;
+  max-width: 300px;
+}
+.site-footer__brand p {
+  font-family: var(--foro-font-text);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+.site-footer__h {
+  color: var(--foro-laguna-chiara);
+  margin-bottom: 18px;
+}
+.site-footer__addr {
+  font-style: normal;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+.footer-today {
+  display: grid;
+  gap: 6px;
+  padding: 16px 0;
+  border-top: 1px solid var(--foro-linea-chiara);
+  border-bottom: 1px solid var(--foro-linea-chiara);
+  margin-bottom: 18px;
+}
+.footer-today .t-label {
+  color: var(--foro-laguna-chiara);
+}
+.footer-today__hours {
+  font-size: 1rem;
+  color: var(--foro-carta);
+}
+.footer-today__state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: rgba(251, 231, 204, 0.8);
+}
+.site-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--foro-laguna-chiara);
+}
+.site-footer__list {
+  display: grid;
+  gap: 12px;
+  font-size: 1rem;
+}
+.site-footer__mail {
+  font-size: 1rem;
+  word-break: break-all;
+}
+.site-footer__social {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.site-footer__social a {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--foro-linea-chiara);
+  border-radius: 50%;
+  transition:
+    background var(--foro-dur-2) var(--foro-ease),
+    color var(--foro-dur-2) var(--foro-ease),
+    border-color var(--foro-dur-2);
+}
+.site-footer__social a:hover {
+  background: var(--foro-carta);
+  color: var(--foro-notte);
+  border-color: var(--foro-carta);
+}
+.footer-news__row {
+  display: flex;
+  border: 1px solid var(--foro-linea-chiara);
+  border-radius: var(--foro-radius);
+  padding: 4px;
+  transition: border-color var(--foro-dur-1);
+}
+.footer-news__row:focus-within {
+  border-color: var(--foro-lanterna);
+}
+.footer-news__row input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0 12px;
+  color: var(--foro-carta);
+  font-size: 0.95rem;
+  outline: none;
+}
+.footer-news__row input::placeholder {
+  color: rgba(143, 193, 204, 0.7);
+}
+.footer-news__row .btn {
+  min-height: 42px;
+  width: 46px;
+  padding: 0;
+}
+.footer-news__err {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #f2b8b3;
+}
+.footer-news__done {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--foro-carta);
+  font-size: 0.95rem;
+}
+.site-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--foro-linea-chiara);
+  font-size: 0.85rem;
+  color: rgba(143, 193, 204, 0.85);
+}
+.site-footer__legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.site-footer__legal button {
+  border: 0;
+  background: none;
+  padding: 0 0 2px;
+  color: inherit;
+  font-size: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+@media (max-width: 1024px) {
+  .site-footer__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .site-footer__grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .site-footer__ctas .btn {
+    width: 100%;
+  }
+}
+
+/* ───────── cookie ───────── */
+.cookie {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 250;
+  width: min(440px, calc(100vw - 40px));
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  background: var(--foro-travertino);
+  color: var(--foro-inchiostro);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  box-shadow: var(--foro-shadow-lg);
+  padding: 22px 22px 18px;
+}
+.cookie__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--foro-petrolio);
+  margin-bottom: 10px;
+}
+.cookie__text {
+  font-family: var(--foro-font-text);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--foro-ardesia);
+}
+.cookie__text strong {
+  font-weight: 500;
+  color: var(--foro-inchiostro);
+}
+.cookie__now {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--foro-petrolio);
+}
+.cookie__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+.cookie__privacy {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 0.85rem;
+  color: var(--foro-ardesia);
+}
+@media (max-width: 560px) {
+  .cookie {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+}
+
+/* l'anello animato del pallino "aperta" non deve sporgere dal margine */
+.footer-today__state .dot {
+  margin-left: 5px;
+}

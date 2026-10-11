@@ -1,0 +1,705 @@
+/* componenti di dominio: locandine, card evento, orari, mappa, hero di pagina */
+
+/* ═════════ locandina (EventArt) ═════════ */
+.event-art {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  overflow: hidden;
+  border-radius: var(--foro-radius);
+  background: var(--foro-petrolio);
+  isolation: isolate;
+}
+.ea-m {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 7cqi;
+  min-width: 0;
+  overflow: hidden;
+}
+.ea-meta {
+  font-family: var(--foro-font-mono);
+  font-size: max(9px, 3.1cqi);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+.ea-meta--lanterna {
+  color: var(--foro-lanterna);
+}
+.ea-meta--ink {
+  color: var(--foro-inchiostro);
+}
+.ea-meta--notte {
+  color: var(--foro-notte);
+}
+.ea-title {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: 8.4cqi;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.ea-title--petrolio {
+  color: var(--foro-petrolio);
+  font-weight: 400;
+}
+.ea-title--notte {
+  color: var(--foro-notte);
+}
+.ea-sub {
+  font-family: var(--foro-font-display);
+  font-size: max(10px, 3.5cqi);
+  line-height: 1.4;
+  color: rgba(251, 231, 204, 0.86);
+}
+.ea-sub--ink {
+  font-family: var(--foro-font-text);
+  color: var(--foro-inchiostro);
+  font-size: max(10px, 3.6cqi);
+}
+.ea-label {
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: max(8px, 2.7cqi);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--foro-notte);
+}
+.ea-label--cotto {
+  color: var(--foro-cotto);
+}
+.ea-label--petrolio {
+  color: var(--foro-petrolio);
+}
+
+/* locandina vera */
+.event-art--poster {
+  display: block;
+  background: var(--foro-notte);
+}
+.ea-poster__bg {
+  position: absolute;
+  inset: -10%;
+  width: 120%;
+  height: 120%;
+  object-fit: cover;
+  filter: blur(28px) brightness(0.55) saturate(1.1);
+}
+.ea-poster__img {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* post: titolo largo in alto, sotto informazioni + modulo Lanterna */
+.event-art--post .ea-m--top {
+  grid-column: 1 / -1;
+  justify-content: space-between;
+  gap: 4cqi;
+  border-bottom: 1px solid rgba(251, 231, 204, 0.14);
+}
+.event-art--post .ea-m--top .ea-title {
+  font-size: 9.2cqi;
+}
+.event-art--post .ea-m--bl {
+  border-right: 1px solid rgba(251, 231, 204, 0.14);
+}
+.event-art--post .ea-logo {
+  position: absolute;
+  right: 7cqi;
+  bottom: 7cqi;
+}
+
+/* locandina: foto/numero sopra, carta sotto */
+.event-art--locandina {
+  grid-template-rows: 0.9fr 1.1fr;
+}
+.event-art--locandina .ea-m--photo {
+  grid-column: 1 / -1;
+  padding: 0;
+  background: linear-gradient(160deg, #1a6b82 0%, var(--foro-petrolio) 45%, var(--foro-notte) 100%);
+  justify-content: flex-end;
+}
+.event-art--locandina .ea-m--photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.event-art--locandina .ea-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(12, 73, 91, 0.1) 30%, var(--foro-velatura-petrolio) 100%);
+}
+.ea-bignum {
+  position: relative;
+  z-index: 1;
+  padding: 0 7cqi 3cqi;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: 38cqi;
+  line-height: 0.8;
+  letter-spacing: -0.05em;
+  color: var(--foro-laguna-chiara);
+  display: flex;
+  align-items: flex-end;
+  gap: 3cqi;
+}
+.ea-bignum small {
+  font-size: 4cqi;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding-bottom: 3cqi;
+  color: var(--foro-carta);
+}
+.event-art--locandina .ea-m--paper {
+  grid-column: 1 / -1;
+  gap: 2.4cqi;
+}
+.event-art--locandina .ea-m--paper .ea-title {
+  font-size: 7.6cqi;
+}
+.ea-foot {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 4cqi;
+}
+.ea-logo-sm {
+  height: 11cqi !important;
+  flex: none;
+}
+
+/* pieno: annuncio a colore pieno */
+.event-art--pieno .ea-m--full {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  gap: 4cqi;
+}
+.event-art--pieno .ea-title {
+  font-size: 10.5cqi;
+  max-width: 88%;
+}
+.ea-corner {
+  position: absolute;
+  top: 6cqi;
+  right: 6cqi;
+  width: 7cqi;
+  height: 7cqi;
+  border-top: 1.4cqi solid var(--foro-carta);
+  border-right: 1.4cqi solid var(--foro-carta);
+}
+.ea-disc {
+  position: absolute;
+  left: 7cqi;
+  bottom: 7cqi;
+  width: 34cqi;
+  height: 34cqi;
+  border-radius: 50%;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  display: grid;
+  place-content: center;
+  text-align: center;
+  font-family: var(--foro-font-display);
+}
+.ea-disc b {
+  font-weight: 300;
+  font-size: 15cqi;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+.ea-disc small {
+  font-weight: 600;
+  font-size: 3cqi;
+  letter-spacing: 0.18em;
+  margin-top: 1cqi;
+}
+.ea-meta--bottom {
+  position: absolute;
+  left: 46cqi;
+  bottom: 9cqi;
+}
+.ea-logo-corner {
+  position: absolute;
+  right: 7cqi;
+  bottom: 7cqi;
+}
+
+/* ufficiale: comunicazione ufficiale, registro silenzio */
+.event-art--ufficiale {
+  background: var(--foro-travertino);
+  gap: 2cqi;
+  padding: 2cqi;
+}
+.event-art--ufficiale .ea-m--tl {
+  justify-content: space-between;
+}
+.event-art--ufficiale .ea-m--tr {
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+}
+.ea-disc--petrolio {
+  position: static;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  max-height: 100%;
+  background: var(--foro-petrolio);
+}
+.event-art--ufficiale .ea-m--bottom {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+.event-art--ufficiale .ea-m--bottom .ea-title {
+  font-size: 8cqi;
+  max-width: 70%;
+}
+.event-art--ufficiale .ea-logo {
+  position: absolute;
+  right: 6cqi;
+  bottom: 6cqi;
+}
+
+/* ═════════ card evento ═════════ */
+.event-card {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  color: inherit;
+}
+.event-card__media {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--foro-radius);
+}
+.event-card__media .event-art {
+  transition: transform 900ms var(--foro-ease);
+}
+.event-card:hover .event-card__media .event-art {
+  transform: scale(1.025);
+}
+.event-card__badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+}
+.event-card__body {
+  display: grid;
+  gap: 10px;
+}
+.event-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.event-card__title {
+  font-family: var(--foro-font-display);
+  font-weight: 400;
+  font-size: clamp(1.3rem, 1.8vw, 1.55rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--foro-petrolio);
+  text-wrap: balance;
+}
+.event-card__sub {
+  font-family: var(--foro-font-text);
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: var(--foro-ardesia);
+}
+.event-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--foro-petrolio);
+  margin-top: 4px;
+}
+.event-card__cta svg {
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.event-card:hover .event-card__cta svg {
+  transform: translateX(4px);
+}
+.event-card.is-past .event-card__media {
+  filter: saturate(0.6);
+}
+
+/* barra dei posti */
+.seats {
+  display: grid;
+  gap: 6px;
+}
+.seats__bar {
+  height: 3px;
+  background: var(--foro-pietra);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.seats__fill {
+  height: 100%;
+  background: var(--foro-petrolio);
+  transform-origin: left;
+}
+.seats--low .seats__fill {
+  background: var(--foro-lanterna);
+}
+.seats--full .seats__fill {
+  background: var(--foro-cotto);
+}
+.seats__label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--foro-font-mono);
+  font-size: 0.78rem;
+  color: var(--foro-ardesia);
+}
+.surface-petrolio .seats__bar,
+.surface-notte .seats__bar {
+  background: rgba(251, 231, 204, 0.18);
+}
+.surface-petrolio .seats__fill,
+.surface-notte .seats__fill {
+  background: var(--foro-carta);
+}
+.surface-petrolio .seats__label,
+.surface-notte .seats__label {
+  color: var(--foro-laguna-chiara);
+}
+
+/* ═════════ orari ═════════ */
+.orari {
+  display: grid;
+  border-top: 1px solid var(--foro-linea);
+}
+.orari-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: center;
+  gap: 16px 28px;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--foro-linea);
+  position: relative;
+  transition: background var(--foro-dur-2);
+}
+.orari-row__day {
+  display: grid;
+  gap: 2px;
+}
+.orari-row__dow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1.08rem;
+}
+.orari-row__date {
+  font-family: var(--foro-font-mono);
+  font-size: 0.78rem;
+  color: var(--foro-ardesia);
+}
+.orari-row__hours {
+  display: grid;
+  gap: 4px;
+}
+.orari-row__range {
+  font-family: var(--foro-font-mono);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.orari-row__note {
+  font-size: 0.85rem;
+  color: var(--foro-ardesia);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.orari-row__note::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--foro-lanterna);
+  flex: none;
+}
+.orari-row.is-closed .orari-row__range {
+  color: var(--foro-ardesia);
+}
+.orari-row.is-today {
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+  border-bottom-color: transparent;
+}
+.orari-row.is-today .orari-row__date,
+.orari-row.is-today .orari-row__note {
+  color: var(--foro-laguna-chiara);
+}
+.orari-row__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid currentColor;
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--foro-lanterna);
+}
+/* timeline 07–24 */
+.timeline {
+  position: relative;
+  height: 28px;
+}
+.timeline__track {
+  position: absolute;
+  inset: 13px 0 auto 0;
+  height: 2px;
+  background: var(--foro-linea);
+}
+.orari-row.is-today .timeline__track {
+  background: rgba(251, 231, 204, 0.16);
+}
+.timeline__seg {
+  position: absolute;
+  top: 9px;
+  height: 10px;
+  background: var(--foro-petrolio);
+  border-radius: 1px;
+}
+.timeline__seg.is-special {
+  background: var(--foro-lanterna);
+}
+.orari-row.is-today .timeline__seg {
+  background: var(--foro-carta);
+}
+.orari-row.is-today .timeline__seg.is-special {
+  background: var(--foro-lanterna);
+}
+.timeline__now {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--foro-lanterna);
+  transform: translateX(-1px);
+}
+.timeline__now::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--foro-lanterna);
+}
+.timeline__ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--foro-font-mono);
+  font-size: 0.68rem;
+  color: var(--foro-ardesia);
+  padding: 0 16px 8px;
+  margin-left: calc(180px + 28px);
+}
+.orari__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-top: 18px;
+  font-size: 0.85rem;
+  color: var(--foro-ardesia);
+}
+.orari__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.orari__legend i {
+  width: 18px;
+  height: 8px;
+  border-radius: 1px;
+  background: var(--foro-petrolio);
+}
+.orari__legend i.special {
+  background: var(--foro-lanterna);
+}
+.orari__legend i.now {
+  width: 2px;
+  height: 14px;
+  background: var(--foro-lanterna);
+}
+@media (max-width: 760px) {
+  .orari-row {
+    grid-template-columns: 1fr;
+    gap: 6px 16px;
+    padding: 16px 12px;
+  }
+  .orari-row .timeline {
+    grid-column: 1 / -1;
+  }
+  .timeline__ticks {
+    display: none;
+  }
+}
+
+/* pannello di stato */
+.status-panel {
+  display: grid;
+  gap: 10px;
+}
+.status-panel__state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.status-panel__state .dot {
+  width: 12px;
+  height: 12px;
+}
+.status-panel__detail {
+  font-family: var(--foro-font-mono);
+  font-size: 0.9rem;
+}
+.status-panel.is-closed .dot {
+  background: var(--foro-lanterna);
+}
+
+/* ═════════ mappa ═════════ */
+.map-block {
+  position: relative;
+  border-radius: var(--foro-radius);
+  overflow: hidden;
+  background: var(--foro-travertino-deep);
+  min-height: 360px;
+}
+.map-block iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  filter: none;
+}
+.map-block__overlay {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(246, 240, 230, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+}
+.map-block__addr strong {
+  display: block;
+  font-weight: 500;
+  color: var(--foro-petrolio);
+}
+.map-block__addr span {
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+}
+.map-block__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.map-pin {
+  transform-origin: center bottom;
+  animation: pin-drop 1.2s var(--foro-ease) both;
+}
+@keyframes pin-drop {
+  0% {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* ═════════ hero di pagina interna ═════════ */
+.page-hero {
+  padding-top: calc(var(--foro-header-h) + clamp(56px, 9vw, 120px));
+  padding-bottom: clamp(56px, 8vw, 110px);
+  position: relative;
+}
+.page-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 40px 64px;
+  align-items: end;
+}
+.page-hero__title {
+  color: var(--foro-petrolio);
+  margin-top: 20px;
+}
+.page-hero.surface-petrolio .page-hero__title,
+.page-hero.surface-notte .page-hero__title {
+  color: var(--foro-carta);
+}
+.page-hero__intro {
+  max-width: 560px;
+  color: var(--foro-ardesia);
+}
+.page-hero.surface-petrolio .page-hero__intro,
+.page-hero.surface-notte .page-hero__intro {
+  color: rgba(251, 231, 204, 0.8);
+}
+.page-hero__crumbs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-family: var(--foro-font-mono);
+  font-size: 0.8rem;
+  color: var(--foro-ardesia);
+}
+.page-hero.surface-petrolio .page-hero__crumbs,
+.page-hero.surface-notte .page-hero__crumbs {
+  color: var(--foro-laguna-chiara);
+}
+.page-hero__crumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 900px) {
+  .page-hero__grid {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}

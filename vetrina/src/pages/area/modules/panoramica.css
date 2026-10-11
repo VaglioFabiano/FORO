@@ -1,0 +1,291 @@
+.pan__role {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  background: #fffdf9;
+  color: var(--foro-petrolio);
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+/* in evidenza: il riquadro attivo si allarga, come FORO e AGORÀ in homepage (sections/aula.css) */
+.pan__top {
+  --pan-big: 1.72;
+  --pan-gap: 16px;
+  --pan-pad: 28px;
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1.72fr) minmax(0, 1fr); /* = --pan-big */
+  gap: var(--pan-gap);
+  margin-bottom: 16px;
+  transition: grid-template-columns 0.95s var(--foro-ease);
+}
+.pan__top[data-active="secondo"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.72fr);
+}
+.pan__cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: start;
+}
+.pan__stats {
+  display: grid;
+  gap: 16px;
+}
+.pan__seq {
+  list-style: none;
+  margin: -20px;
+  padding: 0;
+}
+.pan__turno {
+  display: grid;
+  grid-template-columns: 112px 10px 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--foro-pietra);
+}
+.pan__turno:first-child {
+  border-top: 0;
+}
+.pan__turno.is-finito {
+  opacity: 0.55;
+}
+.pan__turno.is-live {
+  background: color-mix(in srgb, var(--foro-lanterna) 12%, transparent);
+}
+.pan__ora {
+  font-size: 0.9rem;
+  color: var(--foro-petrolio);
+}
+.pan__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--foro-pietra);
+}
+.pan__turno.is-live .pan__dot {
+  background: var(--foro-lanterna);
+}
+.pan__chi {
+  display: grid;
+  min-width: 0;
+}
+.pan__chi small {
+  color: var(--foro-ardesia);
+  font-size: 0.82rem;
+}
+.pan__vuoto {
+  color: var(--foro-ardesia);
+}
+.pan__sub {
+  margin: 36px 0 14px;
+  color: var(--foro-petrolio);
+}
+.pan__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.pan__card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  min-height: 84px;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  color: var(--foro-inchiostro);
+  text-decoration: none;
+  transition:
+    border-color var(--foro-dur-2) var(--foro-ease),
+    background-color var(--foro-dur-2) var(--foro-ease);
+}
+.pan__card:hover {
+  border-color: var(--foro-petrolio);
+}
+.pan__card:hover .pan__arrow {
+  transform: translateX(3px);
+  color: var(--foro-petrolio);
+}
+.pan__ico {
+  width: 44px;
+  background: var(--foro-travertino-deep);
+  color: var(--foro-petrolio);
+}
+.pan__card-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.pan__card-text strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  color: var(--foro-petrolio);
+}
+.pan__card-text span {
+  font-size: 0.88rem;
+  color: var(--foro-ardesia);
+  line-height: 1.4;
+}
+.pan__arrow {
+  color: var(--foro-ardesia);
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+@media (max-width: 1100px) {
+  .pan__top {
+    grid-template-columns: minmax(0, 1fr) !important;
+    transition: none;
+  }
+}
+@media (max-width: 899px) {
+  .pan__cols {
+    grid-template-columns: 1fr;
+  }
+  .pan__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .pan__stats {
+    grid-template-columns: 1fr;
+  }
+  .pan__turno {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    row-gap: 8px;
+  }
+  .pan__ora {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .pan__dot {
+    display: none;
+  }
+  .pan__turno > :nth-child(3) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .pan__turno > .pan__chi {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .pan__turno > .tag {
+    grid-column: 3;
+    grid-row: 2;
+  }
+}
+
+/* meccanica comune: larghezze fisse in cqw, così il testo non si ricompone mentre il riquadro si allarga */
+.pan-x {
+  --pan-w-min: calc((100cqw - var(--pan-gap)) / (1 + var(--pan-big)) - 2 * var(--pan-pad) - 2px);
+  --pan-w-max: calc((100cqw - var(--pan-gap)) * var(--pan-big) / (1 + var(--pan-big)) - 2 * var(--pan-pad) - 2px);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  padding: var(--pan-pad);
+  border-radius: var(--foro-radius);
+  min-width: 0;
+  cursor: pointer;
+}
+.pan-x.is-active { cursor: default; }
+/* velo al passaggio sul riquadro chiuso: invita a entrare */
+.pan-x::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--x-velo); opacity: 0; transition: opacity var(--foro-dur-2) var(--foro-ease); pointer-events: none; }
+.pan-x:not(.is-active):hover::before { opacity: 0.1; }
+.pan-x__sum { width: var(--pan-w-min); display: grid; gap: 10px; align-content: start; }
+.pan-x__fondo { display: grid; }
+.pan-x__det,
+.pan-x__invito { grid-area: 1 / 1; }
+.pan-x__det {
+  width: var(--pan-w-max);
+  align-self: start;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px);
+  transition: opacity 0.28s var(--foro-ease), transform 0.28s var(--foro-ease), visibility 0s linear 0.28s;
+}
+.pan-x.is-active .pan-x__det {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.7s var(--foro-ease) 0.32s, transform 0.9s var(--foro-ease) 0.32s, visibility 0s;
+}
+.pan-x__invito {
+  align-self: end;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--x-rule);
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--x-sub);
+  white-space: nowrap;
+  transition: opacity 0.5s var(--foro-ease) 0.35s, border-color var(--foro-dur-2) var(--foro-ease), color var(--foro-dur-2) var(--foro-ease);
+}
+.pan-x:hover .pan-x__invito { border-color: currentColor; color: inherit; }
+.pan-x.is-active .pan-x__invito { opacity: 0; pointer-events: none; transition: opacity 0.18s var(--foro-ease); }
+.pan-x__trigger { display: inline; padding: 0; margin: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; line-height: inherit; text-align: left; color: inherit; cursor: inherit; }
+.pan-x__trigger:focus-visible { outline-offset: 6px; }
+@media (max-width: 1100px) {
+  .pan-x__sum,
+  .pan-x__det { width: auto; }
+}
+
+/* prossima assemblea, in Notte */
+.pan-as { --x-velo: var(--foro-carta); --x-rule: color-mix(in srgb, var(--foro-carta) 25%, transparent); --x-sub: var(--foro-laguna-chiara); background: var(--foro-notte); color: var(--foro-carta); }
+.pan-as--vuoto { display: grid; gap: 16px; align-content: start; padding: var(--pan-pad); border-radius: var(--foro-radius); }
+.pan-as__eyebrow { color: var(--foro-lanterna); }
+.pan-as__title { margin: 0; font-family: var(--foro-font-display); font-weight: 300; font-size: clamp(1.7rem, 2.6vw, 2.4rem); line-height: 1.05; letter-spacing: -0.02em; }
+.pan-as__when { margin: 0; font-size: 0.92rem; opacity: 0.9; }
+.pan-as__det { display: grid; gap: 18px; padding-top: 20px; border-top: 1px solid var(--x-rule); }
+.pan-as__sub { margin: 0; font-family: var(--foro-font-text); font-size: 1.05rem; opacity: 0.85; max-width: 56ch; }
+.pan-as__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 0; }
+.pan-as__facts dt { display: block; font-family: var(--foro-font-display); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--foro-laguna-chiara); margin-bottom: 4px; }
+.pan-as__facts dd { margin: 0; display: grid; gap: 2px; font-size: 0.98rem; }
+.pan-as__facts small { font-size: 0.82rem; opacity: 0.75; }
+.pan-as__count { font-size: 1.5rem; line-height: 1; color: var(--foro-lanterna); }
+.pan-as__cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.pan-as--vuoto p { margin: 0; }
+
+/* prossimo evento, su carta */
+.pan-ev { --x-velo: var(--foro-notte); --x-rule: var(--foro-pietra); --x-sub: var(--foro-ardesia); background: #fffdf9; border: 1px solid var(--foro-pietra); }
+.pan-ev--vuoto { display: grid; padding: var(--pan-pad); border-radius: var(--foro-radius); }
+.pan-ev__main { grid-template-columns: 96px minmax(0, 1fr); gap: 16px; align-items: start; }
+.pan-ev__art { width: 100%; border-radius: var(--foro-radius); }
+.pan-ev__body { display: grid; gap: 6px; min-width: 0; }
+.pan-ev__eyebrow { color: var(--foro-ardesia); }
+.pan-ev__title { margin: 2px 0 0; font-family: var(--foro-font-display); font-weight: 400; font-size: 1.35rem; line-height: 1.15; letter-spacing: -0.01em; color: var(--foro-petrolio); }
+.pan-ev__when { margin: 0; font-size: 0.86rem; color: var(--foro-inchiostro); }
+.pan-ev__det { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 28px; padding-top: 20px; border-top: 1px solid var(--x-rule); align-items: start; }
+.pan-ev__info { display: grid; gap: 8px; }
+.pan-ev__sub { margin: 0; font-family: var(--foro-font-text); font-size: 1rem; line-height: 1.45; color: var(--foro-inchiostro); }
+.pan-ev__where { margin: 0; display: grid; gap: 2px; font-size: 0.92rem; color: var(--foro-inchiostro); }
+.pan-ev__where small { font-size: 0.82rem; color: var(--foro-ardesia); }
+.pan-ev__seats { display: grid; gap: 8px; }
+.pan-ev__count { display: flex; align-items: baseline; gap: 10px; font-size: 0.9rem; color: var(--foro-ardesia); }
+.pan-ev__count b { font-size: 1.6rem; font-weight: 400; color: var(--foro-petrolio); }
+.pan-ev__bar { height: 6px; background: var(--foro-travertino-deep); border-radius: 1px; overflow: hidden; }
+.pan-ev__bar span { display: block; height: 100%; background: var(--foro-petrolio); }
+.pan-ev__free { font-size: 0.86rem; color: var(--foro-ardesia); }
+.pan-ev__link { grid-column: 1 / -1; justify-self: start; }
+.pan-ev--vuoto { align-content: start; justify-items: start; gap: 10px; }
+.pan-ev--vuoto p { margin: 0; color: var(--foro-ardesia); }
+@media (max-width: 760px) { .pan__top { --pan-pad: 18px; } }
+.pan-ev__aperto { margin: 0; font-size: 0.92rem; color: var(--foro-ardesia); }
+.pan-ev__aperto b { font-weight: 600; color: var(--foro-petrolio); }

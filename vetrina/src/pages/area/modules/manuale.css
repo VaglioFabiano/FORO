@@ -1,0 +1,323 @@
+.man__tabs {
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.man__tabs .segmented {
+  min-width: max-content;
+}
+/* procedure di apertura e chiusura: elenco puntato */
+.man__punti {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.man__punti > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 16px;
+  padding: 18px 0 18px 22px;
+  border-top: 1px solid var(--foro-pietra);
+}
+.man__punti > li:first-child {
+  border-top: 0;
+  padding-top: 4px;
+}
+/* il punto dell'elenco, in Lanterna */
+.man__punti > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 27px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--foro-lanterna);
+}
+.man__punti > li:first-child::before {
+  top: 13px;
+}
+.man__punto-ico {
+  margin-top: 2px;
+  color: var(--foro-laguna);
+}
+.man__h {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1.12rem;
+  color: var(--foro-petrolio);
+}
+.man__punti p,
+.man__card p {
+  margin-top: 6px;
+  max-width: 68ch;
+  font-family: var(--foro-font-text);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--foro-inchiostro);
+}
+.man__punti b,
+.man__card b {
+  font-weight: 600;
+  color: var(--foro-petrolio);
+}
+.man__nota {
+  padding: 8px 12px;
+  border-left: 3px solid var(--foro-lanterna);
+  background: color-mix(in srgb, var(--foro-lanterna) 10%, transparent);
+  font-size: 0.92rem !important;
+  color: var(--foro-ardesia) !important;
+}
+
+/* direttivo: nomi e numeri, in evidenza in cima ai contatti */
+.man__dir {
+  margin-bottom: 16px;
+  padding: 24px;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  border-radius: var(--foro-radius);
+}
+.man__dir-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.man__dir-head h2 {
+  margin: 0;
+  font-family: var(--foro-font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  color: var(--foro-carta);
+}
+.man__dir-head p {
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+  color: var(--foro-laguna-chiara);
+}
+.man__dir-ico {
+  width: 42px;
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+}
+.man__dir-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.man__dir-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--foro-carta) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foro-carta) 14%, transparent);
+  border-radius: var(--foro-radius);
+}
+.man__dir-list .avatar,
+.man__dir-list li > :first-child {
+  grid-row: 1 / 3;
+}
+.man__dir-nome {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  color: var(--foro-carta);
+}
+.man__dir-tel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  font-size: 0.95rem;
+  color: var(--foro-lanterna);
+  text-decoration: none;
+}
+.man__dir-tel:hover {
+  text-decoration: underline;
+}
+.man__num {
+  font-size: 1.3rem;
+  color: var(--foro-petrolio);
+  text-decoration: none;
+}
+.man__num:hover {
+  text-decoration: underline;
+}
+.man__referente {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 8px;
+  background: var(--foro-travertino);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  color: var(--foro-inchiostro);
+  text-decoration: none;
+  transition: border-color var(--foro-dur-2) var(--foro-ease);
+}
+.man__referente:hover {
+  border-color: var(--foro-petrolio);
+}
+.man__referente > span {
+  display: grid;
+  line-height: 1.25;
+}
+.man__referente strong {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  color: var(--foro-petrolio);
+}
+.man__referente .t-mono {
+  font-size: 0.85rem;
+  color: var(--foro-ardesia);
+}
+.man__card--referente {
+  border-left: 3px solid var(--foro-lanterna);
+}
+.man__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.man__grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.man__grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.man__card {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 22px;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+}
+.man__card--wide {
+  grid-column: 1 / -1;
+}
+.man__card h3 {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: var(--foro-petrolio);
+}
+.man__card-ico {
+  width: 42px;
+  background: var(--foro-travertino-deep);
+  color: var(--foro-petrolio);
+}
+.man__card-body {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+.man__card-body p {
+  margin-top: 0;
+}
+.man__tip {
+  padding-left: 12px;
+  border-left: 3px solid var(--foro-lanterna);
+  font-size: 0.95rem !important;
+  color: var(--foro-ardesia) !important;
+}
+.man__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.man__chips li {
+  padding: 6px 12px;
+  background: var(--foro-travertino-deep);
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-size: 0.9rem;
+}
+.man__dl {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+}
+.man__dl > div {
+  padding-top: 12px;
+  border-top: 1px solid var(--foro-pietra);
+}
+.man__dl > div:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.man__dl dt {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  color: var(--foro-petrolio);
+}
+.man__dl dd {
+  margin: 4px 0 0;
+  font-family: var(--foro-font-text);
+  line-height: 1.5;
+}
+.man__dl dd.t-mono {
+  font-size: 1.3rem;
+  font-family: var(--foro-font-mono);
+}
+.man__card--emergenza {
+  border-left: 3px solid var(--foro-cotto);
+}
+.man__sub {
+  margin: 32px 0 14px;
+  color: var(--foro-petrolio);
+}
+.man__ruolo {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 20px;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.man__ruolo h3 {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: var(--foro-petrolio);
+}
+.man__ruolo-l {
+  color: var(--foro-ardesia);
+}
+.man__ruolo-r {
+  color: var(--foro-ardesia);
+}
+@media (max-width: 1100px) {
+  .man__grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .man__grid--2,
+  .man__grid--4 {
+    grid-template-columns: 1fr;
+  }
+  .man__punti > li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .man__punto-ico {
+    display: none;
+  }
+  .man__dir {
+    padding: 18px 16px;
+  }
+}

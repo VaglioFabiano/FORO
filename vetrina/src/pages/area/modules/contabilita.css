@@ -1,0 +1,11 @@
+/* Contabilità: prefisso .ct- */
+.ct-doc {
+  overflow: hidden;
+}
+.ct-frame {
+  display: block;
+  width: 100%;
+  height: max(480px, calc(100dvh - 260px));
+  border: 0;
+  background: #fff;
+}

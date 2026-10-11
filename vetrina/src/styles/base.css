@@ -1,0 +1,703 @@
+/* FORO · base, tipografia, primitive condivise */
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--foro-header-h) + 16px);
+}
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+body {
+  margin: 0;
+  background: var(--foro-travertino);
+  color: var(--foro-inchiostro);
+  font-family: var(--foro-font-display);
+  font-size: var(--foro-size-ui);
+  line-height: 1.47;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+img,
+video {
+  height: auto;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+blockquote,
+dl,
+dd,
+ul,
+ol {
+  margin: 0;
+}
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+::selection {
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+}
+:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 3px;
+  border-radius: var(--foro-radius);
+}
+[hidden] {
+  display: none !important;
+}
+
+/* ───────── layout ───────── */
+.container {
+  width: 100%;
+  max-width: var(--foro-max);
+  margin-inline: auto;
+  padding-inline: var(--foro-gutter);
+}
+.container--narrow {
+  max-width: 880px;
+}
+.section {
+  padding-block: clamp(72px, 11vw, 160px);
+  position: relative;
+}
+.section--tight {
+  padding-block: clamp(48px, 7vw, 96px);
+}
+.surface-petrolio {
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+}
+.surface-notte {
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+}
+.surface-lanterna {
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+}
+.surface-carta {
+  background: var(--foro-carta);
+  color: var(--foro-petrolio);
+}
+.surface-deep {
+  background: var(--foro-travertino-deep);
+}
+.rule {
+  height: 1px;
+  background: var(--foro-linea);
+  border: 0;
+  margin: 0;
+}
+.surface-petrolio .rule,
+.surface-notte .rule {
+  background: var(--foro-linea-chiara);
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ───────── tipografia ───────── */
+.t-hero {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: var(--foro-size-hero);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+}
+.t-display {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: var(--foro-size-display-fluid);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+}
+.t-h1 {
+  font-family: var(--foro-font-display);
+  font-weight: 300;
+  font-size: var(--foro-size-h1-fluid);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+.t-h2 {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: var(--foro-size-h2);
+  line-height: 1.21;
+  letter-spacing: -0.01em;
+}
+.t-h3 {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: var(--foro-size-h3);
+  line-height: 1.3;
+}
+.t-body {
+  font-family: var(--foro-font-text);
+  font-size: var(--foro-size-body);
+  line-height: 1.61; /* 18/29 */
+  font-optical-sizing: auto;
+}
+.t-lead {
+  font-family: var(--foro-font-text);
+  font-size: clamp(1.2rem, 1.6vw, 1.45rem);
+  line-height: 1.5;
+  font-optical-sizing: auto;
+}
+.t-ui {
+  font-family: var(--foro-font-display);
+  font-size: var(--foro-size-ui);
+  line-height: 1.47;
+}
+.t-label {
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: var(--foro-size-label);
+  line-height: 1.33;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.t-mono {
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem; /* 13/20 */
+  line-height: 1.54;
+  font-variant-numeric: tabular-nums;
+}
+.t-italic {
+  font-family: var(--foro-font-text);
+  font-style: italic;
+}
+.t-muted {
+  color: var(--foro-ardesia);
+}
+.surface-petrolio .t-muted,
+.surface-notte .t-muted {
+  color: var(--foro-laguna-chiara);
+}
+.t-petrolio {
+  color: var(--foro-petrolio);
+}
+.t-cotto {
+  color: var(--foro-cotto);
+}
+.t-balance {
+  text-wrap: balance;
+}
+.t-pretty {
+  text-wrap: pretty;
+}
+
+/* prosa lunga (statuto, descrizioni evento) */
+.prose {
+  font-family: var(--foro-font-text);
+  font-size: var(--foro-size-body);
+  line-height: 1.61;
+  color: var(--foro-inchiostro);
+  max-width: 68ch;
+}
+.prose > * + * {
+  margin-top: 1em;
+}
+.prose h2,
+.prose h3 {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  color: var(--foro-petrolio);
+  margin-top: 2em;
+}
+.prose h2 {
+  font-size: var(--foro-size-h2);
+}
+.prose h3 {
+  font-size: var(--foro-size-h3);
+}
+.prose a {
+  color: var(--foro-laguna);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.prose ul {
+  list-style: none;
+  padding-left: 0;
+}
+.prose ul li {
+  position: relative;
+  padding-left: 1.4em;
+}
+.prose ul li + li {
+  margin-top: 0.4em;
+}
+.prose ul li::before {
+  content: "";
+  position: absolute;
+  left: 0.2em;
+  top: 0.72em;
+  width: 0.5em;
+  height: 1px;
+  background: var(--foro-cotto);
+}
+.prose strong {
+  font-weight: 500;
+}
+
+/* link con sottolineatura animata */
+.link {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size var(--foro-dur-2) var(--foro-ease);
+  padding-bottom: 2px;
+}
+.link:hover,
+.link:focus-visible {
+  background-size: 100% 1px;
+}
+.link--always {
+  background-size: 100% 1px;
+}
+.link--always:hover {
+  background-size: 0 1px;
+  background-position: 100% 100%;
+}
+
+/* ───────── marcatori grafici ───────── */
+/* L'angolo: una sola volta per composizione, in alto a destra, Lanterna o Carta */
+.has-corner {
+  position: relative;
+}
+.corner-mark {
+  display: inline-block;
+  width: 0.34em;
+  height: 0.34em;
+  border-top: max(2px, 0.055em) solid var(--foro-lanterna);
+  border-right: max(2px, 0.055em) solid var(--foro-lanterna);
+  vertical-align: top;
+  margin-left: 0.12em;
+  transform: translateY(0.08em);
+}
+.corner-mark--carta {
+  border-color: var(--foro-carta);
+}
+/* il cerchio pieno: unica forma curva ammessa */
+.disc {
+  border-radius: var(--foro-radius-pill);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* intestazione di sezione: "—— 03" + titolo + angolo */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--foro-font-mono);
+  font-size: 0.8125rem;
+  color: var(--foro-ardesia);
+}
+.eyebrow::before {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+}
+.surface-petrolio .eyebrow,
+.surface-notte .eyebrow {
+  color: var(--foro-laguna-chiara);
+}
+
+/* ───────── pulsanti ───────── */
+.btn {
+  --btn-bg: var(--foro-petrolio);
+  --btn-fg: var(--foro-carta);
+  --btn-bd: var(--foro-petrolio);
+  --btn-bg-h: var(--foro-laguna);
+  --btn-bd-h: var(--foro-laguna);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1px solid var(--btn-bd);
+  border-radius: var(--foro-radius);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--foro-font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  transition:
+    background-color var(--foro-dur-1) var(--foro-ease),
+    border-color var(--foro-dur-1) var(--foro-ease),
+    color var(--foro-dur-1) var(--foro-ease),
+    transform var(--foro-dur-1) var(--foro-ease);
+  user-select: none;
+}
+.btn:hover {
+  background: var(--btn-bg-h);
+  border-color: var(--btn-bd-h);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn[disabled],
+.btn[aria-disabled="true"] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.btn .btn-arrow {
+  transition: transform var(--foro-dur-2) var(--foro-ease);
+}
+.btn:hover .btn-arrow {
+  transform: translateX(4px);
+}
+.btn--lanterna {
+  --btn-bg: var(--foro-lanterna);
+  --btn-fg: var(--foro-notte);
+  --btn-bd: var(--foro-lanterna);
+  --btn-bg-h: #f0b457;
+  --btn-bd-h: #f0b457;
+}
+.btn--outline {
+  --btn-bg: transparent;
+  --btn-fg: var(--foro-petrolio);
+  --btn-bd: var(--foro-petrolio);
+  --btn-bg-h: var(--foro-petrolio);
+  --btn-bd-h: var(--foro-petrolio);
+}
+.btn--outline:hover {
+  color: var(--foro-carta);
+}
+.btn--carta {
+  --btn-bg: var(--foro-carta);
+  --btn-fg: var(--foro-petrolio);
+  --btn-bd: var(--foro-carta);
+  --btn-bg-h: #fff3e2;
+  --btn-bd-h: #fff3e2;
+}
+.btn--outline-carta {
+  --btn-bg: transparent;
+  --btn-fg: var(--foro-carta);
+  --btn-bd: rgba(251, 231, 204, 0.5);
+  --btn-bg-h: var(--foro-carta);
+  --btn-bd-h: var(--foro-carta);
+}
+.btn--outline-carta:hover {
+  color: var(--foro-petrolio);
+}
+.btn--ghost {
+  --btn-bg: transparent;
+  --btn-fg: currentColor;
+  --btn-bd: transparent;
+  --btn-bg-h: rgba(12, 73, 91, 0.06);
+  --btn-bd-h: transparent;
+  padding-inline: 12px;
+}
+.btn--sm {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 0.9rem;
+}
+.btn--lg {
+  min-height: 58px;
+  padding: 0 30px;
+  font-size: 1.0625rem;
+}
+.btn--block {
+  width: 100%;
+}
+.btn .spinner {
+  width: 16px;
+  height: 16px;
+  border: 1.6px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: foro-spin 0.7s linear infinite;
+}
+@keyframes foro-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ───────── campi ───────── */
+.field {
+  display: grid;
+  gap: 8px;
+}
+.field__label {
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--foro-inchiostro);
+}
+.field__label .opt {
+  font-weight: 400;
+  color: var(--foro-ardesia);
+  margin-left: 6px;
+  font-size: 0.85em;
+}
+.field__hint {
+  font-size: 0.85rem;
+  color: var(--foro-ardesia);
+}
+.field__error {
+  font-size: 0.85rem;
+  color: var(--foro-errore);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  background: #fffdf9;
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-size: 1rem;
+  color: var(--foro-inchiostro);
+  transition:
+    border-color var(--foro-dur-1) var(--foro-ease),
+    box-shadow var(--foro-dur-1) var(--foro-ease);
+}
+.textarea {
+  min-height: 140px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: #8a969b;
+}
+.input:hover,
+.select:hover,
+.textarea:hover {
+  border-color: #c9bfae;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--foro-petrolio);
+  box-shadow: 0 0 0 3px rgba(233, 162, 59, 0.45);
+}
+.input[aria-invalid="true"],
+.select[aria-invalid="true"],
+.textarea[aria-invalid="true"] {
+  border-color: var(--foro-errore);
+}
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='%230C495B' stroke-width='1.6'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px;
+  padding-right: 40px;
+}
+.check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.check input {
+  appearance: none;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 1px solid var(--foro-ardesia);
+  border-radius: var(--foro-radius);
+  background: #fffdf9;
+  display: grid;
+  place-items: center;
+  transition: all var(--foro-dur-1) var(--foro-ease);
+}
+.check input::after {
+  content: "";
+  width: 10px;
+  height: 5px;
+  border-left: 1.6px solid var(--foro-carta);
+  border-bottom: 1.6px solid var(--foro-carta);
+  transform: rotate(-45deg) translate(1px, -1px) scale(0);
+  transition: transform var(--foro-dur-1) var(--foro-ease);
+}
+.check input:checked {
+  background: var(--foro-petrolio);
+  border-color: var(--foro-petrolio);
+}
+.check input:checked::after {
+  transform: rotate(-45deg) translate(1px, -1px) scale(1);
+}
+.check input:focus-visible {
+  outline: 2px solid var(--foro-lanterna);
+  outline-offset: 2px;
+}
+
+/* ───────── avvisi ───────── */
+.alert {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 18px;
+  background: var(--foro-travertino-deep);
+  border-left: 3px solid var(--foro-info);
+  border-radius: 0 var(--foro-radius) var(--foro-radius) 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.alert--ok {
+  border-left-color: var(--foro-ok);
+}
+.alert--avviso {
+  border-left-color: var(--foro-lanterna);
+}
+.alert--errore {
+  border-left-color: var(--foro-errore);
+}
+
+/* ───────── etichette / chip ───────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--foro-linea);
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foro-ardesia);
+  white-space: nowrap;
+}
+.tag--cotto {
+  color: var(--foro-cotto);
+  border-color: rgba(154, 68, 36, 0.3);
+}
+.tag--petrolio {
+  color: var(--foro-petrolio);
+  border-color: rgba(12, 73, 91, 0.3);
+}
+.tag--solid-petrolio {
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+  border-color: var(--foro-petrolio);
+}
+.tag--solid-lanterna {
+  background: var(--foro-lanterna);
+  color: var(--foro-notte);
+  border-color: var(--foro-lanterna);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.dot--live {
+  position: relative;
+  background: #3aa676;
+}
+.dot--live::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid #3aa676;
+  animation: foro-pulse 2.2s var(--foro-ease) infinite;
+}
+@keyframes foro-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* ───────── card ───────── */
+.card {
+  background: var(--foro-carta-soft);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+}
+
+/* ───────── movimento ridotto ───────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

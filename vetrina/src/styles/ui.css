@@ -1,0 +1,288 @@
+/* componenti UI condivisi */
+
+/* intestazione di sezione */
+.section-head {
+  display: grid;
+  gap: 24px 48px;
+  margin-bottom: clamp(40px, 6vw, 80px);
+}
+.section-head__title {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+.section-head--split {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: end;
+}
+.section-head--split .section-head__intro {
+  padding-bottom: 0.5em;
+  max-width: 560px;
+  color: var(--foro-ardesia);
+}
+.surface-petrolio .section-head--split .section-head__intro,
+.surface-notte .section-head--split .section-head__intro {
+  color: rgba(251, 231, 204, 0.78);
+}
+.section-head--stack .section-head__intro {
+  max-width: 640px;
+  color: var(--foro-ardesia);
+}
+.section-head h1,
+.section-head h2 {
+  color: var(--foro-petrolio);
+}
+.surface-petrolio .section-head h1,
+.surface-petrolio .section-head h2,
+.surface-notte .section-head h1,
+.surface-notte .section-head h2 {
+  color: var(--foro-carta);
+}
+@media (max-width: 860px) {
+  .section-head--split {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+}
+
+/* modal */
+.modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(7, 48, 61, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+.modal {
+  width: 100%;
+  background: var(--foro-travertino);
+  border-radius: var(--foro-radius);
+  box-shadow: var(--foro-shadow-lg);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+}
+.modal--right {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  max-height: none;
+  height: 100dvh;
+  border-radius: 0;
+}
+.modal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px 0;
+  color: var(--foro-petrolio);
+}
+.modal__close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  border-radius: var(--foro-radius);
+  color: var(--foro-inchiostro);
+  margin-right: -8px;
+}
+.modal__close:hover {
+  background: rgba(12, 73, 91, 0.07);
+}
+.modal__body {
+  padding: 16px 24px 28px;
+  overflow-y: auto;
+}
+
+/* accordion */
+.accordion {
+  border-top: 1px solid var(--foro-linea);
+}
+.accordion__item {
+  border-bottom: 1px solid var(--foro-linea);
+}
+.accordion__trigger {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 26px 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  color: var(--foro-inchiostro);
+}
+.accordion__trigger:hover .accordion__title {
+  color: var(--foro-petrolio);
+}
+.accordion__meta {
+  color: var(--foro-ardesia);
+  min-width: 56px;
+}
+.accordion__title {
+  font-family: var(--foro-font-display);
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  font-weight: 400;
+  transition: color var(--foro-dur-1);
+}
+.accordion__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--foro-linea);
+  border-radius: 50%;
+  transition:
+    transform var(--foro-dur-2) var(--foro-ease),
+    background var(--foro-dur-2),
+    color var(--foro-dur-2);
+}
+.accordion__item.is-open .accordion__icon {
+  transform: rotate(45deg);
+  background: var(--foro-petrolio);
+  color: var(--foro-carta);
+  border-color: var(--foro-petrolio);
+}
+.accordion__content {
+  padding: 0 0 32px 80px;
+}
+@media (max-width: 640px) {
+  .accordion__trigger {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+  .accordion__meta {
+    grid-column: 1 / -1;
+  }
+  .accordion__content {
+    padding-left: 0;
+  }
+}
+
+/* segmented */
+.segmented {
+  display: inline-flex;
+  padding: 4px;
+  gap: 2px;
+  background: var(--foro-travertino-deep);
+  border: 1px solid var(--foro-pietra);
+  border-radius: var(--foro-radius);
+}
+.segmented__opt {
+  position: relative;
+  border: 0;
+  background: transparent;
+  padding: 0 16px;
+  height: 40px;
+  border-radius: var(--foro-radius);
+  font-family: var(--foro-font-display);
+  font-weight: 500;
+  font-size: 0.925rem;
+  color: var(--foro-ardesia);
+  white-space: nowrap;
+}
+.segmented--sm .segmented__opt {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+.segmented__opt.is-active {
+  color: var(--foro-carta);
+}
+.segmented__pill {
+  position: absolute;
+  inset: 0;
+  background: var(--foro-petrolio);
+  border-radius: var(--foro-radius);
+}
+.segmented__label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* skeleton */
+.skeleton {
+  display: block;
+  border-radius: var(--foro-radius);
+  background: linear-gradient(90deg, #ebe3d5 0%, #f3ecdf 50%, #ebe3d5 100%) 0 0 / 200% 100%;
+  animation: foro-shimmer 1.4s linear infinite;
+}
+@keyframes foro-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* toast */
+.toaster {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 300;
+  display: grid;
+  gap: 10px;
+  width: min(420px, calc(100vw - 40px));
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 16px 16px 18px;
+  background: var(--foro-notte);
+  color: var(--foro-carta);
+  border-left: 3px solid var(--foro-laguna-chiara);
+  border-radius: 0 var(--foro-radius) var(--foro-radius) 0;
+  box-shadow: var(--foro-shadow-lg);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.toast svg {
+  margin-top: 2px;
+}
+.toast--ok {
+  border-left-color: #3aa676;
+}
+.toast--avviso {
+  border-left-color: var(--foro-lanterna);
+}
+.toast--errore {
+  border-left-color: #e0584f;
+}
+.toast__title {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.toast button {
+  border: 0;
+  background: transparent;
+  color: var(--foro-laguna-chiara);
+  padding: 2px;
+  border-radius: var(--foro-radius);
+}
+.toast button:hover {
+  color: var(--foro-carta);
+}
+@media (max-width: 560px) {
+  .toaster {
+    right: 16px;
+    left: 16px;
+    bottom: 16px;
+    width: auto;
+  }
+}

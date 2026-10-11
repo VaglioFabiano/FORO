@@ -1,0 +1,26 @@
+/* Segnalazioni (prefisso sgn-) */
+.sgn { display: grid; gap: 20px; }
+.sgn-filters { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; padding: 16px 18px; border-bottom: 1px solid var(--foro-pietra); }
+.sgn-filters .field { min-width: 180px; }
+.sgn-grid { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.sgn-list { list-style: none; margin: 0; padding: 0; }
+.sgn-item { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--foro-linea); padding: 14px 18px; cursor: pointer; display: grid; gap: 6px; position: relative; color: inherit; font: inherit; }
+.sgn-item:hover { background: rgba(12, 73, 91, 0.04); }
+.sgn-item.is-active { background: rgba(12, 73, 91, 0.07); box-shadow: inset 3px 0 0 var(--foro-petrolio); }
+.sgn-item__top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.sgn-when { font-size: 0.78rem; color: var(--foro-ardesia); white-space: nowrap; }
+.sgn-code { font-family: var(--foro-font-mono); font-size: 0.8rem; color: var(--foro-petrolio); letter-spacing: 0.02em; }
+.sgn-item__msg { font-size: 0.92rem; line-height: 1.4; color: var(--foro-inchiostro); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sgn-item__meta { font-size: 0.78rem; color: var(--foro-ardesia); display: flex; gap: 6px 12px; flex-wrap: wrap; }
+.sgn-detail { display: grid; gap: 22px; }
+.sgn-detail__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: baseline; }
+.sgn-detail__code { font-family: var(--foro-font-mono); font-size: 1.35rem; color: var(--foro-petrolio); }
+.sgn-msg { margin: 0; padding: 16px 18px; background: var(--foro-travertino); border-left: 3px solid var(--foro-petrolio); font-family: var(--foro-font-text); font-size: 1.05rem; line-height: 1.55; color: var(--foro-inchiostro); }
+.sgn-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px 20px; margin: 0; }
+.sgn-facts dt { font-family: var(--foro-font-display); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--foro-ardesia); margin-bottom: 4px; }
+.sgn-facts dd { margin: 0; font-size: 0.95rem; color: var(--foro-inchiostro); overflow-wrap: anywhere; }
+.sgn-facts .mono { font-family: var(--foro-font-mono); font-size: 0.88rem; }
+@media (max-width: 960px) { .sgn-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .sgn-filters .field { flex: 1 1 100%; } }
+
+.sgn-proto { margin: -8px 0 16px; font-size: 0.85rem; color: var(--foro-ardesia); }
