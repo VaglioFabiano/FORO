@@ -935,15 +935,19 @@
     margin-top: 0;
   }
 }
+/* sul telefono il giorno sopra e gli orari sotto: con due fasce sulla stessa riga si sovrapponevano */
 @media (max-width: 760px) {
+  .ho-week .orari-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .ho-week .orari-row__hours {
     display: contents;
   }
   .ho-week .orari-row__range {
-    grid-column: 2;
-    grid-row: 1;
-    text-align: right;
+    grid-column: 1;
+    text-align: left;
     font-size: 0.95rem;
+    overflow-wrap: anywhere;
   }
   .ho-week .orari-row__note {
     grid-column: 1 / -1;
