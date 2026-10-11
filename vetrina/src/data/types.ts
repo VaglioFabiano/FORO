@@ -141,8 +141,8 @@ export interface RichiestaTessera {
 export interface Segnalazione {
   id: string;
   codice: string; // "S-2026-0042"
-  categoria: "guasto" | "pulizia" | "regolamento" | "proposta" | "altro";
-  aula: AulaId | "ristoro" | "esterno" | "altro";
+  categoria: "guasto" | "pulizia" | "regolamento" | "proposta" | "generico" | "altro";
+  aula: AulaId | "ristoro" | "esterno" | "generico" | "altro";
   messaggio: string;
   anonima: boolean;
   nome?: string;

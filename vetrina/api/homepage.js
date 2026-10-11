@@ -95,8 +95,8 @@ async function salvaCategorie(b) {
   return { versione: await versione() };
 }
 
-const CATEGORIE_SEGN = ["guasto", "pulizia", "regolamento", "proposta", "altro"];
-const LUOGHI_SEGN = ["foro", "agora", "ristoro", "esterno", "altro"];
+const CATEGORIE_SEGN = ["guasto", "pulizia", "regolamento", "proposta", "generico", "altro"];
+const LUOGHI_SEGN = ["foro", "agora", "ristoro", "esterno", "generico", "altro"];
 
 async function segnalazione(b) {
   const messaggio = testo(b.messaggio);

@@ -17,14 +17,15 @@ import "./segnalazioni.css";
 type Categoria = Segnalazione["categoria"];
 type Dove = Segnalazione["aula"];
 
-const CATEGORIE_VAL: { value: Categoria; icon: "plug" | "sparkle" | "document" | "edit" | "info" }[] = [
+const CATEGORIE_VAL: { value: Categoria; icon: "plug" | "sparkle" | "document" | "edit" | "flag" | "info" }[] = [
   { value: "guasto", icon: "plug" },
   { value: "pulizia", icon: "sparkle" },
   { value: "regolamento", icon: "document" },
   { value: "proposta", icon: "edit" },
+  { value: "generico", icon: "flag" },
   { value: "altro", icon: "info" },
 ];
-const DOVE_VAL: Dove[] = ["foro", "agora", "ristoro", "esterno", "altro"];
+const DOVE_VAL: Dove[] = ["foro", "agora", "ristoro", "esterno", "generico", "altro"];
 const MAX = 800;
 
 type Errors = Partial<Record<"categoria" | "aula" | "messaggio" | "email" | "form", string>>;

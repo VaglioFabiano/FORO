@@ -41,6 +41,7 @@ export const TESTI_SEGNALAZIONI: GruppoTesti = {
     v("categoria.pulizia", "Categoria · Pulizia", "Pulizia"),
     v("categoria.regolamento", "Categoria · Regolamento", "Regolamento"),
     v("categoria.proposta", "Categoria · Proposta", "Proposta"),
+    v("categoria.generico", "Categoria · Generico", "Generico"),
     v("categoria.altro", "Categoria · Altro", "Altro"),
     v("campo.dove", "Campo · Dove", "Dove"),
     v("campo.dove.placeholder", "Campo · Dove · testo iniziale", "Scegli il luogo"),
@@ -48,6 +49,7 @@ export const TESTI_SEGNALAZIONI: GruppoTesti = {
     v("dove.agora", "Luogo · Aula AGORÀ", "Aula AGORÀ, ad alta voce"),
     v("dove.ristoro", "Luogo · Zona ristoro", "Zona ristoro"),
     v("dove.esterno", "Luogo · Esterno", "Esterno e pagode"),
+    v("dove.generico", "Luogo · Generico", "Generico"),
     v("dove.altro", "Luogo · Altro", "Altro"),
     v("campo.messaggio", "Campo · Messaggio", "Messaggio"),
     v(

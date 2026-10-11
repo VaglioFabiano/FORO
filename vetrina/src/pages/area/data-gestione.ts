@@ -250,6 +250,7 @@ export const CATEGORIE_SEGN: Record<Segnalazione["categoria"], string> = {
   pulizia: "Pulizia",
   regolamento: "Regolamento",
   proposta: "Proposta",
+  generico: "Generico",
   altro: "Altro",
 };
 export const LUOGHI_SEGN: Record<Segnalazione["aula"], string> = {
@@ -257,6 +258,7 @@ export const LUOGHI_SEGN: Record<Segnalazione["aula"], string> = {
   agora: "Aula AGORÀ",
   ristoro: "Zona ristoro",
   esterno: "Spazi esterni",
+  generico: "Generico",
   altro: "Altro",
 };
 /* ═════════════ ORARI: canale Telegram ═════════════ */
