@@ -167,8 +167,8 @@
   }
 }
 @media (max-width: 720px) {
+  /* sul telefono resta "Login": si vede subito, senza aprire il menu */
   .site-header .status-chip__detail,
-  .site-header__login,
   .site-header__actions > .btn {
     display: none;
   }
@@ -176,7 +176,7 @@
     display: none !important;
   }
 }
-@media (max-width: 380px) {
+@media (max-width: 340px) {
   .site-header .status-chip {
     display: none;
   }

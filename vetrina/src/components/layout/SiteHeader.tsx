@@ -77,7 +77,7 @@ export function SiteHeader() {
               </Link>
             ) : (
               <Link to="/accedi" className="site-header__login link">
-                Accedi
+                Login
               </Link>
             )}
             <button className="site-header__burger" aria-label={open ? "Chiudi il menu" : "Apri il menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
@@ -115,9 +115,8 @@ export function SiteHeader() {
                 ))}
               </nav>
               <motion.div className="mobile-menu__foot" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55, duration: 0.5 }}>
-                <StatusChip tone="dark" />
                 <Link to={utente ? "/area" : "/accedi"} className="btn btn--carta btn--block" onClick={() => setOpen(false)}>
-                  <Icon name={utente ? "user" : "lock"} size={18} /> {utente ? "Area volontari" : "Accedi all'area volontari"}
+                  <Icon name={utente ? "user" : "lock"} size={18} /> {utente ? "Area volontari" : "Login"}
                 </Link>
                 <div className="mobile-menu__contacts t-mono">
                   <a href={`mailto:${email}`}>{email}</a>
