@@ -167,9 +167,18 @@
   }
 }
 @media (max-width: 720px) {
-  /* sul telefono resta "Login": si vede subito, senza aprire il menu */
-  .site-header .status-chip__detail,
-  .site-header__actions > .btn {
+  /* sul telefono "Login" (o "Area volontari" per chi è dentro) si vede subito, senza aprire il menu */
+  .site-header .status-chip__detail {
+    display: none;
+  }
+  .site-header__area.btn {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 0.95rem;
+  }
+  .site-header__area svg {
     display: none;
   }
   .logo-descr--compact {

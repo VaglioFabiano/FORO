@@ -6,7 +6,7 @@ import { TESTI_FOOTER } from "@/data/testi/footer";
 import { NAV, ORG } from "@/data/org";
 import { SectionLink } from "./sections";
 import { Modificabile } from "@/components/cms/Modificabile";
-import { settimanaMobile, statoLabel, useOrari, useStatoAula } from "@/lib/api";
+import { settimanaMobile, statoLabel, useOrari, useStatoAula, useUtenteCorrente } from "@/lib/api";
 import { fmtRange } from "@/lib/time";
 import { useLink } from "@/lib/link";
 import { TESTI_LINK } from "@/data/testi/link";
@@ -33,6 +33,7 @@ function OggiInAula() {
 export function SiteFooter() {
   const year = new Date().getFullYear();
   const t = useTesti(TESTI_FOOTER);
+  const utente = useUtenteCorrente();
   const link = useLink();
   const tl = useTesti(TESTI_LINK);
   return (
@@ -84,8 +85,8 @@ export function SiteFooter() {
                   </li>
                 ))}
                 <li>
-                  <Link className="link" to="/accedi">
-                    Login
+                  <Link className="link" to={utente ? "/area" : "/accedi"}>
+                    {utente ? "Area volontari" : "Login"}
                   </Link>
                 </li>
               </ul>
