@@ -8,9 +8,9 @@ import type { Evento, Livello } from "@/data/types";
 import { conPrenotazione, eventiFuturi, eventoInEvidenza, homepagePronta, postiPrenotati, statoLabel, useEventi, useStatoAula, useUtenteCorrente } from "@/lib/api";
 import { cacheHomepage } from "@/lib/cache";
 import { useStore } from "@/lib/store";
-import { fmtLong, mondayOf, relativeDay, romeNow, toMin, todayIso } from "@/lib/time";
+import { fmtLong, relativeDay, romeNow, toMin, todayIso } from "@/lib/time";
 import { AreaHead, Panel, StatTile, puo, useLivello } from "../ui";
-import { giornoLungo, isFinito, nomeCompleto, riepilogoSettimana, turniDelGiorno, turniPronti, useTurni } from "../data-turni";
+import { giornoLungo, isFinito, nomeCompleto, scopertiProssimi, turniDelGiorno, turniPronti, useTurni } from "../data-turni";
 import "./panoramica.css";
 
 /** stessa sequenza dei gruppi della barra laterale */
@@ -51,7 +51,7 @@ export default function Panoramica() {
   const now = romeNow();
   const oggi = todayIso();
 
-  const scoperti = useMemo(() => riepilogoSettimana(turni, mondayOf(oggi)).scopertiFuturi.length, [turni, oggi]);
+  const scoperti = useMemo(() => scopertiProssimi(turni).length, [turni, oggi]);
   const futuri = eventiFuturi(eventi, oggi);
   const riquadri = riquadriInEvidenza(eventi, futuri, oggi);
   const lab = statoLabel(stato);
@@ -97,7 +97,7 @@ export default function Panoramica() {
             label="Turni scoperti"
             tone={!turniOk ? "default" : scoperti ? "avviso" : "ok"}
             value={turniOk ? scoperti : <Skeleton h={30} w={48} />}
-            hint={!turniOk ? undefined : scoperti ? "Ancora da coprire questa settimana. Apri i turni." : "Questa settimana è tutto coperto."}
+            hint={!turniOk ? undefined : scoperti ? "Ancora da coprire nei prossimi 7 giorni. Apri i turni." : "Nei prossimi 7 giorni è tutto coperto."}
             to="/area/turni"
           />
         </div>

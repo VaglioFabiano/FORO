@@ -1,19 +1,14 @@
 /**
- * Ruolo effettivo di chi usa il sito: il livello del proprio account, oppure quello scelto
- * nel selettore "Visualizza come" della demo. Vale sia nell'area volontari sia sulla homepage.
+ * Livello di chi usa il sito: quello del proprio account, nient'altro (ognuno vede ciò che il suo livello permette).
+ * Vale sia nell'area volontari sia sulla homepage; il server ripete comunque ogni controllo.
  */
 import type { Livello } from "@/data/types";
 import { useUtenteCorrente } from "./api";
-import { createStore, useStore } from "./store";
 
-export const vistaComeStore = createStore<Livello | null>("area-vista-come", null);
-
-/** livello effettivo, oppure null se nessuno è entrato */
+/** livello dell'account, oppure null se nessuno è entrato */
 export function useLivelloEffettivo(): Livello | null {
   const u = useUtenteCorrente();
-  const vista = useStore(vistaComeStore);
-  if (!u) return null;
-  return (vista ?? u.livello) as Livello;
+  return u ? (u.livello as Livello) : null;
 }
 
 /**

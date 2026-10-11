@@ -188,6 +188,24 @@ export function riepilogoSettimana(list: TurnoVol[], monday: string, userId?: nu
   };
 }
 
+/**
+ * fasce teoriche (lun–ven: mattina, pranzo, pomeriggio) ancora da coprire nei prossimi `giorni` giorni, oggi compreso:
+ * finestra mobile, così la domenica guarda già la settimana che arriva. Quelle già finite non contano.
+ */
+export function scopertiProssimi(list: TurnoVol[], giorni = 7, now = romeNow()): Scoperto[] {
+  const out: Scoperto[] = [];
+  for (let d = 0; d < giorni; d++) {
+    const iso = addDays(now.iso, d);
+    if (weekdayOf(iso) > 4) continue;
+    for (let f = 0; f < 3; f++) {
+      if (isFinito(iso, FASCE_TURNI[f].end, now)) continue;
+      const c = copertura(list, iso, f);
+      if (c.stato !== "coperto") out.push({ data: iso, fascia: f, buchi: c.buchi, stato: c.stato });
+    }
+  }
+  return out;
+}
+
 /** i prossimi turni di una persona (quello in corso compreso) */
 export function prossimiTurni(list: TurnoVol[], userId: number, now = romeNow()) {
   return list

@@ -1,22 +1,21 @@
 /**
- * Area volontari: shell con barra laterale Notte, rotte annidate per modulo,
- * selettore "Visualizza come" per vedere l'area con un altro livello (solo grafico: il server ripete
- * ogni controllo, BACKEND.md §8). Si entra solo con una sessione del server. Registro Silenzio, niente payoff.
+ * Area volontari: shell con barra laterale Notte, rotte annidate per modulo. Ognuno vede i moduli che il
+ * suo livello permette (il server ripete ogni controllo, BACKEND.md §8). Si entra solo con una sessione del server.
+ * Registro Silenzio, niente payoff.
  */
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { LogoMark } from "@/brand/Logo";
-import { Avatar, Button, ButtonLink, Icon, Skeleton, cx, type IconName } from "@/components/ui";
+import { Avatar, ButtonLink, Icon, Skeleton, cx, type IconName } from "@/components/ui";
 import { toast } from "@/components/ui/Toast";
 import { esci, useSessione, useUtenteCorrente } from "@/lib/api";
 import { aggiornaUtente, chiama } from "@/lib/server";
 import { useStore } from "@/lib/store";
-import { mondayOf, todayIso } from "@/lib/time";
 import { LIVELLI } from "@/data/volontari";
 import type { Livello, Utente } from "@/data/types";
-import { Empty, puo, useLivello, vistaComeStore } from "./ui";
-import { riepilogoSettimana, turniPronti, useTurni } from "./data-turni";
+import { Empty, puo, useLivello } from "./ui";
+import { scopertiProssimi, turniPronti, useTurni } from "./data-turni";
 import Panoramica from "./modules/Panoramica";
 import "./shell.css";
 
@@ -77,14 +76,13 @@ function moduloDa(pathname: string) {
 function Sidebar({ onNavigate, onEsci, uscendo }: { onNavigate?: () => void; onEsci: () => void; uscendo: boolean }) {
   const utente = useUtenteCorrente();
   const livello = useLivello();
-  const vista = useStore(vistaComeStore);
   const turni = useTurni();
   const pronti = useStore(turniPronti);
   // finché i turni non arrivano dal server non c'è nessun numero da mostrare
-  const scoperti = useMemo(() => (pronti ? riepilogoSettimana(turni, mondayOf(todayIso())).scopertiFuturi.length : 0), [turni, pronti]);
+  const scoperti = useMemo(() => (pronti ? scopertiProssimi(turni).length : 0), [turni, pronti]);
   const badge: Record<string, number> = { turni: scoperti };
   const badgeTitle: Record<string, string> = {
-    turni: `${scoperti} ${scoperti === 1 ? "turno scoperto" : "turni scoperti"} questa settimana`,
+    turni: `${scoperti} ${scoperti === 1 ? "turno scoperto" : "turni scoperti"} nei prossimi 7 giorni`,
   };
 
   return (
@@ -154,27 +152,6 @@ function Sidebar({ onNavigate, onEsci, uscendo }: { onNavigate?: () => void; onE
             <Icon name="chevron-right" size={18} className="sh-user__go" />
           </Link>
         )}
-        <label className="sh-vista">
-          <span className="sh-vista__label">
-            <Icon name="eye" size={15} /> Visualizza come
-          </span>
-          <select
-            className="sh-vista__select"
-            value={vista ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              vistaComeStore.set(v ? (Number(v) as Livello) : null);
-            }}
-          >
-            <option value="">Il mio ruolo{utente ? ` · ${utente.livello === 0 ? "Livello 0" : LIVELLI[utente.livello].label}` : ""}</option>
-            {/* il livello 0 compare solo a chi è superadmin */}
-            {((utente?.livello === 0 ? [0, 1, 2, 3, 4] : [1, 2, 3, 4]) as Livello[]).map((l) => (
-              <option key={l} value={l}>
-                {l === 0 ? "Livello 0" : LIVELLI[l].label}
-              </option>
-            ))}
-          </select>
-        </label>
         <div className="sh-foot__actions">
           <Link to="/" className="sh-foot__btn">
             <Icon name="arrow-left" size={17} /> Torna al sito
@@ -225,7 +202,6 @@ function ModuleFallback() {
 export default function AreaApp() {
   const sessione = useSessione();
   const utente = useUtenteCorrente();
-  const vista = useStore(vistaComeStore);
   const loc = useLocation();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
@@ -237,10 +213,6 @@ export default function AreaApp() {
     document.title = `${modulo.label} · Area volontari · FORO`;
   }, [modulo.label]);
   useEffect(() => setMenu(false), [loc.pathname]);
-  // sessione scaduta o chiusa: la vista scelta non passa a chi entra dopo
-  useEffect(() => {
-    if (!sessione) vistaComeStore.set(null);
-  }, [sessione]);
   // entrando si rilegge l'utente dal server (livello e dati cambiati da altri); con una sessione non più valida
   // il server risponde 401 e chiama() la chiude, quindi si torna alla pagina di accesso
   const token = sessione?.token;
@@ -266,7 +238,6 @@ export default function AreaApp() {
     setUscendo(true);
     setUscito(true);
     await esci();
-    vistaComeStore.set(null);
     navigate("/", { replace: true });
     toast("Hai chiuso la sessione dell'area volontari. A presto.", "info");
   };
@@ -319,27 +290,6 @@ export default function AreaApp() {
       </AnimatePresence>
 
       <main id="area-contenuto" className="sh-main">
-        <AnimatePresence initial={false}>
-          {vista !== null && (
-            <motion.div
-              className="sh-vista-bar"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="sh-vista-bar__inner">
-                <Icon name="eye" size={18} />
-                <span>
-                  Anteprima: stai vedendo l'area come <strong>{LIVELLI[vista].label}</strong>. Le voci e i permessi cambiano di conseguenza.
-                </span>
-                <Button size="sm" variant="ghost" onClick={() => vistaComeStore.set(null)}>
-                  Torna al tuo ruolo
-                </Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
         <div className="sh-content">
           <motion.div key={modulo.path} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
             <Suspense fallback={<ModuleFallback />}>

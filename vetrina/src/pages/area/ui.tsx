@@ -4,19 +4,15 @@
  */
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useStore } from "@/lib/store";
 import { useUtenteCorrente } from "@/lib/api";
-import { vistaComeStore } from "@/lib/vista";
 import type { Livello } from "@/data/types";
 import { Icon, cx, type IconName } from "@/components/ui";
 import "./area-base.css";
 
-/* ── ruolo effettivo: il selettore "Visualizza come" della demo (lo store vive in lib/vista, lo usa anche la homepage) ── */
-export { vistaComeStore };
+/* ── livello dell'account: ognuno vede quello che il suo livello permette ── */
 export function useLivello(): Livello {
   const u = useUtenteCorrente();
-  const vista = useStore(vistaComeStore);
-  return (vista ?? u?.livello ?? 4) as Livello;
+  return (u?.livello ?? 4) as Livello;
 }
 /** true se il livello corrente può vedere una funzione che richiede `min` (numero più basso = più permessi) */
 export function puo(livello: Livello, min: Livello) {
