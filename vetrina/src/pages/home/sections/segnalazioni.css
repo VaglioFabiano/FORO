@@ -270,80 +270,12 @@
   color: var(--foro-petrolio);
   outline: none;
 }
-.sg-code {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "l b" "v b";
-  align-items: center;
-  gap: 6px 16px;
-  padding: 22px 24px;
-  background: var(--foro-petrolio);
-  color: var(--foro-carta);
-  border-radius: var(--foro-radius);
-}
-.sg-code .t-label {
-  grid-area: l;
-  color: var(--foro-laguna-chiara);
-}
-.sg-code__val {
-  grid-area: v;
-  font-family: var(--foro-font-mono);
-  font-weight: 400;
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-}
-.sg-code__copy {
-  grid-area: b;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1px solid rgba(251, 231, 204, 0.4);
-  border-radius: var(--foro-radius);
-  background: transparent;
-  color: var(--foro-carta);
-  font-weight: 500;
-  transition:
-    background-color var(--foro-dur-1) var(--foro-ease),
-    color var(--foro-dur-1) var(--foro-ease);
-}
-.sg-code__copy:hover {
-  background: var(--foro-carta);
-  color: var(--foro-petrolio);
-}
-.sg-next__title {
-  color: var(--foro-ardesia);
-  margin-bottom: -12px;
-}
-.sg-next {
-  width: 100%;
-  display: grid;
-  border-top: 1px solid var(--foro-pietra);
-}
-.sg-next li {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 12px;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--foro-pietra);
-}
-.sg-next .t-mono {
-  color: var(--foro-cotto);
-  padding-top: 3px;
-}
-.sg-next strong {
-  font-weight: 500;
-  color: var(--foro-petrolio);
-}
-.sg-next p {
-  margin-top: 2px;
+.sg-done__text {
+  margin: 20px 0 24px;
   font-family: var(--foro-font-text);
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--foro-ardesia);
+  max-width: 44ch;
+  font-size: 1.05rem;
+  line-height: 1.55;
 }
 
 @media (max-width: 1100px) {
@@ -373,15 +305,6 @@
   }
   .sg-submit .btn {
     width: 100%;
-  }
-  .sg-code {
-    grid-template-areas: "l" "v" "b";
-    grid-template-columns: 1fr;
-    padding: 20px;
-  }
-  .sg-code__copy {
-    justify-self: start;
-    margin-top: 6px;
   }
   .sg-row {
     grid-template-columns: minmax(0, 1fr) auto;

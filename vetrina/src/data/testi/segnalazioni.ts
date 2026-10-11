@@ -31,7 +31,7 @@ export const TESTI_SEGNALAZIONI: GruppoTesti = {
       true,
     ),
     v("punto.2.titolo", "Punto 2 · titolo", "Arriva al direttivo"),
-    v("punto.2.testo", "Punto 2 · testo", "Ogni segnalazione arriva alle persone che gestiscono l'aula e riceve un codice per seguirla.", true),
+    v("punto.2.testo", "Punto 2 · testo", "Ogni segnalazione arriva alle persone che gestiscono l'aula.", true),
     v("punto.3.titolo", "Punto 3 · titolo", "Se è urgente"),
     v("punto.3.testo", "Punto 3 · testo", "Per un guasto che blocca l'aula, avvisa subito il volontario o la volontaria di turno.", true),
 
@@ -73,21 +73,12 @@ export const TESTI_SEGNALAZIONI: GruppoTesti = {
     /* esito */
     v("ok.kicker", "Conferma · occhiello", "Segnalazione ricevuta"),
     v("ok.titolo", "Conferma · titolo", "Grazie, l'abbiamo ricevuta."),
-    v("ok.codice", "Conferma · etichetta del codice", "Il tuo codice"),
-    v("ok.copia", "Conferma · pulsante Copia", "Copia"),
-    v("ok.dopo", "Conferma · titolo «Cosa succede adesso»", "Cosa succede adesso"),
-    v("ok.1.titolo", "Conferma · passo 1 · titolo", "La leggiamo"),
-    v("ok.1.testo", "Conferma · passo 1 · testo", "Il direttivo la riceve e la valuta nei prossimi giorni di apertura.", true),
-    v("ok.2.titolo", "Conferma · passo 2 · titolo", "La prendiamo in carico"),
-    v("ok.2.testo", "Conferma · passo 2 · testo", "Chi se ne occupa la segue fino a quando il problema è risolto.", true),
-    v("ok.3.titolo", "Conferma · passo 3 · titolo", "Ti diamo un riscontro"),
     v(
-      "ok.3.anonima",
-      "Conferma · passo 3 · se anonima",
-      "Se vuoi sapere a che punto siamo, chiedi in aula con il tuo codice. Le novità più utili le raccontiamo anche sul canale Telegram.",
+      "ok.testo",
+      "Conferma · testo",
+      "Ce ne prendiamo carico. Grazie: ogni segnalazione è preziosa per migliorare l'aula.",
       true,
     ),
-    v("ok.3.contatto", "Conferma · passo 3 · con contatto", "Se ci hai lasciato un indirizzo, ti scriviamo noi quando è risolta.", true),
     v("ok.altra", "Conferma · pulsante Invia un'altra", "Invia un'altra segnalazione"),
   ],
 };

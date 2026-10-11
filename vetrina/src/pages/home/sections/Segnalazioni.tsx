@@ -6,7 +6,6 @@ import { useId, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { Button, Icon, Reveal, SectionHead, SelectField, TextField, cx } from "@/components/ui";
-import { toast } from "@/components/ui/Toast";
 import { ApiError, inviaSegnalazione, isEmail } from "@/lib/api";
 import type { Segnalazione } from "@/data/types";
 import { TESTI_SEGNALAZIONI } from "@/data/testi/segnalazioni";
@@ -101,14 +100,6 @@ export default function Segnalazioni() {
     }
   };
 
-  const copiaCodice = async (c: string) => {
-    try {
-      await navigator.clipboard.writeText(c);
-      toast(`Conservalo: ti serve se vuoi chiederci a che punto siamo.`, "ok", `Codice ${c} copiato`);
-    } catch {
-      toast("Non siamo riusciti a copiare il codice. Selezionalo e copialo a mano.", "avviso");
-    }
-  };
 
   const restanti = MAX - messaggio.length;
 
@@ -166,37 +157,8 @@ export default function Segnalazioni() {
                         </h3>
                       </div>
                     </div>
-                    <div className="sg-code">
-                      <span className="t-label">{t.ed("ok.codice")}</span>
-                      <strong className="sg-code__val">{inviata.codice}</strong>
-                      <button type="button" className="sg-code__copy" onClick={() => copiaCodice(inviata.codice)}>
-                        <Icon name="copy" size={16} /> {t.ed("ok.copia")}
-                      </button>
-                    </div>
-                    <h4 className="t-label sg-next__title">{t.ed("ok.dopo")}</h4>
-                    <ol className="sg-next">
-                      <li>
-                        <span className="t-mono">01</span>
-                        <div>
-                          <strong>{t.ed("ok.1.titolo")}</strong>
-                          <p>{t.ed("ok.1.testo")}</p>
-                        </div>
-                      </li>
-                      <li>
-                        <span className="t-mono">02</span>
-                        <div>
-                          <strong>{t.ed("ok.2.titolo")}</strong>
-                          <p>{t.ed("ok.2.testo")}</p>
-                        </div>
-                      </li>
-                      <li>
-                        <span className="t-mono">03</span>
-                        <div>
-                          <strong>{t.ed("ok.3.titolo")}</strong>
-                          <p>{inviata.anonima ? t.ed("ok.3.anonima") : t.ed("ok.3.contatto")}</p>
-                        </div>
-                      </li>
-                    </ol>
+                    {/* solo ciò che è vero: la prendiamo in carico e ringraziamo, nessuna promessa di risposte o di codici da seguire */}
+                    <p className="sg-done__text">{t.ed("ok.testo", undefined, { blocco: true })}</p>
                     <Button variant="outline" icon="plus" onClick={() => setInviata(null)}>
                       {t.ed("ok.altra")}
                     </Button>
