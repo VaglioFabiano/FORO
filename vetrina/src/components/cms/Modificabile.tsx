@@ -269,7 +269,7 @@ export function BarraModifica() {
         {visibili ? "Nascondi" : "Mostra"}
       </button>
       <Link className="cms-barra__btn" to="/area">
-        Area volontari
+        Login
       </Link>
     </div>
   );

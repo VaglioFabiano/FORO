@@ -85,7 +85,7 @@ export function SiteFooter() {
                 ))}
                 <li>
                   <Link className="link" to="/accedi">
-                    Area volontari
+                    Login
                   </Link>
                 </li>
               </ul>
