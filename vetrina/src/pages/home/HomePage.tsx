@@ -23,7 +23,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   // tornando dall'area volontari la scheda riprende il titolo del sito
   useEffect(() => {
-    document.title = "FORO · Aula studio di Piossasco";
+    document.title = "FORO · Aula studio di Piossasco · Associazione culturale";
   }, []);
   return (
     <>

@@ -1,0 +1,8 @@
+# foroets.com
+User-agent: *
+Allow: /
+Disallow: /area
+Disallow: /accedi
+Disallow: /api/
+
+Sitemap: https://foroets.com/sitemap.xml

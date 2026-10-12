@@ -70,6 +70,10 @@ export default function PrivacyPage() {
   const [attivo, setAttivo] = useState(INDICE[0].id);
 
   useEffect(() => {
+    document.title = "Informativa privacy · FORO";
+  }, []);
+
+  useEffect(() => {
     const els = INDICE.map((i) => document.getElementById(i.id)).filter(Boolean) as HTMLElement[];
     const io = new IntersectionObserver(
       (entries) => {
