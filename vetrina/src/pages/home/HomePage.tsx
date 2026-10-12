@@ -21,10 +21,10 @@ import "./home.css";
 export default function HomePage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  // tornando dall'area volontari la scheda riprende il titolo del sito
+  // tornando dall'area volontari la scheda riprende il titolo del sito; con un evento aperto il titolo è dell'evento (lib/seo.ts)
   useEffect(() => {
-    document.title = "FORO · Aula studio di Piossasco · Associazione culturale";
-  }, []);
+    if (!slug) document.title = "FORO · Aula studio di Piossasco · Associazione culturale";
+  }, [slug]);
   return (
     <>
       <Modificabile sezione="top">

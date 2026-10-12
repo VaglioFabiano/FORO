@@ -137,6 +137,24 @@ async function segnalazioni() {
   };
 }
 
+/** sitemap per i motori di ricerca: homepage, privacy e la pagina di ogni evento visibile (/sitemap.xml, vedi vercel.json) */
+async function sitemap(res) {
+  const eventi = await eventiVisibili();
+  const url = (loc, extra = "") => `  <url>\n    <loc>https://foroets.com${loc}</loc>${extra}\n  </url>`;
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    url("/", "\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>"),
+    url("/privacy", "\n    <changefreq>yearly</changefreq>\n    <priority>0.3</priority>"),
+    ...eventi.map((e) => url(`/eventi/${encodeURIComponent(e.slug)}`, "\n    <priority>0.7</priority>")),
+    "</urlset>",
+  ].join("\n");
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/xml; charset=utf-8");
+  res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+  res.end(xml);
+}
+
 export default funzione(async (req, res) => {
   const { action } = query(req);
   const b = corpo(req);
@@ -151,6 +169,7 @@ export default funzione(async (req, res) => {
     }
     return data;
   }
+  if (req.method === "GET" && action === "sitemap") return sitemap(res);
   if (req.method === "POST" && action === "segnalazione") return segnalazione(b);
   const u = await richiedi(req, 2);
   if (req.method === "GET" && action === "segnalazioni") return segnalazioni();

@@ -16,11 +16,13 @@ import { capitalize, fmtDuration, fmtLong, fmtRange, toMin } from "@/lib/time";
 import { Prenotazione } from "./PrenotaForm";
 import { TitoloEvento } from "./TitoloEvento";
 import { mapsLink, quando, useTestiEventi } from "./testi";
+import { useSeoEvento } from "@/lib/seo";
 import "./prenota.css";
 
 export default function PrenotaDrawer({ slug, onClose }: { slug: string; onClose: () => void }) {
   const eventi = useEventi();
   const e = eventoBySlug(eventi, slug);
+  useSeoEvento(e);
   const [open, setOpen] = useState(true);
   // chiude con l'animazione, poi avvisa la home (che torna a "/")
   const close = useCallback(() => {

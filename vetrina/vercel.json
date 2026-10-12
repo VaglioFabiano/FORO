@@ -1,12 +1,23 @@
 {
-  "regions": ["dub1"],
+  "regions": [
+    "dub1"
+  ],
   "headers": [
     {
       "source": "/sw.js",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     }
   ],
   "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/homepage?action=sitemap"
+    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
