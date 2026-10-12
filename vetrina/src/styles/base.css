@@ -7,6 +7,9 @@
   box-sizing: border-box;
 }
 html {
+  /* il sito ha solo i colori del manuale: i browser con la "modalità scura forzata" (Huawei, Samsung, Chrome)
+     non devono invertirli da soli */
+  color-scheme: only light;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: calc(var(--foro-header-h) + 16px);
