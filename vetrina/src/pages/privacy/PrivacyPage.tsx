@@ -10,7 +10,7 @@ import { ORG } from "@/data/org";
 import "./privacy.css";
 import { useLink } from "@/lib/link";
 
-const AGGIORNATA = "02.10.2026";
+const AGGIORNATA = "12.10.2026";
 
 const INDICE = [
   { id: "titolare", label: "Chi tratta i tuoi dati" },
@@ -29,12 +29,13 @@ const SERVIZI = [
     nome: "Prenotazione eventi",
     dati: "Nome, cognome, email.",
     perche:
-      "Tenere il tuo posto, avvisarti se l'evento cambia orario o viene annullato, contare le presenze. Si prenotano solo gli eventi: l'aula studio non si prenota.",
+      "Tenere il tuo posto, avvisarti se l'evento cambia orario o viene annullato, contare le presenze. Al termine dell'evento nome, cognome ed email vengono cancellati. Si prenotano solo gli eventi: l'aula studio non si prenota.",
   },
   {
     nome: "Tesseramento per le proiezioni",
     dati: "Nome, cognome, data e luogo di nascita, email, telefono se ce lo dai.",
-    perche: "Rilasciarti la tessera che serve per partecipare alle proiezioni e tenere l'elenco delle persone tesserate.",
+    perche:
+      "Rilasciarti la tessera che serve per partecipare alle proiezioni e tenere l'elenco delle persone tesserate, da conservare nel caso in cui MPLC, che ci rilascia la licenza per le proiezioni, ci chieda l'elenco dei tesserati.",
   },
   {
     nome: "Comunicazioni ai tesserati",
@@ -47,16 +48,11 @@ const SERVIZI = [
     dati: "Categoria, luogo e testo del messaggio. Nome ed email solo se scegli di non restare anonima.",
     perche: "Risolvere il problema che ci segnali e, se lo chiedi, risponderti.",
   },
-  {
-    nome: "Disponibilità di volontari e volontarie",
-    dati: "Nome, cognome, email o telefono, giorni e fasce in cui puoi coprire un turno.",
-    perche: "Organizzare i turni di apertura dell'aula e contattarti quando un turno è scoperto.",
-  },
 ];
 
 const BASI = [
   {
-    cosa: "Prenotazioni agli eventi, tesseramento e comunicazioni ai tesserati, turni",
+    cosa: "Prenotazioni agli eventi, tesseramento e comunicazioni ai tesserati",
     base: "Art. 6.1.b",
     descr: "esecuzione di un rapporto o di misure che ci chiedi tu",
   },
@@ -238,12 +234,13 @@ export default function PrivacyPage() {
               <div className="prose">
                 <ul>
                   <li>
-                    <strong>Prenotazioni agli eventi:</strong> le cancelliamo quando l'evento è concluso. Teniamo solo il numero dei
-                    partecipanti.
+                    <strong>Prenotazioni agli eventi:</strong> al termine dell'evento cancelliamo nome, cognome, email ed eventuali note
+                    (lo fa il sito in automatico, entro la sera del giorno dopo). Teniamo solo il numero dei posti prenotati e delle persone
+                    arrivate.
                   </li>
                   <li>
-                    <strong>Tesseramento per le proiezioni:</strong> finché il tuo tesseramento continua. Quando non lo rinnovi, cancelliamo
-                    i tuoi dati.
+                    <strong>Tesseramento per le proiezioni:</strong> finché il tuo tesseramento continua e, anche dopo, finché MPLC può
+                    chiederci l'elenco dei tesserati per verificare la licenza delle proiezioni. Poi cancelliamo i tuoi dati.
                   </li>
                   <li>
                     <strong>Comunicazioni ai tesserati:</strong> anche queste finché il tesseramento continua. Se non vuoi più riceverle,
@@ -252,9 +249,6 @@ export default function PrivacyPage() {
                   <li>
                     <strong>Segnalazioni:</strong> fino a dodici mesi dalla chiusura. Il nome e l'email, se li hai lasciati, li cancelliamo
                     appena ti abbiamo risposto.
-                  </li>
-                  <li>
-                    <strong>Disponibilità per i turni:</strong> finché fai parte del gruppo di volontari e volontarie, poi le cancelliamo.
                   </li>
                 </ul>
               </div>
@@ -276,7 +270,8 @@ export default function PrivacyPage() {
                   </li>
                   <li>
                     a <strong>MPLC Italia</strong> e <strong>SIAE</strong>, per le proiezioni e gli eventi con musica, il titolo
-                    dell'opera e il numero di spettatori, come richiesto dalle licenze.
+                    dell'opera e il numero di spettatori, come richiesto dalle licenze. A <strong>MPLC Italia</strong>, se ce lo chiede
+                    per la licenza di proiezione, anche l'elenco delle persone tesserate.
                   </li>
                 </ul>
               </div>
