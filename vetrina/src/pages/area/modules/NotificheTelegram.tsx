@@ -38,7 +38,7 @@ const AUTOMAZIONI: { t: string; che: string; a: string; tipo?: "rep" | "pr"; gio
   { t: "12:00", che: "Promemoria dei turni dalle 13:00 alle 16:00", a: "chi è di turno", tipo: "pr" },
   { t: "12:00", che: "Report dei turni vuoti", a: "gestione_turni", tipo: "rep", giorno: "Sabato" },
   { t: "12:30", che: "Promemoria presenze, fascia 9-13", a: "chi è di turno" },
-  { t: "15:00", che: "Promemoria dei turni dalle 16:00 alle 21:00", a: "chi è di turno", tipo: "pr" },
+  { t: "15:00", che: "Promemoria dei turni dalle 16:00 alle 19:00", a: "chi è di turno", tipo: "pr" },
   { t: "15:30", che: "Promemoria presenze, fascia 13-16", a: "chi è di turno" },
   { t: "19:00", che: "Promemoria presenze, fascia 16-19", a: "chi è di turno" },
   { t: "20:30", che: "Promemoria dei turni serali, dalle 21:00", a: "chi è di turno", tipo: "pr" },
