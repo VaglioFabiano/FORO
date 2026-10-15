@@ -1,7 +1,7 @@
 /**
  * 05 · Seguici sui social.
  * Contenuti VERI: il profilo Instagram (embed ufficiale del profilo, sempre aggiornato)
- * e gli ultimi messaggi del canale Telegram (widget ufficiale). Si caricano sempre, senza clic.
+ * e gli ultimi messaggi del canale Telegram (widget ufficiale). Si caricano solo con il consenso ai cookie.
  */
 import { useEffect, useRef, useState } from "react";
 import { Icon, Reveal, SectionHead } from "@/components/ui";
@@ -11,6 +11,7 @@ import { useTesti } from "@/lib/contenuti";
 import { ultimiTelegram } from "@/lib/api";
 import "./social.css";
 import { useLink } from "@/lib/link";
+import { ConsensoEsterno } from "@/components/domain/ConsensoEsterno";
 
 const ext = { target: "_blank", rel: "noopener noreferrer" } as const;
 const TG_QUANTI = 3;
@@ -40,12 +41,14 @@ function InstagramProfilo() {
         </a>
       </header>
       <div className="so-ig__embed">
-        <iframe
-          title={`Gli ultimi post di ${igHandle} su Instagram`}
-          src={`https://www.instagram.com/${igUser}/embed/`}
-          loading="lazy"
-          scrolling="no"
-        />
+        <ConsensoEsterno servizio="Instagram" cosa="gli ultimi post" icona="instagram" href={instagram}>
+          <iframe
+            title={`Gli ultimi post di ${igHandle} su Instagram`}
+            src={`https://www.instagram.com/${igUser}/embed/`}
+            loading="lazy"
+            scrolling="no"
+          />
+        </ConsensoEsterno>
       </div>
     </article>
   );
@@ -113,11 +116,13 @@ function TelegramCanale() {
         <h3 className="so-tg__titolo">{t.ed("tg.titolo")}</h3>
         <p className="so-tg__testo">{t.ed("tg.testo")}</p>
       </header>
-      <div className="so-tg__feed" data-lenis-prevent>
-        {ids.map((id) => (
-          <TelegramPost key={`${tgCanale}/${id}`} canale={tgCanale} id={id} />
-        ))}
-      </div>
+      <ConsensoEsterno servizio="Telegram" cosa="gli ultimi messaggi" icona="telegram" href={telegram} scuro className="so-tg__esterno">
+        <div className="so-tg__feed" data-lenis-prevent>
+          {ids.map((id) => (
+            <TelegramPost key={`${tgCanale}/${id}`} canale={tgCanale} id={id} />
+          ))}
+        </div>
+      </ConsensoEsterno>
       <a className="btn btn--carta so-tg__cta" href={telegram} {...ext}>
         {t.ed("tg.cta")} <Icon name="arrow-up-right" size={16} />
       </a>

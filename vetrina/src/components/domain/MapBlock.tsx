@@ -1,16 +1,19 @@
 /**
- * Mappa dell'aula: Google Maps, sempre caricata (nessun clic richiesto).
+ * Mappa dell'aula: Google Maps, caricata solo con il consenso ai cookie («Accetta tutti»).
  */
 import { LogoSymbol } from "@/brand/Logo";
 import { Icon, cx } from "@/components/ui";
 import { useLink } from "@/lib/link";
+import { ConsensoEsterno } from "./ConsensoEsterno";
 
 export function MapBlock({ className, height = 440 }: { className?: string; height?: number }) {
   // indirizzo e coordinate si cambiano dalla homepage (Dove siamo)
   const { luogo } = useLink();
   return (
     <div className={cx("map-block", className)} style={{ minHeight: height }}>
-      <iframe title="Mappa dell'aula studio FORO su Google Maps" src={luogo.mappa} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+      <ConsensoEsterno servizio="Google Maps" cosa="la mappa" icona="map" href={luogo.indicazioni}>
+        <iframe title="Mappa dell'aula studio FORO su Google Maps" src={luogo.mappa} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+      </ConsensoEsterno>
       <div className="map-block__overlay">
         <div className="map-block__addr" style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <LogoSymbol size={36} />

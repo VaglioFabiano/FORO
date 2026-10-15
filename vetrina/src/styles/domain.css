@@ -605,6 +605,54 @@
   border: 0;
   filter: none;
 }
+.map-block .esterno {
+  position: absolute;
+  inset: 0;
+}
+
+/* ═════════ contenuti esterni prima del consenso (ConsensoEsterno) ═════════ */
+.esterno {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px 24px;
+  text-align: center;
+  background: var(--foro-travertino-deep);
+  color: var(--foro-petrolio);
+  border-radius: var(--foro-radius);
+}
+.esterno__testo {
+  max-width: 34ch;
+  font-family: var(--foro-font-text);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--foro-ardesia);
+}
+.esterno__azioni {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 18px;
+}
+.esterno__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.92rem;
+  color: inherit;
+}
+.esterno--scuro {
+  background: rgba(251, 231, 204, 0.06);
+  border: 1px solid var(--foro-linea-chiara);
+  color: var(--foro-carta);
+}
+.esterno--scuro .esterno__testo {
+  color: rgba(251, 231, 204, 0.82);
+}
+
 .map-block__overlay {
   position: absolute;
   left: 16px;

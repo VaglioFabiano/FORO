@@ -1,6 +1,6 @@
 /**
  * Preferenze cookie: due sole scelte, riapribili dal footer e dall'informativa.
- * Mappa e contenuti social fanno parte della homepage e si caricano sempre.
+ * Mappa e contenuti social si caricano solo con «Accetta tutti» (components/domain/ConsensoEsterno).
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -18,6 +18,10 @@ export function CookieBanner() {
       const t = setTimeout(() => setOpen(true), 1200);
       return () => clearTimeout(t);
     }
+  }, [consenso]);
+  // scelta fatta altrove (pulsante «Accetta tutti» sulla mappa o sui social): il banner si chiude
+  useEffect(() => {
+    if (consenso) setOpen(false);
   }, [consenso]);
   useEffect(() => {
     const on = () => setOpen(true);
@@ -50,8 +54,9 @@ export function CookieBanner() {
             <h2 className="t-h3">Cookie e privacy</h2>
           </div>
           <p className="cookie__text">
-            Salviamo nel tuo browser solo ciò che serve a far funzionare la homepage. Nessuna profilazione. La homepage mostra
-            la mappa di Google Maps e i post di Instagram e Telegram: sono servizi esterni, che possono usare cookie propri.
+            Salviamo nel tuo browser solo ciò che serve a far funzionare la homepage. Nessuna profilazione. Con «Accetta tutti»
+            la homepage mostra anche la mappa di Google Maps e i post di Instagram e Telegram: sono servizi esterni, che
+            possono usare cookie propri. Con «Solo necessari» non vengono caricati.
           </p>
           {attuale && <p className="cookie__now t-mono">Scelta attuale · {attuale}</p>}
 

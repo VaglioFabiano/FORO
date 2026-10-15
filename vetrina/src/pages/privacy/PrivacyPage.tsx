@@ -10,7 +10,7 @@ import { ORG } from "@/data/org";
 import "./privacy.css";
 import { useLink } from "@/lib/link";
 
-const AGGIORNATA = "12.10.2026";
+const AGGIORNATA = "15.10.2026";
 
 const INDICE = [
   { id: "titolare", label: "Chi tratta i tuoi dati" },
@@ -336,9 +336,10 @@ export default function PrivacyPage() {
               </h2>
               <div className="prose">
                 <p>
-                  Il sito non usa cookie di profilazione né strumenti di statistica di terze parti. La homepage mostra sempre questi
-                  contenuti esterni, che arrivano direttamente dai rispettivi servizi. Quando la pagina li carica, ricevono l'indirizzo IP
-                  del tuo dispositivo e possono usare cookie propri, secondo le loro informative:
+                  Il sito non usa cookie di profilazione né strumenti di statistica di terze parti, e i caratteri tipografici sono
+                  ospitati sul sito stesso. La homepage mostra questi contenuti esterni solo se scegli «Accetta tutti»: arrivano
+                  direttamente dai rispettivi servizi, che ricevono l'indirizzo IP del tuo dispositivo e possono usare cookie propri,
+                  secondo le loro informative. Prima della tua scelta, o con «Solo necessari», non vengono caricati:
                 </p>
               </div>
               <dl className="pv-card">
@@ -368,7 +369,8 @@ export default function PrivacyPage() {
               </dl>
               <div className="prose">
                 <p>
-                  Alla prima visita ti chiediamo di scegliere fra «Accetta tutti» e «Solo necessari». Noi salviamo soltanto nel tuo browser
+                  Alla prima visita ti chiediamo di scegliere fra «Accetta tutti» e «Solo necessari»; puoi accettare anche dal pulsante
+                  che compare al posto della mappa o dei post. Noi salviamo soltanto nel tuo browser
                   (archiviazione locale):
                 </p>
                 <ul>

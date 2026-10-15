@@ -282,6 +282,14 @@
   grid-area: cta;
   align-self: end;
 }
+/* senza consenso: il riquadro di ConsensoEsterno prende il posto del feed */
+.so-tg__esterno {
+  grid-area: feed;
+}
+.so-ig__embed .esterno {
+  min-height: 340px;
+  height: 100%;
+}
 .so-fb {
   height: 100%;
   grid-template-columns: 1fr;

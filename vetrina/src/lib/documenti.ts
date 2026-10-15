@@ -2,8 +2,8 @@
  * Documenti ufficiali letti dal file originale, così il sito si aggiorna da solo
  * quando l'associazione modifica il documento.
  *
- * Regolamento: Google Doc esportato in testo (CORS consentito da Google), analizzato
- * in articoli. Se il documento non è raggiungibile si usa la copia in data/regolamento.ts.
+ * Regolamento: Google Doc esportato in testo, letto da /api/documenti (così il browser non contatta Google
+ * prima del consenso ai cookie) e analizzato in articoli. Se non è raggiungibile si usa la copia in data/regolamento.ts.
  */
 import { useEffect, useState } from "react";
 import { useLink } from "./link";
@@ -14,7 +14,7 @@ import {
 } from "@/data/regolamento";
 
 /** il documento si sceglie dalla homepage (link «Regolamento · Google Doc», vedi lib/link.ts) */
-const exportUrl = (docId: string) => `https://docs.google.com/document/d/${docId}/export?format=txt`;
+const exportUrl = (docId: string) => `/api/documenti?action=regolamento&id=${encodeURIComponent(docId)}`;
 
 export type Regolamento = {
   titolo: string;

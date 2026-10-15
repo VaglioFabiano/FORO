@@ -29,8 +29,8 @@
   --foro-linea-chiara: rgba(251, 231, 204, 0.16);
 
   /* tipografia */
-  --foro-font-display: "Jost", "Futura", "Century Gothic", system-ui, sans-serif;
-  --foro-font-text: "Newsreader", "Georgia", serif;
+  --foro-font-display: "Jost Variable", "Jost", "Futura", "Century Gothic", system-ui, sans-serif;
+  --foro-font-text: "Newsreader Variable", "Newsreader", "Georgia", serif;
   --foro-font-mono: "IBM Plex Mono", Menlo, monospace;
   --foro-size-display: 3.5rem;
   --foro-size-h1: 2.5rem;
