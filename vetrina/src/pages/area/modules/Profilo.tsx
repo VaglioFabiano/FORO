@@ -150,7 +150,7 @@ export default function Profilo() {
                     <span className="num">
                       {t.inizio}–{t.fine}
                     </span>
-                    <span className="pro-list__n">{t.note || (t.straordinario ? "Turno straordinario" : "Turno in aula")}</span>
+                    <span className="pro-list__n">{t.note || "Turno in aula"}</span>
                     <span className="pro-list__s">
                       <Stato tone={finito ? "ok" : "attesa"}>{finito ? "Fatto" : "Da fare"}</Stato>
                     </span>

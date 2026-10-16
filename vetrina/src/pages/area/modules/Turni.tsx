@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Avatar, Button, Checkbox, Icon, Modal, SelectField, Skeleton, TextArea, TextField, cx } from "@/components/ui";
+import { Avatar, Button, Icon, Modal, SelectField, Skeleton, TextArea, TextField, cx } from "@/components/ui";
 import { toast } from "@/components/ui/Toast";
 import { ApiError, useUtenteCorrente } from "@/lib/api";
 import { GIORNI_BREVI, MESI, addDays, capitalize, isoToDate, mondayOf, romeNow, toMin, weekdayOf } from "@/lib/time";
@@ -99,7 +99,7 @@ export default function Turni() {
       <AreaHead
         eyebrow="Turni"
         title="Turni dell'aula"
-        descr="Tocca uno spazio «Da coprire» per prenderti un turno, o un turno per modificarlo. Sabato, domenica e sera l'aula è chiusa: si apre solo con un turno straordinario."
+        descr="Tocca uno spazio «Da coprire» per prenderti un turno, o un turno per modificarlo. Sabato, domenica e sera l'aula di solito è chiusa, ma puoi comunque aggiungere un turno."
         actions={
           <Button icon="plus" disabled={stato !== "pronto"} onClick={() => setEditor({ data: primoFeriale, fascia: 0 })}>
             Assegna turno
@@ -157,7 +157,6 @@ function MieiTurni({ miei, prossimo, onOpen }: { miei: TurnoVol[]; prossimo?: Tu
                 <span className="tu-mine__h">
                   {t.inizio}–{t.fine}
                 </span>
-                {t.straordinario && <span className="tu-tag">Straordinario</span>}
               </button>
             </li>
           ))}
@@ -385,11 +384,11 @@ function Fascia({
         className="tu-band tu-band--chiusa is-action"
         style={pos(a, b)}
         onClick={() => onNew(iso, fascia)}
-        aria-label={`${giornoLungo(iso)}, ${f.label.toLowerCase()} ${f.start}–${f.end}: aula chiusa. Apri un turno straordinario`}
+        aria-label={`${giornoLungo(iso)}, ${f.label.toLowerCase()} ${f.start}–${f.end}: aula chiusa. Aggiungi un turno`}
       >
         <span>Chiuso</span>
         <small>
-          <Icon name="plus" size={12} /> Straordinario
+          <Icon name="plus" size={12} /> Aggiungi turno
         </small>
       </button>
     );
@@ -427,14 +426,13 @@ function Blocco({ t, now, mine, onOpen }: { t: TurnoVol; now: Adesso; mine: bool
   const finito = isFinito(t.data, t.fine, now);
   const inCorso = !finito && t.data === now.iso && a <= now.minutes;
   const nome = nomeCompleto(t.userId);
-  const cls = cx("tu-ev", mine && "is-mine", t.straordinario && "is-str", finito && "is-past", inCorso && "is-live");
+  const cls = cx("tu-ev", mine && "is-mine", finito && "is-past", inCorso && "is-live");
   const body = (
     <>
       <span className="tu-ev__nome">{nome}</span>
       <span className="tu-ev__h">
         {t.inizio}–{t.fine}
       </span>
-      {t.straordinario && <span className="tu-ev__tag">Straordinario</span>}
       {t.note && <span className="tu-ev__note">{t.note}</span>}
     </>
   );
@@ -451,7 +449,7 @@ function Blocco({ t, now, mine, onOpen }: { t: TurnoVol; now: Adesso; mine: bool
       className={cls}
       style={pos(a, b, 1)}
       onClick={() => onOpen(t)}
-      aria-label={`${nome}, ${giornoLungo(t.data)} ${t.inizio}–${t.fine}${t.straordinario ? ", straordinario" : ""}${inCorso ? ", in corso" : ""}. Modifica turno`}
+      aria-label={`${nome}, ${giornoLungo(t.data)} ${t.inizio}–${t.fine}${inCorso ? ", in corso" : ""}. Modifica turno`}
     >
       {body}
     </button>
@@ -463,7 +461,6 @@ function Legenda() {
     <div className="tu-legend" aria-hidden>
       <span><i className="tu-sw tu-sw--mio" />Il tuo turno</span>
       <span><i className="tu-sw tu-sw--ass" />Assegnato</span>
-      <span><i className="tu-sw tu-sw--str" />Straordinario</span>
       <span><i className="tu-sw tu-sw--lib" />Da coprire</span>
       <span><i className="tu-sw tu-sw--chiuso" />Chiuso</span>
     </div>
@@ -484,8 +481,6 @@ function EditorTurno({ editor, onClose, meId, giorni }: { editor: Editor; onClos
   const [userId, setUserId] = useState<number | undefined>(meId);
   const [q, setQ] = useState("");
   const [note, setNote] = useState("");
-  /** casella "Turno straordinario": null = segue la fascia (selezionata se di solito è chiusa), poi decide chi compila */
-  const [scelta, setScelta] = useState<boolean | null>(null);
   const [err, setErr] = useState<{ msg: string; field?: string } | null>(null);
   const [busy, setBusy] = useState<"save" | "del" | null>(null);
 
@@ -499,15 +494,12 @@ function EditorTurno({ editor, onClose, meId, giorni }: { editor: Editor; onClos
     setFine(t?.fine ?? editor.fine ?? f.end);
     setUserId(t?.userId ?? meId);
     setNote(t?.note ?? "");
-    setScelta(t ? !!t.straordinario : null);
     setQ("");
     setErr(null);
     setBusy(null);
   }, [editor, meId]);
 
   const modifica = !!editor?.turno;
-  const chiusa = !!data && !!inizio && isChiusa(data, fasciaDi(/^\d\d:\d\d$/.test(inizio) ? inizio : FASCE[Number(fascia)].start));
-  const straordinario = scelta ?? chiusa;
   const cerca = q.trim().toLowerCase();
   const persone = utenti.filter((u) => `${u.nome} ${u.cognome}`.toLowerCase().includes(cerca) || u.username.toLowerCase().includes(cerca));
 
@@ -524,7 +516,7 @@ function EditorTurno({ editor, onClose, meId, giorni }: { editor: Editor; onClos
     setBusy("save");
     setErr(null);
     try {
-      await salvaTurno({ data, inizio, fine, userId, note, straordinario }, editor?.turno?.id);
+      await salvaTurno({ data, inizio, fine, userId, note }, editor?.turno?.id);
       toast(
         modifica ? `Turno aggiornato: ${nomeCompleto(userId)}, ${inizio}–${fine}.` : `${nomeCompleto(userId)} è di turno ${giornoLungo(data).toLowerCase()}, ${inizio}–${fine}.`,
         "ok",
@@ -620,25 +612,13 @@ function EditorTurno({ editor, onClose, meId, giorni }: { editor: Editor; onClos
           {fieldErr("userId") && <span className="field__error" role="alert"><Icon name="alert" size={15} /> {fieldErr("userId")}</span>}
         </fieldset>
 
-        {/* come in produzione: casella "straordinario" (is_closed_override) e nota, che per un turno straordinario fa da motivo */}
-        <Checkbox
-          checked={straordinario}
-          onChange={(e) => { setScelta(e.target.checked); setErr(null); }}
-          label="Turno straordinario"
-        />
-        <p className="tu-form__hint">
-          {chiusa
-            ? "Sabato, domenica e sera l'aula di solito è chiusa: questo turno la apre in via straordinaria."
-            : "Selezionala se il turno apre l'aula fuori dal solito orario."}
-        </p>
         <TextArea
-          label={straordinario ? "Motivo dell'apertura straordinaria" : "Note"}
+          label="Note"
           optional
           rows={2}
           value={note}
           onChange={(e) => { setNote(e.target.value); setErr(null); }}
-          placeholder={straordinario ? "Ad esempio: sessione d'esami" : "Ad esempio: porto io le chiavi dell'AGORÀ"}
-          hint={straordinario ? "La nota arriva su Telegram a chi organizza le aperture, come motivo della richiesta." : undefined}
+          placeholder="Ad esempio: porto io le chiavi dell'AGORÀ"
         />
 
         {err && (!err.field || !CAMPI.includes(err.field)) && (

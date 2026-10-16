@@ -1,5 +1,4 @@
 /* Turni: prefisso .tu- */
-.tu-tag { justify-self: start; font-family: var(--foro-font-display); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--foro-notte); background: rgba(233, 162, 59, 0.28); padding: 1px 6px; border-radius: 2px; }
 
 /* i tuoi turni di questa settimana */
 .tu-mine { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 16px; padding: 14px 16px; background: #fffdf9; border: 1px solid var(--foro-pietra); border-radius: var(--foro-radius); }
@@ -9,7 +8,6 @@
 .tu-mine__list button:hover { background: var(--foro-notte); }
 .tu-mine__d { font-family: var(--foro-font-display); font-weight: 500; font-size: 0.9rem; }
 .tu-mine__h { font-family: var(--foro-font-mono); font-size: 0.8rem; opacity: 0.85; }
-.tu-mine__list .tu-tag { align-self: center; background: var(--foro-lanterna); }
 .tu-mine__vuoto { margin: 0; font-size: 0.92rem; color: var(--foro-ardesia); }
 .tu-mine__vuoto .link { font: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
@@ -28,7 +26,6 @@
 .tu-sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
 .tu-sw--mio { background: var(--foro-petrolio); }
 .tu-sw--ass { background: #dce8eb; border-left: 3px solid var(--foro-petrolio); }
-.tu-sw--str { background: #f8e4c4; border-left: 3px solid var(--foro-lanterna); }
 .tu-sw--lib { border: 1px dashed var(--foro-petrolio); }
 .tu-sw--chiuso { background: repeating-linear-gradient(135deg, var(--foro-travertino-deep) 0 3px, rgba(233, 162, 59, 0.35) 3px 5px); }
 
@@ -76,14 +73,11 @@
 .tu-ev { position: absolute; left: 3px; right: 6px; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 5px 8px; overflow: hidden; background: #dce8eb; border: 0; border-left: 3px solid var(--foro-petrolio); border-radius: 4px; color: var(--foro-petrolio); font: inherit; text-align: left; cursor: pointer; transition: box-shadow 0.2s var(--foro-ease), filter 0.2s; }
 button.tu-ev:hover { box-shadow: 0 2px 8px rgba(7, 48, 61, 0.22); z-index: 3; }
 .tu-ev.is-mine { background: var(--foro-petrolio); border-left-color: var(--foro-notte); color: var(--foro-carta); }
-.tu-ev.is-str { background: #f8e4c4; border-left-color: var(--foro-lanterna); color: var(--foro-notte); }
-.tu-ev.is-mine.is-str { background: var(--foro-lanterna); border-left-color: var(--foro-cotto); }
 .tu-ev.is-past { opacity: 0.5; cursor: default; }
 .tu-ev.is-live { box-shadow: 0 0 0 2px var(--foro-lanterna); }
 .tu-ev > span { max-width: 100%; }
 .tu-ev__nome { font-family: var(--foro-font-display); font-weight: 500; font-size: 0.82rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tu-ev__h { font-family: var(--foro-font-mono); font-size: 0.7rem; opacity: 0.85; }
-.tu-ev__tag { margin-top: 2px; font-family: var(--foro-font-display); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
 .tu-ev__note { margin-top: 2px; font-size: 0.72rem; line-height: 1.25; font-style: italic; opacity: 0.85; }
 
 /* linea di adesso */
