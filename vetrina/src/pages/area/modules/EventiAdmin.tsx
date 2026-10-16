@@ -77,7 +77,6 @@ function corpoEvento(e: Evento) {
 
 /* ═════════════ locandine su ImgBB (come client/src/dashboard/GestisciEventi.tsx) ═════════════ */
 
-const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY as string | undefined;
 const TIPI_IMMAGINE = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
 
 /** ridimensiona a 800 px al massimo e ricomprime in JPEG, nel browser */
@@ -114,21 +113,6 @@ function comprimi(file: File): Promise<string> {
   });
 }
 
-async function caricaLocandina(file: File): Promise<string> {
-  if (!IMGBB_API_KEY) throw new Error("Manca la chiave per caricare le immagini (VITE_IMGBB_API_KEY): la locandina non si può caricare.");
-  const base64 = (await comprimi(file)).split(",")[1];
-  const fd = new FormData();
-  fd.append("image", base64);
-  let data: { success?: boolean; data?: { url?: string } };
-  try {
-    const r = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_API_KEY)}`, { method: "POST", body: fd });
-    data = await r.json();
-  } catch {
-    throw new Error("Non siamo riusciti a caricare la locandina. Controlla la connessione e riprova.");
-  }
-  if (!data?.success || !data.data?.url) throw new Error("Il servizio delle immagini non ha accettato la locandina. Riprova o scegli un'altra immagine.");
-  return data.data.url;
-}
 
 /* ═════════════ modulo ═════════════ */
 
@@ -654,7 +638,8 @@ function FormEvento({ aperto, evento, onClose }: { aperto: boolean; evento: Even
     if (Object.keys(e).length) return;
     setSalvo(true);
     try {
-      const immagine = file ? await caricaLocandina(file.file) : v.immagine;
+      // la locandina nuova viaggia come data URL insieme all'evento e si salva in Turso
+      const immagine = file ? await comprimi(file.file) : v.immagine;
       const campi = {
         titolo: v.titolo.trim(),
         sottotitolo: v.sottotitolo.trim() || undefined,
@@ -983,7 +968,7 @@ function Locandina({
       </div>
       <p className="eva-poster__hint">
         {nuova
-          ? "L'immagine si carica quando salvi: la ridimensioniamo e la mettiamo online su ImgBB."
+          ? "L'immagine si carica quando salvi: la ridimensioniamo e la salviamo sul sito."
           : "Se non carichi una locandina, usiamo la grafica a moduli."}
       </p>
       {errore && <p className="eva-poster__err">{errore}</p>}

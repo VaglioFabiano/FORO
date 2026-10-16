@@ -3,7 +3,7 @@
  * Pubblico:
  *   GET                         eventi visibili con i posti prenotati (mai nomi né email)
  *   GET  ?slug=                 un evento visibile
- *   GET  ?action=image&id=      locandina salvata come BLOB (eventi vecchi)
+ *   GET  ?action=image&id=      locandina salvata come BLOB (crea/modifica la ricevono come data URL)
  *   POST ?action=prenota        { eventoId, nome, cognome, email, biglietti, note } → { codice, token, ... }
  *   POST ?action=annulla        { token }
  * Livello ≤ 2:
@@ -24,11 +24,14 @@ import { inviaEmail, richiediEmail, escapeHtml } from "./_email.js";
 export const LUOGO = "Aula studio FORO";
 export const INDIRIZZO = "Via Alfieri 4, Piossasco (TO)";
 const MAX_BIGLIETTI = 10;
+const IMMAGINE_BLOB = "/api/eventi?action=image&id=";
+const MAX_LOCANDINA = 1.5 * 1024 * 1024; // il browser la manda già compressa (≈100 KB)
+const DATA_URL_RE = /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/;
 
 const COLONNE = `e.id, e.titolo, e.descrizione, e.data_evento, e.orario, e.immagine_url, e.visibile, e.num_max, e.link_esterno,
   e.slug, e.sottotitolo, e.categoria, e.rassegna, e.registro, e.ora, e.ora_fine, e.luogo, e.indirizzo, e.aula, e.etichetta,
   e.indizi_json, e.info_json, e.prenotazione, e.solo_tesserati, e.patrocinio, e.composizione, e.foto_url, e.in_evidenza,
-  (e.immagine_blob IS NOT NULL AND length(e.immagine_blob) > 0) AS ha_blob,
+  COALESCE(length(e.immagine_blob), 0) AS blob_byte,
   (SELECT COALESCE(SUM(p.num_partecipanti), 0) FROM prenotazioni_eventi p WHERE p.evento_id = e.id) AS prenotati`;
 
 /** "20:30", "20.30", "ore 21" → "HH:MM"; altrimenti "" */
@@ -66,7 +69,8 @@ export function evento(r) {
     indirizzo: r.indirizzo || INDIRIZZO,
     aula: r.aula === "foro" || r.aula === "agora" ? r.aula : undefined,
     etichetta: r.etichetta || undefined,
-    immagine: r.immagine_url || (Number(r.ha_blob) ? `/api/eventi?action=image&id=${id}` : undefined),
+    // &v= cambia quando cambia la locandina: la cache di un giorno non mostra quella vecchia
+    immagine: r.immagine_url || (Number(r.blob_byte) ? `${IMMAGINE_BLOB}${id}&v=${Number(r.blob_byte)}` : undefined),
     descrizione: r.descrizione ?? "",
     indizi: json(r.indizi_json, undefined),
     info: json(r.info_json, undefined),
@@ -220,6 +224,26 @@ async function annulla(b) {
 }
 
 /* ───────── gestione (livello ≤ 2) ───────── */
+/**
+ * Colonne della locandina da scrivere.
+ * - data URL (immagine nuova dal browser) → BLOB in Turso;
+ * - il nostro indirizzo del BLOB (locandina invariata) → il BLOB resta com'è;
+ * - un link esterno o niente → si usa il link e il BLOB si svuota.
+ */
+function locandina(v) {
+  const s = testo(v);
+  const m = s.match(DATA_URL_RE);
+  if (m) {
+    const buf = Buffer.from(m[2], "base64");
+    if (!buf.length) throw new Errore(400, "L'immagine della locandina è vuota. Scegline un'altra.", "immagine");
+    if (buf.length > MAX_LOCANDINA) throw new Errore(400, "La locandina è troppo pesante anche dopo la compressione. Scegline una più leggera.", "immagine");
+    return { immagine_url: "", immagine_blob: buf, immagine_tipo: m[1], immagine_nome: null };
+  }
+  if (s.startsWith(IMMAGINE_BLOB)) return { immagine_url: "" };
+  if (s.startsWith("data:")) throw new Errore(400, "Il formato della locandina non va bene. Scegli un JPG, un PNG, un GIF o un WebP.", "immagine");
+  return { immagine_url: s, immagine_blob: null, immagine_tipo: null, immagine_nome: null };
+}
+
 function campiEvento(b) {
   const titolo = testo(b.titolo);
   const data = testo(b.data);
@@ -239,7 +263,7 @@ function campiEvento(b) {
     orario: ora, // la colonna vecchia resta allineata: il vecchio sito la legge ancora durante la fase 1
     ora,
     ora_fine: oraFine || null,
-    immagine_url: testo(b.immagine),
+    ...locandina(b.immagine),
     num_max: postiMax,
     link_esterno: testo(b.linkEsterno),
     sottotitolo: testo(b.sottotitolo) || null,
