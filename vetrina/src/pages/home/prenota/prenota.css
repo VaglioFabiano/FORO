@@ -177,6 +177,10 @@
   max-width: 62ch;
   text-wrap: pretty;
 }
+/* gli a capo singoli (es. elenchi puntati incollati da WhatsApp) restano a capo */
+.pd-prose p {
+  white-space: pre-line;
+}
 .pd-prose p:first-child::first-line {
   font-variant-caps: normal;
 }
